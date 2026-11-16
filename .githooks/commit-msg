@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+msg_file="$1"
+subject=$(grep -v '^#' "$msg_file" | sed '/^[[:space:]]*$/d' | head -n1)
+
+case "$subject" in
+  Merge\ *|Revert\ \"*|fixup!\ *|squash!\ *) exit 0 ;;
+esac
+
+ai_pattern='^[[:space:]]*co-authored-by:.*(claude|anthropic|openai|chatgpt|gpt-|copilot|gemini|cursor|codeium|devin|\[bot\]|noreply@anthropic\.com)'
+if grep -v '^#' "$msg_file" | grep -Eiq "$ai_pattern"; then
+  echo "commit-msg: trailer de coautoria de IA não é permitido neste repositório." >&2
+  grep -v '^#' "$msg_file" | grep -Ei "$ai_pattern" >&2
+  exit 1
+fi
+if grep -v '^#' "$msg_file" | grep -Eiq 'generated with \[?claude code'; then
+  echo "commit-msg: assinatura de ferramenta de IA não é permitida na mensagem de commit." >&2
+  exit 1
+fi
+
+cc_pattern='^(feat|fix|perf|refactor|docs|test|build|ci|style|chore|revert)(\([a-z0-9._/-]+\))?!?: [^ ](.*[^.])?$'
+if ! printf '%s' "$subject" | grep -Eq "$cc_pattern"; then
+  echo "commit-msg: título fora do Conventional Commits 1.0.0:" >&2
+  echo "  $subject" >&2
+  echo "  esperado: <tipo>(escopo)!: descrição  (tipos: feat fix perf refactor docs test build ci style chore revert; sem ponto final)" >&2
+  exit 1
+fi
