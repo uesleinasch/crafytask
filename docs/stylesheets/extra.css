@@ -1,0 +1,47 @@
+@import url('https://fonts.googleapis.com/css2?family=Denk+One&display=swap');
+
+:root {
+  --crafy-brand: #705eff;
+  --crafy-brand-light: #8f81ff;
+  --crafy-brand-dark: #5641f0;
+}
+
+[data-md-color-scheme='default'] {
+  --md-primary-fg-color: var(--crafy-brand);
+  --md-primary-fg-color--light: var(--crafy-brand-light);
+  --md-primary-fg-color--dark: var(--crafy-brand-dark);
+  --md-primary-bg-color: #ffffff;
+  --md-primary-bg-color--light: rgba(255, 255, 255, 0.7);
+  --md-accent-fg-color: var(--crafy-brand-dark);
+  --md-accent-fg-color--transparent: rgba(112, 94, 255, 0.1);
+  --md-accent-bg-color: #ffffff;
+  --md-typeset-a-color: var(--crafy-brand-dark);
+}
+
+[data-md-color-scheme='slate'] {
+  --md-primary-fg-color: var(--crafy-brand);
+  --md-primary-fg-color--light: var(--crafy-brand-light);
+  --md-primary-fg-color--dark: var(--crafy-brand-dark);
+  --md-primary-bg-color: #ffffff;
+  --md-primary-bg-color--light: rgba(255, 255, 255, 0.7);
+  --md-accent-fg-color: #a99eff;
+  --md-accent-fg-color--transparent: rgba(169, 158, 255, 0.1);
+  --md-accent-bg-color: #1e1b2e;
+  --md-typeset-a-color: #a99eff;
+}
+
+.md-header__title,
+.md-nav__title[for='__drawer'],
+.crafy-wordmark {
+  font-family: 'Denk One', var(--md-text-font-family), sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+.md-header__title {
+  font-size: 1.1rem;
+}
+
+.crafy-wordmark {
+  color: var(--md-primary-fg-color);
+}

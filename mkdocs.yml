@@ -1,0 +1,117 @@
+site_name: CrafyTask
+site_description: Tarefas e controle de tempo no estilo GTD, local-first, para Linux.
+site_url: https://uesleinasch.github.io/crafytask/
+repo_url: https://github.com/uesleinasch/crafytask
+repo_name: uesleinasch/crafytask
+edit_uri: edit/production/docs/
+docs_dir: docs
+copyright: CrafyTask — código aberto sob licença MIT
+
+theme:
+  name: material
+  language: pt-BR
+  favicon: assets/favicon.png
+  logo: assets/logo.png
+  icon:
+    repo: fontawesome/brands/github
+  palette:
+    - media: '(prefers-color-scheme: light)'
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Mudar para o tema escuro
+    - media: '(prefers-color-scheme: dark)'
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Mudar para o tema claro
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.indexes
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.action.edit
+
+extra_css:
+  - stylesheets/extra.css
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+
+nav:
+  - Início: index.md
+  - Instalação: instalacao.md
+  - Guias:
+      - guias/index.md
+      - Fluxo GTD no CrafyTask: guias/fluxo-gtd.md
+      - Timer e controle de tempo: guias/timer.md
+      - Plano do dia e calendário: guias/plano-do-dia.md
+      - Revisão semanal: guias/revisao-semanal.md
+      - Notas e desenho: guias/notas-e-desenho.md
+      - Cadernos: guias/cadernos.md
+      - Terminal embutido: guias/terminal.md
+      - Backup e restauração: guias/backup.md
+  - Integrações:
+      - integracoes/index.md
+      - Notion: integracoes/notion.md
+      - Google Calendar: integracoes/google-calendar.md
+      - Jira: integracoes/jira.md
+      - MCP (Claude Code e outros): integracoes/mcp.md
+  - Comandos:
+      - comandos/index.md
+      - Scripts npm: comandos/scripts-npm.md
+      - Atalhos de teclado: comandos/atalhos.md
+      - Script de backup: comandos/backup.md
+      - Ferramentas MCP: comandos/ferramentas-mcp.md
+  - Desenvolvimento:
+      - desenvolvimento/index.md
+      - Arquitetura: desenvolvimento/arquitetura.md
+      - Como contribuir: desenvolvimento/contribuir.md
+      - Fluxo git: desenvolvimento/fluxo-git.md
+  - Releases:
+      - releases/index.md
+      - v3.15.0: releases/v3.15.0.md
+  - Referência técnica:
+      - Servidor MCP: mcp-server.md
+      - Mapa da interface:
+          - ui/README.md
+          - Visão geral: ui/00-visao-geral.md
+          - Lista de tarefas: ui/01-lista-de-tarefas.md
+          - Detalhe da tarefa: ui/02-detalhe-da-tarefa.md
+          - Plano do dia: ui/03-plano-do-dia.md
+          - Calendário: ui/04-calendario.md
+          - Projetos: ui/05-projetos.md
+          - Horizontes: ui/06-horizontes.md
+          - Revisão semanal: ui/07-revisao-semanal.md
+          - Dashboard: ui/08-dashboard.md
+          - Contextos e tags: ui/09-contextos-e-tags.md
+          - Arquivadas: ui/10-arquivadas.md
+          - Configurações: ui/11-configuracoes.md
+          - Janelas auxiliares: ui/12-janelas-auxiliares.md
+          - Biblioteca de componentes: ui/13-biblioteca-de-componentes.md
+          - Design tokens: ui/14-design-tokens.md
+          - Inconsistências: ui/15-inconsistencias.md
+          - Terminal: ui/16-terminal.md
+          - Cadernos: ui/17-cadernos.md
+      - Decisões (ADR):
+          - 0001 — Cadernos: adr/0001-cadernos.md
