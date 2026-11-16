@@ -272,7 +272,7 @@ export function NotionSection({
         onOpenChange={setConfirmClear}
         onConfirm={handleClear}
         title="Limpar a configuração do Notion?"
-        description="A API Key e o vínculo com o banco GTD APP serão removidos do TickTask. Nada é apagado no Notion."
+        description="A API Key e o vínculo com o banco GTD APP serão removidos do CrafyTask. Nada é apagado no Notion."
         confirmLabel="Limpar"
       />
     </div>

@@ -25,8 +25,8 @@ function launcherPath(): string {
 function desktopEntry(): string {
   return `[Desktop Entry]
 Type=Application
-Name=TickTask App
-Comment=Iniciar o TickTask na bandeja junto com a sessão
+Name=CrafyTask
+Comment=Iniciar o CrafyTask na bandeja junto com a sessão
 Exec="${launcherPath()}" ${HIDDEN_FLAG}
 Icon=ticktask
 Terminal=false

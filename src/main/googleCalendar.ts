@@ -184,7 +184,7 @@ function waitForAuthCode(
         return
       }
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
-      res.end('<p style="font-family:sans-serif">Pode fechar esta aba e voltar ao TickTask.</p>')
+      res.end('<p style="font-family:sans-serif">Pode fechar esta aba e voltar ao CrafyTask.</p>')
       if (error) settle.reject(new Error(`O Google recusou a autorização: ${error}`))
       else settle.resolve(received!)
     })

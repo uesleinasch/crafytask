@@ -11,7 +11,7 @@ export function AboutSection(): React.JSX.Element {
   }, [])
 
   const rows: [string, string][] = [
-    ['TickTask', version],
+    ['CrafyTask', version],
     ['Electron', runtime.electron ?? ''],
     ['Chromium', runtime.chrome ?? ''],
     ['Node', runtime.node ?? '']

@@ -21,11 +21,11 @@ export function GeneralSection({
       <SectionHeader
         icon={Settings}
         title="Geral"
-        description="Como o TickTask se comporta no seu sistema."
+        description="Como o CrafyTask se comporta no seu sistema."
       />
 
       <ToggleRow
-        title="Iniciar o TickTask com o sistema"
+        title="Iniciar o CrafyTask com o sistema"
         description={
           autostart
             ? 'Ativado: o app sobe na bandeja ao fazer login, sem abrir janela.'
@@ -39,7 +39,7 @@ export function GeneralSection({
         <div className="p-4 rounded-sm border border-slate-200">
           <p className="text-sm font-medium text-slate-700">Fechar a janela não encerra o app</p>
           <p className="text-xs text-slate-500 mt-1">
-            O TickTask continua na bandeja do sistema, com timers e servidor MCP rodando. Para
+            O CrafyTask continua na bandeja do sistema, com timers e servidor MCP rodando. Para
             encerrar de vez, use <strong>Sair</strong> no ícone da bandeja.
           </p>
         </div>

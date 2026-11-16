@@ -582,7 +582,7 @@ function createWindow(): void {
     minHeight: 600,
     show: false,
     autoHideMenuBar: true,
-    title: 'TickTask App',
+    title: 'CrafyTask',
     icon: icon,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -1058,7 +1058,7 @@ function setupIpcHandlers(): void {
     mainWindow?.webContents.send('tasks:refresh')
     // Mostrar notificação
     new Notification({
-      title: 'TickTask',
+      title: 'CrafyTask',
       body: `"${name}" capturado para Inbox`
     }).show()
     return task
@@ -1249,7 +1249,7 @@ function setupIpcHandlers(): void {
       const message = error instanceof Error ? error.message : String(error)
       dialog.showErrorBox(
         'Falha ao restaurar o backup',
-        `${message}\n\nOs dados anteriores foram mantidos. O TickTask vai reiniciar.`
+        `${message}\n\nOs dados anteriores foram mantidos. O CrafyTask vai reiniciar.`
       )
     }
     relaunchApp()

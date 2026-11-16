@@ -17,7 +17,7 @@ export function createMcpServer(bulkThreshold: number, confirmStore: ConfirmStor
     'server_info',
     {
       title: 'Informações do servidor',
-      description: 'Confirma que o TickTask está aberto e respondendo.'
+      description: 'Confirma que o CrafyTask está aberto e respondendo.'
     },
     async () => ok({ app: 'TickTask', status: 'ok' })
   )

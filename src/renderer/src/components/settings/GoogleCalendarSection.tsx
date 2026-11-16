@@ -103,7 +103,7 @@ export function GoogleCalendarSection({
         <p>
           Em <OutLink href="https://console.cloud.google.com/projectcreate">Novo projeto</OutLink>,
           entre com a conta cuja agenda vai receber os eventos e crie um projeto (ex.:{' '}
-          <code>TickTask</code>). Não precisa de faturamento.
+          <code>CrafyTask</code>). Não precisa de faturamento.
         </p>
       )
     },
@@ -127,7 +127,7 @@ export function GoogleCalendarSection({
         <>
           <p>
             Em <OutLink href="https://console.cloud.google.com/auth/branding">Branding</OutLink>,
-            clique em <strong>Get started</strong>: nome <code>TickTask</code>, seu e-mail de
+            clique em <strong>Get started</strong>: nome <code>CrafyTask</code>, seu e-mail de
             suporte, público <strong>External</strong> e seu e-mail de contato.
           </p>
           <Callout tone="warn">
@@ -211,7 +211,7 @@ export function GoogleCalendarSection({
         <>
           <p>
             O navegador abre no login do Google. Na tela “O Google não verificou este app”, clique
-            em <strong>Avançado</strong> → <strong>Acessar TickTask</strong> e permita o acesso à
+            em <strong>Avançado</strong> → <strong>Acessar CrafyTask</strong> e permita o acesso à
             agenda.
           </p>
           <Button

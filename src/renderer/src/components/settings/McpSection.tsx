@@ -53,7 +53,7 @@ export function McpSection({
       <SectionHeader
         icon={Server}
         title="Servidor MCP"
-        description="Exponha o TickTask para assistentes como o Claude Code via MCP."
+        description="Exponha o CrafyTask para assistentes como o Claude Code via MCP."
         status={mcpStatusInfo(status)}
       />
 
