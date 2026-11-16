@@ -1,0 +1,87 @@
+name: pr-checks
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  branch-name:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validar branch de origem × destino
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          work='(feature|feat|bugfix|fix|hotfix|chore)/[a-z0-9]+(-[a-z0-9]+)*'
+          release='release/v[0-9]+\.[0-9]+\.[0-9]+'
+          bots='dependabot/.+'
+
+          case "$BASE_REF" in
+            production) allowed="^(${work}|${release}|${bots})$" ;;
+            main)       allowed="^production$" ;;
+            *)
+              echo "::error::PRs para '$BASE_REF' não são permitidos. O destino é production (ou production → main)."
+              exit 1
+              ;;
+          esac
+
+          if [[ ! "$HEAD_REF" =~ $allowed ]]; then
+            echo "::error::Branch '$HEAD_REF' não pode abrir PR para '$BASE_REF'. Veja https://conventionalbranch.org e o CLAUDE.md."
+            exit 1
+          fi
+
+  no-ai-coauthor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Recusar trailer de coautoria de IA
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          pattern='^[[:space:]]*co-authored-by:.*(claude|anthropic|openai|chatgpt|gpt-|copilot|gemini|cursor|codeium|devin|noreply@anthropic\.com)'
+          bad=0
+          for sha in $(git rev-list "$BASE_SHA..$HEAD_SHA"); do
+            if git log -1 --format=%B "$sha" | grep -Eiq "$pattern"; then
+              echo "::error::Commit $sha tem trailer de coautoria de IA."
+              bad=1
+            fi
+          done
+          if printf '%s' "$PR_BODY" | grep -Eiq "$pattern"; then
+            echo "::error::A descrição do PR tem trailer de coautoria de IA (o squash copiaria para o commit)."
+            bad=1
+          fi
+          exit $bad
+
+  pr-title:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    steps:
+      - uses: amannn/action-semantic-pull-request@e32d7e603df1aa1ba07e981f2a23455dee596825 # v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            perf
+            refactor
+            docs
+            test
+            build
+            ci
+            style
+            chore
+            revert
+          requireScope: false
+          subjectPattern: ^[a-z](.*[^.])?$
+          subjectPatternError: 'A descrição "{subject}" deve começar com minúscula e não terminar com ponto.'
