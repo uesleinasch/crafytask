@@ -4,9 +4,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-TickTask is an Electron desktop app for personal task and time tracking, organized around GTD (Getting Things Done) concepts: an inbox, contexts, projects, areas, goals/horizons, weekly reviews, plus time tracking, recurring tasks, subtasks, and task dependencies. Local-first with SQLite; optional one-way+ sync to Notion. UI strings, task statuses, and categories are in Portuguese (e.g. status `inbox`/`aguardando`/`proximas`/`executando`/`finalizada`/`someday`).
+CrafyTask (antigo TickTask) is an Electron desktop app for personal task and time tracking, organized around GTD (Getting Things Done) concepts: an inbox, contexts, projects, areas, goals/horizons, weekly reviews, plus time tracking, recurring tasks, subtasks, and task dependencies. Local-first with SQLite; optional one-way+ sync to Notion. UI strings, task statuses, and categories are in Portuguese (e.g. status `inbox`/`aguardando`/`proximas`/`executando`/`finalizada`/`someday`).
+
+## Rebrand: só visual
+
+O nome visível é **CrafyTask** (título das janelas, TitleBar, bandeja, autostart, notificações,
+textos de Configurações, nome do atalho no menu do Linux e dos pacotes `crafytask-<versão>.*`). A
+logo é só texto, na fonte **Denk One** (`@fontsource/denk-one`, empacotada — o app é offline e a CSP
+não deixa buscar fonte remota), classes `font-brand` e `text-brand` (`#705EFF`) em `main.css`.
+
+Por compatibilidade com instalações e dados existentes, **não renomeie**: `name: ticktask` e
+`productName: "TickTask App"` (definem a pasta de dados `~/.config/TickTask App`, o pacote deb que
+faz upgrade do antigo, `/opt/TickTask App` e o perfil AppArmor), `app.setName('TickTask App')`,
+`appId`/`AppUserModelId` `com.ticktask.app`, `ticktask.db`, `ticktask-dev`, `TICKTASK_USER_DATA`,
+`ticktask-asset://`, `scripts/ticktask-backup.sh`, a agenda "TickTask" do Google e a descrição
+`TickTask #id` dos eventos, a raiz "Cadernos TickTask" e o banco "GTD APP" do Notion, `app:
+'TickTask'` do `server_info` do MCP. Identificadores de código também ficam como estão.
 
 ## Where the docs are
+
+- **Site MkDocs** (`mkdocs.yml`, `docs/`) — publicado em https://uesleinasch.github.io/crafytask/ :
+  instalação, tutoriais, integrações, comandos, desenvolvimento e uma página por release em
+  `docs/releases/`. Validar com `uvx --with mkdocs-material mkdocs build --strict -d /tmp/site`.
 
 - **`docs/ui/`** — screen-by-screen map of the interface (written in pt-BR): every route, region and
   interactive element, plus the component library, the real design tokens and a catalogue of
@@ -27,7 +46,7 @@ npm run format       # prettier --write
 npm run start        # preview a built app
 npm run test         # vitest run (config em vitest.config.ts, environment node)
 npm run test:watch   # vitest in watch mode
-npm run build:linux  # package AppImage + .deb  (also build:win / build:mac / dist)
+npm run build:linux  # package AppImage + .deb (Linux é o único alvo)
 npm run build:unpack # build + electron-builder --dir (no installer)
 ```
 
@@ -55,8 +74,8 @@ modules, backup planning, due-date notices and most of `src/main/mcp/`. Anything
 it (as `src/main/taskQuery.ts` does for `database.ts`, or `tagQueries.ts` does by taking an
 injected `SqliteLike`) and test that.
 
-`build` (and `dist`/`build:win`/`build:unpack`) runs `typecheck` first, so a type error fails it —
-but `build:linux` and `build:mac` call `electron-vite build` directly and skip it. After meaningful changes run `npm run typecheck && npm run lint` to validate.
+`build` (and `dist`/`build:unpack`) runs `typecheck` first, so a type error fails it —
+but `build:linux` calls `electron-vite build` directly and skips it. After meaningful changes run `npm run typecheck && npm run lint` to validate.
 
 `npm run lint` reports pre-existing prettier warnings across the repo. Do **not** run
 `prettier --write` on a whole legacy file to silence them — it rewrites hundreds of untouched lines
@@ -275,7 +294,7 @@ count (`FLOAT_WIDTH = 300`, 44px per row, max 5 rows) and only re-set when that 
 A due-date notification sweep (`startNotificationScheduler`) runs every minute from the main process; which notices fire (day-of, eve, 15 min before and at `due_time`) is decided by the pure `dueNotifications.ts`.
 
 Closing the main window **hides** it — the app lives on in a tray icon (`src/main/tray.ts`: Abrir
-TickTask / Captura rápida / Sair); only "Sair" actually quits. Autostart is toggled from Settings
+CrafyTask / Captura rápida / Sair); only "Sair" actually quits. Autostart is toggled from Settings
 (`app:getAutostart` / `app:setAutostart`) and launches the app straight into the tray.
 
 All three windows load the **same renderer bundle**, so anything that runs at module scope runs
@@ -309,45 +328,80 @@ Defined in `electron.vite.config.ts` and the tsconfigs:
 
 ## Release
 
-Delivery is tag-driven (`.github/workflows/release.yml`). An annotated `vX.Y.Z-rc.N` tag on
-`release/vX.Y.Z` builds the installers on ubuntu + windows and publishes a GitHub **pre-release**
-(that is the "staging": the installers are tested from there). The final `vX.Y.Z` tag must sit on
-the same commit as the last RC and on the HEAD of `production`; it rebuilds, attests provenance
-and publishes the GitHub Release with a `git-cliff` changelog (`cliff.toml`).
+Só Linux: `.deb` e `AppImage` (`electron-builder.yml` não tem mais alvo Windows/macOS). Entrega
+por tag (`.github/workflows/release.yml`): uma tag anotada `vX.Y.Z` que esteja em `production`
+roda o CI, gera os pacotes no ubuntu, atesta a proveniência e publica a GitHub Release.
 
-The version comes from the tag: the workflow runs `npm version <tag> --no-git-tag-version` before
-`electron-builder`, so **don't bump `package.json` by hand** — nothing is committed on protected
-branches during a release. The next version is computed from Conventional Commits
-(`git cliff --bumped-version`). Other workflows: `ci.yml` (typecheck + tests; lint stays out until
-the pre-existing errors are fixed), `pr-checks.yml` (branch × target and PR title), `security.yml`
-(dependency review + CodeQL).
+- O título da release é **sempre a tag** (`vX.Y.Z`), nunca nome de branch ou de commit.
+- O corpo vem de `docs/releases/vX.Y.Z.md` (tudo depois do `# vX.Y.Z`), mais a tabela de
+  downloads e o changelog do `git-cliff` (`cliff.toml`), que o workflow acrescenta. O workflow
+  **falha** se a página da versão não existir no commit da tag. Essa página é Markdown que o GitHub
+  entende: sem admonitions, abas ou links relativos.
+- A versão vem da tag (`npm version <tag> --no-git-tag-version` no CI): **não mude
+  `package.json` à mão**. A próxima versão sai dos Conventional Commits: `git cliff --bumped-version`.
+- `docs.yml` publica o site MkDocs (`mkdocs.yml`, `docs/`, `requirements-docs.txt`) no GitHub Pages
+  a cada push em `production` que mexa na documentação. `ci.yml` (typecheck, testes e
+  `mkdocs build --strict`) roda em todo PR. `pr-checks.yml` valida origem × destino, título do PR e
+  ausência de coautoria de IA.
 
 ## Git Context
 
-GitFlow com release branches (ver **Release** acima). Regras para o agente:
+Release branch strategy com duas branches fixas. **O agente executa o fluxo inteiro com `git` e
+`gh`**, inclusive merge em `production` e tag de release.
 
-- `main`: default, integração. Nunca commitar direto; só recebe PR.
-- `production`: espelho de produção, sempre igual a uma tag `vX.Y.Z`. Nunca fazer push, merge ou PR
-  para ela; só o mantenedor a atualiza por fast-forward na promoção.
-- `release/vX.Y.Z`: criada só pelo mantenedor. Nunca criar.
-- Branches de trabalho: `feature/`, `bugfix/`, `hotfix/`, `chore/` + descrição em minúsculas com
-  hífens (ex.: `feature/issue-42-export-csv`). Sem maiúsculas, underscore ou ponto.
-  - `feature/*`, `bugfix/*`, `chore/*` saem de `main` e voltam para `main` por PR (squash).
-  - Feature grande, em várias entregas: uma **branch de integração** `feature/<nome>` sai de `main`;
-    cada entrega é uma branch de trabalho saída dela, com PR (squash) para ela. No fim, um único PR
-    da integração para `main`, seguido da release. O `pr-checks.yml` aceita `feature/*` como destino
-    só para branches de trabalho.
-  - Correções de uma release (`bugfix/*`, `hotfix/*`, `chore/*`) saem de `release/vX.Y.Z` e voltam
-    para ela por PR (squash).
+- `production`: branch padrão. Todo trabalho sai dela e volta para ela por PR (squash).
+- `main`: espelho estável. Só recebe PR `production → main` (merge commit) depois de uma release.
+  O agente abre esse PR e **para**: o usuário aprova e faz o merge.
+- Nunca commitar direto em `main` ou `production` (o hook `pre-commit` recusa).
+- Nomes de branch seguem https://conventionalbranch.org: `feature/`, `bugfix/`, `hotfix/`,
+  `chore/` + descrição em minúsculas, números e hífens (ex.: `feature/issue-42-export-csv`);
+  `release/vX.Y.Z` para preparar uma versão. Ponto só na versão do release.
 - Commits granulares em Conventional Commits 1.0.0: `<tipo>(escopo)!: descrição` imperativa,
   minúscula, sem ponto final. Tipos: feat, fix, perf, refactor, docs, test, build, ci, style, chore,
-  revert. O título do PR vira o commit em `main`, então segue o mesmo formato.
-- Ao finalizar a task, push da branch de trabalho e PR para o destino permitido.
-- Nunca criar, mover, apagar ou dar push em tags `v*`. Corte da release, RC, promoção, hotfix e
-  back-merge são comandos `git`/`gh` do mantenedor: mostre os comandos para o usuário executar,
-  não os rode.
-- Nunca `git push --force` (use `--force-with-lease` em branch de trabalho), nunca `--all`,
-  `--mirror`, `--tags`. Não desabilitar rulesets ou checks para destravar algo.
+  revert. O título do PR vira o commit em `production`, então segue o mesmo formato.
+- **Sem coautoria de IA**: nenhum trailer `Co-Authored-By` de Claude/IA nem "Generated with Claude
+  Code" em commit ou descrição de PR (o squash copia o corpo). Os hooks em `.githooks/`
+  (`commit-msg`, `pre-push`) e o `pr-checks.yml` recusam. Os hooks são ativados pelo script
+  `prepare` do `npm install` (`core.hooksPath=.githooks`); num clone novo rode `npm install` ou
+  `git config core.hooksPath .githooks`.
+
+### Fluxo de uma task
+
+```bash
+git switch production && git pull --ff-only
+git switch -c feature/<descricao>
+# ... commits em Conventional Commits ...
+git push -u origin feature/<descricao>
+gh pr create --base production --title "feat(escopo): descrição" --body "..."
+gh pr checks --watch
+gh pr merge --squash --delete-branch
+```
+
+O GitHub não deixa o autor aprovar o próprio PR, e o agente usa a conta do usuário; por isso a
+regra de `production` exige PR e checks verdes, sem aprovação obrigatória. "Aprovar" aqui é
+conferir os checks antes do merge.
+
+### Fluxo de release
+
+```bash
+git switch production && git pull --ff-only
+V=$(git cliff --bumped-version)            # ex.: v3.16.0
+git switch -c release/$V
+# criar docs/releases/$V.md (modelo: a página da versão anterior) e listar em docs/releases/index.md e no nav do mkdocs.yml
+git commit -m "docs(release): adiciona notas da $V"
+git push -u origin release/$V
+gh pr create --base production --title "docs(release): notas da $V" --body "..."
+gh pr checks --watch && gh pr merge --squash --delete-branch
+git switch production && git pull --ff-only
+git tag -a "$V" -m "$V" && git push origin "$V"
+gh run watch "$(gh run list --workflow release.yml --limit 1 --json databaseId --jq '.[0].databaseId')"
+gh pr create --base main --head production --title "chore(release): leva $V para main" --body "..."
+# parar aqui: o usuário aprova e faz o merge do PR para main
+```
+
+- Nunca `git push --force` (use `--force-with-lease` só em branch de trabalho), nunca `--all`,
+  `--mirror`, `--tags`. Nunca mover nem apagar tag `v*` publicada. Não desabilitar rulesets ou
+  checks para destravar algo.
 
 <!-- rtk-instructions v2 -->
 
