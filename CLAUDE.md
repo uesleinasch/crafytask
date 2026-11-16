@@ -1,0 +1,512 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## What this is
+
+TickTask is an Electron desktop app for personal task and time tracking, organized around GTD (Getting Things Done) concepts: an inbox, contexts, projects, areas, goals/horizons, weekly reviews, plus time tracking, recurring tasks, subtasks, and task dependencies. Local-first with SQLite; optional one-way+ sync to Notion. UI strings, task statuses, and categories are in Portuguese (e.g. status `inbox`/`aguardando`/`proximas`/`executando`/`finalizada`/`someday`).
+
+## Where the docs are
+
+- **`docs/ui/`** — screen-by-screen map of the interface (written in pt-BR): every route, region and
+  interactive element, plus the component library, the real design tokens and a catalogue of
+  inconsistencies. Start at `docs/ui/README.md`. **Read the relevant screen doc before touching a
+  page** — it records behaviour that isn't obvious from the JSX (persisted preferences, why the float
+  appears, which colors disagree with which).
+- **`docs/mcp-server.md`** — embedded MCP server: tool list and known limitations.
+- **`ui-ux/`** — original design system and mockups; see the caveat under **Conventions**.
+
+## Commands
+
+```bash
+npm run dev          # Run app with hot reload (electron-vite)
+npm run build        # typecheck (node + web) then build to out/
+npm run typecheck    # tsc for both tsconfig.node.json and tsconfig.web.json
+npm run lint         # eslint --cache
+npm run format       # prettier --write
+npm run start        # preview a built app
+npm run test         # vitest run (config em vitest.config.ts, environment node)
+npm run test:watch   # vitest in watch mode
+npm run build:linux  # package AppImage + .deb  (also build:win / build:mac / dist)
+npm run build:unpack # build + electron-builder --dir (no installer)
+```
+
+`dev` e `start` (app não empacotado) usam uma pasta de dados própria — `<appData>/ticktask-dev`
+(no Linux, `~/.config/ticktask-dev`) — em vez da do app instalado: banco vazio, e o dev roda ao lado
+da instância instalada, já que a trava de instância única é por pasta. `TICKTASK_USER_DATA=<pasta>`
+troca a pasta em qualquer build (`devUserData.ts`, aplicado no topo de `index.ts`, antes da trava).
+Não copie `notion-config.json` nem `mcp-config.json` para a pasta de dev: o dev escreveria no mesmo
+Notion e disputaria a porta do MCP.
+
+Single test file / single case:
+
+```bash
+npx vitest run src/main/taskQuery.test.ts
+npx vitest run src/main/taskQuery.test.ts -t "nome do caso"
+npm run typecheck:node   # or typecheck:web — narrow the tsc run while iterating
+```
+
+Tests run on **vitest** (`vitest.config.ts`, `environment: 'node'`, include `src/**/*.test.ts`) and
+cover the pure modules — query building (`taskQuery`), tag merge/rename (`tagQueries`),
+ProseMirror↔Markdown (`notesMarkdown`), ProseMirror→Notion blocks (`notionBlocks`), note
+format/layout math, the auxiliary-window guard (`timerWindow`), the Google Calendar plan/API/OAuth
+modules, backup planning, due-date notices and most of `src/main/mcp/`. Anything that imports
+`electron` or `better-sqlite3` is not testable as-is; extract the logic into a pure module next to
+it (as `src/main/taskQuery.ts` does for `database.ts`, or `tagQueries.ts` does by taking an
+injected `SqliteLike`) and test that.
+
+`build` (and `dist`/`build:win`/`build:unpack`) runs `typecheck` first, so a type error fails it —
+but `build:linux` and `build:mac` call `electron-vite build` directly and skip it. After meaningful changes run `npm run typecheck && npm run lint` to validate.
+
+`npm run lint` reports pre-existing prettier warnings across the repo. Do **not** run
+`prettier --write` on a whole legacy file to silence them — it rewrites hundreds of untouched lines
+and buries the real diff. Format only the files you created.
+
+## Architecture
+
+Standard electron-vite three-context layout. Understanding the **data round-trip** matters more than any single file:
+
+```
+renderer (React)  →  preload (window.api)  →  main (ipcMain.handle)  →  database.ts (SQLite)
+   src/renderer/src      src/preload/index.ts      src/main/index.ts        src/main/database.ts
+```
+
+- **src/main/** — Node side. `index.ts` (windows, lifecycle, ~130 `ipcMain.handle` registrations in `setupIpcHandlers()`, global shortcut, PDF export via `webContents.printToPDF`). `database.ts` owns the schema + every query as an exported function. `notion.ts` is the Notion client/sync. Around it sit the pure/leaf modules: `taskQuery.ts` (WHERE/ORDER builder), `tagQueries.ts` (tag CRUD/merge over an injected `SqliteLike`), `notesMarkdown.ts` (ProseMirror JSON ↔ Markdown), `notionBlocks.ts` (ProseMirror → Notion blocks), `notionFileUpload.ts` (image upload to Notion), `notesAssets.ts` (local image store + `ticktask-asset://` protocol), `localExport.ts` (task → Markdown file with YAML frontmatter + copied assets).
+- **src/preload/index.ts** — exposes a single `api` object on `window.api` via `contextBridge` (and `@electron-toolkit/preload`'s `electron`). Every method is a thin `ipcRenderer.invoke('domain:action', …)` wrapper. `index.d.ts` types `window.api` for the renderer.
+- **src/renderer/src/** — React 19 app. `main.tsx` → `App.tsx` (uses **`HashRouter`** — required because Electron loads the renderer over `file://`). Pages in `pages/`, reusable components in `components/` (shadcn/Radix primitives under `components/ui/`), data-fetching logic in `hooks/` (one hook per domain: `useTasks`, `useProjects`, `useContexts`, `useTags`, `useCalendar`, `useHorizons`, `useWeeklyReview`, `useTaskDetail`, `useTimer`, `useNotification`, plus the UI-only `useIncrementalList` — IntersectionObserver paging of an already-loaded array — and `usePersistedState` for view preferences), Zustand `stores/timerStore.ts` for the live timer.
+- **src/shared/types.ts** — the single source of truth for domain types (`Task`, `Project`, `Context`, `Area`, `Goal`, `TimeBlock`, `WeeklyReview`, the `Create*/Update*Input` variants, and the status/category/energy unions). Imported by all three contexts.
+
+### IPC conventions
+
+- Channels are named `domain:action` — e.g. `task:create`, `project:getTasks`, `schedule:getWeekly`, `notion:syncAllTasks`, `timeBlock:getForMonth`, `stats:gtdMetrics`. Adding a backend capability almost always means adding a matching channel in all three places.
+- Renderer→main is request/response via `invoke`/`handle`. Main→renderer pushes are **events** sent with `webContents.send`: `tasks:refresh`, `float:update`, `float:clear`, `timer:stopped`, `task:unblocked`, and `notion:syncStart`/`syncSuccess`/`syncError`. The renderer subscribes via `window.api.on*` listeners (e.g. `SyncNotification`, the float timer). `lib/syncEvents.ts` helps bridge these.
+- Task mutation handlers in `index.ts` call `autoSyncToNotion(...)` after the DB write when Notion auto-sync is enabled — keep that side effect in mind when touching task handlers.
+
+### Adding a feature (the cross-cutting path)
+
+A typical new capability touches, in order: `src/shared/types.ts` → a query fn in `src/main/database.ts` → an `ipcMain.handle('domain:action', …)` in `src/main/index.ts` (inside `setupIpcHandlers`) → a wrapper in `src/preload/index.ts` **and** its type in `index.d.ts` → a hook in `src/renderer/src/hooks/` → page/component + (if a new screen) a `<Route>` in `App.tsx`.
+
+A **new screen** needs three more touches in `App.tsx`/`TitleBar.tsx`, all easy to miss:
+its `<Route>`; the `isSubPage` list in `AppContent` (which decides whether the `FloatingTimer`
+overlay renders); and a button in `TitleBar` — whose whole nav bar only renders on `/`, so a screen
+with no `TitleBar` entry is reachable only by code. The page shell itself must use `h-full`, never
+`h-screen`: `<main>` already subtracted the TitleBar, and the extra 56px can be scrolled by a
+programmatic `scrollIntoView` (see `docs/ui/02-detalhe-da-tarefa.md`).
+
+## Database
+
+- File: `app.getPath('userData')/ticktask.db` (em dev, `ticktask-dev/` — ver **Commands**). Opened with `journal_mode = WAL` and `foreign_keys = ON`. `initDatabase()` runs at startup.
+- 16 tables: `tasks`, `time_entries`, `tags`, `task_tags`, `projects`, `contexts`, `task_contexts`, `weekly_reviews`, `task_dependencies`, `areas`, `goals`, `time_blocks`, `note_assets`, `notebooks`, `notebook_sections`, `notebook_pages`.
+- **Migrations are imperative, inline in `initDatabase()`** — `CREATE TABLE IF NOT EXISTS` plus guarded `ALTER TABLE`s. Changing a `CHECK` constraint requires the create-new-table-and-copy dance (see the `tasks_new` rebuild around `src/main/database.ts:375`, used to widen the task `status` CHECK). There is no migration framework — follow the existing pattern.
+- All queries use better-sqlite3 prepared statements; multi-step writes use `db.transaction(...)`.
+
+### Task listings
+
+- `listTasks(filters: TaskListFilters)` is the single listing entry point. **Filtering and sorting
+  belong in SQL, never in the renderer** — the `WHERE` is assembled by `buildTaskListQuery` in
+  `src/main/taskQuery.ts` (pure, unit-tested), which also accepts `limit`/`offset`.
+- Listings project through `TASK_LIST_COLUMNS`, which **omits `notes`** (the Tiptap JSON) and
+  truncates `description`. Anything needing the full body uses `getTask`, or `listTasksForSync` —
+  the Notion sync serializes both fields whole.
+- Never enrich rows one by one: `enrichTasks(rows)` resolves tags, contexts, subtask counts and
+  `is_blocked` with four aggregate queries per batch.
+- Screens that need a slice ask for that slice: `task:listRunning` (timer store),
+  `task:listActiveLight` (task pickers), `schedule:getForDate` (today's tasks). Pulling the whole
+  list to `Array.filter` it in the renderer is the pattern this replaced.
+
+## Rich notes (Tiptap)
+
+Each task carries a `notes` column holding **ProseMirror JSON** (migrated away from an earlier
+Editor.js format). The editor lives in `src/renderer/src/components/editor/`: `TaskNotesEditor.tsx`
+mounts Tiptap with the extension set in `extensions.ts` (starter kit, tables, highlight, images,
+file handler, drag handle, mention), plus a slash menu (`slash/`), `@` mentions of other tasks
+(`mention/`, backed by `notes:searchMentions`), a bubble toolbar, and `NotesFocusBar` for the
+zen/maximized modes. `notesFormat.ts` and `notesLayout.ts` hold the pure bits and are unit-tested.
+
+The JSON is converted, never stored twice: `notesMarkdown.ts` for Markdown (local export),
+`notionBlocks.ts` for Notion blocks. Pasted/dropped images go through `notesAssets.ts` — bytes land
+in `userData/notes-assets`, a row in `note_assets`, and the document references them by the
+privileged `ticktask-asset://` scheme registered in `index.ts` (`registerSchemesAsPrivileged` at
+module scope, `registerAssetProtocol()` after `app.whenReady`). Pushing the same note to Notion
+re-uploads those bytes via `notionFileUpload.ts`; `@notionhq/client` is pinned to v4 because the
+upload API differs across majors.
+
+## Desenho por task (Excalidraw)
+
+Cada task tem um desenho, na aba **Desenho** do mesmo painel das notas. O JSON do Excalidraw vive
+na coluna `drawing` de `tasks`; o PNG derivado vai para `userData/drawings/<taskId>.png`, gravado
+no mesmo IPC (`drawing:save`) que grava o JSON — MCP, Notion e export local leem esse PNG, então
+as duas escritas não podem divergir. O editor (`components/editor/TaskDrawingEditor.tsx`) é
+carregado com `React.lazy`: o pacote é grande e só a aba de desenho paga por ele.
+
+As fontes do Excalidraw são servidas pelo protocolo `ticktask-asset://` (host `excalidraw`), não
+por `file://` — o renderer roda em origem opaca em produção e o Chromium recusa carregar fontes
+dali. A CSP em `src/renderer/index.html` precisa listar o esquema em `font-src` e `img-src`.
+
+## Cadernos
+
+Tela `/notebooks`: Caderno → Seção → Página (até 2 níveis de subpágina), cada página com as abas
+Notas e Desenho da task. Decisões em `docs/adr/0001-cadernos.md`; tela em `docs/ui/17-cadernos.md`.
+
+- Schema e queries em `notebookQueries.ts` (puro, `SqliteLike`, testado), chamado de
+  `initDatabase()` por `ensureNotebookSchema`. Regras de árvore em `src/shared/notebookTree.ts`,
+  usadas pelo renderer e revalidadas no main. IPC em `notebookIpc.ts` (`notebook:*`, `section:*`,
+  `page:*`); mutações de estrutura emitem `notebooks:refresh`.
+- Notas, imagens e desenho têm um **dono** (`NotesOwner = { kind: 'task' | 'page', id }`), não um
+  `taskId`. Os editores recebem `owner`; `components/editor/notesOwner.ts` escolhe o canal.
+  `note_assets` tem `task_id` **ou** `page_id` (CHECK); o PNG de página fica em
+  `drawings/pages/<id>.png`. Código novo que grava nota/imagem/desenho deve receber o dono.
+- Notion: hierarquia de páginas sob a raiz "Cadernos TickTask" (`notionNotebooks.ts`; decisões puras
+  em `notionNotebookPlan.ts`). Tudo passa por uma fila única com debounce (`debouncedSerialQueue.ts`)
+  em `notebookIpc.ts` — em paralelo, duas páginas criariam a mesma seção duas vezes. O SDK v4 não
+  move página: pai diferente = arquivar e recriar. `replacePageBody` (em `notion.ts`) reescreve o
+  corpo de task e de página e preserva blocos `child_page`.
+- `notebookService.ts` concentra o que IPC e MCP compartilham: refresh, fila do Notion, exclusão
+  (apaga PNGs e arquiva no Notion). Escrita nova em caderno passa por ele, não direto pela query.
+- Busca em SQL sobre `notebook_pages.search_text` (texto puro derivado do JSON em
+  `updatePageNotes`, via `notesPlainText.ts`). A menção `@` sugere páginas; clicar numa menção abre
+  task, projeto ou `/notebooks?page=<id>` (`mention/mentionRoute.ts`).
+- MCP em `mcp/tools/notebooks.ts`; export local em `notebookExport.ts` (+ `notebookExportPlan.ts`,
+  puro), reaproveitando `copyNoteAssets`/`writeDrawingFiles` de `localExport.ts`.
+- `notion.ts` não pode chamar `app.getPath` no escopo do módulo: as tools do MCP o importam e o
+  `transport.test.ts` carrega todas elas sob o Node puro.
+
+## Terminal embutido
+
+Cada task pode ter `working_dir` e `start_command` (colunas locais: não vão ao Notion nem ao Jira). O
+painel (`components/terminal/`, montado em `App.tsx`) usa `@xterm/xterm`; o PTY é `node-pty`, só no
+main. `terminalSessions.ts` é puro e testado (sessões, ring buffer de ~200 KB, coalescência de
+output a cada 10 ms, `seq` por envio para o replay não duplicar); `terminal.ts` é o lado Electron e
+importa `node-pty` sob demanda, para um binário com ABI errada degradar só o painel. As sessões
+morrem no `before-quit` e quando a task é apagada: `task:delete`, `task:bulkDelete` e o
+`delete_tasks` do MCP (`afterTasksDeleted`) chamam `disposeTerminalsForTasks`. Shell e "timer no
+primeiro comando" ficam em `localStorage`. Ver `docs/ui/16-terminal.md`.
+
+## Notion sync (src/main/notion.ts)
+
+Config (API key, target page/database id, auto-sync flag) is persisted to `app.getPath('userData')/notion-config.json`, not the DB. On first sync the app provisions a "GTD APP" Notion database and maps local task fields to Notion properties (names are Portuguese: Nome, Status, etc.), translating the local status union to Notion status options. Sync progress is surfaced to the UI through the `notion:sync*` events above.
+
+## Google Calendar sync
+
+Opt-in por task (`tasks.gcal_sync`), só TickTask → Google, numa agenda secundária "TickTask" criada
+pelo app com o escopo `calendar.app.created`. Time blocks viram eventos com hora; `scheduled_date` e
+`due_date` viram eventos de dia inteiro; task finalizada ganha `✓ ` no título.
+
+Não há tabela de vínculo: cada evento tem ID determinístico (`tick{taskId}b{blockId}`,
+`tick{taskId}s`, `tick{taskId}d`) e `extendedProperties.private.taskId`. Com horário na task
+(`scheduled_time`/`scheduled_end_time`, `due_time` — colunas `HH:MM` separadas das datas, regras em
+`src/shared/taskTime.ts`), `s` e `d` viram eventos com hora em vez de dia inteiro. Sincronizar uma task é
+recalcular o conjunto desejado (`gcalPlan.ts`, puro), listar o que existe no Google por essa
+propriedade e aplicar a diferença (`googleCalendarApi.ts`, `fetch` injetado). Task apagada ou
+desmarcada = conjunto vazio = eventos apagados. `gcalSyncQueue.ts` serializa por task.
+
+`googleCalendar.ts` é o lado Electron: `userData/gcal-config.json` (refresh token via
+`safeStorage`), OAuth loopback + PKCE (`googleOAuth.ts`). Em `index.ts`, `autoSyncTask(id)` dispara
+Notion e Google; o Google só age em tasks com `gcal_sync = 1`, então **caminhos de exclusão filtram
+os ids com `filterGcalSyncedIds` antes de apagar** e chamam `pushToGoogle` depois. Handlers de time
+block também sincronizam. No MCP, use `afterCalendarChange(ids)`.
+
+## Jira
+
+Jira Cloud com e-mail + API token (Basic auth). Mesmo desenho do Google: `jiraApi.ts` (REST puro,
+`fetch` injetado), `jiraPlan.ts` (mapeamento inicial, diff de importação e plano da descrição),
+`jiraAdf.ts` (ADF ↔ ProseMirror), `jiraFields.ts` (editmeta → campos editáveis e valor do PUT) —
+todos puros e testados — e `jira.ts` (lado Electron: `userData/jira-config.json`, token via
+`safeStorage`, importação, transições, campos, envio da descrição e agendador).
+
+- A importação traz as issues atribuídas ao usuário nos boards escolhidos e faz upsert por
+  `tasks.jira_key` (índice único). Ela escreve direto no banco, sem passar pelos handlers `task:*`.
+- **Status do Jira e status da task são independentes.** O mapeamento só escolhe o status inicial
+  de task nova; depois a importação atualiza só `tasks.jira_status` (e `tasks.jira_space`, o nome do
+  espaço/projeto da issue). `spaceProjects` (config) leva cada espaço a um projeto local: vale para
+  task nova e para task vinculada ainda sem projeto. O status no Jira muda apenas
+  pelo seletor de transições (`jira:transition`), nunca ao mover a task no TickTask.
+- A importação também grava o tipo da issue (`jira_issue_type`, e a classe em `jira_issue_kind`:
+  epic/story/task/bug/subtask) e a issue pai (`jira_parent_key`/`jira_parent_summary`). A
+  hierarquia do Jira **não** vira subtarefa local (`parent_task_id`): isso tiraria a issue da lista e
+  a apagaria junto com o pai. O agrupamento "Pai Jira" da listagem (`lib/taskGrouping.ts`) cobre isso.
+- **Worklog** (opt-in, `worklogSince` na config): `autoSyncTask` chama `scheduleJiraWorklogPush`,
+  que envia cada sessão de tempo encerrada (≥ 1 min, posterior a ligar) e guarda o id em
+  `time_entries.jira_worklog_id` — a coluna é o que impede envio duplo. `task:reset` captura esses
+  ids **antes** de apagar as sessões e depois os apaga no Jira (`captureJiraWorklogs` →
+  `deleteJiraWorklogs`). Regras puras em `jiraWorklog.ts`.
+- O painel lateral (`components/jira/JiraFieldsSheet.tsx`) lê `issue?expand=editmeta` e grava cada
+  campo com PUT na issue (`jira:updateField`). Depois de transição ou edição, a task é relida do
+  Jira (nome, prazo, status Jira).
+- **Descrição ↔ notas**: a importação converte a descrição (ADF) em notas Tiptap; salvar as notas
+  envia de volta (`scheduleJiraDescriptionPush`, com debounce, chamado por `task:updateNotes` e por
+  `autoSyncTask`, então cobre o MCP). `jira_desc_hash`/`jira_notes_hash` guardam o último estado
+  sincronizado dos dois lados e evitam laço. Se a descrição mudou no Jira, ela vence. Imagens do
+  Jira viram o marcador `🖼 jira-media:<id>` nas notas e voltam como o nó original no envio;
+  imagens locais não vão ao Jira.
+- Tasks com `jira_key` só vão ao Notion com o opt-in ligado: todo caminho que sincroniza com o
+  Notion filtra com `jiraNotionFilter()`.
+- `jira-config.json` fica fora do backup pelo mesmo motivo do `gcal-config.json`.
+
+`tasks.external_url` é o link externo genérico da task (as importadas recebem o da issue). Abrir no
+navegador passa por `app:openExternal`, que só aceita `http(s)` (`shared/externalUrl.ts`).
+
+## Backup e restauração
+
+`src/main/backup.ts` (lado Electron) + `backupPlan.ts` (puro, testado), expostos em Configurações →
+Backup. Um snapshot é uma pasta `AAAA-MM-DD_HHMMSS/` com `ticktask.db` (via `db.backup()`),
+`notes-assets/`, `drawings/`, as configs do Notion e do MCP e um `MANIFEST.txt`. O formato é
+compartilhado com `scripts/ticktask-backup.sh`, que faz backup e restauração sem o app — mudar
+nomes ou rótulos do manifest exige mudar os dois. Restaurar fecha o banco, guarda os dados atuais
+em `userData/pre-restore-*/` e reinicia o app. `gcal-config.json` fica de fora de propósito: o
+token é cifrado com `safeStorage` e não abre em outra máquina.
+
+## MCP server
+
+Lives in `src/main/mcp/`, embedded in the main process. It speaks MCP over HTTP on loopback
+(`127.0.0.1`), authenticated with a Bearer token, toggled from Settings. Tools are thin adapters
+reusing `database.ts` directly — task-write tools call `afterTaskWrite(id)`, non-task-specific
+writes call `broadcastRefresh()`. Destructive or bulk operations go through the two-phase
+confirmation guard in `confirmGuard.ts` (preview + `confirm_token`, then repeat the call). See
+`docs/mcp-server.md` for the tool list and known limitations.
+
+## Windows & shortcuts
+
+`index.ts` manages three `BrowserWindow`s: `mainWindow`, an always-on-top `floatWindow` (the floating timer, route `/float`), and `quickCaptureWindow` (route `/quick-capture`). Global shortcut **`CommandOrControl+Shift+Space`** toggles quick capture. The float and quick-capture windows are `frame: false`; the main window keeps its OS frame with `autoHideMenuBar` and renders its own in-app `TitleBar`. The `window:minimize`/`maximize`/`close` channels exist in the preload but no button in the current UI is wired to them.
+
+The float is driven by `mainWindow` events, not by the renderer: `minimize` **and `close`** show it
+**only when a timer is running**, `restore` and `focus` hide it. Its size is derived from the timer
+count (`FLOAT_WIDTH = 300`, 44px per row, max 5 rows) and only re-set when that count changes.
+A due-date notification sweep (`startNotificationScheduler`) runs every minute from the main process; which notices fire (day-of, eve, 15 min before and at `due_time`) is decided by the pure `dueNotifications.ts`.
+
+Closing the main window **hides** it — the app lives on in a tray icon (`src/main/tray.ts`: Abrir
+TickTask / Captura rápida / Sair); only "Sair" actually quits. Autostart is toggled from Settings
+(`app:getAutostart` / `app:setAutostart`) and launches the app straight into the tray.
+
+All three windows load the **same renderer bundle**, so anything that runs at module scope runs
+three times. `stores/timerWindow.ts` (`shouldBootstrapTimerStore`) is the guard: the auxiliary
+routes must not boot their own copy of the timer store, or each window fights over the float. Keep
+new global side effects behind the same check.
+
+## Path aliases
+
+Defined in `electron.vite.config.ts` and the tsconfigs:
+
+- `@shared/*` → `src/shared/*` (available in main, preload, and renderer)
+- `@renderer/*` → `src/renderer/src/*` (renderer only)
+
+## Conventions
+
+- Pages: `*Page.tsx`; hooks: `useX.ts`; stores: `xStore.ts`. shadcn config in `components.json` (new-york style, lucide icons, `@renderer/components/ui`).
+- No global app store beyond the timer — screen data is fetched on demand inside hooks via `window.api`; cross-screen freshness comes from the `tasks:refresh` event, not shared state.
+- Visual language: **`docs/ui/14-design-tokens.md` describes what the code actually uses** and is the
+  practical reference before inventing colors, radii or spacing.
+  `ui-ux/TickTask - Design System & Guia de Estilo.md` is the original intent and is partly stale
+  (it prescribes `rounded-xl` + shadows; the app moved to `rounded-sm` and dropped `shadow-sm`).
+  Two gotchas worth knowing: `--radius: 0.75rem` makes `rounded-sm` resolve to **8px**, not
+  Tailwind's 2px; and `--font-sans`/`--font-mono` point at `--font-geist-*` variables that are never
+  defined.
+- Status/category colors are declared in several places at once (`shared/types.ts`, `StatusBadge`,
+  `CategoryBadge`, plus local copies in `DashboardPage` and `CalendarPage`) and they **disagree** —
+  check `docs/ui/14-design-tokens.md` before assuming a single source of truth.
+- Carried over from `.github/copilot-instructions.md`: change only what the task requires, keep the
+  code simple over clever, and reserve inline comments for genuinely non-obvious constraints.
+
+## Release
+
+Delivery is tag-driven (`.github/workflows/release.yml`). An annotated `vX.Y.Z-rc.N` tag on
+`release/vX.Y.Z` builds the installers on ubuntu + windows and publishes a GitHub **pre-release**
+(that is the "staging": the installers are tested from there). The final `vX.Y.Z` tag must sit on
+the same commit as the last RC and on the HEAD of `production`; it rebuilds, attests provenance
+and publishes the GitHub Release with a `git-cliff` changelog (`cliff.toml`).
+
+The version comes from the tag: the workflow runs `npm version <tag> --no-git-tag-version` before
+`electron-builder`, so **don't bump `package.json` by hand** — nothing is committed on protected
+branches during a release. The next version is computed from Conventional Commits
+(`git cliff --bumped-version`). Other workflows: `ci.yml` (typecheck + tests; lint stays out until
+the pre-existing errors are fixed), `pr-checks.yml` (branch × target and PR title), `security.yml`
+(dependency review + CodeQL).
+
+## Git Context
+
+GitFlow com release branches (ver **Release** acima). Regras para o agente:
+
+- `main`: default, integração. Nunca commitar direto; só recebe PR.
+- `production`: espelho de produção, sempre igual a uma tag `vX.Y.Z`. Nunca fazer push, merge ou PR
+  para ela; só o mantenedor a atualiza por fast-forward na promoção.
+- `release/vX.Y.Z`: criada só pelo mantenedor. Nunca criar.
+- Branches de trabalho: `feature/`, `bugfix/`, `hotfix/`, `chore/` + descrição em minúsculas com
+  hífens (ex.: `feature/issue-42-export-csv`). Sem maiúsculas, underscore ou ponto.
+  - `feature/*`, `bugfix/*`, `chore/*` saem de `main` e voltam para `main` por PR (squash).
+  - Feature grande, em várias entregas: uma **branch de integração** `feature/<nome>` sai de `main`;
+    cada entrega é uma branch de trabalho saída dela, com PR (squash) para ela. No fim, um único PR
+    da integração para `main`, seguido da release. O `pr-checks.yml` aceita `feature/*` como destino
+    só para branches de trabalho.
+  - Correções de uma release (`bugfix/*`, `hotfix/*`, `chore/*`) saem de `release/vX.Y.Z` e voltam
+    para ela por PR (squash).
+- Commits granulares em Conventional Commits 1.0.0: `<tipo>(escopo)!: descrição` imperativa,
+  minúscula, sem ponto final. Tipos: feat, fix, perf, refactor, docs, test, build, ci, style, chore,
+  revert. O título do PR vira o commit em `main`, então segue o mesmo formato.
+- Ao finalizar a task, push da branch de trabalho e PR para o destino permitido.
+- Nunca criar, mover, apagar ou dar push em tags `v*`. Corte da release, RC, promoção, hotfix e
+  back-merge são comandos `git`/`gh` do mantenedor: mostre os comandos para o usuário executar,
+  não os rode.
+- Nunca `git push --force` (use `--force-with-lease` em branch de trabalho), nunca `--all`,
+  `--mirror`, `--tags`. Não desabilitar rulesets ou checks para destravar algo.
+
+<!-- rtk-instructions v2 -->
+
+# RTK (Rust Token Killer) - Token-Optimized Commands
+
+## Golden Rule
+
+**Always prefix commands with `rtk`**. If RTK has a dedicated filter, it uses it. If not, it passes through unchanged. This means RTK is always safe to use.
+
+**Important**: Even in command chains with `&&`, use `rtk`:
+
+```bash
+# ❌ Wrong
+git add . && git commit -m "msg" && git push
+
+# ✅ Correct
+rtk git add . && rtk git commit -m "msg" && rtk git push
+```
+
+## RTK Commands by Workflow
+
+### Build & Compile (80-90% savings)
+
+```bash
+rtk cargo build         # Cargo build output
+rtk cargo check         # Cargo check output
+rtk cargo clippy        # Clippy warnings grouped by file (80%)
+rtk tsc                 # TypeScript errors grouped by file/code (83%)
+rtk lint                # ESLint/Biome violations grouped (84%)
+rtk prettier --check    # Files needing format only (70%)
+rtk next build          # Next.js build with route metrics (87%)
+```
+
+### Test (60-99% savings)
+
+```bash
+rtk cargo test          # Cargo test failures only (90%)
+rtk go test             # Go test failures only (90%)
+rtk jest                # Jest failures only (99.5%)
+rtk vitest              # Vitest failures only (99.5%)
+rtk playwright test     # Playwright failures only (94%)
+rtk pytest              # Python test failures only (90%)
+rtk rake test           # Ruby test failures only (90%)
+rtk rspec               # RSpec test failures only (60%)
+rtk test <cmd>          # Generic test wrapper - failures only
+```
+
+### Git (59-80% savings)
+
+```bash
+rtk git status          # Compact status
+rtk git log             # Compact log (works with all git flags)
+rtk git diff            # Compact diff (80%)
+rtk git show            # Compact show (80%)
+rtk git add             # Ultra-compact confirmations (59%)
+rtk git commit          # Ultra-compact confirmations (59%)
+rtk git push            # Ultra-compact confirmations
+rtk git pull            # Ultra-compact confirmations
+rtk git branch          # Compact branch list
+rtk git fetch           # Compact fetch
+rtk git stash           # Compact stash
+rtk git worktree        # Compact worktree
+```
+
+Note: Git passthrough works for ALL subcommands, even those not explicitly listed.
+
+### GitHub (26-87% savings)
+
+```bash
+rtk gh pr view <num>    # Compact PR view (87%)
+rtk gh pr checks        # Compact PR checks (79%)
+rtk gh run list         # Compact workflow runs (82%)
+rtk gh issue list       # Compact issue list (80%)
+rtk gh api              # Compact API responses (26%)
+```
+
+### JavaScript/TypeScript Tooling (70-90% savings)
+
+```bash
+rtk pnpm list           # Compact dependency tree (70%)
+rtk pnpm outdated       # Compact outdated packages (80%)
+rtk pnpm install        # Compact install output (90%)
+rtk npm run <script>    # Compact npm script output
+rtk npx <cmd>           # Compact npx command output
+rtk prisma              # Prisma without ASCII art (88%)
+```
+
+### Files & Search (60-75% savings)
+
+```bash
+rtk ls <path>           # Tree format, compact (65%)
+rtk read <file>         # Code reading with filtering (60%)
+rtk grep <pattern>      # Search grouped by file (75%). Format flags (-c, -l, -L, -o, -Z) run raw.
+rtk find <pattern>      # Find grouped by directory (70%)
+```
+
+### Analysis & Debug (70-90% savings)
+
+```bash
+rtk err <cmd>           # Filter errors only from any command
+rtk log <file>          # Deduplicated logs with counts
+rtk json <file>         # JSON structure without values
+rtk deps                # Dependency overview
+rtk env                 # Environment variables compact
+rtk summary <cmd>       # Smart summary of command output
+rtk diff                # Ultra-compact diffs
+```
+
+### Infrastructure (85% savings)
+
+```bash
+rtk docker ps           # Compact container list
+rtk docker images       # Compact image list
+rtk docker logs <c>     # Deduplicated logs
+rtk kubectl get         # Compact resource list
+rtk kubectl logs        # Deduplicated pod logs
+```
+
+### Network (65-70% savings)
+
+```bash
+rtk curl <url>          # Compact HTTP responses (70%)
+rtk wget <url>          # Compact download output (65%)
+```
+
+### Meta Commands
+
+```bash
+rtk gain                # View token savings statistics
+rtk gain --history      # View command history with savings
+rtk discover            # Analyze Claude Code sessions for missed RTK usage
+rtk proxy <cmd>         # Run command without filtering (for debugging)
+rtk init                # Add RTK instructions to CLAUDE.md
+rtk init --global       # Add RTK to ~/.claude/CLAUDE.md
+```
+
+## Token Savings Overview
+
+| Category         | Commands                       | Typical Savings |
+| ---------------- | ------------------------------ | --------------- |
+| Tests            | vitest, playwright, cargo test | 90-99%          |
+| Build            | next, tsc, lint, prettier      | 70-87%          |
+| Git              | status, log, diff, add, commit | 59-80%          |
+| GitHub           | gh pr, gh run, gh issue        | 26-87%          |
+| Package Managers | pnpm, npm, npx                 | 70-90%          |
+| Files            | ls, read, grep, find           | 60-75%          |
+| Infrastructure   | docker, kubectl                | 85%             |
+| Network          | curl, wget                     | 65-70%          |
+
+Overall average: **60-90% token reduction** on common development operations.
+
+<!-- /rtk-instructions -->
+
+## graphify
+
+This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+
+Rules:
+- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).

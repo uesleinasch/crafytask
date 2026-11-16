@@ -1,0 +1,1392 @@
+import {
+  app,
+  shell,
+  BrowserWindow,
+  ipcMain,
+  Notification,
+  screen,
+  globalShortcut,
+  dialog,
+  protocol
+} from 'electron'
+import { copyFileSync } from 'fs'
+import { join } from 'path'
+import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import icon from '../../resources/512.png?asset'
+import { HIDDEN_FLAG, shouldStartHidden } from './launchArgs'
+import { createTray, destroyTray } from './tray'
+import { isAutostartEnabled, setAutostartEnabled } from './autostart'
+import { isSafeHttpUrl } from '@shared/externalUrl'
+import {
+  initDatabase,
+  closeDatabase,
+  createTask,
+  listTasks,
+  countTasks,
+  listActiveTasksLight,
+  listRunningTasks,
+  listTasksForSync,
+  getTask,
+  updateTask,
+  updateTaskNotes,
+  updateTaskDrawing,
+  searchMentions,
+  setTaskLocalExportPath,
+  deleteTask,
+  deleteTasks,
+  getChildTaskIds,
+  archiveTask,
+  unarchiveTask,
+  setTasksArchived,
+  updateTaskStatus,
+  updateTasksStatus,
+  moveTasksToProject,
+  startTask,
+  stopTask,
+  updateTimer,
+  getTimeEntries,
+  getActiveTimeEntry,
+  resetTaskTimer,
+  addManualTimeEntry,
+  setTaskTotalTime,
+  getWeeklyStats,
+  getTaskTimeStats,
+  getStatusStats,
+  getCategoryStats,
+  getHeatmapData,
+  getGeneralStats,
+  getGtdMetrics,
+  getEnergyStats,
+  // Tags
+  createTag,
+  listTags,
+  listTagsWithUsage,
+  listTaskIdsWithTag,
+  updateTag,
+  mergeTags,
+  getOrCreateTag,
+  deleteTag,
+  getTaskTags,
+  setTaskTags,
+  // Projects
+  createProject,
+  getProject,
+  listProjects,
+  updateProject,
+  deleteProject,
+  getProjectTasks,
+  // Contexts
+  createContext,
+  listContexts,
+  updateContext,
+  deleteContext,
+  getTaskContexts,
+  setTaskContexts,
+  // Weekly Reviews
+  createWeeklyReview,
+  getWeeklyReview,
+  listWeeklyReviews,
+  getLastWeeklyReview,
+  updateWeeklyReview,
+  getReviewHealthIndicators,
+  // FASE 4.3: Blocos de Tempo
+  createTimeBlock,
+  getTimeBlocksForDate,
+  getTimeBlocksForWeek,
+  getTimeBlocksForMonth,
+  updateTimeBlock,
+  deleteTimeBlock,
+  // FASE 4: Horizontes GTD
+  createArea,
+  getArea,
+  listAreas,
+  updateArea,
+  deleteArea,
+  createGoal,
+  getGoal,
+  listGoals,
+  updateGoal,
+  deleteGoal,
+  // FASE 2
+  getSubtasks,
+  completeSubtasksCheck,
+  getTaskDependencies,
+  getTaskDependents,
+  addTaskDependency,
+  removeTaskDependency,
+  getTasksForDate,
+  getWeeklySchedule,
+  updateDayOrder,
+  createNextRecurrence,
+  deleteNextRecurrence,
+  getTasksDueForNotification,
+  getTimeBlock,
+  filterGcalSyncedIds,
+  getNextRecurrenceIds
+} from './database'
+import {
+  connectGcal,
+  disconnectGcal,
+  getGcalStatus,
+  isGcalAutoSyncOn,
+  isGcalConnected,
+  saveGcalCredentials,
+  setGcalAutoSync,
+  syncAllToGoogle,
+  syncTaskToGoogle
+} from './googleCalendar'
+import {
+  disconnectJira,
+  getJiraIssueFields,
+  getJiraStatus,
+  importJiraIssues,
+  jiraNotionFilter,
+  listJiraBoards,
+  listJiraTransitions,
+  onJiraBackgroundError,
+  scheduleJiraDescriptionPush,
+  scheduleJiraWorklogPush,
+  getJiraChildren,
+  captureJiraWorklogs,
+  deleteJiraWorklogs,
+  searchJiraUsers,
+  startJiraScheduler,
+  saveJiraBoards,
+  saveJiraCredentials,
+  saveJiraMapping,
+  saveJiraOptions,
+  testJiraConnection,
+  transitionJiraIssue,
+  updateJiraIssueField
+} from './jira'
+import type {
+  JiraCredentialsInput,
+  JiraFieldInput,
+  JiraImportResult,
+  JiraOptionsInput,
+  NotesOwner
+} from '@shared/types'
+import type { StatusMapping } from './jiraPlan'
+import {
+  // Notion
+  getNotionConfig,
+  saveNotionConfig,
+  clearNotionConfig,
+  testNotionConnection,
+  syncTaskToNotion,
+  syncTaskNotesToNotion,
+  syncAllTasks,
+  findOrCreateDatabase,
+  deleteTaskFromNotion,
+  type NotionConfig
+} from './notion'
+import { saveNoteImage, registerAssetProtocol, ASSET_SCHEME } from './notesAssets'
+import { deleteDrawingPreview, saveDrawingPreview } from './drawingAssets'
+import { exportTaskToLocal } from './localExport'
+import {
+  chooseBackupFolder,
+  chooseSnapshotFolder,
+  createBackup,
+  getBackupStatus,
+  inspectSnapshot,
+  restoreSnapshot
+} from './backup'
+import { pickDueNotifications } from './dueNotifications'
+import { localDateString } from '../shared/dueState'
+import { readMcpConfig, writeMcpConfig } from './mcp/store'
+import { isMcpRunning, startMcpServer, stopMcpServer } from './mcp/transport'
+import { generateToken } from './mcp/config'
+import { registerWriteEffects } from './mcp/effects'
+import { disposeTerminalsForTasks, killAllTerminals, registerTerminalIpc } from './terminal'
+import { registerNotebookIpc } from './notebookIpc'
+import { resolveUserDataOverride } from './devUserData'
+import type {
+  CreateTaskInput,
+  UpdateTaskInput,
+  TaskStatus,
+  TaskListFilters,
+  UpdateTagInput,
+  CreateProjectInput,
+  UpdateProjectInput,
+  ProjectStatus,
+  McpStatus,
+  CreateTimeBlockInput,
+  UpdateTimeBlockInput
+} from '../shared/types'
+
+// Protocolo custom para servir imagens locais das notas ao renderer.
+// Precisa ser registrado como privilegiado ANTES do app 'ready'.
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: ASSET_SCHEME,
+    privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true }
+  }
+])
+
+// Precisa vir antes da trava de instância única, que é por pasta de dados, e de qualquer leitura
+// de app.getPath('userData').
+const userDataOverride = resolveUserDataOverride({
+  isPackaged: app.isPackaged,
+  env: process.env,
+  appData: app.getPath('appData')
+})
+if (userDataOverride) app.setPath('userData', userDataOverride)
+
+// Uma segunda instância abriria o mesmo SQLite e disputaria a porta do MCP. Sair aqui, antes
+// de qualquer inicialização, é o que mantém a instância viva como dona única desses recursos.
+const hasSingleInstanceLock = app.requestSingleInstanceLock()
+if (!hasSingleInstanceLock) {
+  app.quit()
+}
+
+let mainWindow: BrowserWindow | null = null
+let floatWindow: BrowserWindow | null = null
+let quickCaptureWindow: BrowserWindow | null = null
+type FloatTimerData = { taskId: number; taskName: string; seconds: number }
+let currentTimers: FloatTimerData[] = []
+let isQuitting = false
+let startHidden = shouldStartHidden(process.argv)
+
+// Dimensões da janela flutuante (lista com altura dinâmica)
+const FLOAT_WIDTH = 300
+const FLOAT_ROW_HEIGHT = 44
+const FLOAT_FOOTER_HEIGHT = 44
+const FLOAT_VPADDING = 16
+const FLOAT_MAX_ROWS = 5
+
+function floatHeightFor(count: number): number {
+  const rows = Math.min(Math.max(count, 1), FLOAT_MAX_ROWS)
+  return rows * FLOAT_ROW_HEIGHT + FLOAT_FOOTER_HEIGHT + FLOAT_VPADDING
+}
+
+// Atalho global padrão para captura rápida
+const quickCaptureShortcut = 'CommandOrControl+Shift+Space'
+
+function normalizeTaskIds(ids: number[]): number[] {
+  const unique = new Set<number>()
+  for (const id of ids) {
+    if (Number.isInteger(id) && id > 0) {
+      unique.add(id)
+    }
+  }
+  return [...unique]
+}
+
+// Helper para sincronização automática com Notion
+async function autoSyncToNotion(taskId: number): Promise<void> {
+  const config = getNotionConfig()
+  if (config?.autoSync && config.databaseId) {
+    try {
+      const task = getTask(taskId)
+      if (task && jiraNotionFilter()(task)) {
+        mainWindow?.webContents.send('notion:syncStart', task.name)
+        await syncTaskToNotion(task)
+        console.log('Tarefa sincronizada automaticamente:', task.name)
+        mainWindow?.webContents.send('notion:syncSuccess', task.name)
+      }
+    } catch (error) {
+      console.error('Erro na sincronização automática:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+      mainWindow?.webContents.send('notion:syncError', errorMessage)
+    }
+  }
+}
+
+let jiraImporting = false
+
+async function runJiraImport(): Promise<JiraImportResult | null> {
+  if (jiraImporting) return null
+  jiraImporting = true
+  mainWindow?.webContents.send('jira:syncStart')
+  try {
+    const result = await importJiraIssues()
+    for (const taskId of result.taskIds) {
+      autoSyncToGoogle(taskId)
+      await autoSyncToNotion(taskId)
+    }
+    mainWindow?.webContents.send('tasks:refresh')
+    mainWindow?.webContents.send('jira:syncSuccess')
+    return result
+  } catch (error) {
+    console.error('[jira] erro na importação:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+    mainWindow?.webContents.send('jira:syncError', errorMessage)
+    throw error
+  } finally {
+    jiraImporting = false
+  }
+}
+
+async function runGoogleSync(taskId: number): Promise<void> {
+  const label = getTask(taskId)?.name ?? `Tarefa #${taskId}`
+  mainWindow?.webContents.send('gcal:syncStart', label)
+  try {
+    await syncTaskToGoogle(taskId)
+    mainWindow?.webContents.send('gcal:syncSuccess', label)
+  } catch (error) {
+    console.error('[gcal] erro na sincronização:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+    mainWindow?.webContents.send('gcal:syncError', errorMessage)
+    throw error
+  }
+}
+
+// Recebe só ids já filtrados por gcal_sync: depois de uma exclusão a task não existe mais para
+// consultar, e o sync com a task ausente é justamente o que apaga os eventos dela. Exclusões vão
+// mesmo com o auto-sync desligado — nenhum "Ressincronizar" alcança uma task que não existe mais.
+function pushToGoogle(taskIds: number[]): void {
+  if (taskIds.length === 0 || !isGcalConnected()) return
+  const autoSync = isGcalAutoSyncOn()
+  for (const id of taskIds) {
+    if (autoSync || !getTask(id)) runGoogleSync(id).catch(() => undefined)
+  }
+}
+
+function autoSyncToGoogle(...taskIds: number[]): void {
+  pushToGoogle(filterGcalSyncedIds(taskIds))
+}
+
+function autoSyncTask(taskId: number): Promise<void> {
+  autoSyncToGoogle(taskId)
+  scheduleJiraDescriptionPush(taskId)
+  scheduleJiraWorklogPush(taskId)
+  return autoSyncToNotion(taskId)
+}
+
+onJiraBackgroundError((error) => {
+  console.error('[jira] erro na sincronização em segundo plano:', error)
+  const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+  mainWindow?.webContents.send('jira:syncError', errorMessage)
+})
+
+async function afterJiraIssueChange(taskId: number): Promise<void> {
+  mainWindow?.webContents.send('tasks:refresh')
+  await autoSyncTask(taskId)
+}
+
+// Renomear, mesclar ou excluir uma tag muda o multi_select das tarefas no Notion, que só é
+// reescrito quando a tarefa inteira é sincronizada de novo.
+async function syncTasksAfterTagChange(taskIds: number[]): Promise<void> {
+  if (taskIds.length === 0) return
+  const config = getNotionConfig()
+  if (!config?.autoSync || !config.databaseId) return
+
+  const label = `${taskIds.length} ${taskIds.length === 1 ? 'tarefa' : 'tarefas'}`
+  mainWindow?.webContents.send('notion:syncStart', label)
+  try {
+    const allowed = jiraNotionFilter()
+    for (const id of taskIds) {
+      const task = getTask(id)
+      if (task && allowed(task)) {
+        await syncTaskToNotion(task)
+      }
+    }
+    mainWindow?.webContents.send('notion:syncSuccess', label)
+  } catch (error) {
+    console.error('Erro ao ressincronizar tarefas após mudança de tag:', error)
+    const message = error instanceof Error ? error.message : 'Erro desconhecido'
+    mainWindow?.webContents.send('notion:syncError', message)
+  }
+}
+
+// ===================== FLOAT WINDOW =====================
+
+function createFloatWindow(): void {
+  if (floatWindow) {
+    floatWindow.show()
+    return
+  }
+
+  const display = screen.getPrimaryDisplay()
+  const { width } = display.workAreaSize
+
+  floatWindow = new BrowserWindow({
+    width: FLOAT_WIDTH,
+    height: floatHeightFor(currentTimers.length),
+    x: width - FLOAT_WIDTH - 20,
+    y: 20,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: false,
+    movable: true,
+    hasShadow: false,
+    show: false,
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
+      sandbox: false
+    }
+  })
+
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    floatWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}#/float`)
+  } else {
+    floatWindow.loadFile(join(__dirname, '../renderer/index.html'), { hash: '/float' })
+  }
+
+  floatWindow.on('closed', () => {
+    floatWindow = null
+  })
+}
+
+function showFloatWindow(): void {
+  if (!floatWindow) {
+    createFloatWindow()
+  }
+  if (!floatWindow || floatWindow.isVisible()) return
+
+  const pushState = (): void => {
+    if (!floatWindow || floatWindow.isDestroyed()) return
+    floatWindow.setSize(FLOAT_WIDTH, floatHeightFor(currentTimers.length))
+    if (currentTimers.length > 0) {
+      floatWindow.webContents.send('float:update', currentTimers)
+    } else {
+      floatWindow.webContents.send('float:clear')
+    }
+  }
+
+  if (floatWindow.webContents.isLoading()) {
+    floatWindow.once('ready-to-show', () => {
+      floatWindow?.show()
+      pushState()
+    })
+  } else {
+    floatWindow.show()
+    pushState()
+  }
+}
+
+function hideFloatWindow(): void {
+  if (floatWindow) {
+    floatWindow.hide()
+  }
+}
+
+function clearFloatWindowState(): void {
+  currentTimers = []
+  if (floatWindow && !floatWindow.isDestroyed()) {
+    floatWindow.destroy()
+    floatWindow = null
+  }
+}
+
+function updateFloatWindow(timers: FloatTimerData[]): void {
+  currentTimers = timers
+  if (floatWindow && !floatWindow.isDestroyed() && floatWindow.isVisible()) {
+    // Redimensionar a cada tick repinta a janela transparente sem necessidade.
+    const [, currentHeight] = floatWindow.getSize()
+    const nextHeight = floatHeightFor(timers.length)
+    if (currentHeight !== nextHeight) {
+      floatWindow.setSize(FLOAT_WIDTH, nextHeight)
+    }
+    floatWindow.webContents.send('float:update', timers)
+  }
+}
+
+// ===================== QUICK CAPTURE WINDOW =====================
+
+function createQuickCaptureWindow(): void {
+  if (quickCaptureWindow && !quickCaptureWindow.isDestroyed()) {
+    quickCaptureWindow.focus()
+    return
+  }
+
+  const display = screen.getPrimaryDisplay()
+  const { width, height } = display.workAreaSize
+
+  quickCaptureWindow = new BrowserWindow({
+    width: 400,
+    height: 140,
+    x: Math.round(width / 2 - 200),
+    y: Math.round(height / 3),
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: false,
+    movable: true,
+    show: false,
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
+      sandbox: false
+    }
+  })
+
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    quickCaptureWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}#/quick-capture`)
+  } else {
+    quickCaptureWindow.loadFile(join(__dirname, '../renderer/index.html'), {
+      hash: '/quick-capture'
+    })
+  }
+
+  quickCaptureWindow.once('ready-to-show', () => {
+    quickCaptureWindow?.show()
+  })
+
+  quickCaptureWindow.on('blur', () => {
+    if (quickCaptureWindow && !quickCaptureWindow.isDestroyed()) {
+      quickCaptureWindow.close()
+    }
+  })
+
+  quickCaptureWindow.on('closed', () => {
+    quickCaptureWindow = null
+  })
+}
+
+function registerGlobalShortcut(): void {
+  try {
+    globalShortcut.register(quickCaptureShortcut, () => {
+      createQuickCaptureWindow()
+    })
+  } catch (error) {
+    console.error('Erro ao registrar atalho global:', error)
+  }
+}
+
+// ===================== MAIN WINDOW =====================
+
+function revealMainWindow(): void {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    startHidden = false
+    createWindow()
+    return
+  }
+
+  if (mainWindow.isMinimized()) mainWindow.restore()
+  mainWindow.show()
+  mainWindow.focus()
+  hideFloatWindow()
+}
+
+// Em AppImage o process.execPath aponta para o volume temporário montado, que some quando este
+// processo sai; APPIMAGE guarda o caminho real do arquivo distribuído.
+function relaunchApp(): void {
+  const args = process.argv.slice(1).filter((arg) => arg !== HIDDEN_FLAG)
+  app.relaunch(process.env.APPIMAGE ? { execPath: process.env.APPIMAGE, args } : { args })
+  app.exit(0)
+}
+
+function quitApp(): void {
+  isQuitting = true
+  app.quit()
+}
+
+function createWindow(): void {
+  mainWindow = new BrowserWindow({
+    width: 1024,
+    height: 700,
+    minWidth: 800,
+    minHeight: 600,
+    show: false,
+    autoHideMenuBar: true,
+    title: 'TickTask App',
+    icon: icon,
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
+      sandbox: false
+    }
+  })
+
+  mainWindow.on('ready-to-show', () => {
+    if (startHidden) {
+      startHidden = false
+      return
+    }
+    mainWindow?.show()
+  })
+
+  mainWindow.on('close', (event) => {
+    if (isQuitting) return
+    event.preventDefault()
+    mainWindow?.hide()
+    // hide() não emite 'minimize', então o float precisa ser acionado aqui — é justamente
+    // ao esconder a janela com um timer rodando que ele importa.
+    if (currentTimers.length > 0) {
+      showFloatWindow()
+    }
+  })
+
+  mainWindow.on('minimize', () => {
+    if (currentTimers.length > 0) {
+      showFloatWindow()
+    }
+  })
+
+  mainWindow.on('restore', () => {
+    hideFloatWindow()
+  })
+
+  mainWindow.on('focus', () => {
+    hideFloatWindow()
+  })
+
+  mainWindow.webContents.setWindowOpenHandler((details) => {
+    shell.openExternal(details.url)
+    return { action: 'deny' }
+  })
+
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+  } else {
+    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+  }
+}
+
+// ===================== MCP SERVER =====================
+
+const BRIDGE_FILE = 'mcp-bridge.js'
+
+// A ponte é registrada no cliente MCP por caminho absoluto, então ele precisa sobreviver a
+// atualizações do app e, no AppImage, ao volume temporário onde a instalação vive. Copiar para
+// o userData a cada boot resolve os dois casos.
+function ensureBridgeScript(): string {
+  const target = join(app.getPath('userData'), BRIDGE_FILE)
+  try {
+    copyFileSync(join(__dirname, BRIDGE_FILE), target)
+  } catch (error) {
+    console.error('[mcp] falha ao publicar a ponte stdio:', error)
+  }
+  return target
+}
+
+function buildMcpStatus(): McpStatus {
+  const config = readMcpConfig()
+  const bridge = join(app.getPath('userData'), BRIDGE_FILE)
+  return {
+    enabled: config.enabled,
+    running: isMcpRunning(),
+    port: config.port,
+    token: config.token,
+    command: `claude mcp add ticktask --scope user --env ELECTRON_RUN_AS_NODE=1 -- "${process.execPath}" "${bridge}"`
+  }
+}
+
+// ===================== IPC HANDLERS =====================
+
+function setupIpcHandlers(): void {
+  registerTerminalIpc(() => mainWindow)
+  registerNotebookIpc(() => mainWindow)
+  // Window controls
+  ipcMain.handle('window:minimize', () => mainWindow?.minimize())
+  ipcMain.handle('window:maximize', () => {
+    if (mainWindow?.isMaximized()) {
+      mainWindow.unmaximize()
+    } else {
+      mainWindow?.maximize()
+    }
+  })
+  ipcMain.handle('window:close', () => mainWindow?.close())
+
+  // Task CRUD
+  ipcMain.handle('task:create', (_, data: CreateTaskInput) => {
+    const task = createTask(data)
+    autoSyncTask(task.id)
+    return task
+  })
+  ipcMain.handle('task:list', (_, filters?: TaskListFilters) => listTasks(filters))
+  ipcMain.handle('task:count', (_, filters?: TaskListFilters) => countTasks(filters))
+  ipcMain.handle('task:listActiveLight', () => listActiveTasksLight())
+  ipcMain.handle('task:listRunning', () => listRunningTasks())
+  ipcMain.handle('task:get', (_, id: number) => getTask(id))
+  ipcMain.handle('task:update', (_, id: number, data: UpdateTaskInput) => {
+    updateTask(id, data)
+    autoSyncTask(id)
+  })
+  ipcMain.handle('task:updateNotes', (_, id: number, notes: string | null) => {
+    updateTaskNotes(id, notes)
+    scheduleJiraDescriptionPush(id)
+  })
+  // O PNG alimenta MCP, Notion e export local. Gravá-lo junto do JSON evita que essas três
+  // saídas passem a servir um preview defasado quando só uma das escritas falha.
+  ipcMain.handle(
+    'drawing:save',
+    async (_, taskId: number, drawing: string | null, preview: Uint8Array | null) => {
+      const owner = { kind: 'task', id: taskId } as const
+      if (drawing === null) {
+        updateTaskDrawing(taskId, null)
+        await deleteDrawingPreview(owner)
+        return
+      }
+      if (preview) await saveDrawingPreview(owner, preview)
+      updateTaskDrawing(taskId, drawing)
+    }
+  )
+  ipcMain.handle('notes:searchMentions', (_, query: string) => searchMentions(query))
+  ipcMain.handle(
+    'notes:saveImage',
+    (_, owner: NotesOwner, bytes: Uint8Array, filename: string, mime: string) =>
+      saveNoteImage(owner, bytes, filename, mime)
+  )
+  // Escolhe (via diálogo) o arquivo de exportação local, persiste o caminho e exporta.
+  ipcMain.handle('notes:exportLocalChoose', async (_, taskId: number) => {
+    const task = getTask(taskId)
+    if (!task) return null
+    const safeName = (task.name || 'task').replace(/[^\w\-. ]+/g, '_').trim() || 'task'
+    const result = await dialog.showSaveDialog({
+      title: 'Salvar nota localmente',
+      defaultPath: task.local_export_path || `${safeName}.md`,
+      filters: [{ name: 'Markdown', extensions: ['md'] }]
+    })
+    if (result.canceled || !result.filePath) return null
+    setTaskLocalExportPath(taskId, result.filePath)
+    await exportTaskToLocal({ ...task, local_export_path: result.filePath }, result.filePath)
+    return result.filePath
+  })
+  // Reexporta silenciosamente se a task já tem um caminho local configurado.
+  ipcMain.handle('notes:exportLocal', async (_, taskId: number) => {
+    const task = getTask(taskId)
+    if (!task || !task.local_export_path) return false
+    await exportTaskToLocal(task, task.local_export_path)
+    return true
+  })
+  ipcMain.handle('task:delete', (_, id: number) => {
+    const calendarIds = filterGcalSyncedIds([id, ...getChildTaskIds(id)])
+    const config = getNotionConfig()
+    if (config?.autoSync && config.databaseId) {
+      // Excluir também as subtarefas do Notion
+      for (const childId of getChildTaskIds(id)) {
+        deleteTaskFromNotion(childId).catch((error) => {
+          console.error('Erro ao deletar subtarefa do Notion:', error)
+        })
+      }
+      deleteTaskFromNotion(id).catch((error) => {
+        console.error('Erro ao deletar do Notion:', error)
+      })
+    }
+    disposeTerminalsForTasks([id, ...getChildTaskIds(id)])
+    deleteTask(id)
+    pushToGoogle(calendarIds)
+  })
+  ipcMain.handle('task:bulkDelete', async (_, ids: number[]) => {
+    const taskIds = normalizeTaskIds(ids)
+    if (taskIds.length === 0) return
+
+    const calendarIds = filterGcalSyncedIds([
+      ...taskIds,
+      ...taskIds.flatMap((id) => getChildTaskIds(id))
+    ])
+    const config = getNotionConfig()
+    if (config?.autoSync && config.databaseId) {
+      // Incluir as subtarefas de cada tarefa para excluí-las também do Notion
+      const idsToDelete = [...taskIds, ...taskIds.flatMap((id) => getChildTaskIds(id))]
+      await Promise.all(
+        idsToDelete.map(async (id) => {
+          try {
+            await deleteTaskFromNotion(id)
+          } catch (error) {
+            console.error(`Erro ao deletar tarefa ${id} do Notion:`, error)
+          }
+        })
+      )
+    }
+
+    disposeTerminalsForTasks([...taskIds, ...taskIds.flatMap((id) => getChildTaskIds(id))])
+    deleteTasks(taskIds)
+    pushToGoogle(calendarIds)
+  })
+  ipcMain.handle('task:bulkUpdateStatus', (_, ids: number[], status: TaskStatus) => {
+    const taskIds = normalizeTaskIds(ids)
+    if (taskIds.length === 0) return
+
+    updateTasksStatus(taskIds, status)
+    for (const id of taskIds) {
+      autoSyncTask(id)
+    }
+  })
+  ipcMain.handle('task:bulkMoveToProject', (_, ids: number[], projectId: number | null) => {
+    const taskIds = normalizeTaskIds(ids)
+    if (taskIds.length === 0) return
+
+    moveTasksToProject(taskIds, projectId)
+    for (const id of taskIds) {
+      autoSyncTask(id)
+    }
+  })
+
+  // Archive
+  ipcMain.handle('task:archive', (_, id: number) => {
+    archiveTask(id)
+    autoSyncTask(id)
+  })
+  ipcMain.handle('task:unarchive', (_, id: number) => {
+    unarchiveTask(id)
+    autoSyncTask(id)
+  })
+  ipcMain.handle('task:bulkSetArchived', (_, ids: number[], archived: boolean) => {
+    const taskIds = normalizeTaskIds(ids)
+    if (taskIds.length === 0) return
+
+    setTasksArchived(taskIds, archived === true)
+    for (const id of taskIds) {
+      autoSyncTask(id)
+    }
+  })
+
+  // Timer
+  ipcMain.handle('task:start', (_, id: number) => {
+    const task = getTask(id)
+    if (task?.is_blocked) {
+      throw new Error('Tarefa bloqueada por dependências não concluídas')
+    }
+    startTask(id)
+  })
+  ipcMain.handle('task:stop', (_, id: number) => {
+    const result = stopTask(id)
+    autoSyncTask(id)
+    return result
+  })
+  ipcMain.handle('task:updateTimer', (_, id: number, seconds: number) => updateTimer(id, seconds))
+  ipcMain.handle('task:reset', (_, id: number) => {
+    const worklogs = captureJiraWorklogs(id)
+    resetTaskTimer(id)
+    deleteJiraWorklogs(worklogs)
+    autoSyncTask(id)
+  })
+  ipcMain.handle('task:addManualTime', (_, id: number, seconds: number) => {
+    addManualTimeEntry(id, seconds)
+    autoSyncTask(id)
+  })
+  ipcMain.handle('task:setTotalTime', (_, id: number, seconds: number) => {
+    setTaskTotalTime(id, seconds)
+    autoSyncTask(id)
+  })
+
+  // Status
+  ipcMain.handle('task:updateStatus', (_, id: number, status: TaskStatus) => {
+    const task = getTask(id)
+    if (!task) return
+
+    // Block setting 'executando' for blocked tasks
+    if (status === 'executando' && task.is_blocked) {
+      throw new Error('Tarefa bloqueada por dependências não concluídas')
+    }
+
+    // Block completing a subtask when the parent task has unresolved dependencies
+    if (status === 'finalizada' && task.parent_task_id) {
+      const parentTask = getTask(task.parent_task_id)
+      if (parentTask?.is_blocked) {
+        throw new Error('A tarefa pai possui dependências não concluídas')
+      }
+    }
+
+    const previousStatus: string = task.status
+    updateTaskStatus(id, status)
+
+    if (status === 'finalizada') {
+      // Recurrence: create next instance for top-level recurring tasks
+      if (task.recurrence_rule && !task.parent_task_id) {
+        const next = createNextRecurrence(id)
+        if (next) autoSyncToGoogle(next.id)
+      }
+
+      // Subtask: check if parent should auto-complete
+      if (task.parent_task_id && completeSubtasksCheck(task.parent_task_id)) {
+        autoSyncToGoogle(task.parent_task_id)
+      }
+
+      // Notify dependents that a dependency was resolved
+      const dependents = getTaskDependents(id)
+      for (const depTaskId of dependents) {
+        const depTask = getTask(depTaskId)
+        if (depTask && !depTask.is_blocked) {
+          mainWindow?.webContents.send('task:unblocked', depTaskId, depTask.name)
+        }
+      }
+    } else if (previousStatus === 'finalizada') {
+      // Undo completion: delete auto-created recurrence instance
+      if (task.recurrence_rule && !task.parent_task_id) {
+        const calendarIds = filterGcalSyncedIds(getNextRecurrenceIds(id))
+        deleteNextRecurrence(id)
+        pushToGoogle(calendarIds)
+      }
+    }
+
+    autoSyncTask(id)
+  })
+
+  // Time Entries
+  ipcMain.handle('task:getTimeEntries', (_, taskId: number) => getTimeEntries(taskId))
+  ipcMain.handle('task:getActiveTimeEntry', (_, taskId: number) => getActiveTimeEntry(taskId))
+
+  // Notifications
+  ipcMain.handle('notification:show', (_, title: string, body: string) => {
+    new Notification({ title, body }).show()
+  })
+
+  // Float window controls
+  ipcMain.handle('float:updateTimer', (_, timers: FloatTimerData[]) => {
+    updateFloatWindow(timers)
+  })
+  ipcMain.handle('float:clearTimer', () => {
+    clearFloatWindowState()
+    hideFloatWindow()
+  })
+  ipcMain.handle('float:restore', () => {
+    if (mainWindow) {
+      mainWindow.restore()
+      mainWindow.focus()
+    }
+    hideFloatWindow()
+  })
+  ipcMain.handle('float:stopTimer', async (_, taskId: number) => {
+    const result = await stopTask(taskId)
+    autoSyncTask(taskId)
+    mainWindow?.webContents.send('timer:stopped', taskId)
+    return result
+  })
+  ipcMain.handle('float:stopAll', async () => {
+    const ids = currentTimers.map((t) => t.taskId)
+    for (const id of ids) {
+      await stopTask(id)
+      autoSyncTask(id)
+      mainWindow?.webContents.send('timer:stopped', id)
+    }
+  })
+
+  // Statistics
+  ipcMain.handle('stats:weekly', () => getWeeklyStats())
+  ipcMain.handle('stats:taskTime', () => getTaskTimeStats())
+  ipcMain.handle('stats:status', () => getStatusStats())
+  ipcMain.handle('stats:category', () => getCategoryStats())
+  ipcMain.handle('stats:heatmap', () => getHeatmapData())
+  ipcMain.handle('stats:general', () => getGeneralStats())
+  // FASE 4.2: Advanced stats
+  ipcMain.handle('stats:gtdMetrics', () => getGtdMetrics())
+  ipcMain.handle('stats:energy', () => getEnergyStats())
+  ipcMain.handle('report:weeklyPDF', async () => {
+    if (!mainWindow) return
+    const { filePath } = await dialog.showSaveDialog(mainWindow, {
+      defaultPath: `ticktask-relatorio-${new Date().toISOString().split('T')[0]}.pdf`,
+      filters: [{ name: 'PDF', extensions: ['pdf'] }]
+    })
+    if (filePath) {
+      const data = await mainWindow.webContents.printToPDF({
+        printBackground: true,
+        landscape: true
+      })
+      const { writeFile } = await import('fs/promises')
+      await writeFile(filePath, data)
+      shell.openPath(filePath)
+    }
+  })
+
+  // Tags
+  ipcMain.handle('tag:create', (_, name: string, color?: string) => createTag(name, color))
+  ipcMain.handle('tag:list', () => listTags())
+  ipcMain.handle('tag:getOrCreate', (_, name: string) => getOrCreateTag(name))
+  ipcMain.handle('tag:listWithUsage', () => listTagsWithUsage())
+  ipcMain.handle('tag:update', (_, id: number, data: UpdateTagInput) => {
+    updateTag(id, data)
+    syncTasksAfterTagChange(listTaskIdsWithTag(id))
+  })
+  ipcMain.handle('tag:merge', (_, sourceId: number, targetId: number) => {
+    const affected = mergeTags(sourceId, targetId)
+    syncTasksAfterTagChange(affected)
+    return affected.length
+  })
+  ipcMain.handle('tag:delete', (_, id: number) => {
+    const affected = listTaskIdsWithTag(id)
+    deleteTag(id)
+    syncTasksAfterTagChange(affected)
+  })
+  ipcMain.handle('tag:getTaskTags', (_, taskId: number) => getTaskTags(taskId))
+  ipcMain.handle('tag:setTaskTags', (_, taskId: number, tagIds: number[]) => {
+    setTaskTags(taskId, tagIds)
+    autoSyncTask(taskId)
+  })
+
+  // ===================== PROJECTS =====================
+  ipcMain.handle('project:create', (_, data: CreateProjectInput) => createProject(data))
+  ipcMain.handle('project:get', (_, id: number) => getProject(id))
+  ipcMain.handle('project:list', (_, status?: ProjectStatus) => listProjects(status))
+  ipcMain.handle('project:update', (_, id: number, data: UpdateProjectInput) =>
+    updateProject(id, data)
+  )
+  ipcMain.handle('project:delete', (_, id: number) => deleteProject(id))
+  ipcMain.handle('project:getTasks', (_, projectId: number) => getProjectTasks(projectId))
+
+  // ===================== CONTEXTS =====================
+  ipcMain.handle('context:create', (_, name: string, icon?: string, color?: string) =>
+    createContext(name, icon, color)
+  )
+  ipcMain.handle('context:list', () => listContexts())
+  ipcMain.handle(
+    'context:update',
+    (_, id: number, data: { name?: string; icon?: string; color?: string }) =>
+      updateContext(id, data)
+  )
+  ipcMain.handle('context:delete', (_, id: number) => deleteContext(id))
+  ipcMain.handle('context:getTaskContexts', (_, taskId: number) => getTaskContexts(taskId))
+  ipcMain.handle('context:setTaskContexts', (_, taskId: number, contextIds: number[]) =>
+    setTaskContexts(taskId, contextIds)
+  )
+
+  // ===================== WEEKLY REVIEWS =====================
+  ipcMain.handle('review:create', () => createWeeklyReview())
+  ipcMain.handle('review:get', (_, id: number) => getWeeklyReview(id))
+  ipcMain.handle('review:list', () => listWeeklyReviews())
+  ipcMain.handle('review:getLast', () => getLastWeeklyReview())
+  ipcMain.handle(
+    'review:update',
+    (
+      _,
+      id: number,
+      data: {
+        inbox_cleared?: boolean
+        notes?: string
+        checklist_state?: string
+        completed_at?: string
+      }
+    ) => updateWeeklyReview(id, data)
+  )
+  ipcMain.handle('review:healthIndicators', () => getReviewHealthIndicators())
+
+  // ===================== QUICK CAPTURE =====================
+  ipcMain.handle('quickCapture:open', () => {
+    createQuickCaptureWindow()
+  })
+  ipcMain.handle('quickCapture:capture', (_, name: string) => {
+    const task = createTask({ name })
+    // Fechar a janela de captura
+    if (quickCaptureWindow && !quickCaptureWindow.isDestroyed()) {
+      quickCaptureWindow.close()
+    }
+    // Notificar a janela principal para atualizar
+    mainWindow?.webContents.send('tasks:refresh')
+    // Mostrar notificação
+    new Notification({
+      title: 'TickTask',
+      body: `"${name}" capturado para Inbox`
+    }).show()
+    return task
+  })
+  ipcMain.handle('quickCapture:close', () => {
+    if (quickCaptureWindow && !quickCaptureWindow.isDestroyed()) {
+      quickCaptureWindow.close()
+    }
+  })
+
+  // Notion Integration
+  ipcMain.handle('notion:getConfig', () => getNotionConfig())
+  ipcMain.handle('notion:saveConfig', (_, config: NotionConfig) => saveNotionConfig(config))
+  ipcMain.handle('notion:clearConfig', () => clearNotionConfig())
+  ipcMain.handle('notion:testConnection', () => testNotionConnection())
+  ipcMain.handle('notion:syncTask', async (_, taskId: number) => {
+    const task = getTask(taskId)
+    if (!task) throw new Error('Tarefa não encontrada')
+    return syncTaskToNotion(task)
+  })
+  ipcMain.handle('notion:syncTaskNotes', async (_, taskId: number) => {
+    const task = getTask(taskId)
+    if (!task) throw new Error('Tarefa não encontrada')
+    mainWindow?.webContents.send('notion:syncStart', task.name)
+    try {
+      await syncTaskNotesToNotion(task)
+      mainWindow?.webContents.send('notion:syncSuccess', task.name)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+      mainWindow?.webContents.send('notion:syncError', errorMessage)
+      throw error
+    }
+  })
+  ipcMain.handle('notion:syncAllTasks', async () => {
+    const tasks = listTasksForSync().filter(jiraNotionFilter())
+    return syncAllTasks(tasks)
+  })
+  ipcMain.handle('notion:createDatabase', () => findOrCreateDatabase())
+
+  // ===================== FASE 2: Subtarefas =====================
+  ipcMain.handle('subtask:list', (_, parentId: number) => getSubtasks(parentId))
+  ipcMain.handle('subtask:create', async (_, data: { name: string; parent_task_id: number }) => {
+    const task = createTask({ name: data.name, parent_task_id: data.parent_task_id })
+    // Sincroniza a pai primeiro (garante a página no Notion) e depois a subtarefa,
+    // para que a relação "Tarefa Pai" encontre a página da pai.
+    await autoSyncTask(data.parent_task_id)
+    autoSyncTask(task.id)
+    return task
+  })
+
+  // ===================== FASE 2: Dependências =====================
+  ipcMain.handle('dependency:get', (_, taskId: number) => getTaskDependencies(taskId))
+  ipcMain.handle('dependency:add', (_, taskId: number, dependsOnId: number) =>
+    addTaskDependency(taskId, dependsOnId)
+  )
+  ipcMain.handle('dependency:remove', (_, taskId: number, dependsOnId: number) =>
+    removeTaskDependency(taskId, dependsOnId)
+  )
+
+  // ===================== FASE 2: Agendamento =====================
+  ipcMain.handle('schedule:getForDate', (_, date: string) => getTasksForDate(date))
+  ipcMain.handle('schedule:getWeekly', (_, startDate: string) => getWeeklySchedule(startDate))
+  ipcMain.handle('schedule:updateDayOrder', (_, taskId: number, order: number) =>
+    updateDayOrder(taskId, order)
+  )
+  ipcMain.handle('task:scheduleForDate', (_, taskId: number, date: string | null) => {
+    updateTask(taskId, { scheduled_date: date })
+    autoSyncToGoogle(taskId)
+  })
+
+  // ===================== FASE 4.3: Blocos de Tempo =====================
+  ipcMain.handle('timeBlock:create', (_, data: CreateTimeBlockInput) => {
+    const block = createTimeBlock(data)
+    autoSyncToGoogle(block.task_id)
+    return block
+  })
+  ipcMain.handle('timeBlock:getForDate', (_, date: string) => getTimeBlocksForDate(date))
+  ipcMain.handle('timeBlock:getForWeek', (_, startDate: string) => getTimeBlocksForWeek(startDate))
+  ipcMain.handle('timeBlock:getForMonth', (_, yearMonth: string) =>
+    getTimeBlocksForMonth(yearMonth)
+  )
+  ipcMain.handle('timeBlock:update', (_, id: number, data: UpdateTimeBlockInput) => {
+    const before = getTimeBlock(id)
+    updateTimeBlock(id, data)
+    if (before) autoSyncToGoogle(before.task_id, data.task_id ?? before.task_id)
+  })
+  ipcMain.handle('timeBlock:delete', (_, id: number) => {
+    const before = getTimeBlock(id)
+    deleteTimeBlock(id)
+    if (before) autoSyncToGoogle(before.task_id)
+  })
+
+  // Jira
+  ipcMain.handle('jira:getStatus', () => getJiraStatus())
+  ipcMain.handle('jira:importNow', () => runJiraImport())
+  ipcMain.handle('jira:saveCredentials', (_, input: JiraCredentialsInput) =>
+    saveJiraCredentials(input)
+  )
+  ipcMain.handle('jira:test', () => testJiraConnection())
+  ipcMain.handle('jira:listBoards', () => listJiraBoards())
+  ipcMain.handle('jira:saveBoards', (_, boardIds: number[]) => saveJiraBoards(boardIds))
+  ipcMain.handle('jira:saveMapping', (_, mapping: StatusMapping) => saveJiraMapping(mapping))
+  ipcMain.handle('jira:saveOptions', (_, input: JiraOptionsInput) => saveJiraOptions(input))
+  ipcMain.handle('jira:disconnect', () => disconnectJira())
+  ipcMain.handle('jira:listTransitions', (_, taskId: number) => listJiraTransitions(taskId))
+  ipcMain.handle('jira:transition', async (_, taskId: number, transitionId: string) => {
+    await transitionJiraIssue(taskId, transitionId)
+    await afterJiraIssueChange(taskId)
+  })
+  ipcMain.handle('jira:getFields', (_, taskId: number) => getJiraIssueFields(taskId))
+  ipcMain.handle('jira:getChildren', (_, taskId: number) => getJiraChildren(taskId))
+  ipcMain.handle(
+    'jira:updateField',
+    async (_, taskId: number, fieldId: string, value: JiraFieldInput) => {
+      const fields = await updateJiraIssueField(taskId, fieldId, value)
+      await afterJiraIssueChange(taskId)
+      return fields
+    }
+  )
+  ipcMain.handle('jira:searchUsers', (_, taskId: number, fieldId: string, query: string) =>
+    searchJiraUsers(taskId, fieldId, query)
+  )
+
+  // Google Calendar
+  ipcMain.handle('gcal:getStatus', () => getGcalStatus())
+  ipcMain.handle('gcal:saveCredentials', (_, clientId: string, clientSecret: string) =>
+    saveGcalCredentials(clientId, clientSecret)
+  )
+  ipcMain.handle('gcal:connect', () => connectGcal())
+  ipcMain.handle('gcal:disconnect', () => disconnectGcal())
+  ipcMain.handle('gcal:setAutoSync', (_, enabled: boolean) => setGcalAutoSync(enabled))
+  ipcMain.handle('gcal:setTaskSync', async (_, taskId: number, enabled: boolean) => {
+    updateTask(taskId, { gcal_sync: enabled })
+    await runGoogleSync(taskId)
+  })
+  ipcMain.handle('gcal:syncTask', (_, taskId: number) => runGoogleSync(taskId))
+  ipcMain.handle('gcal:syncAll', async () => {
+    mainWindow?.webContents.send('gcal:syncStart')
+    try {
+      const result = await syncAllToGoogle()
+      mainWindow?.webContents.send('gcal:syncSuccess')
+      return result
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+      mainWindow?.webContents.send('gcal:syncError', errorMessage)
+      throw error
+    }
+  })
+
+  // ===================== FASE 4: Áreas de Foco =====================
+  ipcMain.handle('area:create', (_, data) => createArea(data))
+  ipcMain.handle('area:get', (_, id: number) => getArea(id))
+  ipcMain.handle('area:list', () => listAreas())
+  ipcMain.handle('area:update', (_, id: number, data) => updateArea(id, data))
+  ipcMain.handle('area:delete', (_, id: number) => deleteArea(id))
+
+  // ===================== FASE 4: Objetivos (Goals) =====================
+  ipcMain.handle('goal:create', (_, data) => createGoal(data))
+  ipcMain.handle('goal:get', (_, id: number) => getGoal(id))
+  ipcMain.handle('goal:list', (_, areaId?: number) => listGoals(areaId))
+  ipcMain.handle('goal:update', (_, id: number, data) => updateGoal(id, data))
+  ipcMain.handle('goal:delete', (_, id: number) => deleteGoal(id))
+
+  // ===================== INICIALIZAÇÃO =====================
+  ipcMain.handle('app:getVersion', () => app.getVersion())
+  ipcMain.handle('app:getAutostart', () => isAutostartEnabled())
+  ipcMain.handle('app:openExternal', (_, url: string) => {
+    if (!isSafeHttpUrl(url)) throw new Error('URL inválida')
+    return shell.openExternal(url)
+  })
+  ipcMain.handle('app:setAutostart', (_, enabled: boolean) => setAutostartEnabled(enabled))
+
+  ipcMain.handle('backup:getStatus', () => getBackupStatus())
+  ipcMain.handle('backup:chooseFolder', () => chooseBackupFolder(mainWindow))
+  ipcMain.handle('backup:create', () => createBackup())
+  ipcMain.handle('backup:chooseSnapshot', () => chooseSnapshotFolder(mainWindow))
+  ipcMain.handle('backup:inspect', (_, dir: string) => inspectSnapshot(dir))
+  ipcMain.handle('backup:restore', async (_, dir: string) => {
+    await inspectSnapshot(dir)
+    isQuitting = true
+    destroyTray()
+    if (notificationInterval) clearInterval(notificationInterval)
+    await stopMcpServer()
+    closeDatabase()
+    try {
+      await restoreSnapshot(dir)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      dialog.showErrorBox(
+        'Falha ao restaurar o backup',
+        `${message}\n\nOs dados anteriores foram mantidos. O TickTask vai reiniciar.`
+      )
+    }
+    relaunchApp()
+  })
+
+  // ===================== MCP SERVER =====================
+  ipcMain.handle('mcp:getStatus', () => buildMcpStatus())
+  ipcMain.handle('mcp:setEnabled', async (_, enabled: boolean) => {
+    const config = writeMcpConfig({ enabled })
+    if (enabled) {
+      await startMcpServer(config).catch((error) => {
+        console.error('[mcp] falha ao iniciar:', error)
+      })
+    } else {
+      await stopMcpServer()
+    }
+    return buildMcpStatus()
+  })
+  ipcMain.handle('mcp:regenerateToken', async () => {
+    const config = writeMcpConfig({ token: generateToken() })
+    if (config.enabled) {
+      await stopMcpServer()
+      await startMcpServer(config).catch((error) => {
+        console.error('[mcp] falha ao reiniciar após regenerar token:', error)
+      })
+    }
+    return buildMcpStatus()
+  })
+}
+
+// ===================== APP LIFECYCLE =====================
+
+// ===================== NOTIFICATION SCHEDULER =====================
+
+const notifiedToday = new Set<string>() // 'taskId-type' keys to avoid spam
+let notificationInterval: NodeJS.Timeout | null = null
+
+function checkDueDateNotifications(): void {
+  const now = new Date()
+  const dayKey = `day-${localDateString(now)}`
+  if (!notifiedToday.has(dayKey)) {
+    notifiedToday.clear()
+    notifiedToday.add(dayKey)
+  }
+
+  for (const notification of pickDueNotifications(
+    getTasksDueForNotification(),
+    now,
+    notifiedToday
+  )) {
+    notifiedToday.add(notification.key)
+    new Notification({ title: notification.title, body: notification.body }).show()
+  }
+}
+
+function startNotificationScheduler(): void {
+  checkDueDateNotifications()
+  notificationInterval = setInterval(checkDueDateNotifications, 60 * 1000)
+}
+
+app.whenReady().then(() => {
+  if (!hasSingleInstanceLock) return
+
+  initDatabase()
+
+  registerWriteEffects({
+    getMainWindow: () => mainWindow,
+    autoSync: (id) => autoSyncTask(id),
+    syncTagChange: (ids) => syncTasksAfterTagChange(ids),
+    syncCalendar: (ids) => pushToGoogle(ids),
+    disposeTerminals: (ids) => disposeTerminalsForTasks(ids)
+  })
+
+  // Nenhuma falha do MCP pode impedir createWindow(): esta promise não tem .catch.
+  try {
+    ensureBridgeScript()
+    const mcpConfig = readMcpConfig()
+    if (mcpConfig.enabled) {
+      startMcpServer(mcpConfig).catch((error) => {
+        console.error('[mcp] falha ao iniciar na porta', mcpConfig.port, error)
+      })
+    }
+  } catch (error) {
+    console.error('[mcp] falha ao inicializar na abertura do app:', error)
+  }
+
+  registerAssetProtocol()
+  setupIpcHandlers()
+  startNotificationScheduler()
+  startJiraScheduler(() => {
+    runJiraImport().catch(() => undefined)
+  })
+
+  electronApp.setAppUserModelId('com.ticktask.app')
+  try {
+    app.setName('TickTask App')
+  } catch {
+    // setName isn't available on all platforms/versions
+  }
+
+  app.on('browser-window-created', (_, window) => {
+    optimizer.watchWindowShortcuts(window)
+  })
+
+  createWindow()
+
+  createTray({
+    showMainWindow: revealMainWindow,
+    openQuickCapture: createQuickCaptureWindow,
+    quit: quitApp
+  })
+
+  // Registrar atalho global para captura rápida
+  registerGlobalShortcut()
+
+  app.on('second-instance', () => {
+    revealMainWindow()
+  })
+
+  app.on('activate', function () {
+    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+  })
+})
+
+// O app vive na bandeja: fechar a janela principal não encerra o processo, senão o servidor
+// MCP cairia junto. A saída acontece pelo menu do tray (quitApp).
+app.on('window-all-closed', () => {})
+
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll()
+})
+
+app.on('before-quit', () => {
+  isQuitting = true
+  destroyTray()
+  killAllTerminals()
+  if (notificationInterval) clearInterval(notificationInterval)
+  void stopMcpServer()
+  closeDatabase()
+})

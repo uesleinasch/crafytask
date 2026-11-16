@@ -1,0 +1,704 @@
+import type { TerminalTabIcon } from './terminalTab'
+
+// ===================== STATUS & CATEGORY =====================
+
+export type TaskStatus =
+  | 'inbox'
+  | 'aguardando'
+  | 'proximas'
+  | 'executando'
+  | 'finalizada'
+  | 'someday'
+export type TaskCategory = 'urgente' | 'prioridade' | 'normal' | 'time_leak'
+export type ProjectStatus = 'active' | 'someday' | 'done' | 'archived'
+export type EnergyLevel = 'alto' | 'medio' | 'baixo'
+
+// ===================== TAG =====================
+
+export interface Tag {
+  id: number
+  name: string
+  color: string
+  created_at: string
+}
+
+export interface TagWithUsage extends Tag {
+  task_count: number
+}
+
+export interface UpdateTagInput {
+  name?: string
+  color?: string
+}
+
+// ===================== CONTEXT =====================
+
+export interface Context {
+  id: number
+  name: string
+  icon: string
+  color: string
+  created_at: string
+}
+
+// ===================== PROJECT =====================
+
+export interface Project {
+  id: number
+  name: string
+  description?: string
+  outcome?: string
+  status: ProjectStatus
+  color: string
+  due_date?: string
+  area_id?: number
+  area_name?: string
+  created_at: string
+  updated_at: string
+  task_count?: number
+  completed_task_count?: number
+  next_action?: string
+}
+
+export interface CreateProjectInput {
+  name: string
+  description?: string
+  outcome?: string
+  status?: ProjectStatus
+  color?: string
+  due_date?: string
+  area_id?: number
+}
+
+export interface UpdateProjectInput {
+  name?: string
+  description?: string
+  outcome?: string
+  status?: ProjectStatus
+  color?: string
+  due_date?: string
+  area_id?: number | null
+}
+
+// ===================== AREA (GTD Horizonte 2) =====================
+
+export interface Area {
+  id: number
+  name: string
+  description?: string
+  icon: string
+  created_at: string
+  project_count?: number
+}
+
+export interface CreateAreaInput {
+  name: string
+  description?: string
+  icon?: string
+}
+
+export interface UpdateAreaInput {
+  name?: string
+  description?: string
+  icon?: string
+}
+
+// ===================== GOAL (GTD Horizontes 3-5) =====================
+
+export type GoalHorizon = 3 | 4 | 5
+
+export interface Goal {
+  id: number
+  name: string
+  description?: string
+  horizon: GoalHorizon
+  area_id?: number
+  area_name?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateGoalInput {
+  name: string
+  description?: string
+  horizon: GoalHorizon
+  area_id?: number
+}
+
+export interface UpdateGoalInput {
+  name?: string
+  description?: string
+  horizon?: GoalHorizon
+  area_id?: number | null
+}
+
+// ===================== RECURRENCE =====================
+
+export interface RecurrenceRule {
+  type: 'daily' | 'weekly' | 'monthly'
+  dayOfWeek?: number // 0–6 for weekly (0 = Sunday)
+  dayOfMonth?: number // 1–31 for monthly
+}
+
+// ===================== TASK DEPENDENCY =====================
+
+export interface TaskDependency {
+  task_id: number
+  depends_on_task_id: number
+  depends_on_task_name?: string
+}
+
+// ===================== TASK =====================
+
+export interface Task {
+  id: number
+  name: string
+  description?: string
+  total_seconds: number
+  time_limit_seconds?: number
+  status: TaskStatus
+  category: TaskCategory
+  is_running: boolean
+  is_archived: boolean
+  project_id?: number
+  project_name?: string
+  project_color?: string
+  created_at: string
+  updated_at: string
+  tags?: Tag[]
+  contexts?: Context[]
+  // FASE 2 fields
+  scheduled_date?: string // DATE string 'YYYY-MM-DD'
+  due_date?: string // DATETIME string
+  recurrence_rule?: string // JSON string of RecurrenceRule
+  parent_task_id?: number // subtask relationship
+  recurrence_source_id?: number // id of the task that spawned this recurrence instance
+  day_order?: number // ordering within TodayPage
+  subtask_count?: number // computed
+  completed_subtask_count?: number // computed
+  is_blocked?: boolean // computed from dependencies
+  // FASE 4.2: Energy Tracking
+  energy_level?: EnergyLevel
+  // FASE 5: Notas ricas (JSON serializado — ProseMirror/Tiptap; legado Editor.js)
+  notes?: string
+  // Tiptap: caminho do arquivo de exportação local (Markdown)
+  local_export_path?: string
+  // Desenho da task (JSON serializado do Excalidraw); o PNG derivado vive em userData/drawings
+  drawing?: string
+  gcal_sync?: boolean
+  scheduled_time?: string | null
+  scheduled_end_time?: string | null
+  due_time?: string | null
+  external_url?: string | null
+  working_dir?: string | null
+  start_command?: string | null
+  jira_key?: string | null
+  jira_status?: string | null
+  jira_space?: string | null
+  jira_issue_type?: string | null
+  jira_issue_kind?: JiraIssueKind | null
+  jira_parent_key?: string | null
+  jira_parent_summary?: string | null
+}
+
+export type JiraIssueKind = 'epic' | 'story' | 'task' | 'bug' | 'subtask'
+
+export interface JiraChildIssue {
+  key: string
+  summary: string
+  statusName: string | null
+  issueType: string | null
+  issueKind: JiraIssueKind | null
+  url: string
+  taskId: number | null
+}
+
+export interface JiraChildrenResult {
+  children: JiraChildIssue[]
+  remoteError: string | null
+}
+
+export interface CreateTaskInput {
+  name: string
+  description?: string
+  time_limit_seconds?: number
+  category?: TaskCategory
+  tagIds?: number[]
+  tagNames?: string[]
+  project_id?: number
+  contextIds?: number[]
+  // FASE 2 fields
+  scheduled_date?: string
+  due_date?: string
+  recurrence_rule?: string
+  parent_task_id?: number
+  recurrence_source_id?: number
+  // FASE 4.2
+  energy_level?: EnergyLevel
+  gcal_sync?: boolean
+  scheduled_time?: string | null
+  scheduled_end_time?: string | null
+  due_time?: string | null
+  external_url?: string | null
+}
+
+export interface UpdateTaskInput {
+  name?: string
+  description?: string
+  time_limit_seconds?: number
+  status?: TaskStatus
+  category?: TaskCategory
+  tagIds?: number[]
+  tagNames?: string[]
+  project_id?: number | null
+  contextIds?: number[]
+  // FASE 2 fields
+  scheduled_date?: string | null
+  due_date?: string | null
+  recurrence_rule?: string | null
+  day_order?: number | null
+  // FASE 4.2
+  energy_level?: EnergyLevel | null
+  gcal_sync?: boolean
+  scheduled_time?: string | null
+  scheduled_end_time?: string | null
+  due_time?: string | null
+  external_url?: string | null
+}
+
+export interface GcalStatus {
+  clientId: string
+  hasClientSecret: boolean
+  connected: boolean
+  autoSync: boolean
+}
+
+export interface JiraBoardSummary {
+  id: number
+  name: string
+  spaceKey?: string | null
+  spaceName?: string | null
+}
+
+export interface JiraTransitionOption {
+  id: string
+  name: string
+  category: 'new' | 'indeterminate' | 'done'
+}
+
+export interface JiraUser {
+  accountId: string
+  displayName: string
+}
+
+export interface JiraFieldOption {
+  id: string
+  label: string
+}
+
+export type JiraFieldView =
+  | { kind: 'string' | 'text'; value: string | null }
+  | { kind: 'number'; value: number | null }
+  | { kind: 'date' | 'datetime'; value: string | null }
+  | { kind: 'select'; value: string | null; options: JiraFieldOption[] }
+  | { kind: 'multiselect'; value: string[]; options: JiraFieldOption[] }
+  | { kind: 'labels'; value: string[] }
+  | { kind: 'user'; value: JiraUser | null }
+  | { kind: 'sprint'; value: number | null; options: JiraFieldOption[] }
+  | { kind: 'readonly'; value: string }
+
+export type JiraField = JiraFieldView & {
+  id: string
+  name: string
+  required: boolean
+}
+
+export type JiraFieldInput =
+  | string
+  | number
+  | string[]
+  | null
+
+export interface JiraIssueFields {
+  key: string
+  url: string
+  statusName: string
+  fields: JiraField[]
+  me: JiraUser | null
+}
+
+export interface JiraSpace {
+  key: string
+  name: string
+}
+
+export interface JiraKnownStatus {
+  name: string
+  category: 'new' | 'indeterminate' | 'done'
+}
+
+export interface JiraCredentialsInput {
+  site: string
+  email: string
+  apiToken: string
+}
+
+export interface JiraOptionsInput {
+  syncToNotion?: boolean
+  autoImportMinutes?: number
+  projectId?: number | null
+  spaceProjects?: Record<string, number>
+  syncWorklogs?: boolean
+}
+
+export interface JiraImportResult {
+  created: number
+  updated: number
+  unchanged: number
+  taskIds: number[]
+}
+
+export interface JiraStatus {
+  site: string
+  email: string
+  hasToken: boolean
+  connected: boolean
+  boardIds: number[]
+  boards: JiraBoardSummary[]
+  knownStatuses: JiraKnownStatus[]
+  knownSpaces: JiraSpace[]
+  spaceProjects: Record<string, number>
+  statusMapping: Record<string, TaskStatus>
+  syncToNotion: boolean
+  autoImportMinutes: number
+  projectId: number | null
+  lastImportAt: string | null
+  syncWorklogs: boolean
+}
+
+export interface BackupCounts {
+  tasks: number | null
+  projects: number | null
+  timeEntries: number | null
+}
+
+export interface BackupSnapshot {
+  name: string
+  path: string
+  createdAt: string
+  sizeBytes: number
+  counts: BackupCounts
+}
+
+export interface BackupStatus {
+  folder: string | null
+  snapshots: BackupSnapshot[]
+}
+
+export interface TimeEntry {
+  id: number
+  task_id: number
+  start_time: string
+  end_time: string | null
+  duration_seconds: number | null
+}
+
+// ===================== TASK LIST FILTERS =====================
+
+export type TaskSort = 'updated' | 'due_date'
+
+export interface TaskListFilters {
+  archived?: boolean
+  status?: TaskStatus | 'all'
+  category?: TaskCategory | 'all'
+  projectId?: number | 'none' | null
+  tagId?: number | null
+  contextId?: number | null
+  search?: string
+  blockedOnly?: boolean
+  dueBefore?: string
+  dueAfter?: string
+  overdueAt?: { date: string; time: string }
+  energy?: EnergyLevel
+  excludeStatus?: TaskStatus[]
+  sort?: TaskSort
+  limit?: number
+  offset?: number
+}
+
+export type TaskListItem = Pick<Task, 'id' | 'name' | 'status' | 'category' | 'project_id'>
+
+// ===================== WEEKLY REVIEW =====================
+
+export interface WeeklyReview {
+  id: number
+  started_at: string
+  completed_at?: string
+  inbox_cleared: boolean
+  notes?: string
+  checklist_state: string
+}
+
+export interface ReviewHealthIndicators {
+  inboxCount: number
+  projectsWithoutNextAction: number
+  staleWaitingTasks: number
+  staleNextTasks: number
+  somedayCount: number
+}
+
+// ===================== TIME BLOCK (GTD Time Blocking) =====================
+
+export interface TimeBlock {
+  id: number
+  task_id: number
+  task_name?: string
+  task_category?: TaskCategory
+  date: string // 'YYYY-MM-DD'
+  start_time: string // 'HH:MM'
+  end_time: string // 'HH:MM'
+  created_at: string
+}
+
+export interface CreateTimeBlockInput {
+  task_id: number
+  date: string
+  start_time: string
+  end_time: string
+}
+
+export interface UpdateTimeBlockInput {
+  task_id?: number
+  date?: string
+  start_time?: string
+  end_time?: string
+}
+
+// ===================== FASE 4.2: DASHBOARD AVANÇADO =====================
+
+export interface GtdMetrics {
+  inboxCompletionRate: number
+  avgProcessingTimeSeconds: number
+  staleProjects: Array<{ id: number; name: string; daysSinceActivity: number }>
+  staleWaitingTasks: Array<{ id: number; name: string; daysSinceUpdate: number }>
+  taskFlowCounts: Record<string, number>
+}
+
+export interface EnergyStats {
+  energy_level: EnergyLevel
+  totalSeconds: number
+  taskCount: number
+  avgSeconds: number
+}
+
+export const ENERGY_LABELS: Record<EnergyLevel, string> = {
+  alto: 'Alta Energia',
+  medio: 'Energia Média',
+  baixo: 'Baixa Energia'
+}
+
+export const ENERGY_COLORS: Record<EnergyLevel, string> = {
+  alto: '#22c55e',
+  medio: '#f59e0b',
+  baixo: '#94a3b8'
+}
+
+export const ENERGY_ICONS: Record<EnergyLevel, string> = {
+  alto: '⚡',
+  medio: '🔋',
+  baixo: '😴'
+}
+
+// ===================== LABELS & COLORS =====================
+
+export const STATUS_LABELS: Record<TaskStatus, string> = {
+  inbox: 'Inbox',
+  aguardando: 'Aguardando',
+  proximas: 'Próximas',
+  executando: 'Executando',
+  finalizada: 'Finalizada',
+  someday: 'Someday/Maybe'
+}
+
+export const STATUS_COLORS: Record<TaskStatus, string> = {
+  inbox: 'bg-gray-500',
+  aguardando: 'bg-yellow-500',
+  proximas: 'bg-blue-500',
+  executando: 'bg-green-500',
+  finalizada: 'bg-purple-500',
+  someday: 'bg-teal-500'
+}
+
+export const CATEGORY_LABELS: Record<TaskCategory, string> = {
+  urgente: 'Urgente',
+  prioridade: 'Prioridade',
+  normal: 'Normal',
+  time_leak: 'Time Leak'
+}
+
+export const CATEGORY_COLORS: Record<TaskCategory, string> = {
+  urgente: 'bg-red-500',
+  prioridade: 'bg-orange-500',
+  normal: 'bg-blue-500',
+  time_leak: 'bg-yellow-500'
+}
+
+export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
+  active: 'Ativo',
+  someday: 'Someday',
+  done: 'Concluído',
+  archived: 'Arquivado'
+}
+
+export const PROJECT_STATUS_COLORS: Record<ProjectStatus, string> = {
+  active: 'bg-emerald-500',
+  someday: 'bg-teal-500',
+  done: 'bg-purple-500',
+  archived: 'bg-gray-500'
+}
+
+// ===================== MCP SERVER =====================
+
+export interface McpStatus {
+  enabled: boolean
+  running: boolean
+  port: number
+  token: string
+  command: string
+}
+
+// ===================== DEFAULT CONTEXTS =====================
+
+export const DEFAULT_CONTEXTS = [
+  { name: '@computador', icon: '💻', color: '#3b82f6' },
+  { name: '@telefone', icon: '📱', color: '#8b5cf6' },
+  { name: '@reunião', icon: '👥', color: '#f97316' },
+  { name: '@email', icon: '📧', color: '#ef4444' },
+  { name: '@leitura', icon: '📖', color: '#22c55e' },
+  { name: '@compras', icon: '🛒', color: '#eab308' },
+  { name: '@casa', icon: '🏠', color: '#14b8a6' },
+  { name: '@escritório', icon: '🏢', color: '#6366f1' }
+]
+
+export interface TerminalSession {
+  id: string
+  taskId: number
+  taskName: string
+  cwd: string
+  shell: string
+  title: string | null
+  color: string | null
+  icon: TerminalTabIcon | null
+  busy: boolean
+  exitCode: number | null
+}
+
+export interface TerminalTabCustomization {
+  title?: string | null
+  color?: string | null
+  icon?: string | null
+}
+
+export interface TerminalBuffer {
+  data: string
+  seq: number
+}
+
+export type TerminalCreateResult =
+  | { ok: true; session: TerminalSession; shellFallback: boolean }
+  | { ok: false; error: string; reason: 'no-task' | 'no-dir' | 'bad-dir' | 'pty-unavailable' }
+
+// ===================== CADERNOS =====================
+
+export interface NotesOwner {
+  kind: 'task' | 'page'
+  id: number
+}
+
+export interface Notebook {
+  id: number
+  name: string
+  color: string
+  position: number
+  notion_page_id: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface NotebookSection {
+  id: number
+  notebook_id: number
+  name: string
+  color: string
+  position: number
+  notion_page_id: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface NotebookPageSummary {
+  id: number
+  section_id: number
+  parent_page_id: number | null
+  title: string
+  position: number
+  notion_page_id: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface NotebookPage extends NotebookPageSummary {
+  notes: string | null
+  drawing: string | null
+}
+
+export interface CreateNotebookInput {
+  name: string
+  color?: string
+}
+
+export interface UpdateNotebookInput {
+  name?: string
+  color?: string
+}
+
+export interface CreateSectionInput {
+  notebook_id: number
+  name: string
+  color?: string
+}
+
+export interface UpdateSectionInput {
+  name?: string
+  color?: string
+}
+
+export interface CreatePageInput {
+  section_id: number
+  parent_page_id?: number | null
+  title?: string
+}
+
+export interface PageSearchResult {
+  id: number
+  title: string
+  section_id: number
+  section_name: string
+  notebook_id: number
+  notebook_name: string
+  notebook_color: string
+  snippet: string
+  updated_at: string
+}
+
+export interface PageLocation {
+  page_id: number
+  section_id: number
+  notebook_id: number
+}
+
+export interface MovePageInput {
+  section_id: number
+  parent_page_id: number | null
+  index: number
+}

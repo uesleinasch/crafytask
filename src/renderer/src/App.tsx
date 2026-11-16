@@ -1,0 +1,199 @@
+import { useCallback, useEffect } from 'react'
+import { HashRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { TaskListPage } from './pages/TaskListPage'
+import { SingleTaskPage } from './pages/SingleTaskPage'
+import { ArchivedTasksPage } from './pages/ArchivedTasksPage'
+import { FloatTimerPage } from './pages/FloatTimerPage'
+import { DashboardPage } from './pages/DashboardPage'
+import { SettingsPage } from './pages/SettingsPage'
+import { ProjectsPage } from './pages/ProjectsPage'
+import { ProjectDetailPage } from './pages/ProjectDetailPage'
+import { ContextsPage } from './pages/ContextsPage'
+import { TagsPage } from './pages/TagsPage'
+import { WeeklyReviewPage } from './pages/WeeklyReviewPage'
+import { QuickCapturePage } from './pages/QuickCapturePage'
+import { TodayPage } from './pages/TodayPage'
+import { HorizonsPage } from './pages/HorizonsPage'
+import { CalendarPage } from './pages/CalendarPage'
+import { NotebooksPage } from './pages/NotebooksPage'
+import { TitleBar } from './components/TitleBar'
+import { FloatingTimer } from './components/FloatingTimer'
+import { SyncNotification } from './components/SyncNotification'
+import { Toaster } from './components/ui/sonner'
+import { TerminalPanel } from './components/terminal/TerminalPanel'
+import { notifySyncStart, notifySyncSuccess, notifySyncError } from './lib/syncEvents'
+import { useTimerStore } from './stores/timerStore'
+import { toast } from './components/ui/sonner'
+
+// Event emitter para comunicação entre componentes
+const eventEmitter = {
+  listeners: new Map<string, Set<() => void>>(),
+  on(event: string, callback: () => void): void {
+    if (!this.listeners.has(event)) {
+      this.listeners.set(event, new Set())
+    }
+    this.listeners.get(event)?.add(callback)
+  },
+  off(event: string, callback: () => void): void {
+    this.listeners.get(event)?.delete(callback)
+  },
+  emit(event: string): void {
+    this.listeners.get(event)?.forEach((cb) => cb())
+  }
+}
+
+export { eventEmitter }
+
+// Componente para a janela flutuante
+function FloatContent(): React.JSX.Element {
+  return (
+    <div className="w-full h-full p-1">
+      <FloatTimerPage />
+    </div>
+  )
+}
+
+// Componente para a janela de captura rápida
+function QuickCaptureContent(): React.JSX.Element {
+  return (
+    <div className="w-full h-full">
+      <QuickCapturePage />
+    </div>
+  )
+}
+
+function AppContent(): React.JSX.Element {
+  const location = useLocation()
+  const isTaskPage = location.pathname.startsWith('/task/')
+  const isProjectDetailPage = location.pathname.startsWith('/project/')
+  const isDashboardPage = location.pathname === '/dashboard'
+  const isFloatPage = location.pathname === '/float'
+  const isQuickCapturePage = location.pathname === '/quick-capture'
+  const isSubPage =
+    isTaskPage ||
+    isProjectDetailPage ||
+    isDashboardPage ||
+    location.pathname === '/projects' ||
+    location.pathname === '/contexts' ||
+    location.pathname === '/tags' ||
+    location.pathname === '/review' ||
+    location.pathname === '/archived' ||
+    location.pathname === '/settings' ||
+    location.pathname === '/today' ||
+    location.pathname === '/horizons' ||
+    location.pathname === '/calendar' ||
+    location.pathname === '/notebooks'
+
+  // Listener para eventos de sincronização do main process
+  useEffect(() => {
+    const handleSyncStart = (_: unknown, taskName?: string): void => {
+      notifySyncStart(taskName)
+    }
+    const handleSyncSuccess = (_: unknown, taskName?: string): void => {
+      notifySyncSuccess(taskName)
+    }
+    const handleSyncError = (_: unknown, error?: string): void => {
+      notifySyncError(error)
+    }
+
+    window.api.onSyncStart?.(handleSyncStart)
+    window.api.onSyncSuccess?.(handleSyncSuccess)
+    window.api.onSyncError?.(handleSyncError)
+
+    return () => {
+      window.api.offSyncStart?.(handleSyncStart)
+      window.api.offSyncSuccess?.(handleSyncSuccess)
+      window.api.offSyncError?.(handleSyncError)
+    }
+  }, [])
+
+  useEffect(
+    () =>
+      window.api.onJiraSync((status, detail) => {
+        if (status === 'syncing') notifySyncStart(detail, 'Jira')
+        else if (status === 'success') notifySyncSuccess(detail, 'Jira')
+        else notifySyncError(`Jira: ${detail ?? 'erro na importação'}`)
+      }),
+    []
+  )
+
+  useEffect(
+    () =>
+      window.api.onGcalSync((status, detail) => {
+        if (status === 'syncing') notifySyncStart(detail, 'Google Calendar')
+        else if (status === 'success') notifySyncSuccess(detail, 'Google Calendar')
+        else notifySyncError(`Google Calendar: ${detail ?? 'erro na sincronização'}`)
+      }),
+    []
+  )
+
+  // Listener para timer parado via float window
+  useEffect(() => {
+    const unsubscribe = window.api.onTimerStopped((taskId) => {
+      useTimerStore.getState().removeTimer(taskId)
+    })
+    return unsubscribe
+  }, [])
+
+  // Listener para tarefa desbloqueada (dependência concluída)
+  useEffect(() => {
+    const unsubscribe = window.api.onTaskUnblocked((_taskId, taskName) => {
+      toast.success(`"${taskName}" foi desbloqueada!`, { description: 'Dependência concluída.' })
+    })
+    return unsubscribe
+  }, [])
+
+  // Se for a janela flutuante, renderizar apenas ela
+  if (isFloatPage) {
+    return <FloatContent />
+  }
+
+  // Se for a janela de captura rápida
+  if (isQuickCapturePage) {
+    return <QuickCaptureContent />
+  }
+
+  const handleNewTask = useCallback(() => {
+    eventEmitter.emit('open-new-task-dialog')
+  }, [])
+
+  return (
+    <div className="flex flex-col h-screen bg-slate-50">
+      <TitleBar onNewTask={handleNewTask} />
+      <main className="flex-1 overflow-hidden">
+        <Routes>
+          <Route path="/" element={<TaskListPage />} />
+          <Route path="/task/:id" element={<SingleTaskPage />} />
+          <Route path="/archived" element={<ArchivedTasksPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/projects" element={<ProjectsPage />} />
+          <Route path="/project/:id" element={<ProjectDetailPage />} />
+          <Route path="/contexts" element={<ContextsPage />} />
+          <Route path="/tags" element={<TagsPage />} />
+          <Route path="/review" element={<WeeklyReviewPage />} />
+          <Route path="/today" element={<TodayPage />} />
+          <Route path="/horizons" element={<HorizonsPage />} />
+          <Route path="/calendar" element={<CalendarPage />} />
+          <Route path="/notebooks" element={<NotebooksPage />} />
+          <Route path="/float" element={<FloatTimerPage />} />
+          <Route path="/quick-capture" element={<QuickCapturePage />} />
+        </Routes>
+      </main>
+      <TerminalPanel />
+      {!isSubPage && <FloatingTimer />}
+      <SyncNotification />
+      <Toaster position="bottom-right" />
+    </div>
+  )
+}
+
+function App(): React.JSX.Element {
+  return (
+    <HashRouter>
+      <AppContent />
+    </HashRouter>
+  )
+}
+
+export default App

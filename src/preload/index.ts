@@ -1,0 +1,605 @@
+import { contextBridge, ipcRenderer } from 'electron'
+import { electronAPI } from '@electron-toolkit/preload'
+import type {
+  GcalStatus,
+  TerminalBuffer,
+  TerminalCreateResult,
+  TerminalSession,
+  TerminalTabCustomization,
+  JiraBoardSummary,
+  JiraCredentialsInput,
+  JiraFieldInput,
+  JiraImportResult,
+  JiraChildrenResult,
+  JiraIssueFields,
+  JiraOptionsInput,
+  JiraStatus,
+  JiraTransitionOption,
+  JiraUser,
+  Task,
+  TimeEntry,
+  CreateTaskInput,
+  UpdateTaskInput,
+  TaskStatus,
+  Tag,
+  Project,
+  CreateProjectInput,
+  UpdateProjectInput,
+  ProjectStatus,
+  Context,
+  WeeklyReview,
+  ReviewHealthIndicators,
+  TaskDependency,
+  Area,
+  CreateAreaInput,
+  UpdateAreaInput,
+  Goal,
+  CreateGoalInput,
+  UpdateGoalInput,
+  TimeBlock,
+  CreateTimeBlockInput,
+  UpdateTimeBlockInput,
+  TaskListFilters,
+  TaskListItem,
+  TagWithUsage,
+  UpdateTagInput,
+  McpStatus,
+  BackupSnapshot,
+  BackupStatus,
+  NotesOwner,
+  Notebook,
+  NotebookSection,
+  NotebookPage,
+  NotebookPageSummary,
+  CreateNotebookInput,
+  UpdateNotebookInput,
+  CreateSectionInput,
+  UpdateSectionInput,
+  CreatePageInput,
+  MovePageInput,
+  PageLocation,
+  PageSearchResult
+} from '../shared/types'
+
+// Custom APIs for renderer
+const api = {
+  // Window controls
+  minimizeWindow: (): Promise<void> => ipcRenderer.invoke('window:minimize'),
+  maximizeWindow: (): Promise<void> => ipcRenderer.invoke('window:maximize'),
+  closeWindow: (): Promise<void> => ipcRenderer.invoke('window:close'),
+
+  // Cadernos
+  listNotebooks: (): Promise<Notebook[]> => ipcRenderer.invoke('notebook:list'),
+  createNotebook: (input: CreateNotebookInput): Promise<Notebook> =>
+    ipcRenderer.invoke('notebook:create', input),
+  updateNotebook: (id: number, input: UpdateNotebookInput): Promise<void> =>
+    ipcRenderer.invoke('notebook:update', id, input),
+  deleteNotebook: (id: number): Promise<void> => ipcRenderer.invoke('notebook:delete', id),
+  reorderNotebooks: (ids: number[]): Promise<void> => ipcRenderer.invoke('notebook:reorder', ids),
+  listSections: (notebookId: number): Promise<NotebookSection[]> =>
+    ipcRenderer.invoke('section:list', notebookId),
+  createSection: (input: CreateSectionInput): Promise<NotebookSection> =>
+    ipcRenderer.invoke('section:create', input),
+  updateSection: (id: number, input: UpdateSectionInput): Promise<void> =>
+    ipcRenderer.invoke('section:update', id, input),
+  deleteSection: (id: number): Promise<void> => ipcRenderer.invoke('section:delete', id),
+  reorderSections: (notebookId: number, ids: number[]): Promise<void> =>
+    ipcRenderer.invoke('section:reorder', notebookId, ids),
+  listPages: (sectionId: number): Promise<NotebookPageSummary[]> =>
+    ipcRenderer.invoke('page:list', sectionId),
+  getPage: (id: number): Promise<NotebookPage | null> => ipcRenderer.invoke('page:get', id),
+  createPage: (input: CreatePageInput): Promise<NotebookPage> =>
+    ipcRenderer.invoke('page:create', input),
+  updatePageTitle: (id: number, title: string): Promise<void> =>
+    ipcRenderer.invoke('page:updateTitle', id, title),
+  deletePage: (id: number): Promise<void> => ipcRenderer.invoke('page:delete', id),
+  movePage: (id: number, input: MovePageInput): Promise<void> =>
+    ipcRenderer.invoke('page:move', id, input),
+  savePageNotes: (id: number, notes: string | null): Promise<void> =>
+    ipcRenderer.invoke('page:saveNotes', id, notes),
+  savePageDrawing: (
+    id: number,
+    drawing: string | null,
+    preview: Uint8Array | null
+  ): Promise<void> => ipcRenderer.invoke('page:saveDrawing', id, drawing, preview),
+  searchPages: (query: string): Promise<PageSearchResult[]> =>
+    ipcRenderer.invoke('page:search', query),
+  locatePage: (id: number): Promise<PageLocation | null> => ipcRenderer.invoke('page:locate', id),
+  exportPageLocal: (id: number): Promise<string | null> =>
+    ipcRenderer.invoke('page:exportLocal', id),
+  exportNotebookLocal: (id: number): Promise<{ dir: string; pages: number } | null> =>
+    ipcRenderer.invoke('notebook:exportLocal', id),
+  syncNotebookPageToNotion: (id: number): Promise<void> =>
+    ipcRenderer.invoke('notion:syncNotebookPage', id),
+  syncNotebookToNotion: (id: number): Promise<void> =>
+    ipcRenderer.invoke('notion:syncNotebook', id),
+  onNotebooksRefresh: (callback: () => void): (() => void) => {
+    const handler = (): void => callback()
+    ipcRenderer.on('notebooks:refresh', handler)
+    return () => ipcRenderer.removeListener('notebooks:refresh', handler)
+  },
+
+  // Task CRUD
+  createTask: (data: CreateTaskInput): Promise<Task> => ipcRenderer.invoke('task:create', data),
+  listTasks: (filters?: TaskListFilters): Promise<Task[]> =>
+    ipcRenderer.invoke('task:list', filters),
+  countTasks: (filters?: TaskListFilters): Promise<number> =>
+    ipcRenderer.invoke('task:count', filters),
+  listActiveTasksLight: (): Promise<TaskListItem[]> => ipcRenderer.invoke('task:listActiveLight'),
+  listRunningTasks: (): Promise<Task[]> => ipcRenderer.invoke('task:listRunning'),
+  getTask: (id: number): Promise<Task | undefined> => ipcRenderer.invoke('task:get', id),
+  updateTask: (id: number, data: UpdateTaskInput): Promise<void> =>
+    ipcRenderer.invoke('task:update', id, data),
+  updateTaskNotes: (id: number, notes: string | null): Promise<void> =>
+    ipcRenderer.invoke('task:updateNotes', id, notes),
+  saveDrawing: (id: number, drawing: string | null, preview: Uint8Array | null): Promise<void> =>
+    ipcRenderer.invoke('drawing:save', id, drawing, preview),
+  searchMentions: (
+    query: string
+  ): Promise<Array<{ id: number; label: string; type: 'task' | 'project' | 'context' | 'page' }>> =>
+    ipcRenderer.invoke('notes:searchMentions', query),
+  saveNoteImage: (
+    owner: NotesOwner,
+    bytes: Uint8Array,
+    filename: string,
+    mime: string
+  ): Promise<{ assetId: string; src: string }> =>
+    ipcRenderer.invoke('notes:saveImage', owner, bytes, filename, mime),
+  exportNotesLocalChoose: (taskId: number): Promise<string | null> =>
+    ipcRenderer.invoke('notes:exportLocalChoose', taskId),
+  exportNotesLocal: (taskId: number): Promise<boolean> =>
+    ipcRenderer.invoke('notes:exportLocal', taskId),
+  syncTaskNotes: (id: number): Promise<void> => ipcRenderer.invoke('notion:syncTaskNotes', id),
+  deleteTask: (id: number): Promise<void> => ipcRenderer.invoke('task:delete', id),
+  bulkDeleteTasks: (ids: number[]): Promise<void> => ipcRenderer.invoke('task:bulkDelete', ids),
+  bulkUpdateStatus: (ids: number[], status: TaskStatus): Promise<void> =>
+    ipcRenderer.invoke('task:bulkUpdateStatus', ids, status),
+  bulkMoveToProject: (ids: number[], projectId: number | null): Promise<void> =>
+    ipcRenderer.invoke('task:bulkMoveToProject', ids, projectId),
+
+  // Archive
+  archiveTask: (id: number): Promise<void> => ipcRenderer.invoke('task:archive', id),
+  unarchiveTask: (id: number): Promise<void> => ipcRenderer.invoke('task:unarchive', id),
+  bulkSetArchived: (ids: number[], archived: boolean): Promise<void> =>
+    ipcRenderer.invoke('task:bulkSetArchived', ids, archived),
+
+  // Timer
+  startTask: (id: number): Promise<void> => ipcRenderer.invoke('task:start', id),
+  stopTask: (id: number): Promise<void> => ipcRenderer.invoke('task:stop', id),
+  updateTimer: (id: number, seconds: number): Promise<void> =>
+    ipcRenderer.invoke('task:updateTimer', id, seconds),
+  resetTask: (id: number): Promise<void> => ipcRenderer.invoke('task:reset', id),
+  addManualTime: (id: number, seconds: number): Promise<void> =>
+    ipcRenderer.invoke('task:addManualTime', id, seconds),
+  setTotalTime: (id: number, seconds: number): Promise<void> =>
+    ipcRenderer.invoke('task:setTotalTime', id, seconds),
+
+  // Status
+  updateStatus: (id: number, status: TaskStatus): Promise<void> =>
+    ipcRenderer.invoke('task:updateStatus', id, status),
+
+  // Time Entries
+  getTimeEntries: (taskId: number): Promise<TimeEntry[]> =>
+    ipcRenderer.invoke('task:getTimeEntries', taskId),
+  getActiveTimeEntry: (taskId: number): Promise<TimeEntry | undefined> =>
+    ipcRenderer.invoke('task:getActiveTimeEntry', taskId),
+
+  // Notifications
+  showNotification: (title: string, body: string): void => {
+    ipcRenderer.invoke('notification:show', title, body)
+  },
+
+  // Float window controls
+  updateFloatTimer: (
+    timers: { taskId: number; taskName: string; seconds: number }[]
+  ): Promise<void> => ipcRenderer.invoke('float:updateTimer', timers),
+  clearFloatTimer: (): Promise<void> => ipcRenderer.invoke('float:clearTimer'),
+  restoreFromFloat: (): Promise<void> => ipcRenderer.invoke('float:restore'),
+  stopFromFloat: (taskId: number): Promise<void> => ipcRenderer.invoke('float:stopTimer', taskId),
+  stopAllFromFloat: (): Promise<void> => ipcRenderer.invoke('float:stopAll'),
+
+  // Float window events
+  onFloatUpdate: (
+    callback: (timers: { taskId: number; taskName: string; seconds: number }[]) => void
+  ): (() => void) => {
+    const handler = (
+      _: Electron.IpcRendererEvent,
+      timers: { taskId: number; taskName: string; seconds: number }[]
+    ): void => {
+      callback(timers)
+    }
+    ipcRenderer.on('float:update', handler)
+    return () => ipcRenderer.removeListener('float:update', handler)
+  },
+
+  onFloatClear: (callback: () => void): (() => void) => {
+    const handler = (): void => {
+      callback()
+    }
+    ipcRenderer.on('float:clear', handler)
+    return () => ipcRenderer.removeListener('float:clear', handler)
+  },
+
+  onTimerStopped: (callback: (taskId: number) => void): (() => void) => {
+    const handler = (_: Electron.IpcRendererEvent, taskId: number): void => {
+      callback(taskId)
+    }
+    ipcRenderer.on('timer:stopped', handler)
+    return () => ipcRenderer.removeListener('timer:stopped', handler)
+  },
+
+  // Tasks refresh event (from quick capture)
+  onTasksRefresh: (callback: () => void): (() => void) => {
+    const handler = (): void => {
+      callback()
+    }
+    ipcRenderer.on('tasks:refresh', handler)
+    return () => ipcRenderer.removeListener('tasks:refresh', handler)
+  },
+
+  // Statistics
+  getWeeklyStats: (): Promise<DailyStats[]> => ipcRenderer.invoke('stats:weekly'),
+  getTaskTimeStats: (): Promise<TaskTimeStats[]> => ipcRenderer.invoke('stats:taskTime'),
+  getStatusStats: (): Promise<StatusStats[]> => ipcRenderer.invoke('stats:status'),
+  getCategoryStats: (): Promise<CategoryStats[]> => ipcRenderer.invoke('stats:category'),
+  getHeatmapData: (): Promise<HeatmapData[]> => ipcRenderer.invoke('stats:heatmap'),
+  getGeneralStats: (): Promise<GeneralStats> => ipcRenderer.invoke('stats:general'),
+  // FASE 4.2: Advanced stats
+  getGtdMetrics: () => ipcRenderer.invoke('stats:gtdMetrics'),
+  getEnergyStats: () => ipcRenderer.invoke('stats:energy'),
+  generateWeeklyPDF: () => ipcRenderer.invoke('report:weeklyPDF'),
+
+  // Tags
+  createTag: (name: string, color?: string): Promise<Tag> =>
+    ipcRenderer.invoke('tag:create', name, color),
+  listTags: (): Promise<Tag[]> => ipcRenderer.invoke('tag:list'),
+  listTagsWithUsage: (): Promise<TagWithUsage[]> => ipcRenderer.invoke('tag:listWithUsage'),
+  updateTag: (id: number, data: UpdateTagInput): Promise<void> =>
+    ipcRenderer.invoke('tag:update', id, data),
+  mergeTags: (sourceId: number, targetId: number): Promise<number> =>
+    ipcRenderer.invoke('tag:merge', sourceId, targetId),
+  getOrCreateTag: (name: string): Promise<Tag> => ipcRenderer.invoke('tag:getOrCreate', name),
+  deleteTag: (id: number): Promise<void> => ipcRenderer.invoke('tag:delete', id),
+  getTaskTags: (taskId: number): Promise<Tag[]> => ipcRenderer.invoke('tag:getTaskTags', taskId),
+  setTaskTags: (taskId: number, tagIds: number[]): Promise<void> =>
+    ipcRenderer.invoke('tag:setTaskTags', taskId, tagIds),
+
+  // ===================== PROJECTS =====================
+  createProject: (data: CreateProjectInput): Promise<Project> =>
+    ipcRenderer.invoke('project:create', data),
+  getProject: (id: number): Promise<Project | undefined> => ipcRenderer.invoke('project:get', id),
+  listProjects: (status?: ProjectStatus): Promise<Project[]> =>
+    ipcRenderer.invoke('project:list', status),
+  updateProject: (id: number, data: UpdateProjectInput): Promise<void> =>
+    ipcRenderer.invoke('project:update', id, data),
+  deleteProject: (id: number): Promise<void> => ipcRenderer.invoke('project:delete', id),
+  getProjectTasks: (projectId: number): Promise<Task[]> =>
+    ipcRenderer.invoke('project:getTasks', projectId),
+
+  // ===================== CONTEXTS =====================
+  createContext: (name: string, icon?: string, color?: string): Promise<Context> =>
+    ipcRenderer.invoke('context:create', name, icon, color),
+  listContexts: (): Promise<Context[]> => ipcRenderer.invoke('context:list'),
+  updateContext: (
+    id: number,
+    data: { name?: string; icon?: string; color?: string }
+  ): Promise<void> => ipcRenderer.invoke('context:update', id, data),
+  deleteContext: (id: number): Promise<void> => ipcRenderer.invoke('context:delete', id),
+  getTaskContexts: (taskId: number): Promise<Context[]> =>
+    ipcRenderer.invoke('context:getTaskContexts', taskId),
+  setTaskContexts: (taskId: number, contextIds: number[]): Promise<void> =>
+    ipcRenderer.invoke('context:setTaskContexts', taskId, contextIds),
+
+  // ===================== WEEKLY REVIEWS =====================
+  createWeeklyReview: (): Promise<WeeklyReview> => ipcRenderer.invoke('review:create'),
+  getWeeklyReview: (id: number): Promise<WeeklyReview | undefined> =>
+    ipcRenderer.invoke('review:get', id),
+  listWeeklyReviews: (): Promise<WeeklyReview[]> => ipcRenderer.invoke('review:list'),
+  getLastWeeklyReview: (): Promise<WeeklyReview | undefined> =>
+    ipcRenderer.invoke('review:getLast'),
+  updateWeeklyReview: (
+    id: number,
+    data: {
+      inbox_cleared?: boolean
+      notes?: string
+      checklist_state?: string
+      completed_at?: string
+    }
+  ): Promise<void> => ipcRenderer.invoke('review:update', id, data),
+  getReviewHealthIndicators: (): Promise<ReviewHealthIndicators> =>
+    ipcRenderer.invoke('review:healthIndicators'),
+
+  // ===================== FASE 2: Subtarefas =====================
+  listSubtasks: (parentId: number): Promise<Task[]> => ipcRenderer.invoke('subtask:list', parentId),
+  createSubtask: (data: { name: string; parent_task_id: number }): Promise<Task> =>
+    ipcRenderer.invoke('subtask:create', data),
+
+  // ===================== FASE 2: Dependências =====================
+  getDependencies: (taskId: number): Promise<TaskDependency[]> =>
+    ipcRenderer.invoke('dependency:get', taskId),
+  addDependency: (taskId: number, dependsOnId: number): Promise<void> =>
+    ipcRenderer.invoke('dependency:add', taskId, dependsOnId),
+  removeDependency: (taskId: number, dependsOnId: number): Promise<void> =>
+    ipcRenderer.invoke('dependency:remove', taskId, dependsOnId),
+
+  // ===================== FASE 2: Agendamento =====================
+  getTasksForDate: (date: string): Promise<Task[]> =>
+    ipcRenderer.invoke('schedule:getForDate', date),
+  getWeeklySchedule: (startDate: string): Promise<{ date: string; tasks: Task[] }[]> =>
+    ipcRenderer.invoke('schedule:getWeekly', startDate),
+  updateDayOrder: (taskId: number, order: number): Promise<void> =>
+    ipcRenderer.invoke('schedule:updateDayOrder', taskId, order),
+  scheduleTaskForDate: (taskId: number, date: string | null): Promise<void> =>
+    ipcRenderer.invoke('task:scheduleForDate', taskId, date),
+
+  // ===================== FASE 2: Eventos push =====================
+  onTaskUnblocked: (callback: (taskId: number, taskName: string) => void): (() => void) => {
+    const handler = (_: Electron.IpcRendererEvent, taskId: number, taskName: string): void => {
+      callback(taskId, taskName)
+    }
+    ipcRenderer.on('task:unblocked', handler)
+    return () => ipcRenderer.removeListener('task:unblocked', handler)
+  },
+
+  // ===================== QUICK CAPTURE =====================
+  openQuickCapture: (): Promise<void> => ipcRenderer.invoke('quickCapture:open'),
+  quickCapture: (name: string): Promise<Task> => ipcRenderer.invoke('quickCapture:capture', name),
+  closeQuickCapture: (): Promise<void> => ipcRenderer.invoke('quickCapture:close'),
+
+  // Notion Integration
+  notionGetConfig: (): Promise<NotionConfig | null> => ipcRenderer.invoke('notion:getConfig'),
+  notionSaveConfig: (config: NotionConfig): Promise<void> =>
+    ipcRenderer.invoke('notion:saveConfig', config),
+  notionClearConfig: (): Promise<void> => ipcRenderer.invoke('notion:clearConfig'),
+  notionTestConnection: (): Promise<{ success: boolean; message: string }> =>
+    ipcRenderer.invoke('notion:testConnection'),
+  notionSyncTask: (taskId: number): Promise<string> =>
+    ipcRenderer.invoke('notion:syncTask', taskId),
+  notionSyncAllTasks: (): Promise<{ success: number; failed: number }> =>
+    ipcRenderer.invoke('notion:syncAllTasks'),
+  notionCreateDatabase: (): Promise<string> => ipcRenderer.invoke('notion:createDatabase'),
+
+  // Jira
+  jiraGetStatus: (): Promise<JiraStatus> => ipcRenderer.invoke('jira:getStatus'),
+  jiraSaveCredentials: (input: JiraCredentialsInput): Promise<JiraStatus> =>
+    ipcRenderer.invoke('jira:saveCredentials', input),
+  jiraTest: (): Promise<JiraUser> => ipcRenderer.invoke('jira:test'),
+  jiraListBoards: (): Promise<JiraBoardSummary[]> => ipcRenderer.invoke('jira:listBoards'),
+  jiraSaveBoards: (boardIds: number[]): Promise<JiraStatus> =>
+    ipcRenderer.invoke('jira:saveBoards', boardIds),
+  jiraSaveMapping: (mapping: Record<string, TaskStatus>): Promise<JiraStatus> =>
+    ipcRenderer.invoke('jira:saveMapping', mapping),
+  jiraSaveOptions: (input: JiraOptionsInput): Promise<JiraStatus> =>
+    ipcRenderer.invoke('jira:saveOptions', input),
+  jiraDisconnect: (): Promise<JiraStatus> => ipcRenderer.invoke('jira:disconnect'),
+  jiraImportNow: (): Promise<JiraImportResult | null> => ipcRenderer.invoke('jira:importNow'),
+  jiraListTransitions: (taskId: number): Promise<JiraTransitionOption[]> =>
+    ipcRenderer.invoke('jira:listTransitions', taskId),
+  jiraTransition: (taskId: number, transitionId: string): Promise<void> =>
+    ipcRenderer.invoke('jira:transition', taskId, transitionId),
+  jiraGetFields: (taskId: number): Promise<JiraIssueFields> =>
+    ipcRenderer.invoke('jira:getFields', taskId),
+  jiraGetChildren: (taskId: number): Promise<JiraChildrenResult> =>
+    ipcRenderer.invoke('jira:getChildren', taskId),
+  jiraUpdateField: (
+    taskId: number,
+    fieldId: string,
+    value: JiraFieldInput
+  ): Promise<JiraIssueFields> => ipcRenderer.invoke('jira:updateField', taskId, fieldId, value),
+  jiraSearchUsers: (taskId: number, fieldId: string, query: string): Promise<JiraUser[]> =>
+    ipcRenderer.invoke('jira:searchUsers', taskId, fieldId, query),
+  onJiraSync: (
+    callback: (status: 'syncing' | 'success' | 'error', detail?: string) => void
+  ): (() => void) => {
+    const start = (_: unknown, detail?: string): void => callback('syncing', detail)
+    const success = (_: unknown, detail?: string): void => callback('success', detail)
+    const error = (_: unknown, detail?: string): void => callback('error', detail)
+    ipcRenderer.on('jira:syncStart', start)
+    ipcRenderer.on('jira:syncSuccess', success)
+    ipcRenderer.on('jira:syncError', error)
+    return () => {
+      ipcRenderer.removeListener('jira:syncStart', start)
+      ipcRenderer.removeListener('jira:syncSuccess', success)
+      ipcRenderer.removeListener('jira:syncError', error)
+    }
+  },
+
+  // Google Calendar
+  gcalGetStatus: (): Promise<GcalStatus> => ipcRenderer.invoke('gcal:getStatus'),
+  gcalSaveCredentials: (clientId: string, clientSecret: string): Promise<GcalStatus> =>
+    ipcRenderer.invoke('gcal:saveCredentials', clientId, clientSecret),
+  gcalConnect: (): Promise<GcalStatus> => ipcRenderer.invoke('gcal:connect'),
+  gcalDisconnect: (): Promise<GcalStatus> => ipcRenderer.invoke('gcal:disconnect'),
+  gcalSetAutoSync: (enabled: boolean): Promise<GcalStatus> =>
+    ipcRenderer.invoke('gcal:setAutoSync', enabled),
+  gcalSetTaskSync: (taskId: number, enabled: boolean): Promise<void> =>
+    ipcRenderer.invoke('gcal:setTaskSync', taskId, enabled),
+  gcalSyncTask: (taskId: number): Promise<void> => ipcRenderer.invoke('gcal:syncTask', taskId),
+  gcalSyncAll: (): Promise<{ success: number; failed: number }> =>
+    ipcRenderer.invoke('gcal:syncAll'),
+  onGcalSync: (
+    callback: (status: 'syncing' | 'success' | 'error', detail?: string) => void
+  ): (() => void) => {
+    const start = (_: unknown, detail?: string): void => callback('syncing', detail)
+    const success = (_: unknown, detail?: string): void => callback('success', detail)
+    const error = (_: unknown, detail?: string): void => callback('error', detail)
+    ipcRenderer.on('gcal:syncStart', start)
+    ipcRenderer.on('gcal:syncSuccess', success)
+    ipcRenderer.on('gcal:syncError', error)
+    return () => {
+      ipcRenderer.removeListener('gcal:syncStart', start)
+      ipcRenderer.removeListener('gcal:syncSuccess', success)
+      ipcRenderer.removeListener('gcal:syncError', error)
+    }
+  },
+
+  // ===================== FASE 4.3: Blocos de Tempo =====================
+  createTimeBlock: (data: CreateTimeBlockInput): Promise<TimeBlock> =>
+    ipcRenderer.invoke('timeBlock:create', data),
+  getTimeBlocksForDate: (date: string): Promise<TimeBlock[]> =>
+    ipcRenderer.invoke('timeBlock:getForDate', date),
+  getTimeBlocksForWeek: (startDate: string): Promise<TimeBlock[]> =>
+    ipcRenderer.invoke('timeBlock:getForWeek', startDate),
+  getTimeBlocksForMonth: (yearMonth: string): Promise<TimeBlock[]> =>
+    ipcRenderer.invoke('timeBlock:getForMonth', yearMonth),
+  updateTimeBlock: (id: number, data: UpdateTimeBlockInput): Promise<void> =>
+    ipcRenderer.invoke('timeBlock:update', id, data),
+  deleteTimeBlock: (id: number): Promise<void> => ipcRenderer.invoke('timeBlock:delete', id),
+
+  // ===================== FASE 4: Áreas de Foco =====================
+  createArea: (data: CreateAreaInput): Promise<Area> => ipcRenderer.invoke('area:create', data),
+  getArea: (id: number): Promise<Area | undefined> => ipcRenderer.invoke('area:get', id),
+  listAreas: (): Promise<Area[]> => ipcRenderer.invoke('area:list'),
+  updateArea: (id: number, data: UpdateAreaInput): Promise<void> =>
+    ipcRenderer.invoke('area:update', id, data),
+  deleteArea: (id: number): Promise<void> => ipcRenderer.invoke('area:delete', id),
+
+  // ===================== FASE 4: Objetivos (Goals) =====================
+  createGoal: (data: CreateGoalInput): Promise<Goal> => ipcRenderer.invoke('goal:create', data),
+  getGoal: (id: number): Promise<Goal | undefined> => ipcRenderer.invoke('goal:get', id),
+  listGoals: (areaId?: number): Promise<Goal[]> => ipcRenderer.invoke('goal:list', areaId),
+  updateGoal: (id: number, data: UpdateGoalInput): Promise<void> =>
+    ipcRenderer.invoke('goal:update', id, data),
+  deleteGoal: (id: number): Promise<void> => ipcRenderer.invoke('goal:delete', id),
+
+  // Sync notification events
+  onSyncStart: (callback: (event: unknown, taskName?: string) => void): void => {
+    ipcRenderer.on('notion:syncStart', callback)
+  },
+  offSyncStart: (callback: (event: unknown, taskName?: string) => void): void => {
+    ipcRenderer.removeListener('notion:syncStart', callback)
+  },
+  onSyncSuccess: (callback: (event: unknown, taskName?: string) => void): void => {
+    ipcRenderer.on('notion:syncSuccess', callback)
+  },
+  offSyncSuccess: (callback: (event: unknown, taskName?: string) => void): void => {
+    ipcRenderer.removeListener('notion:syncSuccess', callback)
+  },
+  onSyncError: (callback: (event: unknown, error?: string) => void): void => {
+    ipcRenderer.on('notion:syncError', callback)
+  },
+  offSyncError: (callback: (event: unknown, error?: string) => void): void => {
+    ipcRenderer.removeListener('notion:syncError', callback)
+  },
+
+  // ===================== INICIALIZAÇÃO =====================
+  appGetVersion: (): Promise<string> => ipcRenderer.invoke('app:getVersion'),
+  appGetAutostart: (): Promise<boolean> => ipcRenderer.invoke('app:getAutostart'),
+  appOpenExternal: (url: string): Promise<void> => ipcRenderer.invoke('app:openExternal', url),
+  appSetAutostart: (enabled: boolean): Promise<boolean> =>
+    ipcRenderer.invoke('app:setAutostart', enabled),
+
+  // ===================== BACKUP =====================
+  backupGetStatus: (): Promise<BackupStatus> => ipcRenderer.invoke('backup:getStatus'),
+  backupChooseFolder: (): Promise<BackupStatus | null> => ipcRenderer.invoke('backup:chooseFolder'),
+  backupCreate: (): Promise<BackupSnapshot> => ipcRenderer.invoke('backup:create'),
+  backupChooseSnapshot: (): Promise<string | null> => ipcRenderer.invoke('backup:chooseSnapshot'),
+  backupInspect: (dir: string): Promise<BackupSnapshot> =>
+    ipcRenderer.invoke('backup:inspect', dir),
+  backupRestore: (dir: string): Promise<void> => ipcRenderer.invoke('backup:restore', dir),
+
+  // ===================== MCP SERVER =====================
+  mcpGetStatus: (): Promise<McpStatus> => ipcRenderer.invoke('mcp:getStatus'),
+  mcpSetEnabled: (enabled: boolean): Promise<McpStatus> =>
+    ipcRenderer.invoke('mcp:setEnabled', enabled),
+  mcpRegenerateToken: (): Promise<McpStatus> => ipcRenderer.invoke('mcp:regenerateToken'),
+
+  terminalCreate: (
+    taskId: number,
+    options: { shell?: string | null; cols?: number; rows?: number }
+  ): Promise<TerminalCreateResult> => ipcRenderer.invoke('terminal:create', taskId, options),
+  terminalWrite: (id: string, data: string): Promise<void> =>
+    ipcRenderer.invoke('terminal:write', id, data),
+  terminalResize: (id: string, cols: number, rows: number): Promise<void> =>
+    ipcRenderer.invoke('terminal:resize', id, cols, rows),
+  terminalDispose: (id: string): Promise<void> => ipcRenderer.invoke('terminal:dispose', id),
+  terminalList: (): Promise<TerminalSession[]> => ipcRenderer.invoke('terminal:list'),
+  terminalCustomize: (
+    id: string,
+    patch: TerminalTabCustomization
+  ): Promise<TerminalSession | null> => ipcRenderer.invoke('terminal:customize', id, patch),
+  terminalGetBuffer: (id: string): Promise<TerminalBuffer | null> =>
+    ipcRenderer.invoke('terminal:getBuffer', id),
+  terminalPickDirectory: (taskId: number): Promise<string | null> =>
+    ipcRenderer.invoke('terminal:pickDirectory', taskId),
+  terminalSetTaskWorkspace: (
+    taskId: number,
+    workspace: { working_dir?: string | null; start_command?: string | null }
+  ): Promise<void> => ipcRenderer.invoke('terminal:setTaskWorkspace', taskId, workspace),
+  onTerminalData: (callback: (id: string, chunk: string, seq: number) => void): (() => void) => {
+    const handler = (_: Electron.IpcRendererEvent, id: string, chunk: string, seq: number): void =>
+      callback(id, chunk, seq)
+    ipcRenderer.on('terminal:data', handler)
+    return () => ipcRenderer.removeListener('terminal:data', handler)
+  },
+  onTerminalExit: (callback: (id: string, exitCode: number) => void): (() => void) => {
+    const handler = (_: Electron.IpcRendererEvent, id: string, exitCode: number): void =>
+      callback(id, exitCode)
+    ipcRenderer.on('terminal:exit', handler)
+    return () => ipcRenderer.removeListener('terminal:exit', handler)
+  },
+  onTerminalRemoved: (callback: (id: string) => void): (() => void) => {
+    const handler = (_: Electron.IpcRendererEvent, id: string): void => callback(id)
+    ipcRenderer.on('terminal:removed', handler)
+    return () => ipcRenderer.removeListener('terminal:removed', handler)
+  }
+}
+
+// Types for statistics
+interface DailyStats {
+  date: string
+  dayOfWeek: number
+  totalSeconds: number
+}
+
+interface TaskTimeStats {
+  taskId: number
+  taskName: string
+  totalSeconds: number
+}
+
+interface StatusStats {
+  status: string
+  totalSeconds: number
+}
+
+interface CategoryStats {
+  category: string
+  totalSeconds: number
+  taskCount: number
+}
+
+interface HeatmapData {
+  date: string
+  count: number
+}
+
+interface GeneralStats {
+  totalTasks: number
+  completedTasks: number
+  totalTimeSeconds: number
+  totalSessions: number
+  avgSessionSeconds: number
+}
+
+interface NotionConfig {
+  apiKey: string
+  pageId: string
+  databaseId?: string
+  autoSync: boolean
+  lastSync?: string
+}
+
+if (process.contextIsolated) {
+  try {
+    contextBridge.exposeInMainWorld('electron', electronAPI)
+    contextBridge.exposeInMainWorld('api', api)
+  } catch (error) {
+    console.error(error)
+  }
+} else {
+  // @ts-ignore (define in dts)
+  window.electron = electronAPI
+  // @ts-ignore (define in dts)
+  window.api = api
+}
