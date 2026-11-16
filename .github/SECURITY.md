@@ -2,7 +2,7 @@
 
 ## 🔒 Relatando Vulnerabilidades
 
-Se você descobrir uma vulnerabilidade de segurança no TickTask, por favor, ajude-nos a mantê-la confidencial até que possamos resolvê-la adequadamente.
+Se você descobrir uma vulnerabilidade de segurança no CrafyTask, por favor, ajude-nos a mantê-la confidencial até que possamos resolvê-la adequadamente.
 
 **Não** relate vulnerabilidades de segurança através de issues públicas no GitHub.
 
@@ -35,7 +35,7 @@ Inclua as seguintes informações:
 
 ### Dados do Usuário
 
-- O TickTask armazena dados localmente no dispositivo do usuário
+- O CrafyTask armazena dados localmente no dispositivo do usuário
 - Não coletamos dados pessoais sem consentimento
 - Dados são criptografados quando apropriado
 

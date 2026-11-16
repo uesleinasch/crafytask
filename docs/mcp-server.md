@@ -1,4 +1,4 @@
-# Servidor MCP do TickTask
+# Servidor MCP do CrafyTask
 
 Servidor MCP embutido no processo main, exposto via HTTP em loopback (`127.0.0.1`) e autenticado
 por token Bearer. Vive em `src/main/mcp/`: `config.ts` (shape/normalização da config), `store.ts`
@@ -34,7 +34,7 @@ O HTTP em loopback continua disponível para clientes que preferirem falar diret
 claude mcp add ticktask --scope user --transport http http://127.0.0.1:<porta>/mcp --header "Authorization: Bearer <token>"
 ```
 
-A diferença prática: nesse modo o TickTask **precisa** estar aberto no momento em que a sessão do
+A diferença prática: nesse modo o CrafyTask **precisa** estar aberto no momento em que a sessão do
 cliente inicia, ou o servidor fica indisponível até a sessão ser reiniciada.
 
 ## Ponte stdio
@@ -60,7 +60,7 @@ Ao subir a ponte com `ELECTRON_RUN_AS_NODE=1`, essa variável é removida do amb
 
 | Tool | Descrição |
 | --- | --- |
-| `server_info` | Confirma que o TickTask está aberto e respondendo. |
+| `server_info` | Confirma que o CrafyTask está aberto e respondendo (o payload mantém `app: 'TickTask'` por compatibilidade). |
 | `search_tasks` | Lista tasks com filtros (status, categoria, energia, projeto, contexto, busca, datas). Não inclui subtarefas. |
 | `get_task` | Detalhe completo de uma task: campos, notas em Markdown, subtarefas, dependências, registros de tempo. |
 | `create_task` | Cria uma task; projeto/contexto por nome ou id, tags criadas se não existirem. Aceita `scheduled_time`/`scheduled_end_time` (exigem `scheduled_date`) e `due_time` (exige `due_date`), em `HH:MM`, e `external_url` (`http(s)`). |
@@ -101,7 +101,7 @@ Operações destrutivas ou em massa seguem um fluxo de duas fases (`confirmGuard
 
 ## Limitações conhecidas
 
-- O servidor só responde enquanto o app TickTask está aberto (não há processo headless). Com a
+- O servidor só responde enquanto o app CrafyTask está aberto (não há processo headless). Com a
   ponte stdio isso deixa de exigir ação sua — ela abre o app quando necessário —, mas a primeira
   chamada nesse caso paga o tempo de inicialização do app (~1–3 s).
 - O app agora vive na bandeja: fechar a janela não encerra o processo, então o servidor continua
@@ -110,5 +110,5 @@ Operações destrutivas ou em massa seguem um fluxo de duas fases (`confirmGuard
 - `write_notes` converte um subconjunto de Markdown; menções `@` a outras tasks, tabelas e imagens
   do editor Tiptap não sobrevivem à conversão.
 - Deletar uma task pai apaga as subtarefas em cascata — não há como recuperar depois de confirmado.
-- `read_drawing` serve o PNG gerado no último save feito no app. Um desenho criado num TickTask
-  desatualizado, antes da coluna `drawing` existir, não tem imagem para servir.
+- `read_drawing` serve o PNG gerado no último save feito no app. Um desenho criado numa versão
+  antiga do app, antes da coluna `drawing` existir, não tem imagem para servir.

@@ -143,16 +143,16 @@ A criação emite `tasks:refresh`, então a lista de tarefas da janela principal
 
 `src/main/tray.ts`
 
-Ícone de 32px com tooltip "TickTask App". Menu de contexto:
+Ícone de 32px com tooltip "CrafyTask". Menu de contexto:
 
 | Item | Ação |
 | --- | --- |
-| Abrir TickTask | restaura e foca a janela principal (e esconde o float) |
+| Abrir CrafyTask | restaura e foca a janela principal (e esconde o float) |
 | Captura rápida | abre a janela de captura |
 | — | separador |
 | Sair | encerra o app de fato |
 
-Clique simples no ícone equivale a "Abrir TickTask".
+Clique simples no ícone equivale a "Abrir CrafyTask".
 
 A bandeja é o que sustenta dois comportamentos que a interface principal não explica:
 

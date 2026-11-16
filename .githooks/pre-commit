@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+branch=$(git symbolic-ref --short -q HEAD || true)
+[ -z "$branch" ] && exit 0
+
+case "$branch" in
+  main|production)
+    if [ "${ALLOW_TRUNK_COMMIT:-}" != "1" ]; then
+      echo "pre-commit: não commite direto em '$branch'. Crie uma branch de trabalho a partir de production." >&2
+      exit 1
+    fi
+    exit 0
+    ;;
+esac
+
+"$(git rev-parse --show-toplevel)/.githooks/check-branch-name" "$branch"

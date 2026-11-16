@@ -212,7 +212,7 @@ export async function chooseSnapshotFolder(win: BrowserWindow | null): Promise<s
 
 export async function inspectSnapshot(dir: string): Promise<BackupSnapshot> {
   if (!fs.existsSync(path.join(dir, DB_FILE))) {
-    throw new Error(`A pasta escolhida não é um backup do TickTask (não tem ${DB_FILE}).`)
+    throw new Error(`A pasta escolhida não é um backup do CrafyTask (não tem ${DB_FILE}).`)
   }
   return describeSnapshot(dir, readDbCounts(path.join(dir, DB_FILE)))
 }

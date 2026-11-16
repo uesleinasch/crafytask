@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root=$(git rev-parse --show-toplevel)
+ai_pattern='^[[:space:]]*co-authored-by:.*(claude|anthropic|openai|chatgpt|gpt-|copilot|gemini|cursor|codeium|devin|noreply@anthropic\.com)'
+zero=0000000000000000000000000000000000000000
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ "$local_sha" = "$zero" ] && continue
+  case "$remote_ref" in refs/heads/*) ;; *) continue ;; esac
+  branch=${remote_ref#refs/heads/}
+  case "$branch" in
+    main|production) ;;
+    *) "$root/.githooks/check-branch-name" "$branch" ;;
+  esac
+
+  if [ "$remote_sha" = "$zero" ]; then
+    range=$(git rev-list "$local_sha" --not --remotes 2>/dev/null || true)
+  else
+    range=$(git rev-list "$remote_sha..$local_sha" 2>/dev/null || true)
+  fi
+  for sha in $range; do
+    if git log -1 --format=%B "$sha" | grep -Eiq "$ai_pattern"; then
+      echo "pre-push: o commit $sha tem trailer de coautoria de IA. Reescreva a mensagem antes do push." >&2
+      exit 1
+    fi
+  done
+done

@@ -61,7 +61,7 @@ export function JiraChildIssues({
                       : void window.api.appOpenExternal(child.url)
                   }
                   title={
-                    child.taskId ? 'Abrir a task no TickTask' : 'Não importada — abrir no Jira'
+                    child.taskId ? 'Abrir a task no CrafyTask' : 'Não importada — abrir no Jira'
                   }
                   className="group w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-slate-50 transition-colors"
                 >

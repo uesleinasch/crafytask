@@ -16,8 +16,6 @@ import {
 import { Button } from '@renderer/components/ui/button'
 import { TerminalToggleButton } from '@renderer/components/terminal/TerminalToggleButton'
 
-import appIcon from '../../../../resources/32.png'
-
 interface TitleBarProps {
   onNewTask?: () => void
 }
@@ -29,11 +27,7 @@ export function TitleBar({ onNewTask }: TitleBarProps): React.JSX.Element {
 
   return (
     <header className="flex items-center justify-between h-14 px-6 bg-white border-b border-slate-200">
-      {/* Lado Esquerdo: Logo + Nome */}
-      <div className="flex items-center gap-2">
-        <img src={appIcon} alt="TickTask App" className="w-8 h-8" />
-        <span className="text-xl font-bold text-slate-900">TickTask App</span>
-      </div>
+      <span className="font-brand text-2xl leading-none text-brand select-none">CrafyTask</span>
 
       {/* Lado Direito: Ações */}
       <div className="flex items-center gap-2">

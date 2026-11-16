@@ -118,7 +118,7 @@ async function waitForServer(config: BridgeConfig): Promise<void> {
     if (await isPortOpen(config.port)) return
   }
 
-  throw new Error('tempo esgotado ao aguardar o TickTask abrir')
+  throw new Error('tempo esgotado ao aguardar o CrafyTask abrir')
 }
 
 async function ensureApp(config: BridgeConfig): Promise<void> {
@@ -153,13 +153,13 @@ async function handleFrame(frame: string): Promise<void> {
   const config = readConfig()
 
   if (!config) {
-    if (id !== null) write(jsonRpcError(id, 'Configuração do MCP do TickTask não encontrada.'))
+    if (id !== null) write(jsonRpcError(id, 'Configuração do MCP do CrafyTask não encontrada.'))
     return
   }
 
   if (!config.enabled) {
     if (id !== null) {
-      write(jsonRpcError(id, 'Servidor MCP desligado — ative-o em Configurações no TickTask.'))
+      write(jsonRpcError(id, 'Servidor MCP desligado — ative-o em Configurações no CrafyTask.'))
     }
     return
   }
@@ -181,7 +181,7 @@ async function handleFrame(frame: string): Promise<void> {
   } catch (error) {
     const detail = error instanceof Error ? error.message : 'erro desconhecido'
     if (id !== null) {
-      write(jsonRpcError(id, `Não foi possível falar com o TickTask (${detail}).`))
+      write(jsonRpcError(id, `Não foi possível falar com o CrafyTask (${detail}).`))
     }
   }
 }

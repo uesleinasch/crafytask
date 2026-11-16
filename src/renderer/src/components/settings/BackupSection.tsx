@@ -162,7 +162,7 @@ export function BackupSection(): React.JSX.Element {
 
       {busy === 'restore' && (
         <p className="flex items-center gap-2 text-sm text-slate-600">
-          <Loader2 size={14} className="animate-spin" /> Restaurando… o TickTask vai reiniciar.
+          <Loader2 size={14} className="animate-spin" /> Restaurando… o CrafyTask vai reiniciar.
         </p>
       )}
 
@@ -186,7 +186,7 @@ export function BackupSection(): React.JSX.Element {
         title="Restaurar este backup?"
         description={
           pending
-            ? `Backup de ${formatDate(pending.createdAt)}: ${describeCounts(pending.counts)}. Os dados atuais serão substituídos (uma cópia fica em uma pasta pre-restore dentro da pasta de dados do app) e o TickTask vai reiniciar.`
+            ? `Backup de ${formatDate(pending.createdAt)}: ${describeCounts(pending.counts)}. Os dados atuais serão substituídos (uma cópia fica em uma pasta pre-restore dentro da pasta de dados do app) e o CrafyTask vai reiniciar.`
             : ''
         }
         confirmLabel="Restaurar e reiniciar"

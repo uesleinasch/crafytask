@@ -1,3 +1,4 @@
+import '@fontsource/denk-one/400.css'
 import './assets/main.css'
 // Precisa valer antes de o chunk do Excalidraw ser avaliado, senão ele resolve as fontes pelo
 // CDN — que a CSP recusa, deixando o desenho com as fontes do sistema.

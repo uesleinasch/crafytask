@@ -192,6 +192,6 @@ export function toJiraValue(field: JiraField, input: JiraFieldInput): unknown {
     case 'sprint':
       return blank(input) ? null : Number(input)
     case 'readonly':
-      throw new Error(`${field.name} não pode ser editado pelo TickTask.`)
+      throw new Error(`${field.name} não pode ser editado pelo CrafyTask.`)
   }
 }
