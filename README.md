@@ -40,7 +40,7 @@ chmod +x crafytask-<versão>.AppImage
 ```
 
 Quem já usa o TickTask pode instalar por cima: o pacote faz upgrade e os dados continuam na mesma
-pasta (`~/.config/TickTask App`). Detalhes, inclusive o perfil AppArmor do Ubuntu 24.04+, na
+pasta (`~/.config/ticktask`). Detalhes, inclusive o perfil AppArmor do Ubuntu 24.04+, na
 [documentação](https://uesleinasch.github.io/crafytask/).
 
 ## Desenvolvimento

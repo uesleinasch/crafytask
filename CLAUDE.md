@@ -13,9 +13,9 @@ textos de Configurações, nome do atalho no menu do Linux e dos pacotes `crafyt
 logo é só texto, na fonte **Denk One** (`@fontsource/denk-one`, empacotada — o app é offline e a CSP
 não deixa buscar fonte remota), classes `font-brand` e `text-brand` (`#705EFF`) em `main.css`.
 
-Por compatibilidade com instalações e dados existentes, **não renomeie**: `name: ticktask` e
-`productName: "TickTask App"` (definem a pasta de dados `~/.config/TickTask App`, o pacote deb que
-faz upgrade do antigo, `/opt/TickTask App` e o perfil AppArmor), `app.setName('TickTask App')`,
+Por compatibilidade com instalações e dados existentes, **não renomeie**: `name: ticktask` (define a
+pasta de dados `~/.config/ticktask` e o pacote deb que faz upgrade do antigo) e `productName: "TickTask
+App"` (`/opt/TickTask App` e o perfil AppArmor), `app.setName('TickTask App')`,
 `appId`/`AppUserModelId` `com.ticktask.app`, `ticktask.db`, `ticktask-dev`, `TICKTASK_USER_DATA`,
 `ticktask-asset://`, `scripts/ticktask-backup.sh`, a agenda "TickTask" do Google e a descrição
 `TickTask #id` dos eventos, a raiz "Cadernos TickTask" e o banco "GTD APP" do Notion, `app:
