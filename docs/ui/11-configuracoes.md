@@ -60,7 +60,7 @@ reabrir. Lógica em `stepProgress.ts` (pura, testada).
 
 ### Geral
 
-- `ToggleRow` **Iniciar o TickTask com o sistema** (texto muda com o estado). Se o sistema recusar,
+- `ToggleRow` **Iniciar o CrafyTask com o sistema** (texto muda com o estado). Se o sistema recusar,
   toast vermelho.
 - Bloco "Fechar a janela não encerra o app" — explica a bandeja e o "Sair".
 - Bloco "Captura rápida" com o atalho em `<kbd>` (`Ctrl` ou `⌘` conforme a plataforma) — só
@@ -109,7 +109,7 @@ reabrir. Lógica em `stepProgress.ts` (pura, testada).
   verificação) · 4. Audience → Publish app (aviso: em Testing o acesso expira em 7 dias) ·
   5. Client "Desktop app" — os campos **Client ID** e **Client Secret** ficam dentro deste passo,
   com "Salvar credenciais" quando editados (automático: credenciais salvas) · 6. **Conectar com o
-  Google** (automático: conectado), com a instrução Avançado → Acessar TickTask.
+  Google** (automático: conectado), com a instrução Avançado → Acessar CrafyTask.
 - **Conectado** → `ToggleRow` de auto-sync, **Ressincronizar todas**, **Desconectar** (a agenda
   "TickTask" continua no Google) e o recolhível "Ver guia de configuração e trocar credenciais".
 - O secret nunca volta ao renderer: o campo mostra `•••••••• (salvo)`.
@@ -126,7 +126,7 @@ reabrir. Lógica em `stepProgress.ts` (pura, testada).
   nos últimos 30 dias) e mostra a contagem. Issue já concluída não vira task nova. Em
   re-importação atualiza nome e link; o prazo só quando a issue tem um (prazo local não é apagado).
 - **Status separados**: a task guarda o status do Jira em `tasks.jira_status`, à parte do status
-  local. A importação só atualiza o status Jira; mover a task no TickTask não mexe no Jira. O status
+  local. A importação só atualiza o status Jira; mover a task no CrafyTask não mexe no Jira. O status
   no Jira muda pelo seletor "Jira" do card, da tabela e do detalhe.
 - **Descrição**: a descrição da issue entra nas notas da task, e editar as notas atualiza a
   descrição no Jira.
@@ -160,7 +160,7 @@ reabrir. Lógica em `stepProgress.ts` (pura, testada).
 
 ### Sobre
 
-Versões em lista: TickTask (`app:getVersion`), Electron, Chromium e Node
+Versões em lista: CrafyTask (`app:getVersion`), Electron, Chromium e Node
 (`window.electron.process.versions`).
 
 ## O que falta

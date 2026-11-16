@@ -2,7 +2,7 @@
 
 `src/renderer/src/pages/ProjectsPage.tsx` · `src/renderer/src/pages/ProjectDetailPage.tsx`
 
-No GTD, projeto é qualquer resultado que exige mais de uma ação. No TickTask ele agrupa tarefas,
+No GTD, projeto é qualquer resultado que exige mais de uma ação. No CrafyTask ele agrupa tarefas,
 carrega um *outcome* (resultado desejado), uma cor que se propaga para todas as listagens e,
 opcionalmente, uma área de foco.
 

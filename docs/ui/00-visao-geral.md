@@ -1,6 +1,6 @@
 # Visão geral
 
-## O que é o TickTask
+## O que é o CrafyTask
 
 Aplicativo de desktop (Electron) para gestão pessoal de tarefas e tempo, organizado em torno do
 método **GTD** (*Getting Things Done*). Local-first: tudo vive num SQLite na máquina do usuário;
@@ -84,7 +84,7 @@ Quanto de disposição a tarefa exige. Usado como filtro mental e alimenta o gr�
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │ TitleBar — h-14, bg-white, border-b slate-200                │
-│ [ícone 32px] TickTask App          [ações — só na rota "/"]  │
+│ CrafyTask (logo em texto)          [ações — só na rota "/"]  │
 ├──────────────────────────────────────────────────────────────┤
 │                                                              │
 │ <main class="flex-1 overflow-hidden">                        │
@@ -105,7 +105,8 @@ da interface atual.
 
 ### TitleBar (`components/TitleBar.tsx`)
 
-- **Esquerda:** ícone 32px + "TickTask App" em `text-xl font-bold text-slate-900`.
+- **Esquerda:** o logo em texto "CrafyTask" em `font-brand text-2xl text-brand` (fonte Denk One,
+  cor `#705EFF`, tokens `--font-brand` e `--color-brand` em `main.css`).
 - **Direita:** a barra de navegação inteira, **renderizada apenas quando `location.pathname === '/'`**.
   Em qualquer outra rota o lado direito fica vazio e a navegação depende do botão "Voltar" da própria
   tela.
@@ -173,7 +174,7 @@ Regras de exibição do float, decididas no processo principal (não pelo render
 - **Restaurar** ou **focar** a janela principal → esconde o float.
 - Fechar a janela principal não encerra o app: ele fica na bandeja.
 
-O app também registra um **ícone de bandeja** (Abrir TickTask · Captura rápida · Sair) e um **atalho
+O app também registra um **ícone de bandeja** (Abrir CrafyTask · Captura rápida · Sair) e um **atalho
 global `Ctrl/Cmd + Shift + Space`** que abre a captura rápida de qualquer lugar do sistema.
 
 ## Padrões que se repetem em toda tela

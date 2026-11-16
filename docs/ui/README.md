@@ -1,7 +1,7 @@
-# TickTask — Mapa da Interface
+# CrafyTask — Mapa da Interface
 
-Documentação de referência da interface do TickTask (v3.8.2), escrita para servir de **contexto de
-design**: cada tela, cada região, cada elemento interativo e o que ele faz.
+Documentação de referência da interface do CrafyTask (iniciada na v3.8.2, quando o app ainda se
+chamava TickTask), escrita para servir de **contexto de design**: cada tela, cada região, cada elemento interativo e o que ele faz.
 
 Este conjunto descreve **o que existe hoje**, não o que deveria existir. É a linha de base sobre a
 qual uma refatoração de interface pode ser desenhada sem perder funcionalidade.
@@ -43,6 +43,7 @@ qual uma refatoração de interface pode ser desenhada sem perder funcionalidade
 ## Documentação técnica relacionada
 
 - [`../mcp-server.md`](../mcp-server.md) — servidor MCP embutido (ferramentas, limitações)
-- [`../../CLAUDE.md`](../../CLAUDE.md) — arquitetura, comandos, convenções de código
-- [`../../ui-ux/TickTask - Design System & Guia de Estilo.md`](../../ui-ux/TickTask%20-%20Design%20System%20&%20Guia%20de%20Estilo.md) —
+- [`CLAUDE.md`](https://github.com/uesleinasch/crafytask/blob/production/CLAUDE.md) — arquitetura, comandos, convenções de código
+  (resumo em [Arquitetura](../desenvolvimento/arquitetura.md))
+- [`ui-ux/TickTask - Design System & Guia de Estilo.md`](https://github.com/uesleinasch/crafytask/blob/production/ui-ux/TickTask%20-%20Design%20System%20%26%20Guia%20de%20Estilo.md) —
   guia de estilo original, **parcialmente defasado** (ver [15-inconsistencias.md](15-inconsistencias.md))

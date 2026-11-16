@@ -5,7 +5,7 @@
 
 ## Contexto
 
-O TickTask ganha uma tela de anotações livres no molde do OneNote. Cada página precisa das mesmas
+O CrafyTask (então TickTask) ganha uma tela de anotações livres no molde do OneNote. Cada página precisa das mesmas
 abas da task — Notas (Tiptap) e Desenho (Excalidraw) — e, numa entrega seguinte, sincronizar com o
 Notion. Até aqui editores, imagens coladas (`note_assets`), o PNG do desenho
 (`drawings/<taskId>.png`) e o sync estavam todos amarrados a `taskId`.
@@ -62,7 +62,7 @@ por caderno, por seção e por página (com subpáginas aninhadas). Cada linha g
 `notion_page_id`. O corpo reaproveita `notionBlocks.ts`, `notionFileUpload.ts` e o upload do PNG do
 desenho.
 
-O SDK do Notion (v4) não move página entre pais. Mover no TickTask arquiva a página antiga no Notion
+O SDK do Notion (v4) não move página entre pais. Mover no CrafyTask arquiva a página antiga no Notion
 e cria outra sob o pai novo; a ordem entre irmãs no Notion fica sendo a de criação.
 
 ### Vínculo com tasks (entrega 3)

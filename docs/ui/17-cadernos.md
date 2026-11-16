@@ -99,9 +99,9 @@ de lá, a raiz é procurada pelo título antes de criar outra.
 
 Limitações:
 
-- A API não move página entre pais: mover no TickTask arquiva a página no Notion e cria outra no
+- A API não move página entre pais: mover no CrafyTask arquiva a página no Notion e cria outra no
   lugar novo (com as subpáginas). Links antigos para ela deixam de valer.
-- A ordem das páginas no Notion é a de criação; reordenar no TickTask não reflete lá.
+- A ordem das páginas no Notion é a de criação; reordenar no CrafyTask não reflete lá.
 - Numa página com subpáginas, o corpo fica abaixo dos links das subpáginas.
 - Com o auto-sync desligado, excluir não arquiva nada no Notion.
 
