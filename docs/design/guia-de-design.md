@@ -137,6 +137,11 @@ existem. Token antd: `fontFamily` (Geist) e `fontFamilyCode` (Geist Mono), `font
 - **Raio:** 4 (`borderRadiusXS`, tag), 6 (`borderRadiusSM`, chip e controle pequeno), 8
   (`borderRadius`, controle e card), 12 (`borderRadiusLG`, modal, coluna do Kanban, barra
   flutuante). `999px` só para pílula de timer e ponto. Nada de outros valores.
+- **Cabeçalho de card:** altura mínima de 48px no `size="small"` (56px no normal), 16px de
+  padding lateral (20px no normal), corpo com o mesmo padding. Título com subtítulo (duas linhas)
+  ganha 12px de padding vertical via `styles.header`, nunca encostando nas bordas; entre o
+  marcador (chip, ícone) e o título, 12–14px. Tokens: `Card.headerHeightSM`, `headerPaddingSM`,
+  `bodyPaddingSM` (e as versões normais).
 - **Sombra:** só no que flutua (popover, modal, barra de ações em massa). Card na página tem borda,
   sem sombra.
 - **Espaço:** múltiplos de 4. Página com 24px de margem lateral (12px abaixo de `md`), 16px entre

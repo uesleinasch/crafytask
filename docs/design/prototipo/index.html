@@ -337,7 +337,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         Menu: { itemBg: 'transparent', subMenuItemBg: 'transparent', itemSelectedBg: c.primarySoft, itemSelectedColor: c.primary, itemHoverBg: mode === 'dark' ? '#25232F' : '#F0EFF6', itemBorderRadius: 8, itemMarginInline: 8, groupTitleColor: c.text3, groupTitleFontSize: 11, iconSize: 16, collapsedIconSize: 18 },
         Tabs: { itemColor: c.text2, itemSelectedColor: c.text, inkBarColor: c.primary, horizontalItemGutter: compact ? 16 : 24, horizontalItemPadding: '10px 4px', horizontalItemPaddingSM: '8px 4px', horizontalItemPaddingLG: '12px 4px', titleFontSize: 14 },
         Table: { headerBg: c.surface, headerColor: c.text3, headerSplitColor: 'transparent', rowHoverBg: mode === 'dark' ? '#201E2B' : '#F7F6FC', rowSelectedBg: c.primarySoft, rowSelectedHoverBg: c.primarySoft, cellPaddingBlock: compact ? 6 : 10, borderColor: c.border },
-        Card: { headerFontSize: 14 },
+        Card: { headerFontSize: 15, headerFontSizeSM: 14, headerHeight: 56, headerHeightSM: 48, headerPadding: 20, headerPaddingSM: 16, bodyPadding: 20, bodyPaddingSM: 16 },
         Segmented: { itemSelectedBg: c.surface, trackBg: mode === 'dark' ? '#15141D' : '#ECEBF3' },
         Statistic: { contentFontSize: 22 }
       }
@@ -2054,10 +2054,10 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       : html`<${Tag} bordered=${false} style=${{ margin: 0 }}>todas as áreas<//>`;
 
     const levelCard = (lv, count, children, onAdd) => html`<section id=${'hz-' + lv.h} className="ct-hzsection">
-      <${Card} size="small"
-        title=${html`<${Flex} align="center" gap=${10}>
+      <${Card} size="small" styles=${{ header: { paddingBlock: 12 } }}
+        title=${html`<${Flex} align="center" gap=${14}>
           <${HzChip} h=${lv.h} mode=${mode} />
-          <div style=${{ minWidth: 0 }}>
+          <div style=${{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <${Flex} align="center" gap=${8}><${Text} strong>${lv.label}<//><${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12 }}>${count}<//><//>
             <${Text} type="secondary" style=${{ fontSize: 12, fontWeight: 400 }}>${lv.sub}<//>
           </div>
