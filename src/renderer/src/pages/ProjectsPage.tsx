@@ -13,9 +13,11 @@ import {
   DialogTitle
 } from '@renderer/components/ui/dialog'
 import { useProjects } from '@renderer/hooks/useProjects'
+import { usePersistedState } from '@renderer/hooks/usePersistedState'
+import { ProjectListRow } from '@renderer/components/projects/ProjectListRow'
 import { ColorPicker } from '@renderer/components/ColorPicker'
 import { DEFAULT_COLORS } from '@renderer/lib/colors'
-import type { ProjectStatus, CreateProjectInput } from '@shared/types'
+import type { Project, ProjectStatus, CreateProjectInput } from '@shared/types'
 import { PROJECT_STATUS_LABELS, PROJECT_STATUS_COLORS } from '@shared/types'
 import {
   FolderKanban,
@@ -24,11 +26,20 @@ import {
   Target,
   CheckCircle2,
   Clock,
-  ArrowRight
+  ArrowRight,
+  LayoutGrid,
+  List
 } from 'lucide-react'
 import { cn } from '@renderer/lib/utils'
 
 type FilterStatus = ProjectStatus | 'all'
+type ViewMode = 'cards' | 'list'
+
+function projectProgress(project: Project): number {
+  return project.task_count && project.task_count > 0
+    ? Math.round(((project.completed_task_count || 0) / project.task_count) * 100)
+    : 0
+}
 
 const statusTabs: { id: FilterStatus; label: string }[] = [
   { id: 'all', label: 'Todos' },
@@ -43,6 +54,10 @@ export function ProjectsPage(): React.JSX.Element {
   const { projects, loading, createProject } = useProjects()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('active')
+  const [viewMode, setViewMode] = usePersistedState<ViewMode>(
+    'ticktask:projectListViewMode',
+    'cards'
+  )
 
   // Form state
   const [name, setName] = useState('')
@@ -105,8 +120,8 @@ export function ProjectsPage(): React.JSX.Element {
       </header>
 
       {/* Status Tabs */}
-      <div className="px-6 pt-4 pb-2">
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+      <div className="px-6 pt-4 pb-2 flex items-center gap-4">
+        <div className="flex-1 min-w-0 flex gap-2 overflow-x-auto scrollbar-hide">
           {statusTabs.map((tab) => (
             <button
               key={tab.id}
@@ -124,6 +139,28 @@ export function ProjectsPage(): React.JSX.Element {
                   {projects.filter((p) => p.status === tab.id).length}
                 </span>
               )}
+            </button>
+          ))}
+        </div>
+        <div className="shrink-0 flex items-center bg-white border border-slate-200 rounded-lg p-1">
+          {(
+            [
+              { id: 'cards', title: 'Visualização em Cards', Icon: LayoutGrid },
+              { id: 'list', title: 'Visualização em Lista', Icon: List }
+            ] as const
+          ).map(({ id, title, Icon }) => (
+            <button
+              key={id}
+              onClick={() => setViewMode(id)}
+              title={title}
+              className={cn(
+                'p-2 rounded-md transition-all',
+                viewMode === id
+                  ? 'bg-slate-900 text-white'
+                  : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+              )}
+            >
+              <Icon size={18} />
             </button>
           ))}
         </div>
@@ -152,15 +189,21 @@ export function ProjectsPage(): React.JSX.Element {
                 Criar primeiro projeto
               </Button>
             </div>
+          ) : viewMode === 'list' ? (
+            <div className="bg-white border border-slate-200 rounded-sm divide-y divide-slate-100 overflow-hidden">
+              {filteredProjects.map((project) => (
+                <ProjectListRow
+                  key={project.id}
+                  project={project}
+                  progress={projectProgress(project)}
+                  onOpen={() => navigate(`/project/${project.id}`)}
+                />
+              ))}
+            </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {filteredProjects.map((project) => {
-                const progress =
-                  project.task_count && project.task_count > 0
-                    ? Math.round(
-                        ((project.completed_task_count || 0) / project.task_count) * 100
-                      )
-                    : 0
+                const progress = projectProgress(project)
 
                 return (
                   <div
