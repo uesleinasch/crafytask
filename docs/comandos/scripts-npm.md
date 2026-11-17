@@ -15,7 +15,7 @@ npm run dev
 
 | Comando | O que faz |
 | --- | --- |
-| `npm run dev` | roda o app com hot reload (electron-vite) |
+| `npm run dev` | roda o app com hot reload (electron-vite), com `ELECTRON_DISABLE_SANDBOX=1`: o `chrome-sandbox` de `node_modules` não tem o SUID root que o sandbox do Chromium exige |
 | `npm run start` | abre uma prévia do app já compilado |
 | `npm run build` | typecheck + compila para `out/` |
 | `npm run build:linux` | compila e empacota `.deb` e AppImage em `dist/` (**não** roda o typecheck) |
