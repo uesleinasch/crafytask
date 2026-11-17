@@ -38,7 +38,7 @@ App"` (`/opt/TickTask App` e o perfil AppArmor), `app.setName('TickTask App')`,
 ## Commands
 
 ```bash
-npm run dev          # Run app with hot reload (electron-vite)
+npm run dev          # Run app with hot reload (electron-vite), com ELECTRON_DISABLE_SANDBOX=1
 npm run build        # typecheck (node + web) then build to out/
 npm run typecheck    # tsc for both tsconfig.node.json and tsconfig.web.json
 npm run lint         # eslint --cache
