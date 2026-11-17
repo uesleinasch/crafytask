@@ -15,7 +15,7 @@ O servidor escuta só em `127.0.0.1` (não é acessível pela rede) e exige um t
 3. Rode o comando no terminal. Ele tem esta forma:
 
     ```bash
-    claude mcp add ticktask --scope user --env ELECTRON_RUN_AS_NODE=1 -- "<executável>" "<pasta de dados>/mcp-bridge.js"
+    claude mcp add crafytask --scope user --env ELECTRON_RUN_AS_NODE=1 -- "<executável>" "<pasta de dados>/mcp-bridge.js"
     ```
 
 4. Abra uma sessão nova do Claude Code e peça, por exemplo, "o que tenho no inbox do CrafyTask?".
@@ -32,15 +32,20 @@ O servidor escuta só em `127.0.0.1` (não é acessível pela rede) e exige um t
   fechado, a ponte o abre na bandeja, sem janela, e espera o servidor responder (a primeira
   chamada leva 1–3 s a mais). A ponte é recopiada para a pasta de dados a cada inicialização, então
   o caminho registrado sobrevive a atualizações do app.
-- O nome registrado continua `ticktask`: quem já tinha o servidor registrado no TickTask não
-  precisa fazer nada.
+- O nome registrado é `crafytask`. Quem registrou antes com o nome antigo `ticktask` continua
+  funcionando, mas as tools aparecem como `mcp__ticktask__*`. Para trocar, remova o antigo e
+  registre de novo com o comando da tela:
+
+    ```bash
+    claude mcp remove ticktask --scope user
+    ```
 
 ### Alternativa: HTTP direto
 
 Clientes que preferirem falar HTTP podem registrar assim:
 
 ```bash
-claude mcp add ticktask --scope user --transport http http://127.0.0.1:<porta>/mcp --header "Authorization: Bearer <token>"
+claude mcp add crafytask --scope user --transport http http://127.0.0.1:<porta>/mcp --header "Authorization: Bearer <token>"
 ```
 
 Nesse modo o app **precisa** estar aberto quando a sessão do cliente começa.

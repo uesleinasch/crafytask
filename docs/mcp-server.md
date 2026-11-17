@@ -17,7 +17,7 @@ regenerar o token a qualquer momento (reinicia o servidor).
 O registro recomendado é via **ponte stdio** (`src/mcp-bridge/`, comando pronto na tela de Ajustes):
 
 ```
-claude mcp add ticktask --scope user --env ELECTRON_RUN_AS_NODE=1 -- "<executável>" "<userData>/mcp-bridge.js"
+claude mcp add crafytask --scope user --env ELECTRON_RUN_AS_NODE=1 -- "<executável>" "<userData>/mcp-bridge.js"
 ```
 
 Dois detalhes importam nesse comando:
@@ -31,7 +31,7 @@ Dois detalhes importam nesse comando:
 O HTTP em loopback continua disponível para clientes que preferirem falar direto com ele:
 
 ```
-claude mcp add ticktask --scope user --transport http http://127.0.0.1:<porta>/mcp --header "Authorization: Bearer <token>"
+claude mcp add crafytask --scope user --transport http http://127.0.0.1:<porta>/mcp --header "Authorization: Bearer <token>"
 ```
 
 A diferença prática: nesse modo o CrafyTask **precisa** estar aberto no momento em que a sessão do
@@ -60,7 +60,7 @@ Ao subir a ponte com `ELECTRON_RUN_AS_NODE=1`, essa variável é removida do amb
 
 | Tool | Descrição |
 | --- | --- |
-| `server_info` | Confirma que o CrafyTask está aberto e respondendo (o payload mantém `app: 'TickTask'` por compatibilidade). |
+| `server_info` | Confirma que o CrafyTask está aberto e respondendo (`app: 'CrafyTask'`). |
 | `search_tasks` | Lista tasks com filtros (status, categoria, energia, projeto, contexto, busca, datas). Não inclui subtarefas. |
 | `get_task` | Detalhe completo de uma task: campos, notas em Markdown, subtarefas, dependências, registros de tempo. |
 | `create_task` | Cria uma task; projeto/contexto por nome ou id, tags criadas se não existirem. Aceita `scheduled_time`/`scheduled_end_time` (exigem `scheduled_date`) e `due_time` (exige `due_date`), em `HH:MM`, e `external_url` (`http(s)`). |

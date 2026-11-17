@@ -129,8 +129,11 @@ Os dados são mantidos porque **nada do que identifica a pasta de dados mudou**:
 | Script de backup | `scripts/ticktask-backup.sh` |
 | Agenda no Google Calendar | "TickTask" |
 | Banco no Notion / raiz dos cadernos | "GTD APP" / "Cadernos TickTask" |
-| Servidor MCP | nome `ticktask`; `server_info` responde `app: 'TickTask'` |
 
 Por isso as integrações continuam funcionando sem reconfigurar: o Notion segue escrevendo no mesmo
-banco, o Google na mesma agenda e o cliente MCP registrado com `claude mcp add ticktask …` continua
-válido.
+banco e o Google na mesma agenda.
+
+O servidor MCP é a exceção: agora se registra como `crafytask`. O registro antigo
+(`claude mcp add ticktask …`) continua funcionando; para trocar, rode
+`claude mcp remove ticktask --scope user` e registre de novo com o comando de **Configurações →
+Servidor MCP** (ver [MCP](integracoes/mcp.md)).
