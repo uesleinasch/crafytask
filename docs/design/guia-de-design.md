@@ -198,7 +198,7 @@ ConfigProvider (tema, cssVar) → App (message, modal, notification) → RegionB
   de `md` a mesma lista abre num `Drawer` pelo botão de menu do header. O terminal sai do header (o
   botão laranja de hoje) e passa a viver só aqui e no atalho.
 
-- **Header (52px)** em três zonas de grid (`1fr · até 520px · 1fr`): à esquerda, botão de menu (só
+- **Header (52px)** em três zonas de grid (`minmax(max-content, 1fr) · 200–520px · minmax(max-content, 1fr)`: os lados nunca ficam menores que o conteúdo, e com folga ficam iguais, o que centraliza a captura): à esquerda, botão de menu (só
   abaixo de `md`) e título da tela; **no centro, o campo "Capturar para o Inbox…"** (Enter grava,
   mesmo IPC da captura rápida); à direita, pílula com os timers rodando, busca `Ctrl+K`, menu de
   aparência e "Nova tarefa". O centro dá à captura uma posição fixa, que não anda com o tamanho do
