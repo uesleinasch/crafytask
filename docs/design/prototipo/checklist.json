@@ -714,6 +714,36 @@
       }
     },
     {
+      "id": "F7.4",
+      "fase": "F7",
+      "titulo": "Configurações com navegação agrupada, busca e estado das integrações",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/{pages/SettingsPage.tsx,components/settings/*.tsx}",
+        "padroes": ["<Menu", "Buscar configuração", "<Badge", "Aplicativo", "Integrações"]
+      }
+    },
+    {
+      "id": "F7.5",
+      "fase": "F7",
+      "titulo": "Linha de ajuste e guias em Steps",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/components/settings/*.tsx",
+        "padroes": ["SettingRow", "<Steps"]
+      }
+    },
+    {
+      "id": "F7.6",
+      "fase": "F7",
+      "titulo": "Preferências de fluxo de trabalho persistidas no main",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/main/**/*.ts",
+        "padroes": ["workdayHours|jornada", "timeLeak", "calendarStart|calendarRange"]
+      }
+    },
+    {
       "id": "F7.3",
       "fase": "F7",
       "titulo": "Cadernos, dashboard, terminal e configurações conferidos",

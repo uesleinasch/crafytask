@@ -96,6 +96,22 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
 .ct-header-grid { display: grid; grid-template-columns: minmax(max-content, 1fr) minmax(200px, 520px) minmax(max-content, 1fr); align-items: center; gap: 12px; width: 100%; }
 .ct-header-grid > .ct-header-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .ct-header-grid > .ct-header-right { display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-width: 0; }
+.ct-settings-nav { width: 232px; flex: none; position: sticky; top: 0; }
+.ct-setrow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 24px; padding: 12px 0; border-bottom: 1px solid var(--ct-border); }
+.ct-setrow:last-child { border-bottom: 0; }
+.ct-setrow.vertical { align-items: flex-start; }
+.ct-set-icon { width: 36px; height: 36px; flex: none; border-radius: 8px; display: grid; place-items: center; font-size: 18px; color: var(--ct-primary); background: var(--ct-primary-soft); }
+.ct-kbd { font-family: var(--ct-mono); font-size: 12px; padding: 1px 6px; border: 1px solid var(--ct-border-strong); border-bottom-width: 2px; border-radius: 4px; background: var(--ct-bg); color: var(--ct-text); }
+.ct-theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.ct-theme-opt { display: flex; flex-direction: column; gap: 8px; padding: 8px; border: 1px solid var(--ct-border); border-radius: 12px; background: var(--ct-surface); color: var(--ct-text); font: inherit; cursor: pointer; text-align: left; }
+.ct-theme-opt.on { border-color: var(--ct-primary); box-shadow: 0 0 0 1px var(--ct-primary); }
+.ct-theme-prev { height: 64px; border-radius: 8px; display: grid; grid-template-columns: 28% 1fr; grid-template-rows: 1fr 1fr; gap: 4px; padding: 4px; border: 1px solid var(--ct-border); }
+.ct-theme-prev span:first-child { grid-row: 1 / 3; border-radius: 4px; }
+.ct-theme-prev span { border-radius: 4px; }
+.ct-theme-prev.light { background: #F6F5FA; } .ct-theme-prev.light span:nth-child(1) { background: #FBFAFE; } .ct-theme-prev.light span:nth-child(2) { background: #FFFFFF; } .ct-theme-prev.light span:nth-child(3) { background: #EFEDFF; }
+.ct-theme-prev.dark { background: #111018; } .ct-theme-prev.dark span:nth-child(1) { background: #15141D; } .ct-theme-prev.dark span:nth-child(2) { background: #1A1923; } .ct-theme-prev.dark span:nth-child(3) { background: #221E3D; }
+.ct-theme-prev.system { background: linear-gradient(135deg, #F6F5FA 50%, #111018 50%); } .ct-theme-prev.system span { background: rgba(127,120,170,.35); }
+.ct-codeblock { font-family: var(--ct-mono); font-size: 12px; background: var(--ct-bg); border: 1px solid var(--ct-border); border-radius: 8px; padding: 10px 12px; margin: 0 !important; word-break: break-all; }
 .ct-zen { position: fixed; inset: 0; z-index: 1000; display: flex; flex-direction: column; background: var(--ct-surface); color: var(--ct-text); }
 .ct-zen-bar { height: 48px; flex: none; display: flex; align-items: center; gap: 10px; padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px)); border-bottom: 1px solid var(--ct-border); min-width: 0; }
 .ct-zen-title { flex: 1; min-width: 0; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -119,7 +135,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
   const {
     ConfigProvider, App: AntApp, theme, Layout, Menu, Button, Input, Tabs, Badge, Table, Tag, Segmented,
     Select, Space, Typography, Progress, Statistic, Card, Row, Col, Grid, Drawer, Modal, Result, Tooltip,
-    Popover, Popconfirm, Collapse, Checkbox, Divider, DatePicker, TimePicker, InputNumber, Empty, Alert, Flex, List, Avatar, Dropdown, Switch
+    Popover, Popconfirm, Collapse, Steps, Descriptions, Checkbox, Divider, DatePicker, TimePicker, InputNumber, Empty, Alert, Flex, List, Avatar, Dropdown, Switch
   } = antd;
   const I = icons;
   const { Sider, Header, Content } = Layout;
@@ -376,8 +392,8 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
   ];
   const ROUTE_DOCS = { calendario: '04-calendario', revisao: '07-revisao-semanal', horizontes: '06-horizontes', rotulos: '09-contextos-e-tags', cadernos: '17-cadernos', dashboard: '08-dashboard', arquivo: '10-arquivadas', ajustes: '11-configuracoes' };
   const ROUTE_OF = Object.fromEntries(NAV.flatMap(g => g.children).concat(NAV_FOOT).map(i => [i.key, i]));
-  const TITLES = { tarefas: 'Tarefas', tarefa: 'Tarefa', hoje: 'Hoje', projetos: 'Projetos', projeto: 'Projeto', identidade: 'Identidade visual' };
-  const BUILT = ['tarefas', 'tarefa', 'hoje', 'projetos', 'projeto', 'identidade'];
+  const TITLES = { tarefas: 'Tarefas', tarefa: 'Tarefa', hoje: 'Hoje', projetos: 'Projetos', projeto: 'Projeto', ajustes: 'Configurações', identidade: 'Identidade visual' };
+  const BUILT = ['tarefas', 'tarefa', 'hoje', 'projetos', 'projeto', 'ajustes', 'identidade'];
 
   function toMenu(items, collapsed) {
     return items.map(it => it.type === 'group'
@@ -481,6 +497,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       : route === 'hoje' ? html`<${TodayPage} mode=${mode} go=${go} />`
       : route === 'projetos' ? html`<${ProjectsPage} mode=${mode} isMobile=${isMobile} screens=${screens} openProject=${openProject} />`
       : route === 'projeto' ? html`<${ProjectDetailPage} key=${projectId} mode=${mode} go=${go} isMobile=${isMobile} screens=${screens} projectId=${projectId} openTerminal=${() => setTerm(true)} />`
+      : route === 'ajustes' ? html`<${SettingsPage} mode=${mode} isMobile=${isMobile} screens=${screens} themePref=${themePref} setThemePref=${setThemePref} compact=${compact} setCompact=${setCompact} />`
       : route === 'identidade' ? html`<${IdentityPage} mode=${mode} />`
       : html`<${Placeholder} route=${route} go=${go} />`;
 
@@ -522,7 +539,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         <//>
         <div className="ct-statusbar" role="status">
           <span><span className="dot" style=${{ background: '#2FBF7F' }}></span>Notion sincronizado há 2 min</span>
-          ${screens.md ? html`<span><${I.CalendarOutlined} /> Google Calendar ativo</span>` : null}
+          ${screens.md ? html`<span><span className="dot" style=${{ background: 'var(--ct-border-strong)' }}></span>Google Calendar não conectado</span>` : null}
           ${screens.md ? html`<span><${I.ApiOutlined} /> MCP em 127.0.0.1:7432</span>` : null}
           <span style=${{ marginInlineStart: 'auto' }}>Protótipo · dados de exemplo · <a onClick=${() => go('identidade')}>identidade visual</a></span>
         </div>
@@ -1656,6 +1673,315 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         <//>
       <//>
     </div>`;
+  }
+
+  function NewTag() {
+    return html`<${Tooltip} title="Recurso novo: precisa de backend"><${Tag} bordered=${false} color="purple" style=${{ margin: 0, fontSize: 11, lineHeight: '18px' }}>novo<//><//>`;
+  }
+  function SettingRow({ title, desc, isNew, children, vertical }) {
+    return html`<div className=${'ct-setrow' + (vertical ? ' vertical' : '')}>
+      <div style=${{ minWidth: 0, flex: '1 1 260px' }}>
+        <${Flex} align="center" gap=${6}><${Text} strong style=${{ fontWeight: 500 }}>${title}<//>${isNew ? html`<${NewTag} />` : null}<//>
+        ${desc ? html`<${Text} type="secondary" style=${{ fontSize: 13, display: 'block', marginTop: 2 }}>${desc}<//>` : null}
+      </div>
+      <div style=${{ flex: vertical ? '1 1 100%' : 'none', maxWidth: '100%' }}>${children}</div>
+    </div>`;
+  }
+  function SettingsCard({ title, extra, children }) {
+    return html`<${Card} size="small" title=${title} extra=${extra} styles=${{ body: { padding: '4px 16px' } }}>${children}<//>`;
+  }
+
+  const SETTINGS_NAV = [
+    { group: 'Aplicativo', items: [
+      { key: 'geral', label: 'Geral', icon: 'SettingOutlined', keywords: 'iniciar sistema bandeja fechar captura atalho' },
+      { key: 'aparencia', label: 'Aparência', icon: 'BgColorsOutlined', keywords: 'tema escuro claro densidade compacta', isNew: true },
+      { key: 'fluxo', label: 'Fluxo de trabalho', icon: 'FieldTimeOutlined', keywords: 'jornada time leak calendário notificações prazo semana', isNew: true },
+      { key: 'terminal', label: 'Terminal', icon: 'CodeOutlined', keywords: 'shell timer comando' },
+      { key: 'backup', label: 'Backup', icon: 'DatabaseOutlined', keywords: 'restaurar pasta snapshot' }
+    ] },
+    { group: 'Integrações', items: [
+      { key: 'notion', label: 'Notion', icon: 'BookOutlined', keywords: 'sincronizar banco api key', state: 'ok', stateText: 'Conectado' },
+      { key: 'google', label: 'Google Calendar', icon: 'CalendarOutlined', keywords: 'agenda oauth client', state: 'off', stateText: 'Não conectado' },
+      { key: 'jira', label: 'Jira', icon: 'ApiOutlined', keywords: 'boards worklog importar token', state: 'ok', stateText: 'Conectado' },
+      { key: 'mcp', label: 'Servidor MCP', icon: 'CloudSyncOutlined', keywords: 'token claude porta', state: 'ok', stateText: 'Rodando' }
+    ] },
+    { group: '', items: [{ key: 'sobre', label: 'Sobre', icon: 'InfoCircleOutlined', keywords: 'versão electron' }] }
+  ];
+  const stateBadge = s => s === 'ok' ? 'success' : s === 'error' ? 'error' : 'default';
+
+  function SettingsPage({ mode, isMobile, screens, themePref, setThemePref, compact, setCompact }) {
+    const { message, modal } = AntApp.useApp();
+    const [section, setSection] = useState(() => { try { return localStorage.getItem('ct:settings') || 'geral'; } catch (e) { return 'geral'; } });
+    const [q, setQ] = useState('');
+    const go = k => { setSection(k); try { localStorage.setItem('ct:settings', k); } catch (e) {} };
+    const all = SETTINGS_NAV.flatMap(g => g.items);
+    const needle = q.trim().toLowerCase();
+    const match = it => !needle || (it.label + ' ' + it.keywords).toLowerCase().includes(needle);
+    const current = all.find(i => i.key === section) || all[0];
+
+    const [autostart, setAutostart] = useState(true);
+    const [shell, setShell] = useState('');
+    const [autoTimer, setAutoTimer] = useState(true);
+    const [notionAuto, setNotionAuto] = useState(true);
+    const [gcalStep, setGcalStep] = useState(2);
+    const [jiraBoards, setJiraBoards] = useState(['CONNECT', 'OPS']);
+    const [worklog, setWorklog] = useState(true);
+    const [jiraNotion, setJiraNotion] = useState(false);
+    const [mcpOn, setMcpOn] = useState(true);
+    const [backupDir, setBackupDir] = useState('~/Backups/crafytask');
+
+    const nav = html`<div className="ct-settings-nav">
+      <${Input} allowClear size="small" placeholder="Buscar configuração" prefix=${html`<${I.SearchOutlined} />`} value=${q} onChange=${e => setQ(e.target.value)} aria-label="Buscar configuração" style=${{ marginBottom: 8 }} />
+      <${Menu} mode="inline" selectedKeys=${[current.key]} onClick=${e => go(e.key)} style=${{ borderInlineEnd: 0, background: 'transparent' }}
+        items=${SETTINGS_NAV.map(g => ({ type: 'group', key: g.group || 'misc', label: g.group || null, children: g.items.filter(match).map(it => ({
+          key: it.key, icon: createElement(I[it.icon]),
+          label: html`<${Flex} justify="space-between" align="center" gap=${8}><span>${it.label}</span>${it.state ? html`<${Tooltip} title=${it.stateText} placement="right"><${Badge} status=${stateBadge(it.state)} /><//>` : it.isNew ? html`<${NewTag} />` : null}<//>`
+        })) })).filter(g => g.children.length)} />
+      ${needle && !all.some(match) ? html`<${Text} type="secondary" style=${{ fontSize: 12, padding: '0 8px' }}>Nada encontrado para "${q}".<//>` : null}
+    </div>`;
+
+    const header = html`<${Flex} align="start" gap=${12} style=${{ marginBottom: 16 }}>
+      <div className="ct-set-icon">${createElement(I[current.icon])}</div>
+      <div style=${{ minWidth: 0 }}>
+        <${Flex} align="center" gap=${8} wrap="wrap">
+          <${Title} level=${4} style=${{ margin: 0 }}>${current.label}<//>
+          ${current.state ? html`<${Tag} bordered=${false} color=${current.state === 'ok' ? 'success' : 'default'} style=${{ margin: 0 }}><${Badge} status=${stateBadge(current.state)} /> ${current.stateText}<//>` : null}
+          ${current.isNew ? html`<${NewTag} />` : null}
+        <//>
+        <${Text} type="secondary">${{
+          geral: 'Como o CrafyTask abre, fecha e captura.',
+          aparencia: 'Tema e densidade. Valem para as três janelas.',
+          fluxo: 'Números que o app hoje usa fixos: jornada, time leak, calendário e avisos de prazo.',
+          terminal: 'Shell e comportamento do terminal embutido.',
+          backup: 'Cópias do banco, das imagens das notas, dos desenhos e das configurações.',
+          notion: 'Envia as tarefas para um banco "GTD APP" no Notion. Só ida: o Notion não altera o app.',
+          google: 'Coloca tarefas marcadas numa agenda "TickTask" criada pelo app no seu Google Calendar.',
+          jira: 'Importa as issues atribuídas a você e devolve tempo, descrição e status.',
+          mcp: 'Deixa assistentes como o Claude Code lerem e alterarem suas tarefas, só nesta máquina.',
+          sobre: 'Versões e links do projeto.'
+        }[current.key]}<//>
+      </div>
+    <//>`;
+
+    const sections = {
+      geral: html`<${Flex} vertical gap=${16}>
+        <${SettingsCard} title="Inicialização">
+          <${SettingRow} title="Iniciar o CrafyTask com o sistema" desc="Abre direto na bandeja, sem janela.">
+            <${Switch} checked=${autostart} onChange=${v => { setAutostart(v); message.success(v ? 'Vai iniciar com o sistema' : 'Não inicia mais com o sistema'); }} aria-label="Iniciar com o sistema" />
+          <//>
+        <//>
+        <${SettingsCard} title="Janela e bandeja">
+          <${SettingRow} title="Fechar a janela não encerra o app" desc="O CrafyTask continua na bandeja, com os timers rodando. Para sair de vez, use Sair no menu da bandeja.">
+            <${Tag} bordered=${false} icon=${html`<${I.InfoCircleOutlined} />`}>Comportamento fixo<//>
+          <//>
+          <${SettingRow} title="Captura rápida" desc="Abre de qualquer lugar do sistema e manda direto para o Inbox.">
+            <${Space} size=${4}><kbd className="ct-kbd">Ctrl</kbd><kbd className="ct-kbd">Shift</kbd><kbd className="ct-kbd">Space</kbd><//>
+          <//>
+          <${SettingRow} title="Atalho da captura rápida" desc="Hoje o atalho é fixo." isNew=${true}>
+            <${Button} onClick=${() => message.info('Pressione a nova combinação de teclas')}>Alterar atalho<//>
+          <//>
+        <//>
+      <//>`,
+
+      aparencia: html`<${Flex} vertical gap=${16}>
+        <${SettingsCard} title="Tema">
+          <${SettingRow} title="Tema" desc="Seguir o sistema troca sozinho quando o sistema muda." vertical=${true}>
+            <div className="ct-theme-grid">
+              ${[['system', 'Seguir o sistema', 'DesktopOutlined'], ['light', 'Claro', 'SunOutlined'], ['dark', 'Escuro', 'MoonOutlined']].map(([k, label, icon]) => html`
+                <button key=${k} type="button" className=${'ct-theme-opt' + (themePref === k ? ' on' : '')} aria-pressed=${themePref === k} onClick=${() => setThemePref(k)}>
+                  <span className=${'ct-theme-prev ' + k}><span></span><span></span><span></span></span>
+                  <span style=${{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>${createElement(I[icon])}${label}</span>
+                </button>`)}
+            </div>
+          <//>
+        <//>
+        <${SettingsCard} title="Densidade">
+          <${SettingRow} title="Densidade da interface" desc="Compacta mostra mais linhas por tela; controles e tabelas ficam mais baixos.">
+            <${Segmented} value=${compact ? 'compacta' : 'confortavel'} onChange=${v => setCompact(v === 'compacta')} options=${[{ value: 'confortavel', label: 'Confortável' }, { value: 'compacta', label: 'Compacta' }]} />
+          <//>
+        <//>
+      <//>`,
+
+      fluxo: html`<${Flex} vertical gap=${16}>
+        <${SettingsCard} title="Plano do dia">
+          <${SettingRow} title="Jornada diária" desc="Base da barra de carga em Hoje (hoje fixa em 8h)." isNew=${true}>
+            <${InputNumber} defaultValue=${8} min=${1} max=${16} addonAfter="horas" style=${{ width: 140 }} aria-label="Jornada diária" />
+          <//>
+          <${SettingRow} title="Semana começa em" isNew=${true}>
+            <${Segmented} defaultValue="seg" options=${[{ value: 'dom', label: 'Domingo' }, { value: 'seg', label: 'Segunda' }]} />
+          <//>
+        <//>
+        <${SettingsCard} title="Time leak">
+          <${SettingRow} title="Níveis de alerta" desc="Tempo acumulado que pinta a linha de âmbar, laranja e vermelho (hoje 30 min, 1h, 2h)." isNew=${true} vertical=${true}>
+            <${Space} wrap>
+              ${[['Âmbar', 30], ['Laranja', 60], ['Vermelho', 120]].map(([l, v]) => html`<${InputNumber} key=${l} defaultValue=${v} min=${5} addonBefore=${l} addonAfter="min" style=${{ width: 190 }} />`)}
+            <//>
+          <//>
+          <${SettingRow} title="Repetir o aviso de time leak a cada" isNew=${true}>
+            <${Select} defaultValue=${5} style=${{ width: 120 }} options=${[5, 10, 15, 30].map(v => ({ value: v, label: v + ' min' }))} />
+          <//>
+        <//>
+        <${SettingsCard} title="Calendário">
+          <${SettingRow} title="Faixa de horas da grade" desc="Hoje 07:00–22:00." isNew=${true}>
+            <${TimePicker.RangePicker} format="HH:mm" minuteStep=${30} defaultValue=${[dayjs('2026-01-01 07:00'), dayjs('2026-01-01 22:00')]} style=${{ width: 180 }} />
+          <//>
+        <//>
+        <${SettingsCard} title="Avisos de prazo">
+          <${SettingRow} title="Na véspera"><${Switch} defaultChecked /><//>
+          <${SettingRow} title="No dia"><${Switch} defaultChecked /><//>
+          <${SettingRow} title="15 minutos antes da hora do prazo"><${Switch} defaultChecked /><//>
+          <${SettingRow} title="Na hora do prazo"><${Switch} defaultChecked /><//>
+        <//>
+        <${SettingsCard} title="Notas">
+          <${SettingRow} title="Enviar notas ao Notion a cada" desc="Intervalo do auto-sync das notas (hoje 60 s)." isNew=${true}>
+            <${Select} defaultValue=${60} style=${{ width: 120 }} options=${[30, 60, 300].map(v => ({ value: v, label: v < 60 ? v + ' s' : v / 60 + ' min' }))} />
+          <//>
+        <//>
+      <//>`,
+
+      terminal: html`<${SettingsCard} title="Terminal embutido">
+        <${SettingRow} title="Shell" desc="Vazio usa o $SHELL do sistema.">
+          <${Input} className="ct-mono" placeholder="/bin/zsh" value=${shell} onChange=${e => setShell(e.target.value)} style=${{ width: 220 }} aria-label="Shell" />
+        <//>
+        <${SettingRow} title="Iniciar o timer no primeiro comando" desc="Ao digitar o primeiro comando no terminal de uma task, o timer dela começa.">
+          <${Switch} checked=${autoTimer} onChange=${setAutoTimer} aria-label="Iniciar o timer no primeiro comando" />
+        <//>
+        <${SettingRow} title="Atalho do painel"><${Space} size=${4}><kbd className="ct-kbd">Ctrl</kbd><kbd className="ct-kbd">'</kbd><//><//>
+      <//>`,
+
+      backup: html`<${Flex} vertical gap=${16}>
+        <${SettingsCard} title="Pasta de backup">
+          <${SettingRow} title=${html`<span className="ct-mono">${backupDir || 'Nenhuma pasta escolhida'}</span>`} desc="O token do Google não entra no backup: ele é cifrado pelo chaveiro do sistema.">
+            <${Space}>
+              <${Button} icon=${html`<${I.FolderOpenOutlined} />`} onClick=${() => { setBackupDir('~/Backups/crafytask'); message.info('Abre o seletor de pasta do sistema'); }}>${backupDir ? 'Trocar' : 'Escolher pasta'}<//>
+              <${Button} type="primary" disabled=${!backupDir} onClick=${() => message.success('Backup criado: 2026-11-17_211530')}>Fazer backup agora<//>
+            <//>
+          <//>
+          <${SettingRow} title="Backup automático" desc="Diário, mantendo os últimos 14." isNew=${true}>
+            <${Switch} aria-label="Backup automático" />
+          <//>
+        <//>
+        <${SettingsCard} title="Backups nesta pasta" extra=${html`<${Button} size="small" type="link" onClick=${() => message.info('Escolha a pasta de um snapshot')}>Restaurar de outra pasta…<//>`}>
+          <${Table} size="small" pagination=${false} rowKey="name" style=${{ margin: '0 -16px' }} scroll=${{ x: 'max-content' }}
+            dataSource=${[{ name: '2026-11-17_090012', tasks: 742, assets: 38, size: '24 MB' }, { name: '2026-11-10_085941', tasks: 701, assets: 31, size: '21 MB' }, { name: '2026-11-03_091205', tasks: 668, assets: 29, size: '19 MB' }]}
+            columns=${[
+              { title: 'Snapshot', dataIndex: 'name', render: v => html`<span className="ct-mono">${v}</span>` },
+              { title: 'Tarefas', dataIndex: 'tasks', align: 'right', render: v => html`<span className="ct-mono">${v}</span>` },
+              { title: 'Imagens', dataIndex: 'assets', align: 'right', responsive: ['md'], render: v => html`<span className="ct-mono">${v}</span>` },
+              { title: 'Tamanho', dataIndex: 'size', align: 'right', render: v => html`<span className="ct-mono">${v}</span>` },
+              { title: '', key: 'act', render: (_, r) => html`<${Button} size="small" onClick=${() => modal.confirm({
+                title: 'Restaurar ' + r.name + '?',
+                content: `O banco foi conferido (integrity_check ok): ${r.tasks} tarefas, ${r.assets} imagens. Os dados atuais vão para pre-restore-* e o app reinicia.`,
+                okText: 'Restaurar e reiniciar', okButtonProps: { danger: true }, cancelText: 'Cancelar', onOk: () => message.info('Reiniciando…')
+              })}>Restaurar<//>` }
+            ]} />
+        <//>
+      <//>`,
+
+      notion: html`<${Flex} vertical gap=${16}>
+        <${SettingsCard} title="Banco conectado">
+          <${SettingRow} title="Banco GTD APP" desc=${html`<span className="ct-mono">3f2a…9c41</span> · última sincronização há 2 min`}>
+            <${Button} icon=${html`<${I.ExportOutlined} />`}>Abrir no Notion<//>
+          <//>
+          <${SettingRow} title="Sincronizar automaticamente" desc="Cada alteração de tarefa vai ao Notion logo depois de salva.">
+            <${Switch} checked=${notionAuto} onChange=${setNotionAuto} aria-label="Sincronizar automaticamente" />
+          <//>
+          <${SettingRow} title="Sincronizar todas as tarefas" desc="Envia de novo tudo o que não está arquivado.">
+            <${Button} icon=${html`<${I.SyncOutlined} />`} onClick=${() => message.success('742 tarefas enviadas')}>Sincronizar agora<//>
+          <//>
+          <${SettingRow} title="Limpar configurações" desc="Apaga só a configuração local. Nada é apagado no Notion.">
+            <${Popconfirm} title="Limpar a configuração do Notion?" okText="Limpar" okButtonProps=${{ danger: true }} cancelText="Cancelar"><${Button} danger>Limpar<//><//>
+          <//>
+        <//>
+        <${Collapse} items=${[{ key: 'guia', label: 'Guia de configuração e troca da API key', children: html`<${Steps} direction="vertical" size="small" current=${4} items=${[
+          { title: 'Criar a integração', description: html`<a href="https://www.notion.so/my-integrations" target="_blank" rel="noopener">notion.so/my-integrations</a>` },
+          { title: 'API key', description: html`<${Space.Compact} style=${{ width: '100%', maxWidth: 420, marginTop: 6 }}><${Input.Password} defaultValue="secret_xxxxxxxxxxxxxxxx" /><${Button}>Testar conexão<//><//>` },
+          { title: 'Conectar a integração a uma página', description: 'Na página: ⋯ → Conexões → Adicionar conexões.' },
+          { title: 'Criar o banco GTD APP', description: 'Feito.' }
+        ]} />` }]} />
+      <//>`,
+
+      google: html`<${SettingsCard} title="Configurar a conexão">
+        <div style=${{ padding: '12px 0' }}>
+          <${Steps} direction="vertical" size="small" current=${gcalStep} items=${[
+            { title: 'Criar um projeto no Google Cloud', description: html`<a href="https://console.cloud.google.com/" target="_blank" rel="noopener">console.cloud.google.com</a>` },
+            { title: 'Ativar a Google Calendar API' },
+            { title: 'Branding', description: html`<${Flex} vertical gap=${6}><span>Nome e e-mail de suporte.</span><${Alert} type="warning" showIcon message="Não envie logo: com logo o Google exige verificação do app." /><${Button} size="small" style=${{ alignSelf: 'start' }} onClick=${() => setGcalStep(3)}>Marcar como feito<//><//>` },
+            { title: 'Publicar o app (Audience → Publish app)', description: 'Em Testing, o acesso expira em 7 dias.' },
+            { title: 'Criar o client "Desktop app"', description: html`<${Flex} vertical gap=${6} style=${{ maxWidth: 420 }}><${Input} placeholder="Client ID" /><${Input.Password} placeholder="Client Secret" /><${Button} size="small" style=${{ alignSelf: 'start' }}>Salvar credenciais<//><//>` },
+            { title: 'Conectar com o Google', description: html`<${Flex} vertical gap=${6}><span>No aviso do Google: Avançado → Acessar CrafyTask.</span><${Button} type="primary" icon=${html`<${I.CalendarOutlined} />`} style=${{ alignSelf: 'start' }}>Conectar com o Google<//><//>` }
+          ]} />
+        </div>
+      <//>`,
+
+      jira: html`<${Flex} vertical gap=${16}>
+        <${SettingsCard} title="Conta">
+          <${SettingRow} title="Site" desc="Jira Cloud"><${Input} className="ct-mono" defaultValue="https://exemplo.atlassian.net" style=${{ width: 280 }} /><//>
+          <${SettingRow} title="E-mail"><${Input} defaultValue="voce@exemplo.com" style=${{ width: 280 }} /><//>
+          <${SettingRow} title="API token" desc="Fica no chaveiro do sistema e nunca volta para a tela."><${Space.Compact}><${Input.Password} defaultValue="••••••••" style=${{ width: 180 }} /><${Button} onClick=${() => message.success('Conectado como Você')}>Salvar e testar<//><//><//>
+        <//>
+        <${SettingsCard} title="Boards" extra=${html`<${Button} size="small" type="link">Carregar boards<//>`}>
+          <${SettingRow} title="Boards que alimentam o app" vertical=${true}>
+            <${Checkbox.Group} value=${jiraBoards} onChange=${setJiraBoards} style=${{ display: 'flex', flexDirection: 'column', gap: 6 }}
+              options=${[{ value: 'CONNECT', label: html`Squad Connect <span className="ct-mono" style=${{ color: 'var(--ct-text-3)' }}>CONNECT</span>` }, { value: 'OPS', label: html`Operações <span className="ct-mono" style=${{ color: 'var(--ct-text-3)' }}>OPS</span>` }, { value: 'DATA', label: html`Dados <span className="ct-mono" style=${{ color: 'var(--ct-text-3)' }}>DATA</span>` }]} />
+          <//>
+          <${SettingRow} title="Importar agora" desc="Issues atribuídas a você nos boards marcados (abertas, ou concluídas nos últimos 30 dias).">
+            <${Button} type="primary" icon=${html`<${I.SyncOutlined} />`} onClick=${() => message.success('12 issues importadas, 3 atualizadas')}>Importar<//>
+          <//>
+          <${SettingRow} title="Importação automática"><${Select} defaultValue="30" style=${{ width: 140 }} options=${[{ value: 'off', label: 'Desligada' }, { value: '15', label: 'A cada 15 min' }, { value: '30', label: 'A cada 30 min' }, { value: '60', label: 'A cada 1 h' }]} /><//>
+        <//>
+        <${SettingsCard} title="Destino das tasks importadas">
+          <${SettingRow} title="Projeto por espaço" desc="Task nova vai para o projeto do espaço; senão, para o padrão." vertical=${true}>
+            <${Table} size="small" pagination=${false} rowKey="k" dataSource=${[{ k: 'padrão', name: 'Projeto padrão' }, { k: 'CONNECT', name: 'Squad Connect' }, { k: 'OPS', name: 'Operações' }]}
+              columns=${[{ title: 'Espaço', dataIndex: 'k', render: v => html`<span className="ct-mono">${v}</span>` }, { title: 'Projeto', key: 'p', render: (_, r) => html`<${Select} size="small" defaultValue=${r.k === 'OPS' ? null : 4} placeholder="Sem projeto" allowClear style=${{ width: 200 }} options=${PROJECTS.filter(p => p.status === 'active').map(p => ({ value: p.id, label: html`<${ProjectLabel} id=${p.id} />` }))} />` }]} />
+          <//>
+          <${SettingRow} title="Status inicial das tasks novas"><${Select} defaultValue="cat" style=${{ width: 200 }} options=${[{ value: 'cat', label: 'Padrão da categoria' }].concat(Object.entries(STATUS).map(([k, v]) => ({ value: k, label: v.label })))} /><//>
+        <//>
+        <${SettingsCard} title="Opções">
+          <${SettingRow} title="Registrar o tempo no Jira (worklog)" desc="Cada sessão de 1 min ou mais vira um worklog na issue. Tempo anterior a ligar não é enviado."><${Switch} checked=${worklog} onChange=${setWorklog} /><//>
+          <${SettingRow} title="Sincronizar tasks do Jira com o Notion"><${Switch} checked=${jiraNotion} onChange=${setJiraNotion} /><//>
+        <//>
+      <//>`,
+
+      mcp: html`<${Flex} vertical gap=${16}>
+        <${SettingsCard} title="Servidor">
+          <${SettingRow} title="Servidor MCP" desc=${mcpOn ? html`<span>Rodando em <span className="ct-mono">127.0.0.1:7432</span></span>` : 'Desligado'}>
+            <${Switch} checked=${mcpOn} onChange=${setMcpOn} aria-label="Servidor MCP" />
+          <//>
+        <//>
+        <${SettingsCard} title="Registrar no Claude Code">
+          <${SettingRow} title="Comando de registro" desc="Contém o token: não compartilhe." vertical=${true}>
+            <${Typography.Paragraph} copyable=${{ text: 'claude mcp add --transport http crafytask http://127.0.0.1:7432/mcp --header "Authorization: Bearer ••••"', tooltips: ['Copiar', 'Copiado'] }} className="ct-codeblock">
+              claude mcp add --transport http crafytask http://127.0.0.1:7432/mcp --header "Authorization: Bearer ••••"
+            <//>
+          <//>
+          <${SettingRow} title="Regenerar token" desc="Clientes já registrados param de funcionar até rodar o comando de novo.">
+            <${Button} danger onClick=${() => modal.confirm({ title: 'Regenerar o token?', content: 'Clientes registrados param de funcionar até você registrar de novo.', okText: 'Regenerar', okButtonProps: { danger: true }, cancelText: 'Cancelar', onOk: () => message.success('Token novo gerado') })}>Regenerar<//>
+          <//>
+        <//>
+      <//>`,
+
+      sobre: html`<${SettingsCard} title="Versões">
+        <div style=${{ padding: '12px 0' }}>
+          <${Descriptions} column=${1} size="small" items=${[
+            { key: 'app', label: 'CrafyTask', children: html`<span className="ct-mono">3.16.0</span>` },
+            { key: 'el', label: 'Electron', children: html`<span className="ct-mono">38.1.2</span>` },
+            { key: 'ch', label: 'Chromium', children: html`<span className="ct-mono">140.0</span>` },
+            { key: 'node', label: 'Node', children: html`<span className="ct-mono">22.18.0</span>` },
+            { key: 'docs', label: 'Documentação', children: html`<a href="https://uesleinasch.github.io/crafytask/" target="_blank" rel="noopener">uesleinasch.github.io/crafytask</a>` }
+          ]} />
+        </div>
+      <//>`
+    };
+
+    const content = html`<div style=${{ maxWidth: 780, minWidth: 0, flex: 1 }}>${header}${sections[current.key]}</div>`;
+
+    if (isMobile) return html`<div className="ct-page-narrow">
+      <${Select} value=${current.key} onChange=${go} style=${{ width: '100%', marginBottom: 16 }} aria-label="Seção"
+        options=${SETTINGS_NAV.map(g => ({ label: g.group || 'Outros', options: g.items.map(it => ({ value: it.key, label: html`<${Space}>${createElement(I[it.icon])}${it.label}${it.state ? html`<${Badge} status=${stateBadge(it.state)} />` : null}<//>` })) }))} />
+      ${content}
+    </div>`;
+    return html`<div className="ct-page"><${Flex} gap=${24} align="start">${nav}${content}<//></div>`;
   }
 
   function Placeholder({ route, go }) {

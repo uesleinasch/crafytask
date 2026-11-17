@@ -356,6 +356,31 @@ notas:
 - Próxima ação passa a ser **escolhida** (hoje é derivada da tarefa `proximas` mais recente). Isso
   pede uma coluna `projects.next_task_id`, com a regra atual como padrão quando estiver vazia.
 
+### Configurações
+
+Mesmo esqueleto das outras telas, com navegação própria porque são muitas seções:
+
+- **Navegação interna** (232px, fixa ao rolar): busca de configuração no topo (filtra por nome e
+  palavras-chave, como "tema", "worklog", "porta"); grupos **Aplicativo** (Geral, Aparência, Fluxo de
+  trabalho, Terminal, Backup) e **Integrações** (Notion, Google Calendar, Jira, Servidor MCP), e
+  Sobre no fim. Integração mostra um `Badge` de estado (conectado, desligado, erro) com o texto no
+  tooltip. A seção aberta fica salva. Abaixo de `md` a navegação vira um `Select` agrupado.
+- **Cabeçalho da seção:** ícone em quadrado `primarySoft`, título, `Tag` de estado (integrações) e
+  uma frase do que a seção faz.
+- **Linha de ajuste** (`SettingRow`): título e descrição curta à esquerda, controle à direita
+  (`Switch`, `Select`, `Segmented`, `InputNumber`, botão). Quebra para baixo quando falta espaço.
+  Linhas relacionadas ficam num `Card` com título ("Inicialização", "Time leak").
+- **Guias de configuração** (Notion, Google) usam `Steps` vertical com o passo atual, campos dentro
+  do passo e "Marcar como feito" nos passos manuais. Com a integração conectada, o guia fica num
+  `Collapse` para trocar credenciais.
+- **Confirmações** destrutivas (restaurar backup, regenerar token, limpar Notion) dizem o que
+  acontece e o que não acontece.
+- **Seções novas:** **Aparência** (tema Sistema/Claro/Escuro com miniaturas, densidade) e **Fluxo de
+  trabalho** (jornada diária, início da semana, níveis e repetição do time leak, faixa de horas do
+  calendário, avisos de prazo, intervalo do envio das notas ao Notion). Também novos: alterar o
+  atalho da captura e backup automático. Tudo isso hoje é fixo no código (E8) e precisa de backend;
+  no protótipo leva a etiqueta "novo".
+
 ## 9. Modo escuro
 
 - Preferência Sistema / Claro / Escuro, aplicada no main por `nativeTheme.themeSource`, para as

@@ -120,13 +120,14 @@ Sem mudança visível nas telas atuais, exceto a fonte.
 
 ## F7 — Cadernos, dashboard, terminal e configurações
 
-| Subtarefa          | Entrega                                                                                                  | Fecha |
-| ------------------ | -------------------------------------------------------------------------------------------------------- | ----- |
-| F7-a Cadernos      | Árvore com `Tree`/`Menu` do antd, editor isolado por boundary.                                           | —     |
-| F7-b Dashboard     | Gráficos com a paleta de `theme/semantic.ts`; métricas e alertas clicáveis (E4).                         | F7.2  |
-| F7-c Terminal      | Painel e abas de sessão no tema, cores do xterm dos tokens.                                              | —     |
-| F7-d Configurações | Seções com `Tabs` verticais, seção Aparência (tema, densidade). Libera o seletor de tema para o usuário. | F7.1  |
-| F7-e Conferir      | Usuário confere as quatro telas.                                                                         | F7.3  |
+| Subtarefa                  | Entrega                                                                                                                                                                                                                                                     | Fecha            |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| F7-a Cadernos              | Árvore com `Tree`/`Menu` do antd, editor isolado por boundary.                                                                                                                                                                                              | —                |
+| F7-b Dashboard             | Gráficos com a paleta de `theme/semantic.ts`; métricas e alertas clicáveis (E4).                                                                                                                                                                            | F7.2             |
+| F7-c Terminal              | Painel e abas de sessão no tema, cores do xterm dos tokens.                                                                                                                                                                                                 | —                |
+| F7-d Configurações         | Guia §8 "Configurações": navegação agrupada com busca e estado das integrações, `SettingRow` em cards, guias em `Steps`, seção Aparência (tema com miniaturas e densidade). Libera o seletor de tema para o usuário.                                        | F7.1, F7.4, F7.5 |
+| F7-f Preferências de fluxo | Seção Fluxo de trabalho com backend: jornada, início da semana, níveis e repetição do time leak, faixa do calendário, avisos de prazo, intervalo das notas no Notion, atalho da captura editável e backup automático. Hoje tudo isso é fixo no código (E8). | F7.6             |
+| F7-e Conferir              | Usuário confere as quatro telas.                                                                                                                                                                                                                            | F7.3             |
 
 ## F8 — Janelas auxiliares
 
