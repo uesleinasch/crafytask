@@ -347,7 +347,7 @@
     {
       "id": "F3.1",
       "fase": "F3",
-      "titulo": "Detalhe responsivo: 3 colunas (xl), 2 (md), abas (estreito)",
+      "titulo": "Detalhe responsivo: inspetor ao lado (xl), em Drawer (md), abas (estreito)",
       "check": {
         "tipo": "contem",
         "arquivos": "src/renderer/src/pages/SingleTaskPage.tsx",
@@ -369,7 +369,7 @@
     {
       "id": "F3.3",
       "fase": "F3",
-      "titulo": "Cronômetro em Geist Mono tabular",
+      "titulo": "Cronômetro do cabeçalho em Geist Mono tabular",
       "check": {
         "tipo": "contem",
         "arquivos": "src/renderer/src/**/*.{ts,tsx,css}",
@@ -443,6 +443,26 @@
           "JiraFieldsSheet",
           "Desarquivar"
         ]
+      }
+    },
+    {
+      "id": "F3.10",
+      "fase": "F3",
+      "titulo": "Barra de propriedades com pílulas editáveis em Popover",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/components/task/TaskPropertyBar.tsx",
+        "padrao": "<Popover"
+      }
+    },
+    {
+      "id": "F3.11",
+      "fase": "F3",
+      "titulo": "Inspetor com abas Tempo, Detalhes e Relações",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/components/task/TaskInspector.tsx",
+        "padroes": ["<Tabs", "Tempo", "Detalhes", "Relações"]
       }
     },
     {
