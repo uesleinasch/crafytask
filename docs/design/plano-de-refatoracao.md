@@ -84,13 +84,13 @@ Sem mudança visível nas telas atuais, exceto a fonte.
 
 ## F3 — Detalhe da tarefa
 
-| Subtarefa               | Entrega                                                                                                                                      | Fecha      |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| F3-a Layout responsivo  | Três colunas a partir de `xl`, duas em `md`, abas (Timer, Notas, Dados) no estreito. Os modos normal, maximizado e zen continuam, com `Esc`. | F3.1, F3.4 |
-| F3-b Painel de dados    | Campos em `Form` do antd, seções Organização, Agenda, Ambiente, Subtarefas, Dependências.                                                    | —          |
-| F3-c Timer herói        | Cronômetro em Geist Mono tabular, `Progress` do limite, `Statistic` de total e sessões, ajustes de tempo.                                    | F3.3       |
-| F3-d Editores isolados  | `RegionBoundary` em volta do Tiptap, do Excalidraw e do terminal. Tema escuro do editor e do xterm a partir dos tokens.                      | F3.2       |
-| F3-e Conferir o detalhe | Usuário confere as três larguras e os três modos.                                                                                            | F3.5       |
+| Subtarefa               | Entrega                                                                                                                                                                                                         | Fecha            |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| F3-a Layout responsivo  | Três colunas a partir de `xl`, duas em `md`, abas (Timer, Notas, Dados) no estreito. O modo foco vira uma camada de tela cheia dentro do app (`FocusOverlay`), cobrindo o shell, com saída por `Esc` (guia §7). | F3.1, F3.4, F3.6 |
+| F3-b Painel de dados    | Campos em `Form` do antd, seções Organização, Agenda, Ambiente, Subtarefas, Dependências.                                                                                                                       | —                |
+| F3-c Timer herói        | Cronômetro em Geist Mono tabular, `Progress` do limite, `Statistic` de total e sessões, ajustes de tempo.                                                                                                       | F3.3             |
+| F3-d Editores isolados  | `RegionBoundary` em volta do Tiptap, do Excalidraw e do terminal. Tema escuro do editor e do xterm a partir dos tokens.                                                                                         | F3.2             |
+| F3-e Conferir o detalhe | Usuário confere as três larguras e os três modos.                                                                                                                                                               | F3.5             |
 
 ## F4 — Hoje e calendário
 

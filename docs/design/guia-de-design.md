@@ -192,6 +192,12 @@ ConfigProvider (tema, cssVar) → App (message, modal, notification) → RegionB
   [resiliência](pesquisa/05-resiliencia-e-responsividade.md).
 - **Feedback:** sempre por `App.useApp()` (`message`, `modal`, `notification`). Os métodos
   estáticos ignoram o tema.
+- **Modo foco (zen):** uma camada de tela cheia dentro do app (`FocusOverlay`, `position: fixed`
+  sobre o shell inteiro: Sider, Header e barra de status somem). Fica só a barra de foco de 48px
+  (sair, nome da task, ponto de executando, cronômetro, pausar/iniciar, Notas/Desenho) e o editor:
+  notas numa coluna de leitura de ~68 caracteres, desenho na largura toda. Sai por `Esc` (menos
+  com popup de sugestão aberto) ou pelo mesmo botão. Não aciona o fullscreen da janela; o modo
+  maximizado de hoje vira este.
 
 ## 8. Responsividade
 

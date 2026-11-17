@@ -17,7 +17,10 @@
       "id": "F0.1",
       "fase": "F0",
       "titulo": "Ant Design instalado",
-      "check": { "tipo": "dependencia", "nome": "antd" }
+      "check": {
+        "tipo": "dependencia",
+        "nome": "antd"
+      }
     },
     {
       "id": "F0.2",
@@ -94,7 +97,9 @@
       "id": "F0.9",
       "fase": "F0",
       "titulo": "Paleta e tipografia conferidas no app, claro e escuro",
-      "check": { "tipo": "manual" }
+      "check": {
+        "tipo": "manual"
+      }
     },
     {
       "id": "F1.1",
@@ -183,13 +188,20 @@
       "id": "F1.9",
       "fase": "F1",
       "titulo": "Barra de status com sync e MCP (substitui SyncNotification)",
-      "check": { "tipo": "arquivo", "caminho": "src/renderer/src/components/shell/StatusBar.tsx" }
+      "check": {
+        "tipo": "arquivo",
+        "caminho": "src/renderer/src/components/shell/StatusBar.tsx"
+      }
     },
     {
       "id": "F1.10",
       "fase": "F1",
       "titulo": "TitleBar antigo fora do App",
-      "check": { "tipo": "ausente", "arquivos": "src/renderer/src/App.tsx", "padrao": "TitleBar" }
+      "check": {
+        "tipo": "ausente",
+        "arquivos": "src/renderer/src/App.tsx",
+        "padrao": "TitleBar"
+      }
     },
     {
       "id": "F1.11",
@@ -205,7 +217,9 @@
       "id": "F1.12",
       "fase": "F1",
       "titulo": "Shell conferido de 480px a 1920px e falha simulada isolada",
-      "check": { "tipo": "manual" }
+      "check": {
+        "tipo": "manual"
+      }
     },
     {
       "id": "F2.1",
@@ -304,7 +318,9 @@
       "id": "F2.10",
       "fase": "F2",
       "titulo": "Lista conferida: tabela, cards, grupos e Kanban, claro e escuro",
-      "check": { "tipo": "manual" }
+      "check": {
+        "tipo": "manual"
+      }
     },
     {
       "id": "F3.1",
@@ -351,10 +367,23 @@
       }
     },
     {
+      "id": "F3.6",
+      "fase": "F3",
+      "titulo": "Modo foco em tela cheia sobre o shell, com saída por Esc",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/components/editor/FocusOverlay.tsx",
+        "padrao": "position:\\s*'fixed'|fixed inset-0|Escape",
+        "minimo": 2
+      }
+    },
+    {
       "id": "F3.5",
       "fase": "F3",
       "titulo": "Detalhe conferido nas três larguras",
-      "check": { "tipo": "manual" }
+      "check": {
+        "tipo": "manual"
+      }
     },
     {
       "id": "F4.1",
@@ -381,7 +410,9 @@
       "id": "F4.3",
       "fase": "F4",
       "titulo": "Hoje e calendário conferidos",
-      "check": { "tipo": "manual" }
+      "check": {
+        "tipo": "manual"
+      }
     },
     {
       "id": "F5.1",
@@ -419,13 +450,18 @@
       "id": "F5.4",
       "fase": "F5",
       "titulo": "Projetos, horizontes e revisão conferidos",
-      "check": { "tipo": "manual" }
+      "check": {
+        "tipo": "manual"
+      }
     },
     {
       "id": "F6.1",
       "fase": "F6",
       "titulo": "Contextos e tags numa tela só, com abas",
-      "check": { "tipo": "arquivo", "caminho": "src/renderer/src/pages/LabelsPage.tsx" }
+      "check": {
+        "tipo": "arquivo",
+        "caminho": "src/renderer/src/pages/LabelsPage.tsx"
+      }
     },
     {
       "id": "F6.2",
@@ -470,7 +506,9 @@
       "id": "F7.3",
       "fase": "F7",
       "titulo": "Cadernos, dashboard, terminal e configurações conferidos",
-      "check": { "tipo": "manual" }
+      "check": {
+        "tipo": "manual"
+      }
     },
     {
       "id": "F8.1",
@@ -487,7 +525,9 @@
       "id": "F8.2",
       "fase": "F8",
       "titulo": "Janelas auxiliares conferidas",
-      "check": { "tipo": "manual" }
+      "check": {
+        "tipo": "manual"
+      }
     },
     {
       "id": "F9.1",
@@ -523,7 +563,10 @@
       "id": "F9.3",
       "fase": "F9",
       "titulo": "Toasts pelo App do antd (sem sonner)",
-      "check": { "tipo": "sem-dependencia", "nome": "sonner" }
+      "check": {
+        "tipo": "sem-dependencia",
+        "nome": "sonner"
+      }
     },
     {
       "id": "F9.4",
@@ -561,7 +604,11 @@
       "id": "F9.7",
       "fase": "F9",
       "titulo": "docs/ui atualizado para a nova interface",
-      "check": { "tipo": "ausente", "arquivos": "docs/ui/*.md", "padrao": "bg-slate-900" }
+      "check": {
+        "tipo": "ausente",
+        "arquivos": "docs/ui/*.md",
+        "padrao": "bg-slate-900"
+      }
     }
   ]
 }
