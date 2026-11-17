@@ -168,18 +168,35 @@ ConfigProvider (tema, cssVar) → App (message, modal, notification) → RegionB
       └─ StatusBar ..... Notion · Google · Jira · MCP · dica da bandeja
 ```
 
-- **Navegação** em todas as rotas, agrupada:
-  - Fluxo: Tarefas (contador do inbox), Hoje (contador do plano), Calendário, Revisão semanal.
-  - Organizar: Projetos, Horizontes, Contextos e tags.
-  - Conhecimento: Cadernos, Dashboard.
-  - Rodapé: Arquivo, Configurações (com rótulo, não só ícone).
-    Isso substitui os doze botões do `TitleBar` que só existiam na home e os quatro botões "Voltar"
-    (B1, B2, B4). Voltar fica só em telas de detalhe (task, projeto), como botão `text` com o nome do
-    destino.
-- **Header (52px):** título da tela; campo "Capturar para o Inbox…" (Enter grava, mesmo IPC da
-  captura rápida); pílula com os timers rodando (popover com pausar e abrir); busca `Ctrl+K`; menu
-  de aparência; botão primário "Nova tarefa". Abaixo de `sm` a captura sai do header e vai para a
-  paleta de comandos.
+- **Navegação** em todas as rotas. Substitui os doze botões do `TitleBar` (só na home) e os quatro
+  botões "Voltar" (B1, B2, B4). Voltar fica só em telas de detalhe (task, projeto), como botão
+  `text` com o nome do destino. A sidebar completa, de cima para baixo, é esta; nada fora dela:
+
+  | Região       | Item                                | Ícone (lucide)                     | Ação                                                     | Indicador                                  |
+  | ------------ | ----------------------------------- | ---------------------------------- | -------------------------------------------------------- | ------------------------------------------ |
+  | Topo         | Logo "CrafyTask" (só "C" recolhida) | —                                  | —                                                        | —                                          |
+  | Fluxo        | Tarefas                             | `ListTodo`                         | rota `/` (e `/task/:id` fica marcada)                    | contador do Inbox                          |
+  | Fluxo        | Hoje                                | `CalendarDays`                     | `/today`                                                 | contador do plano de hoje                  |
+  | Fluxo        | Calendário                          | `Calendar`                         | `/calendar`                                              | —                                          |
+  | Fluxo        | Revisão semanal                     | `ClipboardCheck`                   | `/review`                                                | ponto âmbar quando a revisão está atrasada |
+  | Organizar    | Projetos                            | `FolderKanban`                     | `/projects` (e `/project/:id`)                           | contador de projetos ativos                |
+  | Organizar    | Horizontes                          | `Mountain`                         | `/horizons`                                              | —                                          |
+  | Organizar    | Contextos e tags                    | `Tags`                             | `/contexts` (abas Contextos e Tags; `/tags` redireciona) | —                                          |
+  | Conhecimento | Cadernos                            | `NotebookTabs`                     | `/notebooks`                                             | —                                          |
+  | Conhecimento | Dashboard                           | `BarChart3`                        | `/dashboard`                                             | —                                          |
+  | Rodapé       | Terminais                           | `SquareTerminal`                   | abre/fecha o painel de terminal (`Ctrl+'`), não navega   | número de sessões abertas, neutro          |
+  | Rodapé       | Arquivo                             | `Archive`                          | `/archived` (até a F6; depois, filtro da lista)          | —                                          |
+  | Rodapé       | Configurações                       | `Settings`                         | `/settings`                                              | —                                          |
+  | Rodapé       | Recolher / Expandir menu            | `PanelLeftClose` / `PanelLeftOpen` | alterna 232px ⇄ 64px; some abaixo de `lg`                | —                                          |
+
+  Recolhida, cada item mostra só o ícone e o rótulo (com o indicador) em tooltip à direita. Abaixo
+  de `md` a mesma lista abre num `Drawer` pelo botão de menu do header. O terminal sai do header (o
+  botão laranja de hoje) e passa a viver só aqui e no atalho.
+
+- **Header (52px):** botão de menu (só abaixo de `md`); título da tela; campo "Capturar para o
+  Inbox…" (Enter grava, mesmo IPC da captura rápida); pílula com os timers rodando (popover com
+  pausar e abrir); busca `Ctrl+K`; menu de aparência; botão primário "Nova tarefa". Abaixo de `sm`
+  a captura sai do header e vai para a paleta de comandos.
 - **Paleta de comandos (`Ctrl+K`):** navegar, buscar tasks e páginas, iniciar timer, mudar tema.
   Componente próprio sobre `Modal` + `Input` + `List` (o antd não tem um).
 - **Barra de status (28px):** indicadores passivos de integração. Substitui o banner
@@ -198,6 +215,14 @@ ConfigProvider (tema, cssVar) → App (message, modal, notification) → RegionB
   notas numa coluna de leitura de ~68 caracteres, desenho na largura toda. Sai por `Esc` (menos
   com popup de sugestão aberto) ou pelo mesmo botão. Não aciona o fullscreen da janela; o modo
   maximizado de hoje vira este.
+- **Timer da task:** abaixo do cronômetro ficam Pausar/Iniciar, Finalizar e Zerar (`Popconfirm`),
+  os totais (Total, Sessões) e um `Collapse` com duas seções:
+  - **Sessões:** a sessão em andamento no topo (ponto verde, sem ações) e as encerradas com data,
+    início–fim e `+HH:MM:SS`. Cada encerrada tem **editar** (início e fim inline, recalcula o total)
+    e **excluir** (`Popconfirm` avisando que o worklog do Jira também é apagado). Editar e excluir
+    sessão são recursos novos: hoje a lista é só leitura e o IPC não existe.
+  - **Ajustes de tempo:** Adicionar tempo, Ajustar total e Limite de tempo (com Remover), os três de
+    hoje, em `HH:MM:SS`.
 
 ## 8. Responsividade
 

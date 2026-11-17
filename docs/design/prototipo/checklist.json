@@ -214,6 +214,28 @@
       }
     },
     {
+      "id": "F1.13",
+      "fase": "F1",
+      "titulo": "Sidebar completa: as dez rotas do guia §7",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/components/shell/*.{ts,tsx}",
+        "padrao": "'/(today|calendar|review|projects|horizons|contexts|notebooks|dashboard|archived|settings)'",
+        "minimo": 10
+      }
+    },
+    {
+      "id": "F1.14",
+      "fase": "F1",
+      "titulo": "Terminais e recolher menu no rodapé da sidebar",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/components/shell/*.{ts,tsx}",
+        "padrao": "Terminais|Recolher menu",
+        "minimo": 2
+      }
+    },
+    {
       "id": "F1.12",
       "fase": "F1",
       "titulo": "Shell conferido de 480px a 1920px e falha simulada isolada",
@@ -351,7 +373,7 @@
       "check": {
         "tipo": "contem",
         "arquivos": "src/renderer/src/**/*.{ts,tsx,css}",
-        "padrao": "Geist Mono|geist-mono",
+        "padrao": "@fontsource-variable/geist-mono|fontFamilyCode",
         "minimo": 1
       }
     },
@@ -374,6 +396,28 @@
         "tipo": "contem",
         "arquivos": "src/renderer/src/components/editor/FocusOverlay.tsx",
         "padrao": "position:\\s*'fixed'|fixed inset-0|Escape",
+        "minimo": 2
+      }
+    },
+    {
+      "id": "F3.7",
+      "fase": "F3",
+      "titulo": "Zerar, adicionar tempo, ajustar total e limite preservados",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/{pages/SingleTaskPage.tsx,components/**/*.tsx,hooks/*.ts}",
+        "padrao": "resetTask|addManualTime|setTotalTime",
+        "minimo": 3
+      }
+    },
+    {
+      "id": "F3.8",
+      "fase": "F3",
+      "titulo": "Editar e excluir sessão de tempo",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/preload/index.ts",
+        "padrao": "timeEntry:(update|delete)",
         "minimo": 2
       }
     },
