@@ -612,6 +612,52 @@
       }
     },
     {
+      "id": "F5.5",
+      "fase": "F5",
+      "titulo": "Lista de projetos com busca, ordenação, Cards/Tabela e agrupar por área",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/{pages/ProjectsPage.tsx,components/projects/*.tsx}",
+        "padroes": ["<Table", "<Segmented", "Buscar", "Agrupar por área"]
+      }
+    },
+    {
+      "id": "F5.6",
+      "fase": "F5",
+      "titulo": "Aviso e filtro de projetos ativos sem próxima ação",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/{pages/ProjectsPage.tsx,components/projects/*.tsx}",
+        "padrao": "sem próxima ação"
+      }
+    },
+    {
+      "id": "F5.7",
+      "fase": "F5",
+      "titulo": "Detalhe do projeto: cabeçalho, pílulas, tabela de tarefas do projeto e coluna de resumo",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/{pages/ProjectDetailPage.tsx,components/projects/*.tsx}",
+        "padroes": [
+          "TaskTable|TasksPage",
+          "Área de foco",
+          "Resultado desejado",
+          "Próxima ação",
+          "Adicionar tarefa"
+        ]
+      }
+    },
+    {
+      "id": "F5.8",
+      "fase": "F5",
+      "titulo": "Próxima ação escolhida (projects.next_task_id)",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/main/database.ts",
+        "padrao": "next_task_id"
+      }
+    },
+    {
       "id": "F5.4",
       "fase": "F5",
       "titulo": "Projetos, horizontes e revisão conferidos",

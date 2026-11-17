@@ -313,6 +313,49 @@ mais um badge (pesquisa: poucos elementos por linha; Hick e carga cognitiva).
   faz parte de uma seleção maior, o menu age sobre a seleção toda (título "N tarefas selecionadas",
   sem Abrir, timer, contextos e copiar), igual à barra de ações em massa.
 
+### Projetos
+
+No GTD, projeto é um resultado que pede mais de uma ação, e só anda se tiver uma **próxima ação**
+concreta (Allen; Masicampo e Baumeister: o plano específico é o que libera a mente). As duas telas
+giram em torno disso.
+
+**Lista (`/projects`)** segue o mesmo esqueleto da lista de tarefas:
+
+- Abas de status com contador (Todos, Ativos, Someday, Concluídos, Arquivados); `Select` abaixo de
+  `md`.
+- Barra: busca (nome, resultado desejado, descrição e área), ordenar (prazo, progresso, mais
+  recentes, nome), Cards/Tabela, agrupar por área de foco (liga a lista aos Horizontes) e "Novo
+  projeto".
+- Aviso GTD: "N projetos ativos estão sem próxima ação", com "Mostrar só esses" (filtro). É o que a
+  revisão semanal precisa achar rápido.
+- **Card:** cor, nome, menu `⋯`; resultado desejado; progresso `feitas/total`; próxima ação (ou chip
+  "Sem próxima ação"); área e prazo. Status só aparece na aba Todos.
+- **Tabela:** Projeto (cor + nome, resultado no tooltip do ícone de alvo) · Status (só em Todos) ·
+  Área (`lg+`, some ao agrupar por área) · Próxima ação · Progresso (barra curta na mesma linha) ·
+  Prazo (`md+`, âmbar a 7 dias, vermelho vencido) · Tempo (`xl+`) · `⋯`. Uma linha por projeto,
+  mesma regra de altura constante da tabela de tarefas.
+- Menu de contexto (botão direito e `⋯`): Abrir · Marcar como ▸ · Área de foco ▸ · Excluir… (avisa
+  que as tarefas ficam sem projeto).
+
+**Detalhe (`/project/:id`)** usa o mesmo esqueleto do detalhe da task, com as tarefas no lugar das
+notas:
+
+- **Cabeçalho:** voltar para Projetos / área; status do projeto; cor + nome e descrição editáveis;
+  terminal (se houver diretório) e `⋯` (copiar nome, arquivar/reativar, excluir).
+- **Pílulas:** Área de foco (editável aqui: resolve E2; link para Horizontes), Prazo (com dias
+  restantes e cor), Cor (paleta), Diretório de trabalho (escolher, alterar, remover).
+- **Aviso** "Sem próxima ação definida" com "Definir", quando ativo, com tarefas abertas e sem
+  próxima.
+- **Área principal:** a mesma tabela de tarefas (abas de status, busca, filtros, agrupamento, menu
+  de contexto, ações em massa), filtrada pelo projeto, sem a coluna Projeto, com um campo
+  "Adicionar tarefa a {projeto}…" no topo (cria em Próximas; resolve E1) e Kanban por status.
+- **Coluna lateral (`xl+`):** Próxima ação (nome, status, contextos, Iniciar, trocar por outra
+  tarefa), Resultado desejado (editável) e Progresso (barra, abertas, bloqueadas, tempo total,
+  prazo). Entre `md` e `lg` os três cards ficam em linha acima das tarefas; abaixo de `md`, abas
+  Tarefas e Resumo.
+- Próxima ação passa a ser **escolhida** (hoje é derivada da tarefa `proximas` mais recente). Isso
+  pede uma coluna `projects.next_task_id`, com a regra atual como padrão quando estiver vazia.
+
 ## 9. Modo escuro
 
 - Preferência Sistema / Claro / Escuro, aplicada no main por `nativeTheme.themeSource`, para as

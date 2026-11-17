@@ -103,12 +103,13 @@ Sem mudança visível nas telas atuais, exceto a fonte.
 
 ## F5 — Projetos, horizontes e revisão
 
-| Subtarefa            | Entrega                                                                                                                            | Fecha      |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| F5-a Projetos        | Grade de `Card` com progresso e alerta "Sem próxima ação". Detalhe com botão de criar tarefa no projeto (E1) e área editável (E2). | F5.1, F5.2 |
-| F5-b Horizontes      | H0 a H5 no tema, confirmação ao excluir área e meta (E6).                                                                          | F5.3       |
-| F5-c Revisão semanal | Checklist em que cada item abre a tela que ele revisa (E5). Uma ação primária só (B3).                                             | F5.3       |
-| F5-d Conferir        | Usuário confere as três telas.                                                                                                     | F5.4       |
+| Subtarefa               | Entrega                                                                                                                                                                                                                                                                                                                    | Fecha            |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| F5-a Lista de projetos  | Guia §8 "Projetos": abas de status com contador, busca, ordenação, Cards/Tabela, agrupar por área, aviso e filtro "sem próxima ação", menu de contexto.                                                                                                                                                                    | F5.1, F5.5, F5.6 |
+| F5-e Detalhe do projeto | Cabeçalho e pílulas (área editável: E2; prazo; cor; diretório), aviso sem próxima ação, a tabela de tarefas reaproveitada e filtrada pelo projeto com "Adicionar tarefa" (E1) e Kanban por status, coluna de resumo (próxima ação, resultado desejado, progresso). Próxima ação escolhida: coluna `projects.next_task_id`. | F5.2, F5.7, F5.8 |
+| F5-b Horizontes         | H0 a H5 no tema, confirmação ao excluir área e meta (E6).                                                                                                                                                                                                                                                                  | F5.3             |
+| F5-c Revisão semanal    | Checklist em que cada item abre a tela que ele revisa (E5). Uma ação primária só (B3).                                                                                                                                                                                                                                     | F5.3             |
+| F5-d Conferir           | Usuário confere as três telas.                                                                                                                                                                                                                                                                                             | F5.4             |
 
 ## F6 — Rótulos e arquivo
 

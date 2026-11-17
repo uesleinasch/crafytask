@@ -155,11 +155,28 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
   const ENERGY = { alto: { label: 'Alta', bars: 3 }, medio: { label: 'Média', bars: 2 }, baixo: { label: 'Baixa', bars: 1 } };
 
   const PROJECTS = [
-    { id: 13, name: 'CrafyTask', color: '#E5484D', outcome: 'App de tarefas sólido, bonito e responsivo', next: true, done: 18, total: 31, area: 'Produtos pessoais' },
-    { id: 4, name: 'Squad Connect', color: '#2A62D6', outcome: 'Squad entregando o roadmap do trimestre', next: true, done: 42, total: 60, area: 'Carreira' },
-    { id: 7, name: 'Day Zero Playbook', color: '#0B7A50', outcome: 'Versão em inglês publicada', next: false, done: 9, total: 22, area: 'Produtos pessoais' },
-    { id: 9, name: 'Saúde 2026', color: '#A15C00', outcome: 'Treinar 4x por semana', next: true, done: 5, total: 8, area: 'Saúde' }
+    { id: 13, name: 'CrafyTask', color: '#E5484D', status: 'active', area: 'Produtos pessoais', due: '2026-12-15', updated: '2026-11-17',
+      description: 'App desktop de tarefas e tempo no estilo GTD.', outcome: 'App de tarefas sólido, bonito e responsivo, com a nova identidade visual publicada.', workingDir: '~/Code/pessoal/crafytask' },
+    { id: 4, name: 'Squad Connect', color: '#2A62D6', status: 'active', area: 'Carreira', due: '2026-12-19', updated: '2026-11-17',
+      description: 'Rotinas e entregas do squad.', outcome: 'Squad entregando o roadmap do trimestre sem hora extra.', workingDir: '~/Code/squad' },
+    { id: 7, name: 'Day Zero Playbook', color: '#0B7A50', status: 'active', area: 'Produtos pessoais', due: '2026-11-30', updated: '2026-11-02',
+      description: 'Guia aberto de gestão de projetos.', outcome: 'Versão em inglês publicada no site.', workingDir: null },
+    { id: 9, name: 'Saúde 2026', color: '#A15C00', status: 'active', area: 'Saúde', due: null, updated: '2026-11-15',
+      description: '', outcome: 'Treinar 4x por semana e fazer o check-up anual.', workingDir: null },
+    { id: 21, name: 'Curso de Rust', color: '#7647B0', status: 'someday', area: 'Aprendizado', due: null, updated: '2026-09-10',
+      description: 'Aprender Rust fazendo um CLI pequeno.', outcome: 'Um CLI de backup escrito em Rust.', workingDir: null },
+    { id: 3, name: 'Site pessoal v2', color: '#0F6E7A', status: 'done', area: 'Carreira', due: '2026-10-01', updated: '2026-09-28',
+      description: '', outcome: 'Site novo no ar com portfólio atualizado.', workingDir: null },
+    { id: 2, name: 'Migração do blog', color: '#5D6B82', status: 'archived', area: 'Produtos pessoais', due: null, updated: '2026-03-12',
+      description: '', outcome: 'Blog fora do WordPress.', workingDir: null }
   ];
+  const AREAS = ['Produtos pessoais', 'Carreira', 'Saúde', 'Aprendizado'];
+  const PROJECT_STATUS = {
+    active: { label: 'Ativo', icon: 'FolderOpenOutlined', light: STATUS.proximas.light, dark: STATUS.proximas.dark },
+    someday: { label: 'Someday', icon: 'BulbOutlined', light: STATUS.someday.light, dark: STATUS.someday.dark },
+    done: { label: 'Concluído', icon: 'CheckCircleOutlined', light: STATUS.finalizada.light, dark: STATUS.finalizada.dark },
+    archived: { label: 'Arquivado', icon: 'ContainerOutlined', light: STATUS.inbox.light, dark: STATUS.inbox.dark }
+  };
   const P = Object.fromEntries(PROJECTS.map(p => [p.id, p]));
   const CONTEXTS = [
     { name: '@dev', emoji: '💻' }, { name: '@reunião', emoji: '👥' }, { name: '@telefone', emoji: '📞' },
@@ -225,7 +242,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     { id: 705, name: 'Reunião diária', status: 'executando', category: 'time_leak', project: 4, contexts: ['@reunião'], due: null, secs: 4380, energy: 'baixo', running: true, leak: 3 },
     { id: 706, name: 'Responder e-mails do fornecedor', status: 'inbox', category: 'normal', project: null, contexts: [], due: null, secs: 0, energy: 'baixo' },
     { id: 707, name: 'Ideia: modo apresentação para a revisão semanal', status: 'inbox', category: 'normal', project: 13, contexts: [], due: null, secs: 0, energy: 'medio' },
-    { id: 708, name: 'Traduzir capítulo 3 do playbook', status: 'proximas', category: 'normal', project: 7, contexts: ['@escrita'], due: '2026-11-24', secs: 5400, energy: 'alto', blocked: true },
+    { id: 708, name: 'Traduzir capítulo 3 do playbook', status: 'aguardando', waiting: 'Revisão do coautor', category: 'normal', project: 7, contexts: ['@escrita'], due: '2026-11-24', secs: 5400, energy: 'alto', blocked: true },
     { id: 709, name: 'Ler "Shape Up" de novo', status: 'someday', category: 'normal', project: null, contexts: ['@leitura'], due: null, secs: 0, energy: 'medio' },
     { id: 710, name: 'Marcar check-up anual', status: 'inbox', category: 'prioridade', project: 9, contexts: ['@telefone'], due: '2026-11-28', secs: 0, energy: 'baixo' },
     { id: 699, name: 'Publicar release v3.16.0', status: 'finalizada', category: 'normal', project: 13, contexts: ['@dev'], due: '2026-11-14', secs: 2700, energy: 'medio' },
@@ -359,8 +376,8 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
   ];
   const ROUTE_DOCS = { calendario: '04-calendario', revisao: '07-revisao-semanal', horizontes: '06-horizontes', rotulos: '09-contextos-e-tags', cadernos: '17-cadernos', dashboard: '08-dashboard', arquivo: '10-arquivadas', ajustes: '11-configuracoes' };
   const ROUTE_OF = Object.fromEntries(NAV.flatMap(g => g.children).concat(NAV_FOOT).map(i => [i.key, i]));
-  const TITLES = { tarefas: 'Tarefas', tarefa: 'Tarefa', hoje: 'Hoje', projetos: 'Projetos', identidade: 'Identidade visual' };
-  const BUILT = ['tarefas', 'tarefa', 'hoje', 'projetos', 'identidade'];
+  const TITLES = { tarefas: 'Tarefas', tarefa: 'Tarefa', hoje: 'Hoje', projetos: 'Projetos', projeto: 'Projeto', identidade: 'Identidade visual' };
+  const BUILT = ['tarefas', 'tarefa', 'hoje', 'projetos', 'projeto', 'identidade'];
 
   function toMenu(items, collapsed) {
     return items.map(it => it.type === 'group'
@@ -408,6 +425,8 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const [crash, setCrash] = useState(false);
     const [capture, setCapture] = useState('');
     const [term, setTerm] = useState(false);
+    const [projectId, setProjectId] = useState(13);
+    const openProject = id => { setProjectId(id); go('projeto'); };
     const { message } = AntApp.useApp();
     const autoCollapsed = !screens.lg;
     const isCollapsed = collapsed || autoCollapsed;
@@ -435,7 +454,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         ${narrow ? html`<span className="ct-logo-mini" aria-label="CrafyTask">C</span>` : html`<span className="ct-logo">CrafyTask</span>`}
       </div>
       <div style=${{ flex: 1, overflowY: 'auto', paddingTop: 8 }}>
-        <${Menu} mode="inline" inlineCollapsed=${narrow} selectedKeys=${[route === 'tarefa' ? 'tarefas' : route]} items=${toMenu(NAV, narrow)} onClick=${e => navigate(e.key)} style=${{ borderInlineEnd: 0 }} />
+        <${Menu} mode="inline" inlineCollapsed=${narrow} selectedKeys=${[route === 'tarefa' ? 'tarefas' : route === 'projeto' ? 'projetos' : route]} items=${toMenu(NAV, narrow)} onClick=${e => navigate(e.key)} style=${{ borderInlineEnd: 0 }} />
       </div>
       <div className="ct-sider-foot">
         <${Menu} mode="inline" inlineCollapsed=${narrow} selectedKeys=${[route].concat(term ? ['terminais'] : [])} items=${footItems(narrow)} onClick=${e => navigate(e.key)} style=${{ borderInlineEnd: 0, padding: '6px 0' }} />
@@ -458,9 +477,10 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     };
 
     const content = route === 'tarefas' ? html`<${TasksPage} mode=${mode} go=${go} isMobile=${isMobile} screens=${screens} />`
-      : route === 'tarefa' ? html`<${TaskDetailPage} mode=${mode} go=${go} screens=${screens} openTerminal=${() => setTerm(true)} />`
+      : route === 'tarefa' ? html`<${TaskDetailPage} mode=${mode} go=${go} screens=${screens} openTerminal=${() => setTerm(true)} openProject=${openProject} />`
       : route === 'hoje' ? html`<${TodayPage} mode=${mode} go=${go} />`
-      : route === 'projetos' ? html`<${ProjectsPage} mode=${mode} />`
+      : route === 'projetos' ? html`<${ProjectsPage} mode=${mode} isMobile=${isMobile} screens=${screens} openProject=${openProject} />`
+      : route === 'projeto' ? html`<${ProjectDetailPage} key=${projectId} mode=${mode} go=${go} isMobile=${isMobile} screens=${screens} projectId=${projectId} openTerminal=${() => setTerm(true)} />`
       : route === 'identidade' ? html`<${IdentityPage} mode=${mode} />`
       : html`<${Placeholder} route=${route} go=${go} />`;
 
@@ -563,10 +583,12 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     return menu ? html`<${Dropdown} menu=${menu} trigger=${['contextMenu']}>${tr}<//>` : tr;
   }
 
-  function TasksPage({ mode, go, isMobile, screens }) {
+  function TasksPage({ mode, go, isMobile, screens, projectId, embedded }) {
     const { message, modal } = AntApp.useApp();
-    const [tasks, setTasks] = useState(() => TASKS.map(t => ({ ...t, subtasks: SUBTASKS[t.id] || [] })));
-    const [status, setStatus] = useState('inbox');
+    const [tasks, setTasks] = useState(() => TASKS.filter(t => !projectId || t.project === projectId).map(t => ({ ...t, subtasks: SUBTASKS[t.id] || [] })));
+    const [status, setStatus] = useState(projectId ? 'all' : 'inbox');
+    const [newName, setNewName] = useState('');
+    const addToProject = () => { if (!newName.trim()) return; setTasks(ts => [{ id: 900 + ts.length, name: newName.trim(), status: 'proximas', category: 'normal', project: projectId, contexts: [], due: null, secs: 0, energy: null, subtasks: [] }].concat(ts)); setNewName(''); message.success('Tarefa criada em ' + P[projectId].name); };
     const [view, setView] = useState('tabela');
     const [groupBy, setGroupBy] = useState('none');
     const [q, setQ] = useState('');
@@ -740,7 +762,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       { title: 'Tarefa', key: 'name', render: (_, t) => nameCell(t) },
       showStatusCol ? { title: 'Status', key: 'status', width: 132, render: (_, t) => html`<${Chip} def=${STATUS[t.status]} mode=${mode} />` } : null,
       screens.lg ? { title: 'Categoria', key: 'cat', width: 124, render: (_, t) => t.category === 'normal' ? null : html`<${Chip} def=${CATEGORY[t.category]} mode=${mode} />` } : null,
-      screens.xl && groupBy !== 'project' ? { title: 'Projeto', key: 'project', width: 160, render: (_, t) => t.isSub ? null : html`<${ProjectLabel} id=${t.project} />` } : null,
+      screens.xl && groupBy !== 'project' && !projectId ? { title: 'Projeto', key: 'project', width: 160, render: (_, t) => t.isSub ? null : html`<${ProjectLabel} id=${t.project} />` } : null,
       screens.lg && groupBy !== 'context' ? { title: 'Contextos', key: 'ctx', width: 150, render: (_, t) => t.isSub ? null : ctxCell(t) } : null,
       screens.xl ? { title: 'Energia', key: 'energy', width: 76, render: (_, t) => t.energy ? html`<${Energy} level=${t.energy} />` : null } : null,
       screens.md ? { title: 'Prazo', key: 'due', width: 104, render: (_, t) => { const tone = dueTone(t.due); return t.due ? html`<${Text} type=${tone === 'error' ? 'danger' : tone === 'warning' ? 'warning' : undefined} className="ct-mono">${fmtDate(t.due)}${t.dueTime ? ' ' + t.dueTime : ''}<//>` : null; } } : null,
@@ -763,7 +785,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           <${Flex} gap=${6} wrap="wrap" align="center">
             ${showStatusCol ? html`<${Chip} def=${STATUS[t.status]} mode=${mode} />` : null}
             ${t.category !== 'normal' ? html`<${Chip} def=${CATEGORY[t.category]} mode=${mode} />` : null}
-            ${groupBy !== 'project' ? html`<${ProjectLabel} id=${t.project} />` : null}
+            ${groupBy !== 'project' && !projectId ? html`<${ProjectLabel} id=${t.project} />` : null}
             ${groupBy !== 'context' && t.contexts.length ? ctxCell(t) : null}
             <span style=${{ marginInlineStart: 'auto' }} className="ct-mono">${fmtShort(t.secs)}</span>
           <//>
@@ -782,7 +804,12 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const body = rows.length === 0
       ? html`<${Empty} image=${Empty.PRESENTED_IMAGE_SIMPLE} description=${status === 'inbox' ? 'Inbox zerado. Tudo processado.' : 'Nenhuma tarefa aqui.'} />`
       : effectiveView === 'kanban'
-        ? html`<div className="ct-kanban">${PROJECTS.map(p => { const items = rows.filter(t => t.project === p.id); return html`<div key=${p.id} className="ct-col">
+        ? projectId
+          ? html`<div className="ct-kanban">${Object.entries(STATUS).map(([k, v]) => { const items = rows.filter(t => t.status === k); return html`<div key=${k} className="ct-col">
+              <${Flex} align="center" gap=${8} style=${{ marginBottom: 8 }}>${createElement(I[v.icon], { style: { color: v[mode][0] } })}<${Text} strong>${v.label}<//><${Text} type="secondary" className="ct-mono">${items.length}<//><//>
+              <${Flex} vertical gap=${8}>${items.map(card)}${items.length ? null : html`<${Text} type="secondary" style=${{ fontSize: 12 }}>Nada aqui<//>`}<//>
+            </div>`; })}</div>`
+          : html`<div className="ct-kanban">${PROJECTS.filter(p => p.status === 'active').map(p => { const items = rows.filter(t => t.project === p.id); return html`<div key=${p.id} className="ct-col">
             <${Flex} align="center" gap=${8} style=${{ marginBottom: 8 }}><span className="ct-dot" style=${{ background: p.color }}></span><${Text} strong>${p.name}<//><${Text} type="secondary" className="ct-mono">${items.length}<//><//>
             <${Flex} vertical gap=${8}>${items.map(card)}${items.length ? null : html`<${Text} type="secondary" style=${{ fontSize: 12 }}>Nada executando<//>`}<//>
           </div>`; })}</div>`
@@ -796,7 +823,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           : table;
 
     const bulk = selIds.length ? menuFor(findTask(selIds[0])) : null;
-    return html`<div className=${isMobile ? 'ct-page-narrow' : 'ct-page'}>
+    return html`<div className=${embedded ? '' : isMobile ? 'ct-page-narrow' : 'ct-page'}>
       ${isMobile
         ? html`<${Select} value=${status} onChange=${setStatus} options=${tabItems.map(t => ({ value: t.key, label: t.label }))} style=${{ width: '100%', marginBottom: 12 }} aria-label="Status" />`
         : html`<${Tabs} activeKey=${status} onChange=${setStatus} items=${tabItems} style=${{ marginBottom: 4 }} />`}
@@ -816,11 +843,13 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         <${Segmented} value=${effectiveView} onChange=${setView} options=${[
           ...(isMobile ? [] : [{ value: 'tabela', icon: html`<${I.TableOutlined} />`, label: screens.lg ? 'Tabela' : null, title: 'Tabela' }]),
           { value: 'cards', icon: html`<${I.AppstoreOutlined} />`, label: screens.lg ? 'Cards' : null, title: 'Cards' },
-          ...(status === 'executando' ? [{ value: 'kanban', icon: html`<${I.ProjectOutlined} />`, label: screens.lg ? 'Kanban' : null, title: 'Kanban' }] : [])
+          ...(status === 'executando' || projectId ? [{ value: 'kanban', icon: html`<${I.ProjectOutlined} />`, label: screens.lg ? 'Kanban' : null, title: 'Kanban' }] : [])
         ]} />
-        ${effectiveView !== 'kanban' ? html`<${Select} value=${groupBy} onChange=${setGroupBy} style=${{ width: 180 }} aria-label="Agrupar" options=${[{ value: 'none', label: 'Sem agrupamento' }, { value: 'project', label: 'Agrupar por projeto' }, { value: 'context', label: 'Agrupar por contexto' }]} />` : null}
+        ${effectiveView !== 'kanban' ? html`<${Select} value=${groupBy} onChange=${setGroupBy} style=${{ width: 180 }} aria-label="Agrupar" options=${[{ value: 'none', label: 'Sem agrupamento' }].concat(projectId ? [] : [{ value: 'project', label: 'Agrupar por projeto' }], [{ value: 'context', label: 'Agrupar por contexto' }])} />` : null}
       <//>
-      ${status === 'inbox' && rows.length ? html`<${Alert} showIcon type="info" style=${{ marginBottom: 12 }} message=${html`<span><b>${plural(rows.length, 'item para processar.', 'itens para processar.')}</b> Para cada um: é acionável? Leva menos de 2 minutos? É de um projeto?</span>`} />` : null}
+      ${projectId ? html`<${Input} value=${newName} onChange=${e => setNewName(e.target.value)} onPressEnter=${addToProject} placeholder=${'Adicionar tarefa a ' + P[projectId].name + '…'} aria-label="Adicionar tarefa ao projeto" className="ct-project-add"
+          prefix=${html`<${I.PlusOutlined} style=${{ color: 'var(--ct-text-3)' }} />`} suffix=${html`<${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12 }}>Enter<//>`} style=${{ marginBottom: 12 }} />` : null}
+      ${!projectId && status === 'inbox' && rows.length ? html`<${Alert} showIcon type="info" style=${{ marginBottom: 12 }} message=${html`<span><b>${plural(rows.length, 'item para processar.', 'itens para processar.')}</b> Para cada um: é acionável? Leva menos de 2 minutos? É de um projeto?</span>`} />` : null}
       ${groupBy === 'context' && rows.some(t => t.contexts.length > 1) ? html`<${Text} type="secondary" style=${{ display: 'block', fontSize: 12, marginBottom: 8 }}><${I.CopyOutlined} /> Tarefas com mais de um contexto aparecem em cada grupo; a soma dos grupos passa do total.<//>` : null}
       ${body}
       ${bulk ? html`<div className="ct-bulkbar"><div className="ct-bulkbar-inner">
@@ -849,7 +878,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     <//>`;
   }
 
-  function TaskDetailView({ mode, go, screens, openTerminal, sample, setSample }) {
+  function TaskDetailView({ mode, go, screens, openTerminal, openProject, sample, setSample }) {
     const t = DETAIL[sample];
     const { message, modal } = AntApp.useApp();
     const [running, setRunning] = useState(t.running);
@@ -963,7 +992,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       <//>
       <${PropPill} label="Projeto" muted=${!project} content=${html`<${Flex} vertical gap=${8}>
           <${Select} showSearch allowClear placeholder="Sem projeto" value=${project} onChange=${setProject} optionFilterProp="title" options=${PROJECTS.map(p => ({ value: p.id, title: p.name, label: html`<${ProjectLabel} id=${p.id} />` }))} />
-          ${project ? html`<a onClick=${() => go('projetos')}>Abrir projeto →</a>` : null}
+          ${project ? html`<a onClick=${() => openProject(project)}>Abrir projeto →</a>` : null}
         <//>`}>
         ${project ? html`<${ProjectLabel} id=${project} />` : html`<span><${I.FolderOutlined} /> Sem projeto</span>`}
       <//>
@@ -1012,7 +1041,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const head = html`<div className="ct-taskhead">
       <${Flex} align="center" gap=${6} wrap="wrap">
         <${Button} size="small" type="text" icon=${html`<${I.ArrowLeftOutlined} />`} onClick=${() => go('tarefas')}>Tarefas<//>
-        ${project ? html`<${Text} type="secondary">/<//><a onClick=${() => go('projetos')} style=${{ color: 'var(--ct-text-2)' }}>${P[project].name}</a>` : null}
+        ${project ? html`<${Text} type="secondary">/<//><a onClick=${() => openProject(project)} style=${{ color: 'var(--ct-text-2)' }}>${P[project].name}</a>` : null}
         <span style=${{ flex: 1 }}></span>
         <${Text} type="secondary" style=${{ fontSize: 12 }}>Exemplo:<//>
         <${Segmented} size="small" value=${sample} onChange=${setSample} options=${[{ value: 'local', label: 'Task local' }, { value: 'jira', label: 'Task do Jira' }]} />
@@ -1274,23 +1303,297 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     </div>`;
   }
 
-  function ProjectsPage({ mode }) {
-    return html`<div className="ct-page">
-      <${Flex} justify="space-between" align="center" wrap="wrap" gap=${8} style=${{ marginBottom: 16 }}>
-        <${Segmented} options=${['Ativos', 'Someday', 'Concluídos', 'Arquivados']} />
-        <${Button} type="primary" icon=${html`<${I.PlusOutlined} />`}>Novo projeto<//>
-      <//>
-      <div className="ct-grid-auto">
-        ${PROJECTS.map(p => html`<${Card} key=${p.id} hoverable size="small">
-          <${Flex} vertical gap=${10}>
-            <${Flex} align="center" gap=${8}><span className="ct-dot" style=${{ background: p.color, width: 10, height: 10 }}></span><${Text} strong>${p.name}<//><//>
-            <${Text} type="secondary">${p.outcome}<//>
-            <${Progress} percent=${Math.round(p.done / p.total * 100)} size="small" format=${() => html`<span className="ct-mono">${p.done}/${p.total}</span>`} />
-            ${p.next ? null : html`<${Alert} type="warning" showIcon message="Sem próxima ação definida" action=${html`<${Button} size="small" type="link">Definir<//>`} />`}
-            <${Text} type="secondary" style=${{ fontSize: 12 }}>${p.area}<//>
+  function projectStats(p, tasks) {
+    const ts = tasks.filter(t => t.project === p.id);
+    const done = ts.filter(t => t.status === 'finalizada').length;
+    const next = ts.filter(t => t.status === 'proximas')[0] || null;
+    return { total: ts.length, done, open: ts.length - done, blocked: ts.filter(t => t.blocked).length, secs: ts.reduce((a, t) => a + t.secs, 0), next, tasks: ts };
+  }
+  const daysBetween = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000);
+
+  function ProjectStatusChip({ status, mode }) {
+    return html`<${Chip} def=${PROJECT_STATUS[status]} mode=${mode} />`;
+  }
+
+  function ProjectsPage({ mode, isMobile, screens, openProject }) {
+    const { message, modal } = AntApp.useApp();
+    const [projects, setProjects] = useState(PROJECTS);
+    const [status, setStatus] = useState('active');
+    const [view, setView] = useState('cards');
+    const [q, setQ] = useState('');
+    const [sort, setSort] = useState('due');
+    const [groupByArea, setGroupByArea] = useState(false);
+    const [onlyNoNext, setOnlyNoNext] = useState(false);
+    const [collapsed, setCollapsed] = useState(() => new Set());
+    const stats = useMemo(() => Object.fromEntries(projects.map(p => [p.id, projectStats(p, TASKS)])), [projects]);
+    const counts = useMemo(() => { const c = { all: projects.length }; projects.forEach(p => { c[p.status] = (c[p.status] || 0) + 1; }); return c; }, [projects]);
+    const noNext = p => p.status === 'active' && stats[p.id].open > 0 && !stats[p.id].next;
+    const activeNoNext = projects.filter(noNext);
+    const effectiveView = isMobile ? 'cards' : view;
+
+    const sorters = {
+      due: (a, b) => (a.due || '9999').localeCompare(b.due || '9999'),
+      progress: (a, b) => (stats[b.id].total ? stats[b.id].done / stats[b.id].total : 0) - (stats[a.id].total ? stats[a.id].done / stats[a.id].total : 0),
+      name: (a, b) => a.name.localeCompare(b.name),
+      updated: (a, b) => b.updated.localeCompare(a.updated)
+    };
+    const needle = q.trim().toLowerCase();
+    const rows = projects
+      .filter(p => status === 'all' || p.status === status)
+      .filter(p => !needle || [p.name, p.outcome, p.description, p.area].join(' ').toLowerCase().includes(needle))
+      .filter(p => !onlyNoNext || noNext(p))
+      .sort(sorters[sort]);
+    const groups = groupByArea
+      ? AREAS.concat(['Sem área']).map(a => ({ key: a, name: a, items: rows.filter(p => (p.area || 'Sem área') === a) })).filter(g => g.items.length)
+      : null;
+
+    const update = (id, patch) => setProjects(ps => ps.map(p => p.id === id ? { ...p, ...patch } : p));
+    const menuFor = p => ({
+      items: [
+        { key: 'open', icon: createElement(I.FolderOpenOutlined), label: 'Abrir' },
+        { key: 'status', icon: createElement(I.CheckCircleOutlined), label: 'Marcar como', children: Object.entries(PROJECT_STATUS).map(([k, v]) => ({ key: 'status:' + k, label: (p.status === k ? '✓ ' : '') + v.label })) },
+        { key: 'area', icon: createElement(I.RiseOutlined), label: 'Área de foco', children: AREAS.map(a => ({ key: 'area:' + a, label: (p.area === a ? '✓ ' : '') + a })).concat([{ key: 'area:', label: (!p.area ? '✓ ' : '') + 'Sem área' }]) },
+        { type: 'divider' },
+        { key: 'delete', icon: createElement(I.DeleteOutlined), label: 'Excluir…', danger: true }
+      ],
+      onClick: ({ key, domEvent }) => {
+        if (domEvent) domEvent.stopPropagation();
+        const [kind, val] = key.split(':');
+        if (kind === 'open') openProject(p.id);
+        if (kind === 'status') { update(p.id, { status: val }); message.success(p.name + ': ' + PROJECT_STATUS[val].label); }
+        if (kind === 'area') { update(p.id, { area: val || null }); message.success(val ? 'Área: ' + val : 'Sem área'); }
+        if (kind === 'delete') modal.confirm({
+          title: 'Excluir o projeto ' + p.name + '?',
+          content: stats[p.id].total ? `As ${stats[p.id].total} tarefas dele não são apagadas: ficam sem projeto.` : 'O projeto não tem tarefas.',
+          okText: 'Excluir', okButtonProps: { danger: true }, cancelText: 'Cancelar',
+          onOk: () => { setProjects(ps => ps.filter(x => x.id !== p.id)); message.success('Projeto excluído'); }
+        });
+      }
+    });
+
+    const progress = (p, w) => { const st = stats[p.id]; const pct = st.total ? Math.round(st.done / st.total * 100) : 0;
+      return html`<${Flex} align="center" gap=${8}><${Progress} percent=${pct} size=${[w, 4]} showInfo=${false} /><span className="ct-mono" style=${{ fontSize: 12, color: 'var(--ct-text-2)' }}>${st.done}/${st.total}</span><//>`; };
+    const nextCell = p => { const st = stats[p.id];
+      if (noNext(p)) return html`<${Chip} def=${{ icon: 'WarningOutlined', light: CATEGORY.time_leak.light, dark: CATEGORY.time_leak.dark }} mode=${mode}>Sem próxima ação<//>`;
+      if (!st.next) return html`<${Text} type="secondary">—<//>`;
+      return html`<span style=${{ display: 'inline-flex', gap: 6, alignItems: 'center', minWidth: 0 }}><${I.ForwardOutlined} style=${{ color: STATUS.proximas[mode][0] }} /><span style=${{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>${st.next.name}</span></span>`; };
+    const dueCell = p => { if (!p.due) return html`<${Text} type="secondary">—<//>`; const d = daysBetween(TODAY, p.due);
+      return html`<${Tooltip} title=${d < 0 ? 'Venceu há ' + -d + ' dias' : d === 0 ? 'Vence hoje' : 'Faltam ' + d + ' dias'}><${Text} className="ct-mono" type=${d < 0 && p.status === 'active' ? 'danger' : d <= 7 && p.status === 'active' ? 'warning' : undefined}>${fmtDate(p.due)}<//><//>`; };
+
+    const card = p => html`<${Dropdown} key=${p.id} menu=${menuFor(p)} trigger=${['contextMenu']}>
+      <div><${Card} hoverable size="small" onClick=${() => openProject(p.id)} style=${{ height: '100%' }}>
+        <${Flex} vertical gap=${10}>
+          <${Flex} align="center" gap=${8}>
+            <span className="ct-dot" style=${{ background: p.color, width: 10, height: 10 }}></span>
+            <${Text} strong style=${{ flex: 1, minWidth: 0 }} ellipsis>${p.name}<//>
+            ${status === 'all' ? html`<${ProjectStatusChip} status=${p.status} mode=${mode} />` : null}
+            <${Dropdown} menu=${menuFor(p)} trigger=${['click']}><${Button} size="small" type="text" aria-label="Mais ações" icon=${html`<${I.EllipsisOutlined} />`} onClick=${e => e.stopPropagation()} /><//>
           <//>
-        <//>`)}
+          <${Flex} gap=${6} align="start"><${I.AimOutlined} style=${{ color: 'var(--ct-text-3)', marginTop: 4 }} /><${Text} type="secondary" style=${{ fontSize: 13 }}>${p.outcome}<//><//>
+          ${progress(p, 120)}
+          <div style=${{ minHeight: 22 }}>${nextCell(p)}</div>
+          <${Flex} gap=${8} align="center" style=${{ fontSize: 12 }}>
+            <${Text} type="secondary" style=${{ fontSize: 12 }}>${p.area || 'Sem área'}<//>
+            <span style=${{ flex: 1 }}></span>
+            ${p.due ? html`<span><${I.CalendarOutlined} style=${{ color: 'var(--ct-text-3)' }} /> ${dueCell(p)}</span>` : null}
+          <//>
+        <//>
+      <//></div>
+    <//>`;
+
+    const cols = [
+      { title: 'Projeto', key: 'name', render: (_, p) => html`<${Flex} align="center" gap=${8} style=${{ minWidth: 0 }}>
+          <span className="ct-dot" style=${{ background: p.color }}></span>
+          <a onClick=${() => openProject(p.id)} style=${{ color: 'var(--ct-text)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>${p.name}</a>
+          <${Tooltip} title=${'Resultado desejado: ' + p.outcome}><${I.AimOutlined} aria-label="Resultado desejado" style=${{ color: 'var(--ct-text-3)', fontSize: 12 }} /><//>
+        <//>` },
+      status === 'all' ? { title: 'Status', key: 'status', width: 128, render: (_, p) => html`<${ProjectStatusChip} status=${p.status} mode=${mode} />` } : null,
+      screens.lg && !groupByArea ? { title: 'Área', key: 'area', width: 150, render: (_, p) => p.area ? html`<${Text} type="secondary">${p.area}<//>` : html`<${Text} type="secondary">—<//>` } : null,
+      { title: 'Próxima ação', key: 'next', width: screens.xl ? 280 : 200, render: (_, p) => nextCell(p) },
+      { title: 'Progresso', key: 'progress', width: 150, render: (_, p) => progress(p, 64) },
+      screens.md ? { title: 'Prazo', key: 'due', width: 96, render: (_, p) => dueCell(p) } : null,
+      screens.xl ? { title: 'Tempo', key: 'time', width: 84, align: 'right', render: (_, p) => html`<span className="ct-mono">${fmtShort(stats[p.id].secs)}</span>` } : null,
+      { title: '', key: 'act', width: 48, render: (_, p) => html`<${Dropdown} menu=${menuFor(p)} trigger=${['click']} placement="bottomRight"><${Button} size="small" type="text" aria-label="Mais ações" icon=${html`<${I.EllipsisOutlined} />`} /><//>` }
+    ].filter(Boolean);
+    const groupHeader = g => { const isC = collapsed.has(g.key); return html`<${Flex} align="center" gap=${8}>
+      <${Button} size="small" type="text" aria-expanded=${!isC} aria-label=${(isC ? 'Expandir ' : 'Recolher ') + g.name} icon=${html`<${isC ? I.CaretRightOutlined : I.CaretDownOutlined} />`}
+        onClick=${() => { const n = new Set(collapsed); n.has(g.key) ? n.delete(g.key) : n.add(g.key); setCollapsed(n); }} />
+      <${I.RiseOutlined} style=${{ color: 'var(--ct-text-3)' }} /><${Text} strong>${g.name}<//><${Text} type="secondary" className="ct-mono">${g.items.length}<//>
+    <//>`; };
+    const columns = cols.map((c, i) => ({ ...c, render: (v, r, idx) => r.isGroup ? (i === 0 ? groupHeader(r.group) : null) : c.render(v, r, idx), onCell: r => r.isGroup ? { colSpan: i === 0 ? cols.length : 0 } : {} }));
+    const data = groups ? groups.flatMap(g => [{ id: 'g:' + g.key, isGroup: true, group: g }].concat(collapsed.has(g.key) ? [] : g.items)) : rows;
+
+    const tabItems = [['all', 'Todos', 'AppstoreOutlined']].concat(Object.entries(PROJECT_STATUS).map(([k, v]) => [k, v.label + (k === 'done' || k === 'archived' ? 's' : k === 'active' ? 's' : ''), v.icon]))
+      .map(([k, label, icon]) => ({ key: k, label: html`<span style=${{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+        ${createElement(I[icon], { style: { color: PROJECT_STATUS[k] ? PROJECT_STATUS[k][mode][0] : 'var(--ct-text-2)' } })}${label}
+        <span className="ct-mono" style=${{ fontSize: 12, color: 'var(--ct-text-3)', background: 'var(--ct-bg)', borderRadius: 6, padding: '0 6px', border: '1px solid var(--ct-border)' }}>${counts[k] || 0}</span>
+      </span>` }));
+
+    const body = rows.length === 0
+      ? html`<${Empty} image=${Empty.PRESENTED_IMAGE_SIMPLE} description=${q || onlyNoNext ? 'Nenhum projeto com esses filtros.' : 'Nenhum projeto aqui.'}>${q || onlyNoNext ? html`<${Button} onClick=${() => { setQ(''); setOnlyNoNext(false); }}>Limpar filtros<//>` : html`<${Button} type="primary" icon=${html`<${I.PlusOutlined} />`}>Criar projeto<//>`}<//>`
+      : effectiveView === 'tabela'
+        ? html`<${Table} rowKey="id" size=${screens.xxl ? 'middle' : 'small'} columns=${columns} dataSource=${data} pagination=${false} scroll=${{ x: 'max-content' }}
+            components=${{ body: { row: MenuRow } }} onRow=${r => r.isGroup ? {} : { record: r, menu: menuFor(r) }}
+            rowClassName=${r => r.isGroup ? 'ct-grouprow' : ''} />`
+        : groups
+          ? groups.map(g => html`<div key=${g.key} style=${{ marginBottom: 16 }}><div className="ct-groupbar">${groupHeader(g)}</div>${collapsed.has(g.key) ? null : html`<div className="ct-grid-auto">${g.items.map(card)}</div>`}</div>`)
+          : html`<div className="ct-grid-auto">${rows.map(card)}</div>`;
+
+    return html`<div className=${isMobile ? 'ct-page-narrow' : 'ct-page'}>
+      ${isMobile
+        ? html`<${Select} value=${status} onChange=${setStatus} options=${tabItems.map(t => ({ value: t.key, label: t.label }))} style=${{ width: '100%', marginBottom: 12 }} aria-label="Status do projeto" />`
+        : html`<${Tabs} activeKey=${status} onChange=${setStatus} items=${tabItems} style=${{ marginBottom: 4 }} />`}
+      <${Flex} gap=${8} wrap="wrap" align="center" style=${{ marginBottom: 12 }}>
+        <${Input} allowClear placeholder="Buscar em nome, resultado e área" prefix=${html`<${I.SearchOutlined} />`} value=${q} onChange=${e => setQ(e.target.value)} style=${{ flex: '1 1 220px', maxWidth: 360 }} aria-label="Buscar projetos" />
+        <${Select} value=${sort} onChange=${setSort} style=${{ width: 170 }} aria-label="Ordenar" options=${[{ value: 'due', label: 'Ordenar por prazo' }, { value: 'progress', label: 'Ordenar por progresso' }, { value: 'updated', label: 'Mais recentes' }, { value: 'name', label: 'Ordenar por nome' }]} />
+        <div style=${{ flex: 1 }}></div>
+        ${isMobile ? null : html`<${Segmented} value=${effectiveView} onChange=${setView} options=${[{ value: 'cards', icon: html`<${I.AppstoreOutlined} />`, label: screens.lg ? 'Cards' : null, title: 'Cards' }, { value: 'tabela', icon: html`<${I.TableOutlined} />`, label: screens.lg ? 'Tabela' : null, title: 'Tabela' }]} />`}
+        <${Select} value=${groupByArea ? 'area' : 'none'} onChange=${v => setGroupByArea(v === 'area')} style=${{ width: 170 }} aria-label="Agrupar" options=${[{ value: 'none', label: 'Sem agrupamento' }, { value: 'area', label: 'Agrupar por área' }]} />
+        <${Button} type="primary" icon=${html`<${I.PlusOutlined} />`}>${screens.sm ? 'Novo projeto' : null}<//>
+      <//>
+      ${activeNoNext.length && (status === 'active' || status === 'all') ? html`<${Alert} showIcon type="warning" style=${{ marginBottom: 12 }}
+        message=${html`<span><b>${activeNoNext.length === 1 ? '1 projeto ativo está' : activeNoNext.length + ' projetos ativos estão'} sem próxima ação.</b> Projeto sem próxima ação fica parado: defina o próximo passo concreto.</span>`}
+        action=${html`<${Button} size="small" type=${onlyNoNext ? 'primary' : 'default'} onClick=${() => setOnlyNoNext(!onlyNoNext)}>${onlyNoNext ? 'Mostrar todos' : 'Mostrar só esses'}<//>`} />` : null}
+      ${body}
+    </div>`;
+  }
+
+  function ProjectDetailPage({ mode, go, isMobile, screens, projectId, openTerminal }) {
+    const base = P[projectId] || PROJECTS[0];
+    const { message, modal } = AntApp.useApp();
+    const [p, setP] = useState(base);
+    const st = projectStats(p, TASKS);
+    const [nextId, setNextId] = useState(st.next ? st.next.id : null);
+    const [narrowTab, setNarrowTab] = useState('tarefas');
+    const set = patch => setP(x => ({ ...x, ...patch }));
+    const pct = st.total ? Math.round(st.done / st.total * 100) : 0;
+    const next = st.tasks.find(t => t.id === nextId) || null;
+    const noNextAction = p.status === 'active' && st.open > 0 && !next;
+    const daysLeft = p.due ? daysBetween(TODAY, p.due) : null;
+    const PALETTE_COLORS = ['#E5484D', '#A84803', '#A15C00', '#0B7A50', '#0F6E7A', '#2A62D6', '#5B47EB', '#7647B0', '#B8327A', '#5D6B82'];
+
+    const moreMenu = {
+      items: [
+        { key: 'copy', icon: createElement(I.CopyOutlined), label: 'Copiar nome' },
+        { key: 'archive', icon: createElement(I.ContainerOutlined), label: p.status === 'archived' ? 'Reativar' : 'Arquivar' },
+        { type: 'divider' },
+        { key: 'delete', icon: createElement(I.DeleteOutlined), label: 'Excluir projeto…', danger: true }
+      ],
+      onClick: ({ key }) => {
+        if (key === 'copy') { try { navigator.clipboard.writeText(p.name).catch(() => {}); } catch (e) {} message.success('Nome copiado'); }
+        if (key === 'archive') { set({ status: p.status === 'archived' ? 'active' : 'archived' }); message.success(p.status === 'archived' ? 'Projeto reativado' : 'Projeto arquivado'); }
+        if (key === 'delete') modal.confirm({ title: 'Excluir o projeto ' + p.name + '?', content: `As ${st.total} tarefas dele não são apagadas: ficam sem projeto.`, okText: 'Excluir', okButtonProps: { danger: true }, cancelText: 'Cancelar', onOk: () => go('projetos') });
+      }
+    };
+
+    const propBar = html`<div className="ct-propbar">
+      <${PropPill} label="Área de foco" icon="RiseOutlined" muted=${!p.area} content=${html`<${Flex} vertical gap=${8}>
+          <${Select} allowClear placeholder="Sem área" value=${p.area} onChange=${v => set({ area: v || null })} options=${AREAS.map(a => ({ value: a, label: a }))} />
+          <a onClick=${() => go('horizontes')}>Ver em Horizontes →</a>
+        <//>`}>${p.area || 'Área de foco'}<//>
+      <${PropPill} label="Prazo" icon="FlagOutlined" muted=${!p.due} tone=${daysLeft !== null && daysLeft < 0 ? PALETTE[mode].error : daysLeft !== null && daysLeft <= 7 ? PALETTE[mode].warning : null}
+        content=${html`<${Flex} vertical gap=${8}>
+          <${DatePicker} format="DD/MM/YYYY" placeholder="Data limite" value=${p.due ? dayjs(p.due) : null} onChange=${d => set({ due: d ? d.format('YYYY-MM-DD') : null })} />
+          ${p.due ? html`<a onClick=${() => set({ due: null })}>Remover prazo</a>` : null}
+        <//>`}>
+        ${p.due ? `Prazo ${fmtDate(p.due)}${daysLeft !== null ? ` · ${daysLeft < 0 ? 'venceu há ' + -daysLeft + 'd' : daysLeft === 0 ? 'hoje' : 'faltam ' + daysLeft + 'd'}` : ''}` : 'Prazo'}
+      <//>
+      <${PropPill} label="Cor" content=${html`<${Flex} gap=${6} wrap="wrap">${PALETTE_COLORS.map(c => html`<button key=${c} type="button" aria-label=${'Cor ' + c} onClick=${() => set({ color: c })}
+          style=${{ width: 24, height: 24, borderRadius: '50%', background: c, border: p.color === c ? '2px solid var(--ct-text)' : '2px solid transparent', boxShadow: '0 0 0 1px var(--ct-border)', cursor: 'pointer' }}></button>`)}<//>`}>
+        <span className="ct-dot" style=${{ background: p.color }}></span>Cor
+      <//>
+      <${PropPill} label="Diretório de trabalho" icon="CodeOutlined" muted=${!p.workingDir} content=${html`<${Flex} vertical gap=${8}>
+          <${Text} className="ct-mono" style=${{ fontSize: 12 }}>${p.workingDir || 'Nenhum diretório'}<//>
+          <${Text} type="secondary" style=${{ fontSize: 12 }}>Tarefas sem diretório próprio abrem o terminal aqui.<//>
+          <${Flex} gap=${6}>
+            <${Button} size="small" icon=${html`<${I.FolderOpenOutlined} />`} onClick=${() => { set({ workingDir: p.workingDir || '~/Code/novo-projeto' }); message.info('Abre o seletor de pasta do sistema'); }}>${p.workingDir ? 'Alterar' : 'Escolher'}<//>
+            ${p.workingDir ? html`<${Button} size="small" type="text" danger onClick=${() => set({ workingDir: null })}>Remover<//>` : null}
+          <//>
+        <//>`}>
+        ${p.workingDir ? '…/' + p.workingDir.split('/').slice(-2).join('/') : 'Diretório'}
+      <//>
+    </div>`;
+
+    const head = html`<div className="ct-taskhead">
+      <${Flex} align="center" gap=${6} wrap="wrap">
+        <${Button} size="small" type="text" icon=${html`<${I.ArrowLeftOutlined} />`} onClick=${() => go('projetos')}>Projetos<//>
+        ${p.area ? html`<${Text} type="secondary">/<//><a onClick=${() => go('horizontes')} style=${{ color: 'var(--ct-text-2)' }}>${p.area}</a>` : null}
+      <//>
+      <div className="ct-taskhead-main">
+        <div style=${{ flex: '1 1 380px', minWidth: 0 }}>
+          <${Flex} align="center" gap=${8} wrap="wrap">
+            <${Select} size="small" variant="filled" value=${p.status} onChange=${v => { set({ status: v }); message.success('Status do projeto alterado'); }} style=${{ width: 150 }} aria-label="Status do projeto" popupMatchSelectWidth=${false}
+              options=${Object.entries(PROJECT_STATUS).map(([k, v]) => ({ value: k, label: html`<${Space} size=${6}>${createElement(I[v.icon], { style: { color: v[mode][0] } })}${v.label}<//>` }))} />
+          <//>
+          <${Flex} align="center" gap=${10} style=${{ marginTop: 4 }}>
+            <span className="ct-dot" style=${{ background: p.color, width: 14, height: 14 }}></span>
+            <${Input} variant="borderless" key=${p.id} defaultValue=${p.name} aria-label="Nome do projeto" className="ct-taskname-input" />
+          <//>
+          <${Input.TextArea} variant="borderless" autoSize=${{ minRows: 1, maxRows: 4 }} placeholder="Adicionar descrição" defaultValue=${p.description} aria-label="Descrição" style=${{ padding: 0, color: 'var(--ct-text-2)' }} />
+        </div>
+        <${Flex} align="center" gap=${4} wrap="wrap" style=${{ flex: 'none' }}>
+          ${p.workingDir ? html`<${Tooltip} title=${'Terminal em ' + p.workingDir}><${Button} type="text" aria-label="Terminal" icon=${html`<${I.CodeOutlined} />`} onClick=${openTerminal} /><//>` : null}
+          <${Dropdown} menu=${moreMenu} trigger=${['click']} placement="bottomRight"><${Button} type="text" aria-label="Mais ações" icon=${html`<${I.EllipsisOutlined} />`} /><//>
+        <//>
       </div>
+      ${propBar}
+      ${noNextAction ? html`<${Alert} type="warning" showIcon style=${{ marginTop: 12 }} message="Sem próxima ação definida: o projeto não anda até ter um próximo passo concreto."
+        action=${html`<${Button} size="small" onClick=${() => { setNarrowTab('resumo'); try { document.querySelector('.ct-next-select input') && document.querySelector('.ct-next-select input').focus(); } catch (e) {} }}>Definir<//>`} />` : null}
+    </div>`;
+
+    const outcomeCard = html`<${Card} size="small" title=${html`<${Space} size=${6}><${I.AimOutlined} />Resultado desejado<//>`}>
+      <${Input.TextArea} variant="borderless" autoSize=${{ minRows: 2, maxRows: 8 }} defaultValue=${p.outcome} placeholder="Como vai ser quando este projeto estiver pronto?" aria-label="Resultado desejado" style=${{ padding: 0, fontSize: 15 }} />
+    <//>`;
+    const nextCard = html`<${Card} size="small" title=${html`<${Space} size=${6}><${I.ForwardOutlined} style=${{ color: STATUS.proximas[mode][0] }} />Próxima ação<//>`}>
+      ${next
+        ? html`<${Flex} vertical gap=${8}>
+            <a onClick=${() => go('tarefa')} style=${{ color: 'var(--ct-text)', fontWeight: 500 }}>${next.name}</a>
+            <${Flex} gap=${6} align="center" wrap="wrap">
+              <${Chip} def=${STATUS[next.status]} mode=${mode} />
+              ${next.contexts.map(c => html`<${Tag} key=${c} bordered=${false} style=${{ margin: 0 }}>${c}<//>`)}
+              <span style=${{ flex: 1 }}></span>
+              <${Button} size="small" type="primary" disabled=${next.blocked} icon=${html`<${I.CaretRightOutlined} />`} onClick=${() => message.success('Timer iniciado: ' + next.name)}>Iniciar<//>
+            <//>
+          <//>`
+        : html`<${Text} type="secondary">Nenhuma tarefa marcada como próxima ação.<//>`}
+      <${Select} className="ct-next-select" placeholder="Escolher outra tarefa como próxima…" value=${null} style=${{ width: '100%', marginTop: 10 }} aria-label="Definir próxima ação"
+        options=${st.tasks.filter(t => t.status !== 'finalizada' && t.id !== nextId).map(t => ({ value: t.id, label: t.name }))}
+        onChange=${id => { setNextId(id); message.success('Marcada como próxima ação'); }} />
+    <//>`;
+    const progressCard = html`<${Card} size="small" title=${html`<${Space} size=${6}><${I.BarChartOutlined} />Progresso<//>`}>
+      <${Flex} vertical gap=${12}>
+        <div>
+          <${Flex} justify="space-between"><${Text} type="secondary" style=${{ fontSize: 12 }}>${st.done} de ${st.total} tarefas<//><span className="ct-mono" style=${{ fontSize: 12 }}>${pct}%</span><//>
+          <${Progress} percent=${pct} showInfo=${false} />
+        </div>
+        <${Row} gutter=${[12, 12]}>
+          <${Col} span=${12}><${Statistic} title="Abertas" value=${st.open} valueStyle=${{ fontFamily: 'var(--ct-mono)', fontSize: 20 }} /><//>
+          <${Col} span=${12}><${Statistic} title="Bloqueadas" value=${st.blocked} valueStyle=${{ fontFamily: 'var(--ct-mono)', fontSize: 20, color: st.blocked ? CATEGORY.prioridade[mode][0] : undefined }} /><//>
+          <${Col} span=${12}><${Statistic} title="Tempo total" value=${fmtShort(st.secs)} valueStyle=${{ fontFamily: 'var(--ct-mono)', fontSize: 20 }} /><//>
+          <${Col} span=${12}><${Statistic} title="Prazo" value=${daysLeft === null ? '—' : daysLeft < 0 ? 'venceu' : daysLeft + ' dias'} valueStyle=${{ fontFamily: 'var(--ct-mono)', fontSize: 20, color: daysLeft !== null && daysLeft < 0 ? PALETTE[mode].error : undefined }} /><//>
+        <//>
+      <//>
+    <//>`;
+
+    const tasksArea = html`<${TasksPage} key=${'p' + p.id} mode=${mode} go=${go} isMobile=${isMobile} screens=${screens} projectId=${p.id} embedded=${true} />`;
+
+    if (isMobile) return html`<div className="ct-page-narrow">${head}
+      <${Tabs} activeKey=${narrowTab} onChange=${setNarrowTab} items=${[
+        { key: 'tarefas', label: 'Tarefas ' + st.open, children: tasksArea },
+        { key: 'resumo', label: 'Resumo', children: html`<${Flex} vertical gap=${12}>${nextCard}${outcomeCard}${progressCard}<//>` }
+      ]} />
+    </div>`;
+
+    return html`<div className="ct-page">${head}
+      ${screens.xl
+        ? html`<${Row} gutter=${16} wrap=${false} style=${{ marginTop: 16 }}>
+            <${Col} flex="1 1 0" style=${{ minWidth: 0 }}>${tasksArea}<//>
+            <${Col} flex=${screens.xxl ? '0 0 400px' : '0 0 340px'}><${Flex} vertical gap=${12}>${nextCard}${outcomeCard}${progressCard}<//><//>
+          <//>`
+        : html`<${Row} gutter=${[12, 12]} style=${{ margin: '16px 0' }}>
+              <${Col} xs=${24} md=${8}>${nextCard}<//><${Col} xs=${24} md=${8}>${outcomeCard}<//><${Col} xs=${24} md=${8}>${progressCard}<//>
+            <//>
+            ${tasksArea}`}
     </div>`;
   }
 
