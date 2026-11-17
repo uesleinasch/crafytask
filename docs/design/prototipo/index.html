@@ -80,6 +80,12 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
 .ct-bulkbar { position: sticky; bottom: 12px; z-index: 5; margin-top: 12px; }
 .ct-bulkbar-inner { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 12px; background: var(--ct-elevated); border: 1px solid var(--ct-border-strong); box-shadow: 0 8px 24px rgba(17,16,24,.12); }
 :focus-visible { outline: 2px solid var(--ct-primary); outline-offset: 2px; }
+.ct-zen { position: fixed; inset: 0; z-index: 1000; display: flex; flex-direction: column; background: var(--ct-surface); color: var(--ct-text); }
+.ct-zen-bar { height: 48px; flex: none; display: flex; align-items: center; gap: 10px; padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px)); border-bottom: 1px solid var(--ct-border); min-width: 0; }
+.ct-zen-title { flex: 1; min-width: 0; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ct-zen-body { flex: 1; overflow: auto; padding-block: 40px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.ct-zen-body .ct-note { margin: 0 auto; font-size: 17px; }
+.ct-zen-draw { height: 100%; display: grid; place-items: center; border: 1px dashed var(--ct-border-strong); border-radius: 12px; }
 </style>
 <div id="root"><div class="ct-boot">Carregando protótipo…</div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
@@ -568,6 +574,11 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const [noteTab, setNoteTab] = useState('notas');
     const [focus, setFocus] = useState(false);
     useEffect(() => { if (!running) return; const i = setInterval(() => setSecs(s => s + 1), 1000); return () => clearInterval(i); }, [running]);
+    useEffect(() => {
+      if (!focus) return;
+      const h = e => { if (e.key === 'Escape') setFocus(false); };
+      window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
+    }, [focus]);
 
     const meta = html`<${Flex} vertical gap=${16}>
       <div>
@@ -632,7 +643,25 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
 
     const back = html`<${Button} type="text" icon=${html`<${I.ArrowLeftOutlined} />`} onClick=${() => go('tarefas')} style=${{ marginBottom: 12 }}>Tarefas<//>`;
 
-    if (focus) return html`<div className="ct-page">${back}<div style=${{ maxWidth: 760, margin: '0 auto' }}>${notes}</div></div>`;
+    if (focus) return html`<div className="ct-zen" role="dialog" aria-modal="true" aria-label="Modo foco">
+      <div className="ct-zen-bar">
+        <${Button} type="text" icon=${html`<${I.ArrowLeftOutlined} />`} onClick=${() => setFocus(false)}>${screens.sm ? 'Sair' : null}<//>
+        <span className="ct-zen-title">${t.name}</span>
+        ${running ? html`<span className="ct-live" aria-label="Timer rodando"></span>` : null}
+        <span className="ct-mono">${fmt(secs)}</span>
+        <${Tooltip} title=${running ? 'Pausar' : 'Iniciar'}><${Button} type="text" aria-label=${running ? 'Pausar' : 'Iniciar'} icon=${html`<${running ? I.PauseOutlined : I.CaretRightOutlined} />`} onClick=${() => setRunning(!running)} /><//>
+        <${Segmented} size="small" value=${noteTab} onChange=${setNoteTab} options=${[{ value: 'notas', icon: html`<${I.FileTextOutlined} />`, label: screens.sm ? 'Notas' : null }, { value: 'desenho', icon: html`<${I.HighlightOutlined} />`, label: screens.sm ? 'Desenho' : null }]} />
+        <${Tooltip} title="Sair do modo foco (Esc)"><${Button} type="text" aria-label="Sair do modo foco" icon=${html`<${I.CompressOutlined} />`} onClick=${() => setFocus(false)} /><//>
+      </div>
+      <div className="ct-zen-body">
+        ${noteTab === 'notas' ? html`<div className="ct-note">
+          <h3>Escopo</h3>
+          <p>Pesquisar UI/UX para apps GTD, criar a pasta <code>docs/design</code>, o guia de orientação e um protótipo em Ant Design com paleta própria.</p>
+          <p>Não perder as <b>abas de status</b>. AppShell isolando crashes, responsivo e com modo escuro.</p>
+          <p>No modo foco o shell some: só a barra de cima, o texto e o cronômetro. <code>Esc</code> volta.</p>
+        </div>` : html`<div className="ct-zen-draw"><${Empty} image=${html`<${I.HighlightOutlined} style=${{ fontSize: 40, color: 'var(--ct-text-3)' }} />`} description="Excalidraw na largura toda" /></div>`}
+      </div>
+    </div>`;
     if (screens.xl) return html`<div className="ct-page">${back}
       <${Row} gutter=${16} wrap=${false}>
         <${Col} flex=${screens.xxl ? '380px' : '320px'}><${Card} size="small" styles=${{ body: { padding: 16 } }}>${meta}<//><//>
