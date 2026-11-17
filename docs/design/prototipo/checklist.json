@@ -246,6 +246,16 @@
       }
     },
     {
+      "id": "F1.15",
+      "fase": "F1",
+      "titulo": "Captura no centro do header (grid de três zonas)",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/components/shell/*.{ts,tsx,css}",
+        "padroes": ["HeaderCapture", "gridTemplateColumns|grid-template-columns"]
+      }
+    },
+    {
       "id": "F1.12",
       "fase": "F1",
       "titulo": "Shell conferido de 480px a 1920px e falha simulada isolada",
@@ -344,6 +354,63 @@
         "tipo": "contem",
         "arquivos": "src/renderer/src/pages/TaskListPage.tsx",
         "padrao": "<Alert\\b"
+      }
+    },
+    {
+      "id": "F2.11",
+      "fase": "F2",
+      "titulo": "Coluna Status só na aba Todas; ID em coluna própria",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/components/tasks/TaskTable.tsx",
+        "padroes": ["=== 'all'", "title: 'ID'|title: \"ID\""]
+      }
+    },
+    {
+      "id": "F2.12",
+      "fase": "F2",
+      "titulo": "Contextos: primeiro + N com popover editável",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/components/tasks/ContextsCell.tsx",
+        "padrao": "<Popover"
+      }
+    },
+    {
+      "id": "F2.13",
+      "fase": "F2",
+      "titulo": "Subtarefas em linhas expansíveis, seleção sem propagar",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/components/tasks/TaskTable.tsx",
+        "padroes": ["expandedRowKeys", "checkStrictly"]
+      }
+    },
+    {
+      "id": "F2.14",
+      "fase": "F2",
+      "titulo": "Agrupamento na tabela com linha de cabeçalho de grupo",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/components/tasks/TaskTable.tsx",
+        "padroes": ["colSpan", "Selecionar grupo"]
+      }
+    },
+    {
+      "id": "F2.15",
+      "fase": "F2",
+      "titulo": "Menu de contexto completo, agindo sobre a seleção",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/components/**/TaskContextMenu.tsx",
+        "padroes": [
+          "contextMenu",
+          "Categoria",
+          "Mover para projeto",
+          "Contextos",
+          "Copiar",
+          "selecionadas"
+        ]
       }
     },
     {
