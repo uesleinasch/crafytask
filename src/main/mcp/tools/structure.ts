@@ -61,7 +61,15 @@ function numField(fields: Fields, key: string): number | undefined {
   return typeof value === 'number' ? value : undefined
 }
 
-const PROJECT_FIELD_KEYS = ['description', 'outcome', 'status', 'color', 'due_date', 'area_id']
+const PROJECT_FIELD_KEYS = [
+  'description',
+  'outcome',
+  'status',
+  'color',
+  'due_date',
+  'area_id',
+  'working_dir'
+]
 const CONTEXT_FIELD_KEYS = ['icon', 'color']
 const TAG_FIELD_KEYS = ['color']
 const AREA_FIELD_KEYS = ['description', 'icon']
@@ -108,6 +116,7 @@ function validateProjectFields(fields: Fields): ReturnType<typeof fail> | null {
     stringFieldTypeError(fields, 'outcome') ??
     stringFieldTypeError(fields, 'color') ??
     stringFieldTypeError(fields, 'due_date') ??
+    stringFieldTypeError(fields, 'working_dir') ??
     projectStatusError(fields)
   )
 }
@@ -203,7 +212,8 @@ function buildProjectCreateInput(
     status: strField(fields, 'status') as ProjectStatus | undefined,
     color: strField(fields, 'color'),
     due_date: strField(fields, 'due_date'),
-    area_id: areaId
+    area_id: areaId,
+    working_dir: strField(fields, 'working_dir')
   }
 }
 
@@ -224,6 +234,8 @@ function buildProjectUpdatePatch(
   if (color !== undefined) patch.color = color
   const dueDate = strField(fields, 'due_date')
   if (dueDate !== undefined) patch.due_date = dueDate
+  const workingDir = strField(fields, 'working_dir')
+  if (workingDir !== undefined) patch.working_dir = workingDir
   if (areaId !== undefined) patch.area_id = areaId
   return patch
 }

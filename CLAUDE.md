@@ -192,7 +192,8 @@ Notas e Desenho da task. Decisões em `docs/adr/0001-cadernos.md`; tela em `docs
 
 ## Terminal embutido
 
-Cada task pode ter `working_dir` e `start_command` (colunas locais: não vão ao Notion nem ao Jira). O
+Cada task pode ter `working_dir` e `start_command` (colunas locais: não vão ao Notion nem ao Jira); sem
+`working_dir`, a task herda `projects.working_dir` (`effectiveWorkingDir` em `shared/workingDir.ts`). O
 painel (`components/terminal/`, montado em `App.tsx`) usa `@xterm/xterm`; o PTY é `node-pty`, só no
 main. `terminalSessions.ts` é puro e testado (sessões, ring buffer de ~200 KB, coalescência de
 output a cada 10 ms, `seq` por envio para o replay não duplicar); `terminal.ts` é o lado Electron e

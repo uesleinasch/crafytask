@@ -384,6 +384,7 @@ interface API {
   terminalCustomize: (id: string, patch: TerminalTabCustomization) => Promise<TerminalSession | null>
   terminalGetBuffer: (id: string) => Promise<TerminalBuffer | null>
   terminalPickDirectory: (taskId: number) => Promise<string | null>
+  terminalPickProjectDirectory: (projectId: number) => Promise<string | null>
   terminalSetTaskWorkspace: (
     taskId: number,
     workspace: { working_dir?: string | null; start_command?: string | null }

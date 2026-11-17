@@ -15,6 +15,7 @@ import { StatusBadge } from '@renderer/components/StatusBadge'
 import { CategoryBadge } from '@renderer/components/CategoryBadge'
 import { useProjectDetail } from '@renderer/hooks/useProjects'
 import { ColorPicker } from '@renderer/components/ColorPicker'
+import { ProjectWorkingDirField } from '@renderer/components/terminal/ProjectWorkingDirField'
 import { DEFAULT_COLORS } from '@renderer/lib/colors'
 import { formatTime } from '@renderer/lib/utils'
 import { liveSeconds } from '@renderer/lib/liveSeconds'
@@ -27,7 +28,8 @@ import {
   Target,
   FolderKanban,
   Clock,
-  Activity
+  Activity,
+  SquareTerminal
 } from 'lucide-react'
 import { toast } from '@renderer/components/ui/sonner'
 import { cn } from '@renderer/lib/utils'
@@ -40,7 +42,7 @@ export function ProjectDetailPage(): React.JSX.Element {
   const { id } = useParams<{ id: string }>()
   const projectId = parseInt(id || '0', 10)
 
-  const { project, tasks, loading, updateProject, deleteProject } =
+  const { project, tasks, loading, refreshProject, updateProject, deleteProject } =
     useProjectDetail(projectId)
 
   const [name, setName] = useState('')
@@ -229,6 +231,18 @@ export function ProjectDetailPage(): React.JSX.Element {
                 </div>
               </div>
             </div>
+          </div>
+
+          <div className="bg-white border border-slate-200 rounded-sm p-4">
+            <h4 className="text-sm font-semibold text-slate-900 mb-3 flex items-center">
+              <SquareTerminal size={16} className="mr-2 text-orange-600" /> Diretório de trabalho
+            </h4>
+            <ProjectWorkingDirField
+              projectId={project.id}
+              workingDir={project.working_dir}
+              onPick={refreshProject}
+              onClear={() => updateProject({ working_dir: null })}
+            />
           </div>
 
           {/* Tasks */}
