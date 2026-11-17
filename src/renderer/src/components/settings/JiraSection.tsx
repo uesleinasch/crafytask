@@ -265,7 +265,7 @@ export function JiraSection({
             </div>
             {status.boards.length === 0 ? (
               <p className="text-xs text-slate-500">
-                Carregue os boards do seu Jira e marque os que devem alimentar o TickTask.
+                Carregue os boards do seu Jira e marque os que devem alimentar o CrafyTask.
               </p>
             ) : (
               <div className="grid gap-4">

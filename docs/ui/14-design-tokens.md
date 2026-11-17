@@ -102,9 +102,9 @@ segundo.
 | `text-8xl` | cronômetro abaixo de 1h (detalhe da tarefa) |
 | `text-7xl` | cronômetro a partir de 1h |
 | `text-3xl` | título do projeto (detalhe) |
-| `text-xl` | "TickTask App" no TitleBar; título do Dashboard; títulos de diálogo |
+| `text-xl` | título do Dashboard; títulos de diálogo |
 | `text-lg` | títulos de sub-página; títulos de bloco no dashboard; números destacados |
-| `text-2xl` | valores dos cartões de métrica |
+| `text-2xl` | valores dos cartões de métrica; logo "CrafyTask" no TitleBar (`font-brand`, Denk One) |
 | `text-sm` | corpo padrão |
 | `text-xs` | rótulos, metadados, badges, dicas |
 | `text-[10px]` | rótulos mínimos (emoji de contexto no card, dica da captura rápida) |

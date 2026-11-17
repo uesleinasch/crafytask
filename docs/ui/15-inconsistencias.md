@@ -11,7 +11,7 @@ Cada item traz **o que é**, **onde acontece** e, quando relevante, **por que im
 
 ### A1. Três paletas para status de tarefa, quatro para categoria
 
-Ver a tabela completa em [14-design-tokens.md](14-design-tokens.md#5-paletas-semânticas).
+Ver a tabela completa em [14-design-tokens.md](14-design-tokens.md#5-paletas-semanticas).
 
 O caso mais visível: **time leak é amarelo** no badge, no `CategorySelect` e no bloco do calendário,
 mas **roxo** no acento da tela de tarefa e no gráfico do dashboard. E `finalizada` é roxo no badge,

@@ -1,191 +1,76 @@
-# TickTask
+# CrafyTask
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Electron](https://img.shields.io/badge/Electron-191970?style=flat&logo=electron&logoColor=white)](https://electronjs.org/)
-[![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)](https://reactjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![CI](https://github.com/uesleinasch/crafytask/actions/workflows/ci.yml/badge.svg?branch=production)](https://github.com/uesleinasch/crafytask/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/uesleinasch/crafytask?label=release&color=705EFF)](https://github.com/uesleinasch/crafytask/releases/latest)
+[![Docs](https://img.shields.io/badge/docs-MkDocs-705EFF)](https://uesleinasch.github.io/crafytask/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-TickTask é um aplicativo desktop open source para gerenciamento de tarefas pessoais e profissionais. Desenvolvido com Electron, React e TypeScript, oferece uma interface intuitiva para criar, organizar e rastrear tarefas, com funcionalidade integrada de timer para medir o tempo dedicado a cada atividade.
+CrafyTask (antigo TickTask) é um app desktop para Linux de tarefas e controle de tempo no estilo
+GTD (Getting Things Done). É local-first: tudo fica num banco SQLite na sua máquina, e as
+integrações são opcionais.
 
-## ✨ Funcionalidades
+**Documentação completa:** https://uesleinasch.github.io/crafytask/
 
-- **Gerenciamento de Tarefas**: Crie, edite, exclua e organize suas tarefas
-- **Timer Integrado**: Inicie e pare timers para rastrear tempo gasto em tarefas
-- **Status de Tarefas**: Acompanhe o progresso com badges de status
-- **Arquivamento**: Mova tarefas concluídas para uma seção de arquivadas
-- **Interface Moderna**: UI responsiva e acessível com componentes reutilizáveis
-- **Banco de Dados Local**: Armazenamento persistente usando SQLite
-- **Notificações**: Alertas para lembretes e atualizações
+## Funcionalidades
 
-## 🛠️ Tecnologias Utilizadas
+- **GTD completo**: inbox, próximas ações, aguardando, algum dia, contextos, projetos, áreas,
+  metas/horizontes e revisão semanal guiada.
+- **Tempo**: timer por tarefa (vários ao mesmo tempo), timer flutuante, time blocks no calendário e
+  relatórios.
+- **Tarefas ricas**: subtarefas, dependências, recorrência, tags, prazos com hora, notas em editor
+  rico (tabelas, imagens, menções `@`) e um desenho Excalidraw por tarefa.
+- **Cadernos**: caderno → seção → página, com as mesmas notas e desenhos.
+- **Terminal embutido** por tarefa, com pasta de trabalho e comando inicial.
+- **Integrações**: Notion, Google Calendar, Jira Cloud e servidor MCP para assistentes como o
+  Claude Code.
+- **Captura rápida** global (`Ctrl+Shift+Espaço`), bandeja do sistema, início com o sistema e
+  backup/restauração.
 
-- **Frontend**: React 18 com TypeScript
-- **Desktop**: Electron
-- **Build Tool**: Vite
-- **UI Components**: Shadcn/UI (baseado em Radix UI)
-- **Styling**: CSS personalizado + Tailwind CSS
-- **Database**: SQLite via better-sqlite3
-- **Linting**: ESLint
-- **Packaging**: Electron Builder
+## Instalação
 
-## 📋 Pré-requisitos
-
-- Node.js (versão 18 ou superior)
-- npm ou yarn
-
-## 🚀 Instalação e Execução
-
-### 1. Clone o repositório
+Baixe o pacote da [última release](https://github.com/uesleinasch/crafytask/releases/latest):
 
 ```bash
-git clone https://github.com/seu-usuario/ticktask.git
-cd ticktask
+# Debian / Ubuntu
+sudo apt install ./crafytask-<versão>.deb
+
+# Qualquer distribuição
+chmod +x crafytask-<versão>.AppImage
+./crafytask-<versão>.AppImage
 ```
 
-### 2. Instale as dependências
+Quem já usa o TickTask pode instalar por cima: o pacote faz upgrade e os dados continuam na mesma
+pasta (`~/.config/ticktask`). Detalhes, inclusive o perfil AppArmor do Ubuntu 24.04+, na
+[documentação](https://uesleinasch.github.io/crafytask/).
+
+## Desenvolvimento
+
+Requer Node.js 22 e as ferramentas de build do `node-gyp` (Python 3.11, `make`, `g++`).
 
 ```bash
-npm install
+git clone https://github.com/uesleinasch/crafytask.git
+cd crafytask
+npm install          # também ativa os git hooks de .githooks/
+npm run dev          # app com hot reload, numa pasta de dados separada (~/.config/ticktask-dev)
+npm run test         # vitest
+npm run typecheck
+npm run build:linux  # gera .deb e AppImage em dist/
 ```
 
-### 3. Execute em modo desenvolvimento
+Documentação local: `uvx --with mkdocs-material mkdocs serve`.
 
-```bash
-npm run dev
-```
+Arquitetura, convenções e fluxo de trabalho: [CLAUDE.md](CLAUDE.md) e
+[guia de contribuição](.github/CONTRIBUTING.md).
 
-Isso abrirá o aplicativo em modo desenvolvimento com hot reload.
+## Fluxo de contribuição (resumo)
 
-## 🏗️ Build para Produção
+- Branches saem de `production` e seguem [Conventional Branch](https://conventionalbranch.org):
+  `feature/…`, `bugfix/…`, `hotfix/…`, `chore/…`, `release/vX.Y.Z`.
+- Commits e títulos de PR em [Conventional Commits](https://www.conventionalcommits.org/).
+- PR para `production` (squash). Releases saem de tags `vX.Y.Z` em `production`; depois,
+  `production` é levada para `main` por PR.
+- Trailers de coautoria de IA não são aceitos (hooks e CI recusam).
 
-### Linux (AppImage e .deb)
+## Licença
 
-```bash
-npm run build:linux
-```
-
-Gera:
-- `dist/ticktask-1.0.0.AppImage` - AppImage executável
-- `dist/ticktask-1.0.0.deb` - Pacote Debian
-
-### Windows (NSIS Installer)
-
-```bash
-npm run build:win
-```
-
-Gera:
-- `dist/ticktask-1.0.0-setup.exe` - Installer executável
-
-**Nota:** Para buildar no Windows a partir do Linux, é necessário Wine.
-
-### macOS (DMG)
-
-```bash
-npm run build:mac
-```
-
-Gera:
-- `dist/ticktask-1.0.0.dmg` - Pacote DMG
-
-Os arquivos de build estarão disponíveis na pasta `dist/`.
-
-## 🤝 Como Contribuir
-
-Contribuições são bem-vindas! Este é um projeto open source e qualquer ajuda é apreciada. Siga estes passos para contribuir:
-
-### 1. Fork o projeto
-
-Clique no botão "Fork" no GitHub para criar sua própria cópia do repositório.
-
-### 2. Clone seu fork
-
-```bash
-git clone https://github.com/seu-usuario/ticktask.git
-cd ticktask
-```
-
-### 3. Crie uma branch para sua feature
-
-```bash
-git checkout -b feature/nome-da-sua-feature
-```
-
-### 4. Instale dependências e desenvolva
-
-```bash
-npm install
-npm run dev
-```
-
-### 5. Faça suas alterações
-
-- Siga as convenções de código existentes
-- Adicione testes para novas funcionalidades
-- Atualize a documentação se necessário
-
-### 6. Commit suas mudanças
-
-```bash
-git add .
-git commit -m "feat: adiciona nova funcionalidade"
-```
-
-### 7. Push para seu fork
-
-```bash
-git push origin feature/nome-da-sua-feature
-```
-
-### 8. Abra um Pull Request
-
-No GitHub, clique em "New Pull Request" e descreva suas alterações detalhadamente.
-
-### Diretrizes de Contribuição
-
-- Use commits convencionais (feat, fix, docs, style, refactor, test, chore)
-- Mantenha o código limpo e bem documentado
-- Adicione testes para novas funcionalidades
-- Respeite o código de conduta
-
-## 📁 Estrutura do Projeto
-
-```
-ticktask/
-├── src/
-│   ├── main/           # Processo principal do Electron
-│   ├── preload/        # Scripts de preload
-│   ├── renderer/       # Interface React
-│   │   ├── components/ # Componentes reutilizáveis
-│   │   ├── pages/      # Páginas da aplicação
-│   │   ├── hooks/      # Hooks customizados
-│   │   └── stores/     # Estado global
-│   └── shared/         # Tipos e utilitários compartilhados
-├── build/              # Configurações de build
-├── electron.vite.config.ts
-└── package.json
-```
-
-## 🐛 Reportando Bugs
-
-Encontrou um bug? Abra uma issue no GitHub com:
-
-- Descrição clara do problema
-- Passos para reproduzir
-- Sistema operacional e versão
-- Logs de erro (se aplicável)
-
-## 📝 Licença
-
-Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
-
-## 🙏 Agradecimentos
-
-- [Electron](https://electronjs.org/) - Framework para aplicações desktop
-- [React](https://reactjs.org/) - Biblioteca para interfaces
-- [Shadcn/UI](https://ui.shadcn.com/) - Componentes UI
-- [Vite](https://vitejs.dev/) - Build tool moderno
-
----
-
-Feito com ❤️ por contribuidores open source
+[MIT](LICENSE).

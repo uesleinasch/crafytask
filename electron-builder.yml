@@ -18,30 +18,20 @@ files:
   - '!node_modules/@excalidraw/excalidraw/dist/dev/**'
 asarUnpack:
   - resources/**
-win:
-  executableName: ticktask
-  target:
-    - nsis
-  icon: build/icon.ico
-nsis:
-  artifactName: ${name}-${version}-setup.${ext}
-  shortcutName: ${productName}
-  uninstallDisplayName: ${productName}
-  createDesktopShortcut: always
-mac:
-  category: public.app-category.productivity
-  icon: build/icon.icns
 linux:
   target:
     - AppImage
     - deb
-  maintainer: ticktask@github.com
+  maintainer: crafytask@github.com
   category: Utility
   icon: build/icons
+  desktop:
+    Name: CrafyTask
+    Comment: Tarefas e tempo no estilo GTD
 appImage:
-  artifactName: ${name}-${version}.${ext}
+  artifactName: crafytask-${version}.${ext}
 deb:
-  artifactName: ${name}-${version}.${ext}
+  artifactName: crafytask-${version}.${ext}
   # Perfil AppArmor para o sandbox do Chromium no Ubuntu 24.04+ — ver build/linux/after-install.sh
   afterInstall: build/linux/after-install.sh
   afterRemove: build/linux/after-remove.sh

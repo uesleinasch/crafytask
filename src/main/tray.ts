@@ -13,10 +13,10 @@ export function createTray(actions: TrayActions): void {
   if (tray && !tray.isDestroyed()) return
 
   tray = new Tray(nativeImage.createFromPath(trayIconPath))
-  tray.setToolTip('TickTask App')
+  tray.setToolTip('CrafyTask')
   tray.setContextMenu(
     Menu.buildFromTemplate([
-      { label: 'Abrir TickTask', click: () => actions.showMainWindow() },
+      { label: 'Abrir CrafyTask', click: () => actions.showMainWindow() },
       { label: 'Captura rápida', click: () => actions.openQuickCapture() },
       { type: 'separator' },
       { label: 'Sair', click: () => actions.quit() }

@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+branch="$1"
+work='^(feature|feat|bugfix|fix|hotfix|chore)/[a-z0-9]+(-[a-z0-9]+)*$'
+release='^release/v[0-9]+\.[0-9]+\.[0-9]+$'
+
+if printf '%s' "$branch" | grep -Eq "$work|$release"; then
+  exit 0
+fi
+
+cat >&2 <<MSG
+Nome de branch inválido: '$branch'
+Siga https://conventionalbranch.org:
+  feature/<descricao>  bugfix/<descricao>  hotfix/<descricao>  chore/<descricao>  release/vX.Y.Z
+  minúsculas, números e hífens; ponto só na versão do release.
+MSG
+exit 1

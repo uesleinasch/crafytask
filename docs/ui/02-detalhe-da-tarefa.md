@@ -191,7 +191,7 @@ concluir. Se a tarefa já está arquivada, o primeiro vira **Desarquivar** (`Und
 Seção da sidebar, antes de **Subtarefas**, em task do Jira que não é subtarefa
 (`JiraChildIssues`). Ao abrir, busca no Jira as issues com `parent = <chave>` (`jira:getChildren`)
 — **todas**, inclusive as de outras pessoas, que a importação não traz. Cada linha: tipo, chave,
-resumo e status Jira. Clique abre a task no TickTask se a issue já foi importada; senão abre a
+resumo e status Jira. Clique abre a task no CrafyTask se a issue já foi importada; senão abre a
 issue no navegador (ícone `ExternalLink`). Sem filhas, a seção some. Se o Jira falhar, mostra um
 aviso âmbar e só as filhas já importadas (`jira_parent_key` local).
 
