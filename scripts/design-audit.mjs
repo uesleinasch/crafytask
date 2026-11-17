@@ -12,6 +12,10 @@ const flag = (name) => args.includes(`--${name}`)
 const option = (name) => args.find((a) => a.startsWith(`--${name}=`))?.split('=')[1]
 
 function globToRegExp(glob) {
+  return new RegExp('^' + globBody(glob) + '$')
+}
+
+function globBody(glob) {
   let re = ''
   for (let i = 0; i < glob.length; i++) {
     const c = glob[i]
@@ -26,13 +30,13 @@ function globToRegExp(glob) {
         glob
           .slice(i + 1, end)
           .split(',')
-          .map(escape)
+          .map(globBody)
           .join('|') +
         ')'
       i = end
     } else re += escape(c)
   }
-  return new RegExp('^' + re + '$')
+  return re
 }
 
 function escape(s) {
