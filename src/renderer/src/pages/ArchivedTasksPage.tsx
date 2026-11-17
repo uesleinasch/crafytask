@@ -111,7 +111,7 @@ export function ArchivedTasksPage(): React.JSX.Element {
       </header>
 
       {/* Content */}
-      <ScrollArea className="flex-1 p-6 pb-24">
+      <ScrollArea className="flex-1 h-0 p-6 pb-24">
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <p className="text-slate-400">Carregando...</p>

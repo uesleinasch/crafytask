@@ -2,12 +2,20 @@ import { create } from 'zustand'
 import type { TerminalSession, TerminalTabCustomization } from '@shared/types'
 import { toast } from '@renderer/components/ui/sonner'
 import { readTerminalShell } from '@renderer/lib/terminalPrefs'
-import { activatePane, openInSplit, panesAfterRemoval, reconcilePanes } from './terminalPanes'
+import {
+  EMPTY_LAYOUT,
+  activate,
+  addSession,
+  detachSession,
+  reconcileLayout,
+  removeSession,
+  replaceSession,
+  splitActive,
+  type PaneLayout
+} from './terminalPanes'
 
-interface TerminalState {
+interface TerminalState extends PaneLayout {
   sessions: TerminalSession[]
-  activeId: string | null
-  splitId: string | null
   open: boolean
   maximized: boolean
   refresh: () => Promise<void>
@@ -15,9 +23,8 @@ interface TerminalState {
   toggle: () => void
   toggleMaximized: () => void
   activate: (id: string) => void
-  openSplit: (id: string) => void
   splitNew: (taskId: number) => Promise<void>
-  closeSplit: () => void
+  detach: (id: string) => void
   createSession: (taskId: number) => Promise<boolean>
   toggleForTask: (taskId: number) => Promise<boolean>
   close: (id: string) => Promise<void>
@@ -27,10 +34,25 @@ interface TerminalState {
   forget: (id: string) => void
 }
 
+async function spawn(taskId: number): Promise<TerminalSession | null> {
+  const result = await window.api.terminalCreate(taskId, { shell: readTerminalShell() })
+  if (!result.ok) {
+    toast.error(result.error)
+    return null
+  }
+  if (result.shellFallback) {
+    toast.warning(`Shell configurado não encontrado; usando ${result.session.shell}`)
+  }
+  return result.session
+}
+
+function layoutOf(state: PaneLayout): PaneLayout {
+  return { groups: state.groups, activeId: state.activeId }
+}
+
 export const useTerminalStore = create<TerminalState>((set, get) => ({
   sessions: [],
-  activeId: null,
-  splitId: null,
+  ...EMPTY_LAYOUT,
   open: false,
   maximized: false,
 
@@ -38,9 +60,9 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
     const sessions = await window.api.terminalList()
     set((state) => ({
       sessions,
-      ...reconcilePanes(
+      ...reconcileLayout(
         sessions.map((s) => s.id),
-        state
+        layoutOf(state)
       )
     }))
   },
@@ -51,31 +73,26 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
 
   toggleMaximized: () => set((state) => ({ open: true, maximized: !state.maximized })),
 
-  activate: (id) => set((state) => ({ ...activatePane(state, id), open: true })),
-
-  openSplit: (id) => set((state) => ({ ...openInSplit(state, id), open: true })),
+  activate: (id) => set((state) => ({ ...activate(layoutOf(state), id), open: true })),
 
   splitNew: async (taskId) => {
-    const previous = get().activeId
-    const created = await get().createSession(taskId)
-    const newId = get().activeId
-    if (created && previous && newId) set({ activeId: previous, splitId: newId })
+    const session = await spawn(taskId)
+    if (!session) return
+    set((state) => ({
+      sessions: [...state.sessions, session],
+      ...splitActive(layoutOf(state), session.id),
+      open: true
+    }))
   },
 
-  closeSplit: () => set({ splitId: null }),
+  detach: (id) => set((state) => detachSession(layoutOf(state), id)),
 
   createSession: async (taskId) => {
-    const result = await window.api.terminalCreate(taskId, { shell: readTerminalShell() })
-    if (!result.ok) {
-      toast.error(result.error)
-      return false
-    }
-    if (result.shellFallback) {
-      toast.warning(`Shell configurado não encontrado; usando ${result.session.shell}`)
-    }
+    const session = await spawn(taskId)
+    if (!session) return false
     set((state) => ({
-      sessions: [...state.sessions, result.session],
-      activeId: result.session.id,
+      sessions: [...state.sessions, session],
+      ...addSession(layoutOf(state), session.id),
       open: true
     }))
     return true
@@ -102,24 +119,17 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
   },
 
   restart: async (id) => {
-    const session = get().sessions.find((s) => s.id === id)
+    const old = get().sessions.find((s) => s.id === id)
+    if (!old) return
+    const session = await spawn(old.taskId)
     if (!session) return
-    const before = { activeId: get().activeId, splitId: get().splitId }
-    await get().close(id)
-    const created = await get().createSession(session.taskId)
-    const newId = get().activeId
-    if (created && newId && before.splitId) {
-      set({
-        activeId: before.activeId === id ? newId : before.activeId,
-        splitId: before.splitId === id ? newId : before.splitId
-      })
-    }
-    if (created && newId && (session.title || session.color || session.icon)) {
-      await get().customize(newId, {
-        title: session.title,
-        color: session.color,
-        icon: session.icon
-      })
+    set((state) => ({
+      sessions: [...state.sessions.filter((s) => s.id !== id), session],
+      ...replaceSession(layoutOf(state), id, session.id)
+    }))
+    await window.api.terminalDispose(id)
+    if (old.title || old.color || old.icon) {
+      await get().customize(session.id, { title: old.title, color: old.color, icon: old.icon })
     }
   },
 
@@ -139,11 +149,7 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
   forget: (id) =>
     set((state) => {
       if (!state.sessions.some((s) => s.id === id)) return state
-      const panes = panesAfterRemoval(
-        state.sessions.map((s) => s.id),
-        state,
-        id
-      )
+      const panes = removeSession(layoutOf(state), id)
       const sessions = state.sessions.filter((s) => s.id !== id)
       const open = sessions.length > 0 && state.open
       return { sessions, ...panes, open, maximized: open && state.maximized }

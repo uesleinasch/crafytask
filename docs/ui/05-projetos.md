@@ -28,6 +28,16 @@ tem:
 | Concluídos | sim |
 | Arquivados | sim |
 
+À direita das abas, o alternador **Cards** (`LayoutGrid`) / **Lista** (`List`), igual ao da lista
+de tarefas e persistido em `localStorage` (`ticktask:projectListViewMode`, padrão `cards`).
+
+## Modo lista
+
+Um bloco branco com uma linha por projeto (`components/projects/ProjectListRow.tsx`), com a mesma
+borda esquerda de 4px na cor do projeto: nome e, abaixo, a próxima ação (ou o alerta "Sem próxima
+ação definida"), badge de status, progresso `{feitas}/{total}` com barra e a data limite. Clicar
+abre `/project/:id`.
+
 ## Cartão de projeto
 
 Grade `grid-cols-1 md:grid-cols-2 gap-4`. Cada cartão é `bg-white border rounded-sm p-5` com

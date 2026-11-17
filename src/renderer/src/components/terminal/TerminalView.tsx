@@ -55,8 +55,15 @@ function startTimerFromTerminal(session: TerminalSession): void {
   })
 }
 
-export function TerminalView({ session }: { session: TerminalSession }): React.JSX.Element {
+interface TerminalViewProps {
+  session: TerminalSession
+  visible: boolean
+  focused: boolean
+}
+
+export function TerminalView({ session, visible, focused }: TerminalViewProps): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null)
+  const terminalRef = useRef<{ terminal: Terminal; refit: () => void } | null>(null)
   const sessionRef = useRef(session)
   sessionRef.current = session
 
@@ -123,10 +130,11 @@ export function TerminalView({ session }: { session: TerminalSession }): React.J
     observer.observe(container)
     refit()
     void window.api.terminalResize(id, terminal.cols, terminal.rows)
-    terminal.focus()
+    terminalRef.current = { terminal, refit }
 
     return () => {
       disposed = true
+      terminalRef.current = null
       observer.disconnect()
       input.dispose()
       resize.dispose()
@@ -135,6 +143,17 @@ export function TerminalView({ session }: { session: TerminalSession }): React.J
       terminal.dispose()
     }
   }, [session.id])
+
+  useEffect(() => {
+    const current = terminalRef.current
+    if (!current || !visible) return
+    const frame = requestAnimationFrame(() => {
+      current.refit()
+      current.terminal.refresh(0, current.terminal.rows - 1)
+      if (focused) current.terminal.focus()
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [visible, focused])
 
   return (
     <div className="h-full w-full px-2 pt-1">
