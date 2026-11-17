@@ -58,6 +58,7 @@ export interface Project {
   task_count?: number
   completed_task_count?: number
   next_action?: string
+  working_dir?: string | null
 }
 
 export interface CreateProjectInput {
@@ -68,6 +69,7 @@ export interface CreateProjectInput {
   color?: string
   due_date?: string
   area_id?: number
+  working_dir?: string | null
 }
 
 export interface UpdateProjectInput {
@@ -78,6 +80,7 @@ export interface UpdateProjectInput {
   color?: string
   due_date?: string
   area_id?: number | null
+  working_dir?: string | null
 }
 
 // ===================== AREA (GTD Horizonte 2) =====================
@@ -191,6 +194,7 @@ export interface Task {
   due_time?: string | null
   external_url?: string | null
   working_dir?: string | null
+  project_working_dir?: string | null
   start_command?: string | null
   jira_key?: string | null
   jira_status?: string | null

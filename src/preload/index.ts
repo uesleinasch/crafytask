@@ -522,6 +522,8 @@ const api = {
     ipcRenderer.invoke('terminal:getBuffer', id),
   terminalPickDirectory: (taskId: number): Promise<string | null> =>
     ipcRenderer.invoke('terminal:pickDirectory', taskId),
+  terminalPickProjectDirectory: (projectId: number): Promise<string | null> =>
+    ipcRenderer.invoke('terminal:pickProjectDirectory', projectId),
   terminalSetTaskWorkspace: (
     taskId: number,
     workspace: { working_dir?: string | null; start_command?: string | null }

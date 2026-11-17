@@ -101,6 +101,13 @@ Título, descrição, outcome e data limite salvam no **blur** (uma única chama
 O cartão da direita acumula duas coisas sem relação (prazo e progresso) porque o da esquerda ficou
 com apenas um campo.
 
+### Diretório de trabalho
+
+Cartão de largura total (`SquareTerminal` laranja) com o caminho em `font-mono`, **Escolher** /
+**Alterar** (diálogo de pasta do sistema, `terminal:pickProjectDirectory`) e `×` para remover. Grava
+`projects.working_dir`, coluna local (não vai ao Notion). As tasks do projeto sem diretório próprio
+abrem o terminal nessa pasta — ver [16-terminal.md](16-terminal.md).
+
 ### Tarefas do projeto
 
 Título de seção `Tarefas do Projeto (N)` em `text-sm font-bold uppercase tracking-wider

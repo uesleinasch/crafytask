@@ -79,6 +79,7 @@ import {
   type NotesViewMode
 } from '@renderer/components/editor/notesLayout'
 import { usePersistedState } from '@renderer/hooks/usePersistedState'
+import { effectiveWorkingDir } from '@shared/workingDir'
 
 // ===================== CATEGORY ACCENT STYLES =====================
 
@@ -859,6 +860,7 @@ export function SingleTaskPage(): React.JSX.Element {
               <WorkingDirField
                 taskId={task.id}
                 workingDir={task.working_dir}
+                projectWorkingDir={task.project_working_dir}
                 startCommand={task.start_command}
                 onChange={refreshTask}
               />
@@ -965,7 +967,7 @@ export function SingleTaskPage(): React.JSX.Element {
             </button>
             <TerminalTaskButton
               taskId={task.id}
-              workingDir={task.working_dir}
+              workingDir={effectiveWorkingDir(task).dir}
               onWorkingDirChange={refreshTask}
             />
           </div>

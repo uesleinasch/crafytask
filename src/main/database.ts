@@ -288,6 +288,12 @@ export function initDatabase(): void {
     /* já existe */
   }
 
+  try {
+    db.exec('ALTER TABLE projects ADD COLUMN working_dir TEXT')
+  } catch {
+    /* já existe */
+  }
+
   // ===================== FASE 4.2: Energy Tracking =====================
   try {
     db.exec(
@@ -657,8 +663,8 @@ export function getTaskContexts(taskId: number): ContextRow[] {
 
 export function createProject(data: CreateProjectInput): Project {
   const stmt = db.prepare(`
-    INSERT INTO projects (name, description, outcome, status, color, due_date, area_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO projects (name, description, outcome, status, color, due_date, area_id, working_dir)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `)
   const result = stmt.run(
     data.name,
@@ -667,7 +673,8 @@ export function createProject(data: CreateProjectInput): Project {
     data.status || 'active',
     data.color || '#6366f1',
     data.due_date || null,
-    data.area_id || null
+    data.area_id || null,
+    data.working_dir || null
   )
   return getProject(result.lastInsertRowid as number)!
 }
@@ -752,6 +759,10 @@ export function updateProject(id: number, data: UpdateProjectInput): void {
   if (data.area_id !== undefined) {
     updates.push('area_id = ?')
     values.push(data.area_id)
+  }
+  if (data.working_dir !== undefined) {
+    updates.push('working_dir = ?')
+    values.push(data.working_dir || null)
   }
 
   if (updates.length > 0) {
@@ -1000,7 +1011,8 @@ export function listActiveTasksLight(): Pick<
 
 export function getTask(id: number): Task | undefined {
   const stmt = db.prepare(`
-    SELECT t.*, p.name as project_name, p.color as project_color
+    SELECT t.*, p.name as project_name, p.color as project_color,
+      p.working_dir as project_working_dir
     FROM tasks t
     LEFT JOIN projects p ON t.project_id = p.id
     WHERE t.id = ?

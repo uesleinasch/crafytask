@@ -4,6 +4,13 @@ Painel de terminal no rodapé da janela principal, por task, no estilo do VS Cod
 ter um **diretório de trabalho** (`tasks.working_dir`) e um **comando inicial**
 (`tasks.start_command`); o terminal abre nessa pasta e digita o comando.
 
+O projeto também pode ter um diretório (`projects.working_dir`, editado no detalhe do projeto). A
+task sem diretório próprio **herda** o do projeto: o campo mostra o caminho com a etiqueta *do
+projeto*, e **Alterar** grava um diretório só da task. Com diretório próprio e projeto com
+diretório, o botão `↶` limpa o da task e volta a herdar. A regra é `effectiveWorkingDir`
+(`shared/workingDir.ts`, testada), usada no renderer e no `terminal:create`. O comando inicial
+continua sendo só da task.
+
 ## Onde aparece
 
 - **Detalhe da tarefa** — botão laranja **Terminal** ao lado de **Notas** e o campo
