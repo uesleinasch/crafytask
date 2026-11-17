@@ -204,7 +204,7 @@ Em task do Jira, à esquerda dele fica o botão **Campos do Jira** (`SlidersHori
 `JiraTaskControls` da sidebar, que ficava apertado e às vezes oculto.
 
 À direita de **Notas** fica o botão **Terminal** (`TerminalTaskButton`, laranja). Sem diretório de
-trabalho, abre o seletor de pasta e, escolhida a pasta, o terminal. Com diretório, alterna o painel
+trabalho (nem próprio, nem herdado do projeto), abre o seletor de pasta e, escolhida a pasta, o terminal. Com diretório, alterna o painel
 de terminal (rodapé da janela, `TerminalPanel` em `App.tsx`) na sessão desta task, criando uma se
 não houver. Preenchido quando o painel está mostrando esta task. Ver
 [16-terminal.md](16-terminal.md).
