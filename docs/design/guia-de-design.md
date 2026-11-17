@@ -224,6 +224,30 @@ ConfigProvider (tema, cssVar) → App (message, modal, notification) → RegionB
   - **Ajustes de tempo:** Adicionar tempo, Ajustar total e Limite de tempo (com Remover), os três de
     hoje, em `HH:MM:SS`.
 
+  Acima do cronômetro: botões **Campos do Jira** (só em task do Jira, abre o `JiraFieldsSheet` num
+  `Drawer`), **Notas** (mostra/esconde a coluna de notas) e **Terminal** (abre o painel na sessão
+  da task). Task bloqueada mostra `Alert` "Bloqueada por dependências" e Iniciar fica desabilitado.
+  O cronômetro fica em `text3` parado, `text` rodando e `error` ao passar do limite; a barra do
+  limite vai de `success` a `warning` (80%) e `error` (100%).
+
+- **Painel de dados da task:** a migração troca o visual, não tira nada. Tudo o que o painel tem
+  hoje continua, na mesma ordem, em linhas rótulo + controle (rótulo de 92px):
+
+  | Bloco                 | Elementos                                                                                                                                                                                                     |
+  | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | Topo                  | `#id` (clique copia), etiqueta "Arquivada" quando for o caso, seletor de categoria, nome e descrição editáveis no lugar                                                                                       |
+  | Organização           | Status (Executando desabilitado se bloqueada) · Jira: tipo, chave e transição (só task do Jira) · Pai no Jira (só com pai) · Projeto + "Abrir projeto →" · Contextos (alternáveis) · Tags                     |
+  | Agenda                | Programado (data + início/fim) · Prazo (data + hora) · Recorrência · Energia (três botões, clicar no ativo limpa) · Link externo + abrir · Google Calendar (switch + ressincronizar; só com Google conectado) |
+  | Ambiente              | Diretório de trabalho (herdado do projeto, Alterar, voltar a herdar) · Comando ao abrir o terminal                                                                                                            |
+  | Issues filhas no Jira | Tipo, chave, resumo e status; abre a task se importada, senão o Jira (só task do Jira com filhas)                                                                                                             |
+  | Subtarefas            | Aviso de pai bloqueado, progresso `feitas/total`, checkbox + nome que navega, "Nova subtarefa" inline (some quando a task já é subtarefa)                                                                     |
+  | Depende de            | Linha verde (concluída) ou laranja (pendente) com remover; "Adicionar dependência" com busca                                                                                                                  |
+  | Ações                 | Arquivar/Desarquivar e Excluir (com confirmação)                                                                                                                                                              |
+
+  O histórico de sessões sai deste painel e vai para a seção Sessões do timer, onde ganha editar e
+  excluir. O protótipo tem um seletor "Task local / Task do Jira" para mostrar os blocos que só
+  aparecem em task do Jira.
+
 ## 8. Responsividade
 
 Breakpoints do antd para a casca; container queries para componentes dentro de painéis

@@ -118,6 +118,14 @@ function evaluate(item) {
         detalhe: present.length ? `ainda presente: ${present.join(', ')}` : 'removida'
       }
     }
+    case 'contem-todos': {
+      const files = matchFiles(c.arquivos)
+      const missing = c.padroes.filter((p) => countMatches(files, p).length === 0)
+      return {
+        ok: files.length > 0 && missing.length === 0,
+        detalhe: missing.length ? `faltando: ${missing.join(', ')}` : 'todos presentes'
+      }
+    }
     case 'contem': {
       const files = matchFiles(c.arquivos)
       if (!files.length)
