@@ -198,10 +198,13 @@ ConfigProvider (tema, cssVar) → App (message, modal, notification) → RegionB
   de `md` a mesma lista abre num `Drawer` pelo botão de menu do header. O terminal sai do header (o
   botão laranja de hoje) e passa a viver só aqui e no atalho.
 
-- **Header (52px):** botão de menu (só abaixo de `md`); título da tela; campo "Capturar para o
-  Inbox…" (Enter grava, mesmo IPC da captura rápida); pílula com os timers rodando (popover com
-  pausar e abrir); busca `Ctrl+K`; menu de aparência; botão primário "Nova tarefa". Abaixo de `sm`
-  a captura sai do header e vai para a paleta de comandos.
+- **Header (52px)** em três zonas de grid (`1fr · até 520px · 1fr`): à esquerda, botão de menu (só
+  abaixo de `md`) e título da tela; **no centro, o campo "Capturar para o Inbox…"** (Enter grava,
+  mesmo IPC da captura rápida); à direita, pílula com os timers rodando, busca `Ctrl+K`, menu de
+  aparência e "Nova tarefa". O centro dá à captura uma posição fixa, que não anda com o tamanho do
+  título nem com quantos botões há à direita; posição estável vira memória espacial e a captura,
+  que é a ação de menor esforço do GTD (Bellotti 2004), fica sempre no mesmo lugar e larga como
+  alvo (Fitts). Abaixo de `sm` a captura sai do header e vai para a paleta de comandos.
 - **Paleta de comandos (`Ctrl+K`):** navegar, buscar tasks e páginas, iniciar timer, mudar tema.
   Componente próprio sobre `Modal` + `Input` + `List` (o antd não tem um).
 - **Barra de status (28px):** indicadores passivos de integração. Substitui o banner
@@ -264,18 +267,46 @@ Breakpoints do antd para a casca; container queries para componentes dentro de p
 redimensionáveis (notas, terminal). A janela principal passa a aceitar `minWidth` 400 (hoje 800,
 o que impede ver qualquer layout estreito).
 
-| Faixa            | Sider                           | Header                              | Lista de tarefas                                     | Detalhe da task                                      |
-| ---------------- | ------------------------------- | ----------------------------------- | ---------------------------------------------------- | ---------------------------------------------------- |
-| `< 576` (xs)     | `Drawer` pelo botão de menu     | sem captura, "Nova tarefa" só ícone | status em `Select`, cards                            | cabeçalho + abas Notas / Tempo / Detalhes / Relações |
-| `576–767` (sm)   | `Drawer`                        | captura volta                       | status em `Select`, cards                            | idem                                                 |
-| `768–991` (md)   | recolhido, 64px                 | sem pílula de timers no texto       | `Tabs` com contadores, tabela com colunas essenciais | cabeçalho + notas; inspetor em `Drawer`              |
-| `992–1199` (lg)  | recolhido, 64px (pode expandir) | completo                            | + status                                             | idem                                                 |
-| `1200–1599` (xl) | aberto, 232px                   | completo + atalho visível           | + projeto, energia                                   | cabeçalho + notas + inspetor 380px (pode esconder)   |
-| `≥ 1600` (xxl)   | aberto                          | completo                            | + contextos                                          | cabeçalho + notas + inspetor 420px                   |
+| Faixa            | Sider                           | Header                              | Lista de tarefas                                                   | Detalhe da task                                      |
+| ---------------- | ------------------------------- | ----------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------- |
+| `< 576` (xs)     | `Drawer` pelo botão de menu     | sem captura, "Nova tarefa" só ícone | status em `Select`, cards                                          | cabeçalho + abas Notas / Tempo / Detalhes / Relações |
+| `576–767` (sm)   | `Drawer`                        | captura volta                       | status em `Select`, cards                                          | idem                                                 |
+| `768–991` (md)   | recolhido, 64px                 | sem pílula de timers no texto       | `Tabs` com contadores; tabela com ID, tarefa, prazo, tempo e ações | cabeçalho + notas; inspetor em `Drawer`              |
+| `992–1199` (lg)  | recolhido, 64px (pode expandir) | completo                            | + categoria, contextos                                             | idem                                                 |
+| `1200–1599` (xl) | aberto, 232px                   | completo + atalho visível           | + projeto, energia                                                 | cabeçalho + notas + inspetor 380px (pode esconder)   |
+| `≥ 1600` (xxl)   | aberto                          | completo                            | idem, linhas mais altas                                            | cabeçalho + notas + inspetor 420px                   |
 
 As abas de status são o centro da lista e continuam abas (não viram menu) enquanto couberem numa
 linha: seis status mais "Todas" estão no limite recomendado pela NN/g. Abaixo de `md` viram `Select`
 com o mesmo ícone, rótulo e contador.
+
+### Tabela de tarefas
+
+Cada linha leva só o que ajuda a decidir o que fazer agora; metadado secundário é texto discreto, não
+mais um badge (pesquisa: poucos elementos por linha; Hick e carga cognitiva).
+
+- **Colunas:** ID (`#711`, mono, 72px) · Tarefa · Status (**só na aba "Todas"**: dentro de um status
+  a coluna repetiria a aba) · Categoria (vazia quando normal) · Projeto · Contextos · Energia ·
+  Prazo · Tempo · ações. As colunas entram por breakpoint (tabela acima) e somem quando viram
+  agrupamento (agrupar por projeto tira Projeto; por contexto tira Contextos).
+- **Célula Tarefa:** linha 1 com cadeado de bloqueio, ponto de executando e o nome; logo abaixo do
+  nome, barra fina de 120px com `feitas/total` das subtarefas; abaixo, "aguardando: …" quando houver.
+- **Contextos:** o primeiro como tag e `+N` ao lado. Passar o mouse abre um popover com todos, já
+  editáveis (marcar/desmarcar).
+- **Subtarefas:** linha expansível. Um caret ao lado do nome abre as subtarefas recuadas logo
+  abaixo, cada uma com checkbox de concluir, status (como chip, quando a coluna Status está oculta),
+  timer e menu. Por padrão ficam recolhidas e não entram na lista principal, para não duplicar
+  linhas. Seleção não propaga do pai para as filhas (`checkStrictly`).
+- **Agrupamento na tabela:** cada grupo é uma linha de cabeçalho que ocupa a largura toda (cor do
+  projeto ou emoji do contexto, nome, quantidade, "Selecionar grupo" e tempo somado), recolhível.
+  Agrupar por contexto repete a tarefa em cada contexto dela, com um ícone discreto "Também em …" e
+  um aviso acima da tabela de que a soma dos grupos passa do total.
+- **Ações da linha:** Hoje, timer e `⋯`. O `⋯` abre o mesmo menu do botão direito.
+- **Menu de contexto** (botão direito na linha ou no card): Abrir · Iniciar/Pausar timer · Planejar
+  para hoje · Marcar como ▸ · Categoria ▸ · Mover para projeto ▸ · Contextos ▸ · Copiar `#id` ·
+  Arquivar · Excluir… (com confirmação). O item atual de cada submenu aparece marcado. Se a linha
+  faz parte de uma seleção maior, o menu age sobre a seleção toda (título "N tarefas selecionadas",
+  sem Abrir, timer, contextos e copiar), igual à barra de ações em massa.
 
 ## 9. Modo escuro
 

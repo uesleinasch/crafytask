@@ -89,6 +89,13 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
 .ct-prop:hover { border-color: var(--ct-border-strong); background: var(--ct-bg); }
 .ct-prop.muted { color: var(--ct-text-3); border-style: dashed; }
 .ct-draw-area { min-height: 420px; display: grid; place-items: center; border: 1px dashed var(--ct-border-strong); border-radius: 12px; }
+.ct-caret { width: 24px !important; min-width: 24px !important; height: 24px; padding: 0 !important; flex: none; }
+.ct-caret-space { display: inline-block; width: 24px; flex: none; }
+.ct-grouprow > td { background: var(--ct-bg) !important; border-top: 1px solid var(--ct-border); }
+.ct-groupbar { padding: 4px 0 8px; margin-bottom: 8px; border-bottom: 1px solid var(--ct-border); }
+.ct-header-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(200px, 520px) minmax(0, 1fr); align-items: center; gap: 12px; width: 100%; }
+.ct-header-grid > .ct-header-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ct-header-grid > .ct-header-right { display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-width: 0; }
 .ct-zen { position: fixed; inset: 0; z-index: 1000; display: flex; flex-direction: column; background: var(--ct-surface); color: var(--ct-text); }
 .ct-zen-bar { height: 48px; flex: none; display: flex; align-items: center; gap: 10px; padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px)); border-bottom: 1px solid var(--ct-border); min-width: 0; }
 .ct-zen-title { flex: 1; min-width: 0; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -156,7 +163,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
   const P = Object.fromEntries(PROJECTS.map(p => [p.id, p]));
   const CONTEXTS = [
     { name: '@dev', emoji: '💻' }, { name: '@reunião', emoji: '👥' }, { name: '@telefone', emoji: '📞' },
-    { name: '@escrita', emoji: '✍️' }, { name: '@leitura', emoji: '📖' }
+    { name: '@escrita', emoji: '✍️' }, { name: '@leitura', emoji: '📖' }, { name: '@github', emoji: '🔀' }
   ];
   const RECURRENCE = [{ value: 'none', label: 'Não repete' }, { value: 'daily', label: 'Diária' }, { value: 'weekly', label: 'Semanal' }, { value: 'monthly', label: 'Mensal' }];
   const DETAIL = {
@@ -211,22 +218,28 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
   }
 
   const TASKS = [
-    { id: 711, name: 'Criação de projeto para refatoração visual', status: 'executando', category: 'normal', project: 13, contexts: ['@dev'], due: '2026-11-21', secs: 9130, energy: 'alto', today: true, running: true, sub: [0, 0] },
-    { id: 731, name: 'Corrigir rolagem do terminal ao redimensionar', status: 'proximas', category: 'prioridade', project: 13, contexts: ['@dev'], due: '2026-11-18', secs: 1860, energy: 'medio', today: true, sub: [1, 3] },
+    { id: 711, name: 'Criação de projeto para refatoração visual', status: 'executando', category: 'normal', project: 13, contexts: ['@dev', '@escrita'], due: '2026-11-21', secs: 9130, energy: 'alto', today: true, running: true },
+    { id: 731, name: 'Corrigir rolagem do terminal ao redimensionar', status: 'proximas', category: 'prioridade', project: 13, contexts: ['@dev'], due: '2026-11-18', secs: 1860, energy: 'medio', today: true },
     { id: 698, name: 'Revisar PR de sync de worklog do Jira', status: 'aguardando', category: 'normal', project: 13, contexts: ['@dev', '@github'], due: null, secs: 600, energy: 'baixo', waiting: 'Revisor externo' },
-    { id: 702, name: 'Planejar sprint 48 com o time', status: 'proximas', category: 'urgente', project: 4, contexts: ['@reunião'], due: '2026-11-17', dueTime: '14:00', secs: 0, energy: 'alto', today: true },
+    { id: 702, name: 'Planejar sprint 48 com o time', status: 'proximas', category: 'urgente', project: 4, contexts: ['@reunião', '@dev', '@telefone'], due: '2026-11-17', dueTime: '14:00', secs: 0, energy: 'alto', today: true },
     { id: 705, name: 'Reunião diária', status: 'executando', category: 'time_leak', project: 4, contexts: ['@reunião'], due: null, secs: 4380, energy: 'baixo', running: true, leak: 3 },
     { id: 706, name: 'Responder e-mails do fornecedor', status: 'inbox', category: 'normal', project: null, contexts: [], due: null, secs: 0, energy: 'baixo' },
     { id: 707, name: 'Ideia: modo apresentação para a revisão semanal', status: 'inbox', category: 'normal', project: 13, contexts: [], due: null, secs: 0, energy: 'medio' },
     { id: 708, name: 'Traduzir capítulo 3 do playbook', status: 'proximas', category: 'normal', project: 7, contexts: ['@escrita'], due: '2026-11-24', secs: 5400, energy: 'alto', blocked: true },
     { id: 709, name: 'Ler "Shape Up" de novo', status: 'someday', category: 'normal', project: null, contexts: ['@leitura'], due: null, secs: 0, energy: 'medio' },
     { id: 710, name: 'Marcar check-up anual', status: 'inbox', category: 'prioridade', project: 9, contexts: ['@telefone'], due: '2026-11-28', secs: 0, energy: 'baixo' },
-    { id: 699, name: 'Publicar release v3.16.0', status: 'finalizada', category: 'normal', project: 13, contexts: ['@dev'], due: '2026-11-14', secs: 2700, energy: 'medio', sub: [4, 4] },
+    { id: 699, name: 'Publicar release v3.16.0', status: 'finalizada', category: 'normal', project: 13, contexts: ['@dev'], due: '2026-11-14', secs: 2700, energy: 'medio' },
     { id: 712, name: 'Organizar 1:1 com o time de dados', status: 'aguardando', category: 'normal', project: 4, contexts: ['@reunião'], due: '2026-11-20', secs: 0, energy: 'medio', waiting: 'Agenda do gestor' },
     { id: 713, name: 'Treino de força — semana 46', status: 'proximas', category: 'normal', project: 9, contexts: ['@academia'], due: '2026-11-19', secs: 0, energy: 'alto', today: true },
     { id: 714, name: 'Rever limiar de time leak nas configurações', status: 'someday', category: 'normal', project: 13, contexts: ['@dev'], due: null, secs: 0, energy: 'baixo' }
   ];
 
+  const SUB = (id, name, status, secs) => ({ id, name, status, category: 'normal', project: null, contexts: [], due: null, secs, energy: null, subtasks: [] });
+  const SUBTASKS = {
+    731: [SUB(7311, 'Reproduzir com três painéis abertos', 'finalizada', 900), SUB(7312, 'Recalcular o fit ao redimensionar', 'executando', 960), SUB(7313, 'Testar em 1366px', 'proximas', 0)],
+    699: [SUB(6991, 'Notas da release', 'finalizada', 600), SUB(6992, 'Tag e workflow', 'finalizada', 900), SUB(6993, 'PR para main', 'finalizada', 300), SUB(6994, 'Conferir pacotes', 'finalizada', 900)],
+    702: [SUB(7021, 'Levantar capacidade do time', 'proximas', 0), SUB(7022, 'Priorizar backlog com PO', 'inbox', 0)]
+  };
   const fmt = s => { const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60; return [h, m, x].map(v => String(v).padStart(2, '0')).join(':'); };
   const fmtShort = s => s >= 3600 ? `${Math.floor(s / 3600)}h${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}` : s > 0 ? `${Math.round(s / 60)} min` : '—';
   const fmtDate = d => d ? d.split('-').reverse().slice(0, 2).join('/') : '—';
@@ -461,19 +474,22 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       <${Layout} style=${{ minWidth: 0 }}>
         <${Header} className="ct-header">
           <${Boundary} region="barra superior" resetKey=${route}>
-            <${Flex} align="center" gap=${12} style=${{ width: '100%', minWidth: 0 }}>
-              ${isMobile ? html`<${Button} type="text" aria-label="Abrir menu" icon=${html`<${I.MenuOutlined} />`} onClick=${() => setDrawer(true)} />` : null}
-              <span className="ct-header-title">${TITLES[route] || (ROUTE_OF[route] || {}).label}</span>
-              ${screens.sm ? html`<${Input} className="ct-capture" placeholder="Capturar para o Inbox…" value=${capture} onChange=${e => setCapture(e.target.value)}
+            <div className="ct-header-grid" style=${screens.sm ? undefined : { gridTemplateColumns: 'minmax(0, 1fr) auto' }}>
+              <div className="ct-header-left">
+                ${isMobile ? html`<${Button} type="text" aria-label="Abrir menu" icon=${html`<${I.MenuOutlined} />`} onClick=${() => setDrawer(true)} />` : null}
+                <span className="ct-header-title">${TITLES[route] || (ROUTE_OF[route] || {}).label}</span>
+              </div>
+              ${screens.sm ? html`<${Input} placeholder="Capturar para o Inbox…" value=${capture} onChange=${e => setCapture(e.target.value)} aria-label="Capturar para o Inbox"
                   prefix=${html`<${I.PlusOutlined} style=${{ color: 'var(--ct-text-3)' }} />`}
-                  suffix=${html`<${Text} type="secondary" style=${{ fontSize: 12 }}>Enter<//>`}
+                  suffix=${html`<${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12 }}>Enter<//>`}
                   onPressEnter=${() => { if (capture.trim()) { message.success('Capturado no Inbox'); setCapture(''); } }} />` : null}
-              <div style=${{ flex: 1 }}></div>
-              ${screens.md ? html`<${RunningPill} go=${go} />` : null}
-              <${Tooltip} title="Buscar e comandos (Ctrl+K)"><${Button} aria-label="Buscar" icon=${html`<${I.SearchOutlined} />`} onClick=${() => setPalette(true)}>${screens.xl ? html`<span>Buscar <${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12, marginInlineStart: 6 }}>Ctrl K<//></span>` : null}<//><//>
-              <${Dropdown} menu=${prefsMenu} trigger=${['click']}><${Button} aria-label="Aparência" icon=${createElement(themeIcon)} /><//>
-              <${Button} type="primary" icon=${html`<${I.PlusOutlined} />`}>${screens.sm ? 'Nova tarefa' : null}<//>
-            <//>
+              <div className="ct-header-right">
+                ${screens.md ? html`<${RunningPill} go=${go} />` : null}
+                <${Tooltip} title="Buscar e comandos (Ctrl+K)"><${Button} aria-label="Buscar" icon=${html`<${I.SearchOutlined} />`} onClick=${() => setPalette(true)}>${screens.xxl ? html`<span>Buscar <${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12, marginInlineStart: 6 }}>Ctrl K<//></span>` : null}<//><//>
+                <${Dropdown} menu=${prefsMenu} trigger=${['click']}><${Button} aria-label="Aparência" icon=${createElement(themeIcon)} /><//>
+                <${Button} type="primary" icon=${html`<${I.PlusOutlined} />`}>${screens.lg ? 'Nova tarefa' : null}<//>
+              </div>
+            </div>
           <//>
         <//>
         <${Content} className="ct-content">
@@ -542,17 +558,85 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     <//>`;
   }
 
+  function MenuRow({ record, menu, ...rest }) {
+    const tr = createElement('tr', rest);
+    return menu ? html`<${Dropdown} menu=${menu} trigger=${['contextMenu']}>${tr}<//>` : tr;
+  }
+
   function TasksPage({ mode, go, isMobile, screens }) {
+    const { message, modal } = AntApp.useApp();
+    const [tasks, setTasks] = useState(() => TASKS.map(t => ({ ...t, subtasks: SUBTASKS[t.id] || [] })));
     const [status, setStatus] = useState('inbox');
     const [view, setView] = useState('tabela');
     const [groupBy, setGroupBy] = useState('none');
     const [q, setQ] = useState('');
     const [sel, setSel] = useState([]);
+    const [expanded, setExpanded] = useState([]);
+    const [collapsed, setCollapsed] = useState(() => new Set());
     const [today, setToday] = useState(() => new Set(TASKS.filter(t => t.today).map(t => t.id)));
-    const counts = useMemo(() => { const c = { all: TASKS.length }; TASKS.forEach(t => { c[t.status] = (c[t.status] || 0) + 1; }); return c; }, []);
-    const rows = TASKS.filter(t => (status === 'all' || t.status === status) && t.name.toLowerCase().includes(q.toLowerCase()));
+    const counts = useMemo(() => { const c = { all: tasks.length }; tasks.forEach(t => { c[t.status] = (c[t.status] || 0) + 1; }); return c; }, [tasks]);
+    const rows = tasks.filter(t => (status === 'all' || t.status === status) && t.name.toLowerCase().includes(q.toLowerCase()));
     const effectiveView = isMobile && view === 'tabela' ? 'cards' : view;
     useEffect(() => { setSel([]); if (status !== 'executando' && view === 'kanban') setView('tabela'); }, [status]);
+    useEffect(() => { setSel([]); setCollapsed(new Set()); }, [groupBy]);
+
+    const idOf = key => Number(String(key).split(':')[1].split('@')[0]);
+    const selIds = [...new Set(sel.filter(k => !String(k).startsWith('g:')).map(idOf))];
+    const findTask = id => { for (const t of tasks) { if (t.id === id) return t; const s = t.subtasks.find(x => x.id === id); if (s) return s; } return null; };
+    const updateTasks = (ids, patch) => setTasks(ts => ts.map(t => {
+      const own = ids.includes(t.id) ? (typeof patch === 'function' ? patch(t) : patch) : {};
+      return { ...t, ...own, subtasks: t.subtasks.map(s => ids.includes(s.id) ? { ...s, ...(typeof patch === 'function' ? patch(s) : patch) } : s) };
+    }));
+    const removeTasks = ids => { setTasks(ts => ts.filter(t => !ids.includes(t.id)).map(t => ({ ...t, subtasks: t.subtasks.filter(s => !ids.includes(s.id)) }))); setSel([]); };
+    const toggleToday = ids => { const n = new Set(today); const add = ids.some(id => !n.has(id)); ids.forEach(id => add ? n.add(id) : n.delete(id)); setToday(n); message.success(add ? 'No plano de hoje' : 'Fora do plano de hoje'); };
+    const plural = (n, s, p) => n + ' ' + (n === 1 ? s : p);
+
+    const menuFor = r => {
+      const many = selIds.length > 1 && selIds.includes(r.id);
+      const ids = many ? selIds : [r.id];
+      const n = ids.length;
+      const tag = s => many ? `${s} (${n})` : s;
+      const check = on => on ? '✓ ' : '';
+      const items = [
+        ...(many
+          ? [{ key: 'hdr', type: 'group', label: plural(n, 'tarefa selecionada', 'tarefas selecionadas') }]
+          : [
+              { key: 'open', icon: createElement(I.FileTextOutlined), label: 'Abrir' },
+              { key: 'timer', icon: createElement(r.running ? I.PauseOutlined : I.CaretRightOutlined), label: r.running ? 'Pausar timer' : 'Iniciar timer', disabled: r.blocked && !r.running }
+            ]),
+        { key: 'today', icon: createElement(I.ScheduleOutlined), label: tag(!many && today.has(r.id) ? 'Tirar do plano de hoje' : 'Planejar para hoje') },
+        { key: 'status', icon: createElement(I.CheckCircleOutlined), label: tag('Marcar como'), children: Object.entries(STATUS).map(([k, v]) => ({
+          key: 'status:' + k, icon: createElement(I[v.icon], { style: { color: v[mode][0] } }), label: (many ? '' : check(r.status === k)) + v.label,
+          disabled: k === 'executando' && ids.some(id => (findTask(id) || {}).blocked) })) },
+        { key: 'cat', icon: createElement(I.FlagOutlined), label: tag('Categoria'), children: Object.entries(CATEGORY).map(([k, v]) => ({ key: 'cat:' + k, label: (many ? '' : check(r.category === k)) + v.label })) },
+        { key: 'proj', icon: createElement(I.FolderOutlined), label: tag('Mover para projeto'), children: [{ key: 'proj:0', label: (many ? '' : check(!r.project)) + 'Sem projeto' }].concat(PROJECTS.map(p => ({ key: 'proj:' + p.id, label: (many ? '' : check(r.project === p.id)) + p.name }))) },
+        ...(many ? [] : [{ key: 'ctx', icon: createElement(I.EnvironmentOutlined), label: 'Contextos', children: CONTEXTS.map(c => ({ key: 'ctx:' + c.name, label: check(r.contexts.includes(c.name)) + c.emoji + ' ' + c.name })) }]),
+        { type: 'divider' },
+        ...(many ? [] : [{ key: 'copy', icon: createElement(I.CopyOutlined), label: 'Copiar #' + r.id }]),
+        { key: 'archive', icon: createElement(I.ContainerOutlined), label: tag('Arquivar') },
+        { key: 'delete', icon: createElement(I.DeleteOutlined), label: tag('Excluir…'), danger: true }
+      ];
+      const onClick = ({ key, domEvent }) => {
+        if (domEvent) domEvent.stopPropagation();
+        const [kind, val] = key.split(':');
+        if (kind === 'open') go('tarefa');
+        if (kind === 'timer') { updateTasks([r.id], { running: !r.running }); message.success(r.running ? 'Timer pausado' : 'Timer iniciado'); }
+        if (kind === 'today') toggleToday(ids);
+        if (kind === 'status') { updateTasks(ids, { status: val }); message.success(plural(n, 'tarefa marcada', 'tarefas marcadas') + ' como ' + STATUS[val].label); }
+        if (kind === 'cat') { updateTasks(ids, { category: val }); message.success('Categoria: ' + CATEGORY[val].label); }
+        if (kind === 'proj') { updateTasks(ids, { project: Number(val) || null }); message.success(Number(val) ? 'Movida para ' + P[val].name : 'Sem projeto'); }
+        if (kind === 'ctx') updateTasks([r.id], t => ({ contexts: t.contexts.includes(val) ? t.contexts.filter(x => x !== val) : t.contexts.concat(val) }));
+        if (kind === 'copy') { try { navigator.clipboard.writeText(String(r.id)).catch(() => {}); } catch (e) {} message.success('#' + r.id + ' copiado'); }
+        if (kind === 'archive') { removeTasks(ids); message.success(plural(n, 'tarefa arquivada', 'tarefas arquivadas')); }
+        if (kind === 'delete') modal.confirm({
+          title: 'Excluir ' + plural(n, 'tarefa', 'tarefas') + '?',
+          content: 'Apaga também sessões, notas e desenho. No Notion e no Google também, se a sincronização estiver ligada.',
+          okText: 'Excluir', okButtonProps: { danger: true }, cancelText: 'Cancelar',
+          onOk: () => { removeTasks(ids); message.success(plural(n, 'tarefa excluída', 'tarefas excluídas')); }
+        });
+      };
+      return { items, onClick };
+    };
 
     const tabItems = [{ key: 'all', label: 'Todas', icon: 'UnorderedListOutlined' }].concat(Object.entries(STATUS).map(([k, v]) => ({ key: k, label: v.label, icon: v.icon })))
       .map(t => {
@@ -565,48 +649,140 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       });
 
     const todayBtn = t => html`<${Tooltip} title=${today.has(t.id) ? 'Tirar do plano de hoje' : 'Planejar para hoje'}>
-      <${Button} size="small" type=${today.has(t.id) ? 'primary' : 'text'} ghost=${today.has(t.id)} aria-label="Hoje" icon=${html`<${I.ScheduleOutlined} />`}
-        onClick=${e => { e.stopPropagation(); const n = new Set(today); n.has(t.id) ? n.delete(t.id) : n.add(t.id); setToday(n); }} />
+      <${Button} size="small" type=${today.has(t.id) ? 'primary' : 'text'} ghost=${today.has(t.id)} aria-label="Hoje" aria-pressed=${today.has(t.id)} icon=${html`<${I.ScheduleOutlined} />`}
+        onClick=${e => { e.stopPropagation(); toggleToday([t.id]); }} />
     <//>`;
-    const nameCell = t => html`<${Flex} vertical gap=${2} style=${{ minWidth: 0 }}>
-      <${Flex} align="center" gap=${6} style=${{ minWidth: 0 }}>
-        ${t.blocked ? html`<${Tooltip} title="Bloqueada: depende de #702"><${I.LockOutlined} style=${{ color: CATEGORY.prioridade[mode][0] }} /><//>` : null}
-        ${t.running ? html`<span className="ct-live" aria-label="Timer rodando"></span>` : null}
-        <a className=${'ct-taskname' + (t.status === 'finalizada' ? ' done' : '')} onClick=${() => go('tarefa')} style=${{ color: 'var(--ct-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>${t.name}</a>
-      <//>
-      <${Flex} gap=${8} align="center" wrap="wrap">
-        <${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12 }}>#${t.id}<//>
-        ${t.sub && t.sub[1] ? html`<${Progress} percent=${Math.round(t.sub[0] / t.sub[1] * 100)} size=${[48, 4]} showInfo=${false} /><${Text} type="secondary" style=${{ fontSize: 12 }}>${t.sub[0]}/${t.sub[1]}<//>` : null}
-        ${t.waiting ? html`<${Text} type="secondary" style=${{ fontSize: 12 }}>aguardando: ${t.waiting}<//>` : null}
-      <//>
+    const timerBtn = t => html`<${Tooltip} title=${t.blocked ? 'Bloqueada por dependências' : t.running ? 'Pausar timer' : 'Iniciar timer'}>
+      <${Button} size="small" type="text" disabled=${t.blocked && !t.running} aria-label=${t.running ? 'Pausar timer' : 'Iniciar timer'} icon=${html`<${t.running ? I.PauseOutlined : I.CaretRightOutlined} />`}
+        onClick=${e => { e.stopPropagation(); updateTasks([t.id], { running: !t.running }); }} />
     <//>`;
-    const columns = [
-      { title: 'Tarefa', key: 'name', render: (_, t) => nameCell(t), ellipsis: false },
-      { title: 'Status', key: 'status', width: 132, render: (_, t) => html`<${Chip} def=${STATUS[t.status]} mode=${mode} />`, responsive: ['lg'] },
-      { title: 'Categoria', key: 'cat', width: 132, render: (_, t) => t.category === 'normal' ? html`<${Text} type="secondary">—<//>` : html`<${Chip} def=${CATEGORY[t.category]} mode=${mode} />` },
-      { title: 'Projeto', key: 'project', width: 170, render: (_, t) => html`<${ProjectLabel} id=${t.project} />`, responsive: ['xl'] },
-      { title: 'Contextos', key: 'ctx', width: 150, render: (_, t) => t.contexts.length ? t.contexts.map(c => html`<${Tag} key=${c} bordered=${false}>${c}<//>`) : html`<${Text} type="secondary">—<//>`, responsive: ['xxl'] },
-      { title: 'Energia', key: 'energy', width: 80, render: (_, t) => html`<${Energy} level=${t.energy} />`, responsive: ['xl'] },
-      { title: 'Prazo', key: 'due', width: 96, render: (_, t) => { const tone = dueTone(t.due); return html`<${Text} type=${tone === 'error' ? 'danger' : tone === 'warning' ? 'warning' : undefined} className="ct-mono">${fmtDate(t.due)}${t.dueTime ? ' ' + t.dueTime : ''}<//>`; }, responsive: ['md'] },
-      { title: 'Tempo', key: 'time', width: 90, align: 'right', render: (_, t) => html`<span className="ct-mono">${fmtShort(t.secs)}</span>` },
-      { title: '', key: 'act', width: 84, render: (_, t) => html`<${Space} size=${2}>${todayBtn(t)}<${Tooltip} title=${t.blocked ? 'Bloqueada' : t.running ? 'Pausar timer' : 'Iniciar timer'}><${Button} size="small" type="text" disabled=${t.blocked} aria-label="Timer" icon=${html`<${t.running ? I.PauseOutlined : I.CaretRightOutlined} />`} /><//><//>` }
-    ];
+    const moreBtn = t => html`<${Dropdown} menu=${menuFor(t)} trigger=${['click']} placement="bottomRight">
+      <${Button} size="small" type="text" aria-label="Mais ações" icon=${html`<${I.EllipsisOutlined} />`} onClick=${e => e.stopPropagation()} />
+    <//>`;
+    const toggleExpand = key => setExpanded(ex => ex.includes(key) ? ex.filter(k => k !== key) : ex.concat(key));
+    const showStatusCol = status === 'all';
 
-    const card = t => html`<${Card} key=${t.id} size="small" hoverable onClick=${() => go('tarefa')} className=${t.leak ? 'ct-leak-' + t.leak : ''}>
-      <${Flex} vertical gap=${8}>
-        <${Flex} justify="space-between" align="start" gap=${8}>${nameCell(t)}${todayBtn(t)}<//>
-        <${Flex} gap=${6} wrap="wrap" align="center">
-          <${Chip} def=${STATUS[t.status]} mode=${mode} />
-          ${t.category !== 'normal' ? html`<${Chip} def=${CATEGORY[t.category]} mode=${mode} />` : null}
-          <${ProjectLabel} id=${t.project} />
-          <span style=${{ marginInlineStart: 'auto' }} className="ct-mono">${fmtShort(t.secs)}</span>
+    const nameCell = t => {
+      const ss = t.subtasks || [];
+      const done = ss.filter(s => s.status === 'finalizada').length;
+      const open = expanded.includes(t.rowKey);
+      const others = groupBy === 'context' && t.groupCtx && t.contexts.length > 1 ? t.contexts.filter(c => c !== t.groupCtx) : [];
+      return html`<${Flex} vertical gap=${4} style=${{ minWidth: 0 }}>
+        <${Flex} align="center" gap=${6} style=${{ minWidth: 0 }}>
+          ${ss.length
+            ? html`<${Button} size="small" type="text" className="ct-caret" aria-expanded=${open} aria-label=${(open ? 'Recolher' : 'Expandir') + ' subtarefas'}
+                icon=${html`<${open ? I.CaretDownOutlined : I.CaretRightOutlined} />`} onClick=${e => { e.stopPropagation(); toggleExpand(t.rowKey); }} />`
+            : t.isSub ? null : html`<span className="ct-caret-space"></span>`}
+          ${t.isSub ? html`<${Checkbox} checked=${t.status === 'finalizada'} aria-label=${'Concluir ' + t.name} onClick=${e => e.stopPropagation()} onChange=${e => updateTasks([t.id], { status: e.target.checked ? 'finalizada' : 'inbox' })} />` : null}
+          ${t.blocked ? html`<${Tooltip} title="Bloqueada: depende de #702"><${I.LockOutlined} style=${{ color: CATEGORY.prioridade[mode][0] }} /><//>` : null}
+          ${t.running ? html`<span className="ct-live" aria-label="Timer rodando"></span>` : null}
+          <a className=${'ct-taskname' + (t.status === 'finalizada' ? ' done' : '')} onClick=${() => go('tarefa')} style=${{ color: 'var(--ct-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>${t.name}</a>
+          ${t.isSub && !showStatusCol ? html`<${Chip} def=${STATUS[t.status]} mode=${mode} />` : null}
+          ${others.length ? html`<${Tooltip} title=${'Também em ' + others.join(', ')}><${I.CopyOutlined} aria-label="Aparece em outros grupos" style=${{ color: 'var(--ct-text-3)', fontSize: 12 }} /><//>` : null}
         <//>
-      <//>
+        ${ss.length ? html`<${Flex} align="center" gap=${8} style=${{ paddingInlineStart: 30 }}>
+          <${Progress} percent=${Math.round(done / ss.length * 100)} size=${[120, 4]} showInfo=${false} strokeColor=${done === ss.length ? STATUS.executando[mode][0] : 'var(--ct-primary)'} />
+          <${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12 }}>${done}/${ss.length}<//>
+        <//>` : null}
+        ${t.waiting ? html`<${Text} type="secondary" style=${{ fontSize: 12, paddingInlineStart: 30 }}>aguardando: ${t.waiting}<//>` : null}
+      <//>`;
+    };
+
+    const ctxCell = t => {
+      if (!t.contexts.length) return html`<${Text} type="secondary">—<//>`;
+      const first = CONTEXTS.find(c => c.name === t.contexts[0]);
+      return html`<${Popover} trigger="hover" mouseEnterDelay=${0.15} placement="bottom" title="Contextos"
+        content=${html`<${Flex} gap=${4} wrap="wrap" style=${{ maxWidth: 240 }}>${CONTEXTS.map(c => html`<${Tag.CheckableTag} key=${c.name} checked=${t.contexts.includes(c.name)}
+          onChange=${on => updateTasks([t.id], x => ({ contexts: on ? x.contexts.concat(c.name) : x.contexts.filter(y => y !== c.name) }))}>${c.emoji} ${c.name}<//>`)}<//>`}>
+        <span style=${{ display: 'inline-flex', gap: 4, alignItems: 'center', cursor: 'default' }}>
+          <${Tag} bordered=${false} style=${{ margin: 0 }}>${first ? first.emoji + ' ' : ''}${t.contexts[0]}<//>
+          ${t.contexts.length > 1 ? html`<${Tag} bordered=${false} className="ct-mono" style=${{ margin: 0, color: 'var(--ct-primary)', background: 'var(--ct-primary-soft)' }}>+${t.contexts.length - 1}<//>` : null}
+        </span>
+      <//>`;
+    };
+
+    const groupList = list => {
+      if (groupBy === 'project') {
+        const m = new Map();
+        list.forEach(t => { const k = t.project || 0; if (!m.has(k)) m.set(k, []); m.get(k).push(t); });
+        return [...m.entries()].map(([k, ts]) => ({ key: 'p' + k, name: k ? P[k].name : 'Sem projeto', color: k ? P[k].color : 'var(--ct-border-strong)', tasks: ts }));
+      }
+      if (groupBy === 'context') {
+        const m = new Map();
+        list.forEach(t => (t.contexts.length ? t.contexts : ['—']).forEach(c => { if (!m.has(c)) m.set(c, []); m.get(c).push({ ...t, groupCtx: c }); }));
+        return [...m.entries()].map(([c, ts]) => { const def = CONTEXTS.find(x => x.name === c); return { key: 'c' + c, name: c === '—' ? 'Sem contexto' : c, emoji: def && def.emoji, tasks: ts }; });
+      }
+      return null;
+    };
+    const groups = groupList(rows);
+    const toRow = (t, gk) => ({
+      ...t, rowKey: 't:' + t.id + (gk ? '@' + gk : ''),
+      children: t.subtasks.length ? t.subtasks.map(s => ({ ...s, isSub: true, parentId: t.id, rowKey: 's:' + s.id + (gk ? '@' + gk : '') })) : undefined
+    });
+    const data = groups
+      ? groups.flatMap(g => [{ rowKey: 'g:' + g.key, isGroup: true, group: g }].concat(collapsed.has(g.key) ? [] : g.tasks.map(t => toRow(t, g.key))))
+      : rows.map(t => toRow(t));
+
+    const groupHeader = g => {
+      const isCollapsed = collapsed.has(g.key);
+      const total = g.tasks.reduce((a, t) => a + t.secs, 0);
+      const keys = g.tasks.map(t => 't:' + t.id + '@' + g.key);
+      return html`<${Flex} align="center" gap=${8}>
+        <${Button} size="small" type="text" aria-expanded=${!isCollapsed} aria-label=${(isCollapsed ? 'Expandir ' : 'Recolher ') + g.name}
+          icon=${html`<${isCollapsed ? I.CaretRightOutlined : I.CaretDownOutlined} />`}
+          onClick=${() => { const n = new Set(collapsed); n.has(g.key) ? n.delete(g.key) : n.add(g.key); setCollapsed(n); }} />
+        ${g.color ? html`<span className="ct-dot" style=${{ background: g.color }}></span>` : g.emoji ? html`<span>${g.emoji}</span>` : null}
+        <${Text} strong>${g.name}<//>
+        <${Text} type="secondary" className="ct-mono">${g.tasks.length}<//>
+        <a style=${{ fontSize: 12 }} onClick=${() => setSel([...new Set(sel.concat(keys))])}>Selecionar grupo</a>
+        <span style=${{ flex: 1 }}></span>
+        <${Tooltip} title="Tempo somado do grupo"><span className="ct-mono" style=${{ color: 'var(--ct-text-2)' }}>${fmtShort(total)}</span><//>
+      <//>`;
+    };
+
+    const cols = [
+      { title: 'ID', key: 'id', width: 72, render: (_, t) => html`<${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12 }}>#${t.id}<//>` },
+      { title: 'Tarefa', key: 'name', render: (_, t) => nameCell(t) },
+      showStatusCol ? { title: 'Status', key: 'status', width: 132, render: (_, t) => html`<${Chip} def=${STATUS[t.status]} mode=${mode} />` } : null,
+      screens.lg ? { title: 'Categoria', key: 'cat', width: 124, render: (_, t) => t.category === 'normal' ? null : html`<${Chip} def=${CATEGORY[t.category]} mode=${mode} />` } : null,
+      screens.xl && groupBy !== 'project' ? { title: 'Projeto', key: 'project', width: 160, render: (_, t) => t.isSub ? null : html`<${ProjectLabel} id=${t.project} />` } : null,
+      screens.lg && groupBy !== 'context' ? { title: 'Contextos', key: 'ctx', width: 150, render: (_, t) => t.isSub ? null : ctxCell(t) } : null,
+      screens.xl ? { title: 'Energia', key: 'energy', width: 76, render: (_, t) => t.energy ? html`<${Energy} level=${t.energy} />` : null } : null,
+      screens.md ? { title: 'Prazo', key: 'due', width: 104, render: (_, t) => { const tone = dueTone(t.due); return t.due ? html`<${Text} type=${tone === 'error' ? 'danger' : tone === 'warning' ? 'warning' : undefined} className="ct-mono">${fmtDate(t.due)}${t.dueTime ? ' ' + t.dueTime : ''}<//>` : null; } } : null,
+      { title: 'Tempo', key: 'time', width: 84, align: 'right', render: (_, t) => html`<span className="ct-mono">${fmtShort(t.secs)}</span>` },
+      { title: '', key: 'act', width: 104, render: (_, t) => html`<${Space} size=${0}>${t.isSub ? null : todayBtn(t)}${timerBtn(t)}${moreBtn(t)}<//>` }
+    ].filter(Boolean);
+    const columns = cols.map((c, i) => ({ ...c, render: (v, r, idx) => r.isGroup ? (i === 0 ? groupHeader(r.group) : null) : c.render(v, r, idx), onCell: r => r.isGroup ? { colSpan: i === 0 ? cols.length : 0 } : {} }));
+
+    const card = t => html`<${Dropdown} key=${t.id + (t.groupCtx || '')} menu=${menuFor(t)} trigger=${['contextMenu']}>
+      <div><${Card} size="small" hoverable onClick=${() => go('tarefa')} className=${t.leak ? 'ct-leak-' + t.leak : ''}>
+        <${Flex} vertical gap=${8}>
+          <${Flex} justify="space-between" align="start" gap=${8}>
+            <${Flex} vertical gap=${2} style=${{ minWidth: 0 }}>
+              <${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12 }}>#${t.id}<//>
+              <span className=${'ct-taskname' + (t.status === 'finalizada' ? ' done' : '')}>${t.running ? html`<span className="ct-live" style=${{ display: 'inline-block', marginInlineEnd: 6 }}></span>` : null}${t.name}</span>
+              ${t.subtasks.length ? html`<${Flex} align="center" gap=${8}><${Progress} percent=${Math.round(t.subtasks.filter(s => s.status === 'finalizada').length / t.subtasks.length * 100)} size=${[96, 4]} showInfo=${false} /><${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12 }}>${t.subtasks.filter(s => s.status === 'finalizada').length}/${t.subtasks.length}<//><//>` : null}
+            <//>
+            <${Space} size=${0}>${todayBtn(t)}${moreBtn(t)}<//>
+          <//>
+          <${Flex} gap=${6} wrap="wrap" align="center">
+            ${showStatusCol ? html`<${Chip} def=${STATUS[t.status]} mode=${mode} />` : null}
+            ${t.category !== 'normal' ? html`<${Chip} def=${CATEGORY[t.category]} mode=${mode} />` : null}
+            ${groupBy !== 'project' ? html`<${ProjectLabel} id=${t.project} />` : null}
+            ${groupBy !== 'context' && t.contexts.length ? ctxCell(t) : null}
+            <span style=${{ marginInlineStart: 'auto' }} className="ct-mono">${fmtShort(t.secs)}</span>
+          <//>
+        <//>
+      <//></div>
     <//>`;
 
-    const groups = groupBy === 'project'
-      ? Object.entries(rows.reduce((a, t) => { const k = t.project ? P[t.project].name : 'Sem projeto'; (a[k] = a[k] || []).push(t); return a; }, {}))
-      : null;
+    const table = html`<${Table} rowKey="rowKey" size=${screens.xxl ? 'middle' : 'small'} columns=${columns} dataSource=${data} pagination=${false}
+      components=${{ body: { row: MenuRow } }}
+      onRow=${r => r.isGroup ? {} : { record: r, menu: menuFor(r) }}
+      rowClassName=${r => r.isGroup ? 'ct-grouprow' : r.isSub ? 'ct-subrow' : r.leak ? 'ct-leak-' + r.leak : ''}
+      expandable=${{ expandedRowKeys: expanded, onExpandedRowsChange: setExpanded, expandIcon: () => null, indentSize: 28, expandIconColumnIndex: 3 }}
+      rowSelection=${{ selectedRowKeys: sel, onChange: setSel, columnWidth: 40, checkStrictly: true, renderCell: (checked, r, i, node) => r.isGroup ? null : node }}
+      scroll=${{ x: 'max-content' }} />`;
 
     const body = rows.length === 0
       ? html`<${Empty} image=${Empty.PRESENTED_IMAGE_SIMPLE} description=${status === 'inbox' ? 'Inbox zerado. Tudo processado.' : 'Nenhuma tarefa aqui.'} />`
@@ -616,12 +792,15 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
             <${Flex} vertical gap=${8}>${items.map(card)}${items.length ? null : html`<${Text} type="secondary" style=${{ fontSize: 12 }}>Nada executando<//>`}<//>
           </div>`; })}</div>`
         : effectiveView === 'cards'
-          ? (groups ? groups.map(([g, ts]) => html`<div key=${g} style=${{ marginBottom: 16 }}><div className="ct-eyebrow" style=${{ margin: '4px 0 8px' }}>${g} · ${ts.length}</div><div className="ct-grid-auto">${ts.map(card)}</div></div>`)
+          ? (groups
+            ? groups.map(g => html`<div key=${g.key} style=${{ marginBottom: 16 }}>
+                <div className="ct-groupbar">${groupHeader(g)}</div>
+                ${collapsed.has(g.key) ? null : html`<div className="ct-grid-auto">${g.tasks.map(card)}</div>`}
+              </div>`)
             : html`<div className="ct-grid-auto">${rows.map(card)}</div>`)
-          : html`<${Table} rowKey="id" size=${screens.xxl ? 'middle' : 'small'} columns=${columns} dataSource=${rows} pagination=${false}
-              rowClassName=${t => t.leak ? 'ct-leak-' + t.leak : ''}
-              rowSelection=${{ selectedRowKeys: sel, onChange: setSel, columnWidth: 40 }} scroll=${{ x: 'max-content' }} />`;
+          : table;
 
+    const bulk = selIds.length ? menuFor(findTask(selIds[0])) : null;
     return html`<div className=${isMobile ? 'ct-page-narrow' : 'ct-page'}>
       ${isMobile
         ? html`<${Select} value=${status} onChange=${setStatus} options=${tabItems.map(t => ({ value: t.key, label: t.label }))} style=${{ width: '100%', marginBottom: 12 }} aria-label="Status" />`
@@ -630,7 +809,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         <${Input} allowClear placeholder="Buscar em nome e descrição" prefix=${html`<${I.SearchOutlined} />`} value=${q} onChange=${e => setQ(e.target.value)} style=${{ flex: '1 1 220px', maxWidth: 360 }} />
         <${Popover} trigger="click" placement="bottomLeft" title="Filtros" content=${html`<${Flex} vertical gap=${10} style=${{ width: 260 }}>
             <${Select} placeholder="Categoria" allowClear options=${Object.entries(CATEGORY).map(([k, v]) => ({ value: k, label: v.label }))} />
-            <${Select} placeholder="Contexto" allowClear options=${['@dev', '@reunião', '@telefone', '@escrita'].map(c => ({ value: c, label: c }))} />
+            <${Select} placeholder="Contexto" allowClear options=${CONTEXTS.map(c => ({ value: c.name, label: c.emoji + ' ' + c.name }))} />
             <${Select} placeholder="Projeto" allowClear options=${[{ value: -1, label: 'Sem projeto' }].concat(PROJECTS.map(p => ({ value: p.id, label: p.name })))} />
             <${Select} placeholder="Tag" allowClear options=${[{ value: 'refactor', label: 'refactor' }]} />
             <${Checkbox}>Só bloqueadas<//>
@@ -644,18 +823,20 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           { value: 'cards', icon: html`<${I.AppstoreOutlined} />`, label: screens.lg ? 'Cards' : null, title: 'Cards' },
           ...(status === 'executando' ? [{ value: 'kanban', icon: html`<${I.ProjectOutlined} />`, label: screens.lg ? 'Kanban' : null, title: 'Kanban' }] : [])
         ]} />
-        ${effectiveView !== 'kanban' ? html`<${Select} value=${groupBy} onChange=${setGroupBy} style=${{ width: 170 }} options=${[{ value: 'none', label: 'Sem agrupamento' }, { value: 'project', label: 'Agrupar por projeto' }, { value: 'context', label: 'Agrupar por contexto' }]} />` : null}
+        ${effectiveView !== 'kanban' ? html`<${Select} value=${groupBy} onChange=${setGroupBy} style=${{ width: 180 }} aria-label="Agrupar" options=${[{ value: 'none', label: 'Sem agrupamento' }, { value: 'project', label: 'Agrupar por projeto' }, { value: 'context', label: 'Agrupar por contexto' }]} />` : null}
       <//>
-      ${status === 'inbox' && rows.length ? html`<${Alert} showIcon type="info" style=${{ marginBottom: 12 }} message=${html`<span><b>${rows.length} itens para processar.</b> Para cada um: é acionável? Leva menos de 2 minutos? É de um projeto?</span>`} />` : null}
+      ${status === 'inbox' && rows.length ? html`<${Alert} showIcon type="info" style=${{ marginBottom: 12 }} message=${html`<span><b>${plural(rows.length, 'item para processar.', 'itens para processar.')}</b> Para cada um: é acionável? Leva menos de 2 minutos? É de um projeto?</span>`} />` : null}
+      ${groupBy === 'context' && rows.some(t => t.contexts.length > 1) ? html`<${Text} type="secondary" style=${{ display: 'block', fontSize: 12, marginBottom: 8 }}><${I.CopyOutlined} /> Tarefas com mais de um contexto aparecem em cada grupo; a soma dos grupos passa do total.<//>` : null}
       ${body}
-      ${sel.length ? html`<div className="ct-bulkbar"><div className="ct-bulkbar-inner">
-          <${Text} strong>${sel.length} selecionada${sel.length > 1 ? 's' : ''}<//>
+      ${bulk ? html`<div className="ct-bulkbar"><div className="ct-bulkbar-inner">
+          <${Text} strong>${plural(selIds.length, 'selecionada', 'selecionadas')}<//>
           <${Button} size="small" type="link" onClick=${() => setSel([])}>Limpar<//>
           <div style=${{ flex: 1 }}></div>
-          <${Select} size="small" placeholder="Marcar como…" style=${{ width: 150 }} options=${Object.entries(STATUS).map(([k, v]) => ({ value: k, label: v.label }))} />
-          <${Select} size="small" placeholder="Mover para projeto…" style=${{ width: 180 }} options=${PROJECTS.map(p => ({ value: p.id, label: p.name }))} />
-          <${Button} size="small" icon=${html`<${I.ContainerOutlined} />`}>Arquivar<//>
-          <${Button} size="small" danger icon=${html`<${I.DeleteOutlined} />`}>Excluir<//>
+          <${Select} size="small" placeholder="Marcar como…" value=${null} style=${{ width: 150 }} options=${Object.entries(STATUS).map(([k, v]) => ({ value: k, label: v.label }))} onChange=${v => { updateTasks(selIds, { status: v }); message.success(plural(selIds.length, 'tarefa marcada', 'tarefas marcadas') + ' como ' + STATUS[v].label); }} />
+          <${Select} size="small" placeholder="Mover para projeto…" value=${null} style=${{ width: 180 }} options=${PROJECTS.map(p => ({ value: p.id, label: p.name }))} onChange=${v => { updateTasks(selIds, { project: v }); message.success('Movidas para ' + P[v].name); }} />
+          <${Button} size="small" icon=${html`<${I.ScheduleOutlined} />`} onClick=${() => toggleToday(selIds)}>Hoje<//>
+          <${Button} size="small" icon=${html`<${I.ContainerOutlined} />`} onClick=${() => { const n = selIds.length; removeTasks(selIds); message.success(plural(n, 'tarefa arquivada', 'tarefas arquivadas')); }}>Arquivar<//>
+          <${Button} size="small" danger icon=${html`<${I.DeleteOutlined} />`} onClick=${() => bulk.onClick({ key: 'delete' })}>Excluir<//>
         </div></div>` : null}
     </div>`;
   }
