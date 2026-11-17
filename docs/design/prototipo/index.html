@@ -1,0 +1,774 @@
+<title>CrafyTask Bancada</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Denk+One&display=swap">
+<style>
+/* Layout: AppShell = Sider de navegação GTD + Header de comando + conteúdo isolado por ErrorBoundary + barra de status. */
+:root {
+  --ct-bg: #F6F5FA;
+  --ct-surface: #FFFFFF;
+  --ct-elevated: #FFFFFF;
+  --ct-border: #E4E2EE;
+  --ct-border-strong: #CFCCDD;
+  --ct-text: #1B1A27;
+  --ct-text-2: #5B5970;
+  --ct-text-3: #6B6980;
+  --ct-brand: #705EFF;
+  --ct-primary: #5B47EB;
+  --ct-primary-soft: #EFEDFF;
+  --ct-sider: #FBFAFE;
+  --ct-font: "Geist", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --ct-mono: "Geist Mono", "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+  --ct-brand-font: "Denk One", "Geist", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ct-bg: #111018; --ct-surface: #1A1923; --ct-elevated: #22202E; --ct-border: #2E2B3C;
+    --ct-border-strong: #403C52; --ct-text: #ECEAF6; --ct-text-2: #A9A6BE; --ct-text-3: #8A879F;
+    --ct-brand: #8F82FF; --ct-primary: #8F82FF; --ct-primary-soft: #221E3D; --ct-sider: #15141D;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ct-bg: #111018; --ct-surface: #1A1923; --ct-elevated: #22202E; --ct-border: #2E2B3C;
+  --ct-border-strong: #403C52; --ct-text: #ECEAF6; --ct-text-2: #A9A6BE; --ct-text-3: #8A879F;
+  --ct-brand: #8F82FF; --ct-primary: #8F82FF; --ct-primary-soft: #221E3D; --ct-sider: #15141D;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-font); }
+#root { height: 100%; }
+.ct-boot { display: grid; place-items: center; height: 100%; color: var(--ct-text-2); font-family: var(--ct-font); }
+.ct-logo { font-family: var(--ct-brand-font); color: var(--ct-brand); font-size: 22px; line-height: 1; letter-spacing: .2px; white-space: nowrap; }
+.ct-logo-mini { font-family: var(--ct-brand-font); color: var(--ct-brand); font-size: 22px; }
+.ct-mono { font-family: var(--ct-mono); font-variant-numeric: tabular-nums; }
+.ct-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ct-text-3); }
+.ct-shell { height: 100%; }
+.ct-sider-inner { display: flex; flex-direction: column; height: 100%; }
+.ct-sider-head { height: 52px; display: flex; align-items: center; padding: 0 20px; border-bottom: 1px solid var(--ct-border); }
+.ct-sider-foot { margin-top: auto; border-top: 1px solid var(--ct-border); }
+.ct-header { display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--ct-border); }
+.ct-header-title { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.ct-capture { flex: 1 1 320px; max-width: 460px; min-width: 0; }
+.ct-content { overflow: auto; min-height: 0; }
+.ct-page { padding: 20px 24px 32px; max-width: 1480px; margin: 0 auto; }
+.ct-page-narrow { padding: 12px 12px 24px; }
+.ct-statusbar { height: 28px; display: flex; align-items: center; gap: 16px; padding: 0 12px; font-size: 12px; color: var(--ct-text-2); border-top: 1px solid var(--ct-border); background: var(--ct-surface); overflow: hidden; white-space: nowrap; }
+.ct-statusbar .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+.ct-timer-pill { display: inline-flex; align-items: center; gap: 8px; padding: 0 6px 0 10px; height: 32px; border-radius: 999px; border: 1px solid var(--ct-border); background: var(--ct-surface); white-space: nowrap; }
+.ct-live { width: 8px; height: 8px; border-radius: 50%; background: #2FBF7F; box-shadow: 0 0 0 0 rgba(47,191,127,.6); animation: ct-pulse 1.8s ease-out infinite; }
+@keyframes ct-pulse { 0% { box-shadow: 0 0 0 0 rgba(47,191,127,.55); } 70% { box-shadow: 0 0 0 7px rgba(47,191,127,0); } 100% { box-shadow: 0 0 0 0 rgba(47,191,127,0); } }
+@media (prefers-reduced-motion: reduce) { .ct-live { animation: none; } }
+.ct-chip { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border-radius: 6px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+.ct-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
+.ct-taskname { font-weight: 500; }
+.ct-taskname.done { text-decoration: line-through; color: var(--ct-text-3); }
+.ct-hero-time { font-family: var(--ct-mono); font-variant-numeric: tabular-nums; font-weight: 500; letter-spacing: -.02em; line-height: 1; }
+.ct-swatch { border-radius: 8px; height: 56px; border: 1px solid var(--ct-border); }
+.ct-grid-auto { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 16px; }
+.ct-kanban { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(260px, 1fr); gap: 12px; overflow-x: auto; padding-bottom: 8px; }
+.ct-col { background: var(--ct-bg); border: 1px solid var(--ct-border); border-radius: 12px; padding: 10px; min-width: 0; }
+.ct-leak-1 { background: var(--ct-leak-1) !important; }
+.ct-leak-2 { background: var(--ct-leak-2) !important; }
+.ct-leak-3 { background: var(--ct-leak-3) !important; }
+:root { --ct-leak-1: #FFF6DD; --ct-leak-2: #FFF0E5; --ct-leak-3: #FDECEE; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ct-leak-1: #2A2412; --ct-leak-2: #2E2016; --ct-leak-3: #301A1E; } }
+:root[data-theme="dark"] { --ct-leak-1: #2A2412; --ct-leak-2: #2E2016; --ct-leak-3: #301A1E; }
+.ct-note { font-size: 15px; line-height: 1.65; max-width: 68ch; }
+.ct-note h3 { font-size: 17px; margin: 0 0 8px; }
+.ct-note code { font-family: var(--ct-mono); font-size: 13px; background: var(--ct-primary-soft); padding: 1px 5px; border-radius: 4px; }
+.ct-bulkbar { position: sticky; bottom: 12px; z-index: 5; margin-top: 12px; }
+.ct-bulkbar-inner { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 12px; background: var(--ct-elevated); border: 1px solid var(--ct-border-strong); box-shadow: 0 8px 24px rgba(17,16,24,.12); }
+:focus-visible { outline: 2px solid var(--ct-primary); outline-offset: 2px; }
+</style>
+<div id="root"><div class="ct-boot">Carregando protótipo…</div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.13/dayjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/antd@5.22.5/dist/antd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@ant-design/icons@5.5.2/dist/index.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.umd.js"></script>
+<script>
+(function () {
+  const { useState, useEffect, useMemo, useCallback, Component, createElement } = React;
+  const html = htm.bind(createElement);
+  const {
+    ConfigProvider, App: AntApp, theme, Layout, Menu, Button, Input, Tabs, Badge, Table, Tag, Segmented,
+    Select, Space, Typography, Progress, Statistic, Card, Row, Col, Grid, Drawer, Modal, Result, Tooltip,
+    Popover, Checkbox, Divider, Empty, Alert, Flex, List, Avatar, Dropdown, Switch
+  } = antd;
+  const I = icons;
+  const { Sider, Header, Content } = Layout;
+  const { Text, Title, Paragraph } = Typography;
+
+  const PALETTE = {
+    light: {
+      bg: '#F6F5FA', surface: '#FFFFFF', elevated: '#FFFFFF', border: '#E4E2EE', borderStrong: '#CFCCDD',
+      text: '#1B1A27', text2: '#5B5970', text3: '#6B6980', primary: '#5B47EB', primarySoft: '#EFEDFF', brand: '#705EFF',
+      success: '#0B7A50', warning: '#A15C00', error: '#C02331', info: '#2A62D6', sider: '#FBFAFE'
+    },
+    dark: {
+      bg: '#111018', surface: '#1A1923', elevated: '#22202E', border: '#2E2B3C', borderStrong: '#403C52',
+      text: '#ECEAF6', text2: '#A9A6BE', text3: '#8A879F', primary: '#8F82FF', primarySoft: '#221E3D', brand: '#8F82FF',
+      success: '#4CD69A', warning: '#F0B44C', error: '#FF7A82', info: '#7AA5FF', sider: '#15141D'
+    }
+  };
+
+  const STATUS = {
+    inbox:      { label: 'Inbox',      icon: 'InboxOutlined',       light: ['#5D6B82', '#EEF1F6'], dark: ['#9AA8C0', '#232A36'] },
+    aguardando: { label: 'Aguardando', icon: 'HourglassOutlined',   light: ['#A15C00', '#FFF4E0'], dark: ['#F0B44C', '#33280F'] },
+    proximas:   { label: 'Próximas',   icon: 'ForwardOutlined',     light: ['#2A62D6', '#EAF0FF'], dark: ['#7AA5FF', '#1C2744'] },
+    executando: { label: 'Executando', icon: 'PlayCircleOutlined',  light: ['#0B7A50', '#E3F6EC'], dark: ['#4CD69A', '#123326'] },
+    finalizada: { label: 'Finalizada', icon: 'CheckCircleOutlined', light: ['#526B5E', '#EDF2EF'], dark: ['#93AE9F', '#1F2A25'] },
+    someday:    { label: 'Someday',    icon: 'BulbOutlined',        light: ['#0F6E7A', '#E2F4F6'], dark: ['#5CC8D4', '#12302F'] }
+  };
+  const CATEGORY = {
+    urgente:    { label: 'Urgente',    icon: 'FireOutlined',      light: ['#C02331', '#FDECEE'], dark: ['#FF7A82', '#3A1A1E'] },
+    prioridade: { label: 'Prioridade', icon: 'FlagOutlined',      light: ['#A84803', '#FFF0E5'], dark: ['#FF9A55', '#3A2414'] },
+    normal:     { label: 'Normal',     icon: null,                light: ['#5B5970', 'transparent'], dark: ['#A9A6BE', 'transparent'] },
+    time_leak:  { label: 'Time leak',  icon: 'FieldTimeOutlined', light: ['#94600E', '#FFF6DD'], dark: ['#F2C062', '#352A10'] }
+  };
+  const ENERGY = { alto: { label: 'Alta', bars: 3 }, medio: { label: 'Média', bars: 2 }, baixo: { label: 'Baixa', bars: 1 } };
+
+  const PROJECTS = [
+    { id: 13, name: 'CrafyTask', color: '#E5484D', outcome: 'App de tarefas sólido, bonito e responsivo', next: true, done: 18, total: 31, area: 'Produtos pessoais' },
+    { id: 4, name: 'Connect — Jacto', color: '#2A62D6', outcome: 'Squad entregando o roadmap do trimestre', next: true, done: 42, total: 60, area: 'Carreira' },
+    { id: 7, name: 'Day Zero Playbook', color: '#0B7A50', outcome: 'Versão em inglês publicada', next: false, done: 9, total: 22, area: 'Produtos pessoais' },
+    { id: 9, name: 'Saúde 2026', color: '#A15C00', outcome: 'Treinar 4x por semana', next: true, done: 5, total: 8, area: 'Saúde' }
+  ];
+  const P = Object.fromEntries(PROJECTS.map(p => [p.id, p]));
+
+  const TASKS = [
+    { id: 711, name: 'Criação de projeto para refatoração visual', status: 'executando', category: 'normal', project: 13, contexts: ['@dev'], due: '2026-11-21', secs: 9130, energy: 'alto', today: true, running: true, sub: [0, 0] },
+    { id: 731, name: 'Corrigir rolagem do terminal ao redimensionar', status: 'proximas', category: 'prioridade', project: 13, contexts: ['@dev'], due: '2026-11-18', secs: 1860, energy: 'medio', today: true, sub: [1, 3] },
+    { id: 698, name: 'Revisar PR de sync de worklog do Jira', status: 'aguardando', category: 'normal', project: 13, contexts: ['@dev', '@github'], due: null, secs: 600, energy: 'baixo', waiting: 'Revisor externo' },
+    { id: 702, name: 'Planejar sprint 48 com o time', status: 'proximas', category: 'urgente', project: 4, contexts: ['@reunião'], due: '2026-11-17', dueTime: '14:00', secs: 0, energy: 'alto', today: true },
+    { id: 705, name: 'Reunião diária', status: 'executando', category: 'time_leak', project: 4, contexts: ['@reunião'], due: null, secs: 4380, energy: 'baixo', running: true, leak: 3 },
+    { id: 706, name: 'Responder e-mails do fornecedor', status: 'inbox', category: 'normal', project: null, contexts: [], due: null, secs: 0, energy: 'baixo' },
+    { id: 707, name: 'Ideia: modo apresentação para a revisão semanal', status: 'inbox', category: 'normal', project: 13, contexts: [], due: null, secs: 0, energy: 'medio' },
+    { id: 708, name: 'Traduzir capítulo 3 do playbook', status: 'proximas', category: 'normal', project: 7, contexts: ['@escrita'], due: '2026-11-24', secs: 5400, energy: 'alto', blocked: true },
+    { id: 709, name: 'Ler "Shape Up" de novo', status: 'someday', category: 'normal', project: null, contexts: ['@leitura'], due: null, secs: 0, energy: 'medio' },
+    { id: 710, name: 'Marcar check-up anual', status: 'inbox', category: 'prioridade', project: 9, contexts: ['@telefone'], due: '2026-11-28', secs: 0, energy: 'baixo' },
+    { id: 699, name: 'Publicar release v3.16.0', status: 'finalizada', category: 'normal', project: 13, contexts: ['@dev'], due: '2026-11-14', secs: 2700, energy: 'medio', sub: [4, 4] },
+    { id: 712, name: 'Organizar 1:1 com o time de dados', status: 'aguardando', category: 'normal', project: 4, contexts: ['@reunião'], due: '2026-11-20', secs: 0, energy: 'medio', waiting: 'Agenda do gestor' },
+    { id: 713, name: 'Treino de força — semana 46', status: 'proximas', category: 'normal', project: 9, contexts: ['@academia'], due: '2026-11-19', secs: 0, energy: 'alto', today: true },
+    { id: 714, name: 'Rever limiar de time leak nas configurações', status: 'someday', category: 'normal', project: 13, contexts: ['@dev'], due: null, secs: 0, energy: 'baixo' }
+  ];
+
+  const fmt = s => { const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60; return [h, m, x].map(v => String(v).padStart(2, '0')).join(':'); };
+  const fmtShort = s => s >= 3600 ? `${Math.floor(s / 3600)}h${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}` : s > 0 ? `${Math.round(s / 60)} min` : '—';
+  const fmtDate = d => d ? d.split('-').reverse().slice(0, 2).join('/') : '—';
+  const TODAY = '2026-11-17';
+  const dueTone = d => !d ? null : d < TODAY ? 'error' : d === TODAY ? 'warning' : null;
+
+  function useMode(pref) {
+    const mq = useMemo(() => { try { return window.matchMedia('(prefers-color-scheme: dark)'); } catch (e) { return null; } }, []);
+    const read = () => {
+      if (pref !== 'system') return pref;
+      const attr = document.documentElement.getAttribute('data-theme');
+      if (attr === 'dark' || attr === 'light') return attr;
+      return mq && mq.matches ? 'dark' : 'light';
+    };
+    const [mode, setMode] = useState(read);
+    useEffect(() => {
+      setMode(read());
+      const h = () => setMode(read());
+      if (mq) mq.addEventListener('change', h);
+      const mo = new MutationObserver(h);
+      mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+      return () => { if (mq) mq.removeEventListener('change', h); mo.disconnect(); };
+    }, [pref]);
+    return mode;
+  }
+
+  function buildTheme(mode, compact) {
+    const c = PALETTE[mode];
+    return {
+      cssVar: true,
+      hashed: false,
+      algorithm: [mode === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm].concat(compact ? [theme.compactAlgorithm] : []),
+      token: {
+        colorPrimary: c.primary, colorInfo: c.info, colorSuccess: c.success, colorWarning: c.warning, colorError: c.error,
+        colorLink: c.primary, colorBgLayout: c.bg, colorBgContainer: c.surface, colorBgElevated: c.elevated,
+        colorBorder: c.borderStrong, colorBorderSecondary: c.border, colorText: c.text, colorTextSecondary: c.text2,
+        colorTextTertiary: c.text3, colorTextQuaternary: c.text3,
+        fontFamily: 'Geist, Inter, system-ui, -apple-system, "Segoe UI", sans-serif',
+        fontFamilyCode: '"Geist Mono", "JetBrains Mono", ui-monospace, monospace',
+        fontSize: 14, borderRadius: 8, borderRadiusSM: 6, borderRadiusLG: 12, borderRadiusXS: 4,
+        wireframe: false, motionDurationMid: '0.16s', motionDurationSlow: '0.24s',
+        boxShadowSecondary: mode === 'dark' ? '0 8px 24px rgba(0,0,0,.45)' : '0 8px 24px rgba(17,16,24,.10)'
+      },
+      components: {
+        Layout: { siderBg: c.sider, headerBg: c.surface, bodyBg: c.bg, headerHeight: 52, headerPadding: '0 16px', triggerBg: c.sider, triggerColor: c.text2 },
+        Menu: { itemBg: 'transparent', subMenuItemBg: 'transparent', itemSelectedBg: c.primarySoft, itemSelectedColor: c.primary, itemHoverBg: mode === 'dark' ? '#25232F' : '#F0EFF6', itemBorderRadius: 8, itemMarginInline: 8, groupTitleColor: c.text3, groupTitleFontSize: 11, iconSize: 16, collapsedIconSize: 18 },
+        Tabs: { itemColor: c.text2, itemSelectedColor: c.text, inkBarColor: c.primary, horizontalItemGutter: 4, horizontalItemPadding: '10px 12px', titleFontSize: 14 },
+        Table: { headerBg: c.surface, headerColor: c.text3, headerSplitColor: 'transparent', rowHoverBg: mode === 'dark' ? '#201E2B' : '#F7F6FC', rowSelectedBg: c.primarySoft, rowSelectedHoverBg: c.primarySoft, cellPaddingBlock: compact ? 6 : 10, borderColor: c.border },
+        Card: { headerFontSize: 14 },
+        Segmented: { itemSelectedBg: c.surface, trackBg: mode === 'dark' ? '#15141D' : '#ECEBF3' },
+        Statistic: { contentFontSize: 22 }
+      }
+    };
+  }
+
+  function Chip({ def, mode, children }) {
+    const [fg, bg] = def[mode];
+    const Ic = def.icon ? I[def.icon] : null;
+    return html`<span className="ct-chip" style=${{ color: fg, background: bg, border: bg === 'transparent' ? '1px solid var(--ct-border)' : '1px solid transparent' }}>
+      ${Ic ? html`<${Ic} />` : null}${children || def.label}
+    </span>`;
+  }
+  function Energy({ level }) {
+    const n = ENERGY[level].bars;
+    return html`<${Tooltip} title=${'Energia ' + ENERGY[level].label.toLowerCase()}>
+      <span aria-label=${'Energia ' + ENERGY[level].label} style=${{ display: 'inline-flex', gap: 2, alignItems: 'flex-end', height: 14 }}>
+        ${[1, 2, 3].map(i => html`<span key=${i} style=${{ width: 4, height: 4 + i * 3, borderRadius: 1, background: i <= n ? 'var(--ct-primary)' : 'var(--ct-border-strong)' }}></span>`)}
+      </span>
+    <//>`;
+  }
+  function ProjectLabel({ id }) {
+    if (!id) return html`<${Text} type="secondary">Sem projeto<//>`;
+    const p = P[id];
+    return html`<span style=${{ display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 0 }}><span className="ct-dot" style=${{ background: p.color }}></span><span style=${{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>${p.name}</span></span>`;
+  }
+
+  class Boundary extends Component {
+    constructor(props) { super(props); this.state = { error: null }; }
+    static getDerivedStateFromError(error) { return { error }; }
+    componentDidUpdate(prev) { if (prev.resetKey !== this.props.resetKey && this.state.error) this.setState({ error: null }); }
+    render() {
+      if (!this.state.error) return this.props.children;
+      const region = this.props.region;
+      return html`<div style=${{ padding: 24 }}>
+        <${Result} status="warning" title=${'Esta área falhou: ' + region}
+          subTitle="O resto do app continua funcionando. Seus dados estão salvos no banco local."
+          extra=${[
+            html`<${Button} key="r" type="primary" icon=${html`<${I.ReloadOutlined} />`} onClick=${() => this.setState({ error: null })}>Tentar de novo<//>`,
+            html`<${Button} key="c" icon=${html`<${I.CopyOutlined} />`} onClick=${() => { try { navigator.clipboard.writeText(String(this.state.error && this.state.error.stack || this.state.error)).catch(() => {}); } catch (e) {} }}>Copiar detalhes<//>`
+          ]} />
+      </div>`;
+    }
+  }
+  function Bomb() { throw new Error('Falha simulada na tela (demonstração do ErrorBoundary)'); }
+
+  const NAV = [
+    { type: 'group', label: 'Fluxo', children: [
+      { key: 'tarefas', icon: 'CheckSquareOutlined', label: 'Tarefas', count: 3 },
+      { key: 'hoje', icon: 'ScheduleOutlined', label: 'Hoje', count: 4 },
+      { key: 'calendario', icon: 'CalendarOutlined', label: 'Calendário' },
+      { key: 'revisao', icon: 'AuditOutlined', label: 'Revisão semanal' }
+    ] },
+    { type: 'group', label: 'Organizar', children: [
+      { key: 'projetos', icon: 'FolderOutlined', label: 'Projetos' },
+      { key: 'horizontes', icon: 'RiseOutlined', label: 'Horizontes' },
+      { key: 'rotulos', icon: 'TagsOutlined', label: 'Contextos e tags' }
+    ] },
+    { type: 'group', label: 'Conhecimento', children: [
+      { key: 'cadernos', icon: 'BookOutlined', label: 'Cadernos' },
+      { key: 'dashboard', icon: 'BarChartOutlined', label: 'Dashboard' }
+    ] }
+  ];
+  const NAV_FOOT = [
+    { key: 'arquivo', icon: 'ContainerOutlined', label: 'Arquivo' },
+    { key: 'identidade', icon: 'BgColorsOutlined', label: 'Identidade visual' },
+    { key: 'ajustes', icon: 'SettingOutlined', label: 'Configurações' }
+  ];
+  const TITLES = { tarefas: 'Tarefas', tarefa: 'Tarefa #711', hoje: 'Hoje', projetos: 'Projetos', identidade: 'Identidade visual' };
+  const BUILT = ['tarefas', 'tarefa', 'hoje', 'projetos', 'identidade'];
+
+  function toMenu(items, collapsed) {
+    return items.map(it => it.type === 'group'
+      ? { type: 'group', label: collapsed ? null : it.label, key: it.label, children: toMenu(it.children, collapsed) }
+      : { key: it.key, icon: createElement(I[it.icon]), label: it.count ? html`<${Flex} justify="space-between" align="center">${it.label}<${Badge} count=${it.count} size="small" color="var(--ct-primary)" /><//>` : it.label });
+  }
+
+  function useRoute() {
+    const get = () => { const h = (location.hash || '').replace('#', ''); return BUILT.concat(['calendario', 'revisao', 'horizontes', 'rotulos', 'cadernos', 'dashboard', 'arquivo', 'ajustes']).includes(h) ? h : 'tarefas'; };
+    const [route, setRoute] = useState(get);
+    useEffect(() => { const h = () => setRoute(get()); window.addEventListener('hashchange', h); return () => window.removeEventListener('hashchange', h); }, []);
+    const go = r => { try { location.hash = r; } catch (e) {} setRoute(r); };
+    return [route, go];
+  }
+
+  function Shell() {
+    const [themePref, setThemePref] = useState(() => { try { return localStorage.getItem('ct:theme') || 'system'; } catch (e) { return 'system'; } });
+    const [compact, setCompact] = useState(false);
+    const mode = useMode(themePref);
+    useEffect(() => {
+      try { localStorage.setItem('ct:theme', themePref); } catch (e) {}
+      if (themePref === 'system') document.documentElement.removeAttribute('data-theme');
+      else document.documentElement.setAttribute('data-theme', themePref);
+    }, [themePref]);
+    const cfg = useMemo(() => buildTheme(mode, compact), [mode, compact]);
+    return html`<${ConfigProvider} theme=${cfg} componentSize=${compact ? 'small' : 'middle'}>
+      <${AntApp} style=${{ height: '100%' }}>
+        <${AppFrame} mode=${mode} themePref=${themePref} setThemePref=${setThemePref} compact=${compact} setCompact=${setCompact} />
+      <//>
+    <//>`;
+  }
+
+  function AppFrame({ mode, themePref, setThemePref, compact, setCompact }) {
+    const screens = Grid.useBreakpoint();
+    const isMobile = !screens.md;
+    const [collapsed, setCollapsed] = useState(false);
+    const [drawer, setDrawer] = useState(false);
+    const [route, go] = useRoute();
+    const [palette, setPalette] = useState(false);
+    const [crash, setCrash] = useState(false);
+    const [capture, setCapture] = useState('');
+    const { message } = AntApp.useApp();
+    const autoCollapsed = !screens.lg;
+    const isCollapsed = collapsed || autoCollapsed;
+
+    useEffect(() => {
+      const h = e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setPalette(true); } };
+      window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
+    }, []);
+    useEffect(() => { setCrash(false); }, [route]);
+
+    const navigate = key => { go(key); setDrawer(false); };
+    const sideNav = narrow => html`<div className="ct-sider-inner">
+      <div className="ct-sider-head" style=${{ justifyContent: narrow ? 'center' : 'flex-start', padding: narrow ? 0 : '0 20px' }}>
+        ${narrow ? html`<span className="ct-logo-mini" aria-label="CrafyTask">C</span>` : html`<span className="ct-logo">CrafyTask</span>`}
+      </div>
+      <div style=${{ flex: 1, overflowY: 'auto', paddingTop: 8 }}>
+        <${Menu} mode="inline" inlineCollapsed=${narrow} selectedKeys=${[route === 'tarefa' ? 'tarefas' : route]} items=${toMenu(NAV, narrow)} onClick=${e => navigate(e.key)} style=${{ borderInlineEnd: 0 }} />
+      </div>
+      <div className="ct-sider-foot">
+        <${Menu} mode="inline" inlineCollapsed=${narrow} selectedKeys=${[route]} items=${toMenu(NAV_FOOT, narrow)} onClick=${e => navigate(e.key)} style=${{ borderInlineEnd: 0, padding: '6px 0' }} />
+      </div>
+    </div>`;
+
+    const themeIcon = themePref === 'dark' ? I.MoonOutlined : themePref === 'light' ? I.SunOutlined : I.DesktopOutlined;
+    const prefsMenu = {
+      items: [
+        { key: 'h1', type: 'group', label: 'Tema', children: [
+          { key: 'system', icon: createElement(I.DesktopOutlined), label: 'Seguir o sistema' },
+          { key: 'light', icon: createElement(I.SunOutlined), label: 'Claro' },
+          { key: 'dark', icon: createElement(I.MoonOutlined), label: 'Escuro' }
+        ] },
+        { type: 'divider' },
+        { key: 'compact', icon: createElement(I.ColumnHeightOutlined), label: compact ? 'Densidade confortável' : 'Densidade compacta' }
+      ],
+      selectable: true, selectedKeys: [themePref],
+      onClick: e => { if (e.key === 'compact') setCompact(!compact); else setThemePref(e.key); }
+    };
+
+    const content = route === 'tarefas' ? html`<${TasksPage} mode=${mode} go=${go} isMobile=${isMobile} screens=${screens} />`
+      : route === 'tarefa' ? html`<${TaskDetailPage} mode=${mode} go=${go} screens=${screens} />`
+      : route === 'hoje' ? html`<${TodayPage} mode=${mode} go=${go} />`
+      : route === 'projetos' ? html`<${ProjectsPage} mode=${mode} />`
+      : route === 'identidade' ? html`<${IdentityPage} mode=${mode} />`
+      : html`<${Placeholder} route=${route} go=${go} />`;
+
+    return html`<${Layout} className="ct-shell" hasSider=${!isMobile}>
+      ${isMobile ? html`<${Drawer} placement="left" open=${drawer} onClose=${() => setDrawer(false)} width=${264} styles=${{ body: { padding: 0, background: 'var(--ct-sider)' } }} closable=${false}>
+          <${Boundary} region="navegação" resetKey=${route}>${sideNav(false)}<//>
+        <//>`
+        : html`<${Sider} width=${232} collapsedWidth=${64} collapsed=${isCollapsed} trigger=${null} style=${{ borderInlineEnd: '1px solid var(--ct-border)', height: '100%' }}>
+          <${Boundary} region="navegação" resetKey=${route}>${sideNav(isCollapsed)}<//>
+        <//>`}
+      <${Layout} style=${{ minWidth: 0 }}>
+        <${Header} className="ct-header">
+          <${Boundary} region="barra superior" resetKey=${route}>
+            <${Flex} align="center" gap=${12} style=${{ width: '100%', minWidth: 0 }}>
+              ${isMobile
+                ? html`<${Button} type="text" aria-label="Abrir menu" icon=${html`<${I.MenuOutlined} />`} onClick=${() => setDrawer(true)} />`
+                : html`<${Tooltip} title=${isCollapsed ? 'Expandir menu' : 'Recolher menu'}><${Button} type="text" aria-label="Alternar menu" disabled=${autoCollapsed} icon=${html`<${isCollapsed ? I.MenuUnfoldOutlined : I.MenuFoldOutlined} />`} onClick=${() => setCollapsed(!collapsed)} /><//>`}
+              <span className="ct-header-title">${TITLES[route] || 'Em breve'}</span>
+              ${screens.sm ? html`<${Input} className="ct-capture" placeholder="Capturar para o Inbox…" value=${capture} onChange=${e => setCapture(e.target.value)}
+                  prefix=${html`<${I.PlusOutlined} style=${{ color: 'var(--ct-text-3)' }} />`}
+                  suffix=${html`<${Text} type="secondary" style=${{ fontSize: 12 }}>Enter<//>`}
+                  onPressEnter=${() => { if (capture.trim()) { message.success('Capturado no Inbox'); setCapture(''); } }} />` : null}
+              <div style=${{ flex: 1 }}></div>
+              ${screens.md ? html`<${RunningPill} go=${go} />` : null}
+              <${Tooltip} title="Buscar e comandos (Ctrl+K)"><${Button} aria-label="Buscar" icon=${html`<${I.SearchOutlined} />`} onClick=${() => setPalette(true)}>${screens.xl ? html`<span>Buscar <${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12, marginInlineStart: 6 }}>Ctrl K<//></span>` : null}<//><//>
+              <${Dropdown} menu=${prefsMenu} trigger=${['click']}><${Button} aria-label="Aparência" icon=${createElement(themeIcon)} /><//>
+              <${Button} type="primary" icon=${html`<${I.PlusOutlined} />`}>${screens.sm ? 'Nova tarefa' : null}<//>
+            <//>
+          <//>
+        <//>
+        <${Content} className="ct-content">
+          <${Boundary} region=${TITLES[route] || 'tela'} resetKey=${route}>
+            ${crash ? html`<${Bomb} />` : content}
+            <div style=${{ padding: '0 24px 24px', textAlign: 'center' }}>
+              <${Button} size="small" type="dashed" danger icon=${html`<${I.BugOutlined} />`} onClick=${() => setCrash(true)}>Simular falha nesta tela<//>
+            </div>
+          <//>
+        <//>
+        <div className="ct-statusbar" role="status">
+          <span><span className="dot" style=${{ background: '#2FBF7F' }}></span>Notion sincronizado há 2 min</span>
+          ${screens.md ? html`<span><${I.CalendarOutlined} /> Google Calendar ativo</span>` : null}
+          ${screens.md ? html`<span><${I.ApiOutlined} /> MCP em 127.0.0.1:7432</span>` : null}
+          <span style=${{ marginInlineStart: 'auto' }}>Protótipo · dados de exemplo</span>
+        </div>
+      <//>
+      <${CommandPalette} open=${palette} onClose=${() => setPalette(false)} go=${k => { go(k); setPalette(false); }} />
+    <//>`;
+  }
+
+  function RunningPill({ go }) {
+    const [secs, setSecs] = useState(9130);
+    useEffect(() => { const t = setInterval(() => setSecs(s => s + 1), 1000); return () => clearInterval(t); }, []);
+    return html`<${Popover} trigger="click" placement="bottomRight" title="Timers em execução" content=${html`<div style=${{ width: 280 }}>
+        ${[{ id: 711, name: 'Criação de projeto para refatoração visual', s: secs }, { id: 705, name: 'Reunião diária', s: 4380 + (secs - 9130), leak: true }].map(t => html`
+          <${Flex} key=${t.id} align="center" gap=${8} style=${{ padding: '6px 0' }}>
+            <span className="ct-live"></span>
+            <a onClick=${() => go('tarefa')} style=${{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>${t.name}</a>
+            <span className="ct-mono" style=${{ color: t.leak ? 'var(--ct-text)' : undefined }}>${fmt(t.s)}</span>
+            <${Button} size="small" type="text" aria-label="Pausar" icon=${html`<${I.PauseOutlined} />`} />
+          <//>`)}
+      </div>`}>
+      <button className="ct-timer-pill" style=${{ cursor: 'pointer', color: 'var(--ct-text)', font: 'inherit' }}>
+        <span className="ct-live"></span>
+        <span className="ct-mono">${fmt(secs)}</span>
+        <${Badge} count=${2} size="small" color="var(--ct-primary)" />
+      </button>
+    <//>`;
+  }
+
+  function CommandPalette({ open, onClose, go }) {
+    const [q, setQ] = useState('');
+    const cmds = [
+      { k: 'tarefas', t: 'Ir para Tarefas', i: 'CheckSquareOutlined' }, { k: 'hoje', t: 'Ir para Hoje', i: 'ScheduleOutlined' },
+      { k: 'projetos', t: 'Ir para Projetos', i: 'FolderOutlined' }, { k: 'identidade', t: 'Abrir identidade visual', i: 'BgColorsOutlined' },
+      { k: 'tarefa', t: '#711 Criação de projeto para refatoração visual', i: 'FileTextOutlined' },
+      { k: 'tarefa', t: '#731 Corrigir rolagem do terminal ao redimensionar', i: 'FileTextOutlined' }
+    ].filter(c => c.t.toLowerCase().includes(q.toLowerCase()));
+    return html`<${Modal} open=${open} onCancel=${onClose} footer=${null} closable=${false} width=${560} styles=${{ content: { padding: 8 } }} destroyOnClose>
+      <${Input} autoFocus size="large" variant="borderless" placeholder="Buscar tarefas, projetos, páginas ou comandos…" prefix=${html`<${I.SearchOutlined} />`} value=${q} onChange=${e => setQ(e.target.value)} />
+      <${Divider} style=${{ margin: '6px 0' }} />
+      <${List} size="small" dataSource=${cmds} locale=${{ emptyText: 'Nada encontrado' }} renderItem=${c => html`<${List.Item} style=${{ cursor: 'pointer', padding: '8px 12px', borderRadius: 8 }} onClick=${() => go(c.k)}>
+        <${Space}><${I[c.i]} />${c.t}<//>
+      <//>`} />
+    <//>`;
+  }
+
+  function TasksPage({ mode, go, isMobile, screens }) {
+    const [status, setStatus] = useState('inbox');
+    const [view, setView] = useState('tabela');
+    const [groupBy, setGroupBy] = useState('none');
+    const [q, setQ] = useState('');
+    const [sel, setSel] = useState([]);
+    const [today, setToday] = useState(() => new Set(TASKS.filter(t => t.today).map(t => t.id)));
+    const counts = useMemo(() => { const c = { all: TASKS.length }; TASKS.forEach(t => { c[t.status] = (c[t.status] || 0) + 1; }); return c; }, []);
+    const rows = TASKS.filter(t => (status === 'all' || t.status === status) && t.name.toLowerCase().includes(q.toLowerCase()));
+    const effectiveView = isMobile && view === 'tabela' ? 'cards' : view;
+    useEffect(() => { setSel([]); if (status !== 'executando' && view === 'kanban') setView('tabela'); }, [status]);
+
+    const tabItems = [{ key: 'all', label: 'Todas', icon: 'UnorderedListOutlined' }].concat(Object.entries(STATUS).map(([k, v]) => ({ key: k, label: v.label, icon: v.icon })))
+      .map(t => {
+        const def = STATUS[t.key];
+        const color = def ? def[mode][0] : 'var(--ct-text-2)';
+        return { key: t.key, label: html`<span style=${{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          ${createElement(I[t.icon], { style: { color } })}${t.label}
+          <span className="ct-mono" style=${{ fontSize: 12, color: 'var(--ct-text-3)', background: 'var(--ct-bg)', borderRadius: 6, padding: '0 6px', border: '1px solid var(--ct-border)' }}>${counts[t.key] || 0}</span>
+        </span>` };
+      });
+
+    const todayBtn = t => html`<${Tooltip} title=${today.has(t.id) ? 'Tirar do plano de hoje' : 'Planejar para hoje'}>
+      <${Button} size="small" type=${today.has(t.id) ? 'primary' : 'text'} ghost=${today.has(t.id)} aria-label="Hoje" icon=${html`<${I.ScheduleOutlined} />`}
+        onClick=${e => { e.stopPropagation(); const n = new Set(today); n.has(t.id) ? n.delete(t.id) : n.add(t.id); setToday(n); }} />
+    <//>`;
+    const nameCell = t => html`<${Flex} vertical gap=${2} style=${{ minWidth: 0 }}>
+      <${Flex} align="center" gap=${6} style=${{ minWidth: 0 }}>
+        ${t.blocked ? html`<${Tooltip} title="Bloqueada: depende de #702"><${I.LockOutlined} style=${{ color: CATEGORY.prioridade[mode][0] }} /><//>` : null}
+        ${t.running ? html`<span className="ct-live" aria-label="Timer rodando"></span>` : null}
+        <a className=${'ct-taskname' + (t.status === 'finalizada' ? ' done' : '')} onClick=${() => go('tarefa')} style=${{ color: 'var(--ct-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>${t.name}</a>
+      <//>
+      <${Flex} gap=${8} align="center" wrap="wrap">
+        <${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12 }}>#${t.id}<//>
+        ${t.sub && t.sub[1] ? html`<${Progress} percent=${Math.round(t.sub[0] / t.sub[1] * 100)} size=${[48, 4]} showInfo=${false} /><${Text} type="secondary" style=${{ fontSize: 12 }}>${t.sub[0]}/${t.sub[1]}<//>` : null}
+        ${t.waiting ? html`<${Text} type="secondary" style=${{ fontSize: 12 }}>aguardando: ${t.waiting}<//>` : null}
+      <//>
+    <//>`;
+    const columns = [
+      { title: 'Tarefa', key: 'name', render: (_, t) => nameCell(t), ellipsis: false },
+      { title: 'Status', key: 'status', width: 132, render: (_, t) => html`<${Chip} def=${STATUS[t.status]} mode=${mode} />`, responsive: ['lg'] },
+      { title: 'Categoria', key: 'cat', width: 132, render: (_, t) => t.category === 'normal' ? html`<${Text} type="secondary">—<//>` : html`<${Chip} def=${CATEGORY[t.category]} mode=${mode} />` },
+      { title: 'Projeto', key: 'project', width: 170, render: (_, t) => html`<${ProjectLabel} id=${t.project} />`, responsive: ['xl'] },
+      { title: 'Contextos', key: 'ctx', width: 150, render: (_, t) => t.contexts.length ? t.contexts.map(c => html`<${Tag} key=${c} bordered=${false}>${c}<//>`) : html`<${Text} type="secondary">—<//>`, responsive: ['xxl'] },
+      { title: 'Energia', key: 'energy', width: 80, render: (_, t) => html`<${Energy} level=${t.energy} />`, responsive: ['xl'] },
+      { title: 'Prazo', key: 'due', width: 96, render: (_, t) => { const tone = dueTone(t.due); return html`<${Text} type=${tone === 'error' ? 'danger' : tone === 'warning' ? 'warning' : undefined} className="ct-mono">${fmtDate(t.due)}${t.dueTime ? ' ' + t.dueTime : ''}<//>`; }, responsive: ['md'] },
+      { title: 'Tempo', key: 'time', width: 90, align: 'right', render: (_, t) => html`<span className="ct-mono">${fmtShort(t.secs)}</span>` },
+      { title: '', key: 'act', width: 84, render: (_, t) => html`<${Space} size=${2}>${todayBtn(t)}<${Tooltip} title=${t.blocked ? 'Bloqueada' : t.running ? 'Pausar timer' : 'Iniciar timer'}><${Button} size="small" type="text" disabled=${t.blocked} aria-label="Timer" icon=${html`<${t.running ? I.PauseOutlined : I.CaretRightOutlined} />`} /><//><//>` }
+    ];
+
+    const card = t => html`<${Card} key=${t.id} size="small" hoverable onClick=${() => go('tarefa')} className=${t.leak ? 'ct-leak-' + t.leak : ''}>
+      <${Flex} vertical gap=${8}>
+        <${Flex} justify="space-between" align="start" gap=${8}>${nameCell(t)}${todayBtn(t)}<//>
+        <${Flex} gap=${6} wrap="wrap" align="center">
+          <${Chip} def=${STATUS[t.status]} mode=${mode} />
+          ${t.category !== 'normal' ? html`<${Chip} def=${CATEGORY[t.category]} mode=${mode} />` : null}
+          <${ProjectLabel} id=${t.project} />
+          <span style=${{ marginInlineStart: 'auto' }} className="ct-mono">${fmtShort(t.secs)}</span>
+        <//>
+      <//>
+    <//>`;
+
+    const groups = groupBy === 'project'
+      ? Object.entries(rows.reduce((a, t) => { const k = t.project ? P[t.project].name : 'Sem projeto'; (a[k] = a[k] || []).push(t); return a; }, {}))
+      : null;
+
+    const body = rows.length === 0
+      ? html`<${Empty} image=${Empty.PRESENTED_IMAGE_SIMPLE} description=${status === 'inbox' ? 'Inbox zerado. Tudo processado.' : 'Nenhuma tarefa aqui.'} />`
+      : effectiveView === 'kanban'
+        ? html`<div className="ct-kanban">${PROJECTS.map(p => { const items = rows.filter(t => t.project === p.id); return html`<div key=${p.id} className="ct-col">
+            <${Flex} align="center" gap=${8} style=${{ marginBottom: 8 }}><span className="ct-dot" style=${{ background: p.color }}></span><${Text} strong>${p.name}<//><${Text} type="secondary" className="ct-mono">${items.length}<//><//>
+            <${Flex} vertical gap=${8}>${items.map(card)}${items.length ? null : html`<${Text} type="secondary" style=${{ fontSize: 12 }}>Nada executando<//>`}<//>
+          </div>`; })}</div>`
+        : effectiveView === 'cards'
+          ? (groups ? groups.map(([g, ts]) => html`<div key=${g} style=${{ marginBottom: 16 }}><div className="ct-eyebrow" style=${{ margin: '4px 0 8px' }}>${g} · ${ts.length}</div><div className="ct-grid-auto">${ts.map(card)}</div></div>`)
+            : html`<div className="ct-grid-auto">${rows.map(card)}</div>`)
+          : html`<${Table} rowKey="id" size=${screens.xxl ? 'middle' : 'small'} columns=${columns} dataSource=${rows} pagination=${false}
+              rowClassName=${t => t.leak ? 'ct-leak-' + t.leak : ''}
+              rowSelection=${{ selectedRowKeys: sel, onChange: setSel, columnWidth: 40 }} scroll=${{ x: 'max-content' }} />`;
+
+    return html`<div className=${isMobile ? 'ct-page-narrow' : 'ct-page'}>
+      ${isMobile
+        ? html`<${Select} value=${status} onChange=${setStatus} options=${tabItems.map(t => ({ value: t.key, label: t.label }))} style=${{ width: '100%', marginBottom: 12 }} aria-label="Status" />`
+        : html`<${Tabs} activeKey=${status} onChange=${setStatus} items=${tabItems} style=${{ marginBottom: 4 }} />`}
+      <${Flex} gap=${8} wrap="wrap" align="center" style=${{ marginBottom: 12 }}>
+        <${Input} allowClear placeholder="Buscar em nome e descrição" prefix=${html`<${I.SearchOutlined} />`} value=${q} onChange=${e => setQ(e.target.value)} style=${{ flex: '1 1 220px', maxWidth: 360 }} />
+        <${Popover} trigger="click" placement="bottomLeft" title="Filtros" content=${html`<${Flex} vertical gap=${10} style=${{ width: 260 }}>
+            <${Select} placeholder="Categoria" allowClear options=${Object.entries(CATEGORY).map(([k, v]) => ({ value: k, label: v.label }))} />
+            <${Select} placeholder="Contexto" allowClear options=${['@dev', '@reunião', '@telefone', '@escrita'].map(c => ({ value: c, label: c }))} />
+            <${Select} placeholder="Projeto" allowClear options=${[{ value: -1, label: 'Sem projeto' }].concat(PROJECTS.map(p => ({ value: p.id, label: p.name })))} />
+            <${Select} placeholder="Tag" allowClear options=${[{ value: 'refactor', label: 'refactor' }]} />
+            <${Checkbox}>Só bloqueadas<//>
+            <${Button} type="link" style=${{ padding: 0, alignSelf: 'start' }}>Limpar filtros<//>
+          <//>`}>
+          <${Button} icon=${html`<${I.FilterOutlined} />`}>Filtros<//>
+        <//>
+        <div style=${{ flex: 1 }}></div>
+        <${Segmented} value=${effectiveView} onChange=${setView} options=${[
+          ...(isMobile ? [] : [{ value: 'tabela', icon: html`<${I.TableOutlined} />`, label: screens.lg ? 'Tabela' : null, title: 'Tabela' }]),
+          { value: 'cards', icon: html`<${I.AppstoreOutlined} />`, label: screens.lg ? 'Cards' : null, title: 'Cards' },
+          ...(status === 'executando' ? [{ value: 'kanban', icon: html`<${I.ProjectOutlined} />`, label: screens.lg ? 'Kanban' : null, title: 'Kanban' }] : [])
+        ]} />
+        ${effectiveView !== 'kanban' ? html`<${Select} value=${groupBy} onChange=${setGroupBy} style=${{ width: 170 }} options=${[{ value: 'none', label: 'Sem agrupamento' }, { value: 'project', label: 'Agrupar por projeto' }, { value: 'context', label: 'Agrupar por contexto' }]} />` : null}
+      <//>
+      ${status === 'inbox' && rows.length ? html`<${Alert} showIcon type="info" style=${{ marginBottom: 12 }} message=${html`<span><b>${rows.length} itens para processar.</b> Para cada um: é acionável? Leva menos de 2 minutos? É de um projeto?</span>`} />` : null}
+      ${body}
+      ${sel.length ? html`<div className="ct-bulkbar"><div className="ct-bulkbar-inner">
+          <${Text} strong>${sel.length} selecionada${sel.length > 1 ? 's' : ''}<//>
+          <${Button} size="small" type="link" onClick=${() => setSel([])}>Limpar<//>
+          <div style=${{ flex: 1 }}></div>
+          <${Select} size="small" placeholder="Marcar como…" style=${{ width: 150 }} options=${Object.entries(STATUS).map(([k, v]) => ({ value: k, label: v.label }))} />
+          <${Select} size="small" placeholder="Mover para projeto…" style=${{ width: 180 }} options=${PROJECTS.map(p => ({ value: p.id, label: p.name }))} />
+          <${Button} size="small" icon=${html`<${I.ContainerOutlined} />`}>Arquivar<//>
+          <${Button} size="small" danger icon=${html`<${I.DeleteOutlined} />`}>Excluir<//>
+        </div></div>` : null}
+    </div>`;
+  }
+
+  function TaskDetailPage({ mode, go, screens }) {
+    const t = TASKS[0];
+    const [running, setRunning] = useState(true);
+    const [secs, setSecs] = useState(t.secs);
+    const [noteTab, setNoteTab] = useState('notas');
+    const [focus, setFocus] = useState(false);
+    useEffect(() => { if (!running) return; const i = setInterval(() => setSecs(s => s + 1), 1000); return () => clearInterval(i); }, [running]);
+
+    const meta = html`<${Flex} vertical gap=${16}>
+      <div>
+        <${Flex} gap=${6} wrap="wrap" style=${{ marginBottom: 8 }}><${Chip} def=${STATUS[t.status]} mode=${mode} /><${Text} type="secondary" className="ct-mono">#711<//><//>
+        <${Title} level=${4} style=${{ margin: 0, textWrap: 'balance' }}>${t.name}<//>
+      </div>
+      <div>
+        <div className="ct-eyebrow" style=${{ marginBottom: 8 }}>Organização</div>
+        <${Flex} vertical gap=${8}>
+          <${Select} value="executando" options=${Object.entries(STATUS).map(([k, v]) => ({ value: k, label: html`<${Space}>${createElement(I[v.icon], { style: { color: v[mode][0] } })}${v.label}<//>` }))} />
+          <${Select} value=${13} options=${PROJECTS.map(p => ({ value: p.id, label: html`<${ProjectLabel} id=${p.id} />` }))} />
+          <${Select} mode="multiple" value=${['@dev']} options=${['@dev', '@reunião', '@escrita'].map(c => ({ value: c, label: c }))} />
+          <${Select} mode="tags" value=${['refactor']} />
+        <//>
+      </div>
+      <div>
+        <div className="ct-eyebrow" style=${{ marginBottom: 8 }}>Agenda</div>
+        <${Flex} gap=${8} wrap="wrap">
+          <${Button} icon=${html`<${I.ScheduleOutlined} />`} type="primary" ghost>No plano de hoje<//>
+          <${Button} icon=${html`<${I.CalendarOutlined} />`}>Prazo 21/11<//>
+        <//>
+      </div>
+      <div>
+        <div className="ct-eyebrow" style=${{ marginBottom: 8 }}>Ambiente</div>
+        <${Flex} gap=${8} wrap="wrap">
+          <${Button} icon=${html`<${I.CodeOutlined} />`}>Abrir terminal<//>
+          <${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12, alignSelf: 'center' }}>~/Code/pessoal/crafytask<//>
+        <//>
+      </div>
+    <//>`;
+
+    const timer = html`<${Flex} vertical align="center" gap=${16} style=${{ padding: '24px 8px' }}>
+      <${Text} type="secondary">${running ? 'Em andamento' : 'Pausado'}<//>
+      <div className="ct-hero-time" style=${{ fontSize: screens.xl ? 72 : 52 }}>${fmt(secs)}</div>
+      <div style=${{ width: '100%', maxWidth: 360 }}>
+        <${Progress} percent=${Math.min(100, Math.round(secs / 144))} showInfo=${false} strokeColor="var(--ct-primary)" />
+        <${Flex} justify="space-between"><${Text} type="secondary" style=${{ fontSize: 12 }}>Limite 4h<//><${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12 }}>${Math.min(100, Math.round(secs / 144))}%<//><//>
+      </div>
+      <${Space}>
+        <${Button} type="primary" size="large" icon=${html`<${running ? I.PauseOutlined : I.CaretRightOutlined} />`} onClick=${() => setRunning(!running)}>${running ? 'Pausar' : 'Iniciar'}<//>
+        <${Button} size="large" icon=${html`<${I.CheckOutlined} />`}>Finalizar<//>
+      <//>
+      <${Row} gutter=${12} style=${{ width: '100%', maxWidth: 360 }}>
+        <${Col} span=${12}><${Card} size="small"><${Statistic} title="Total" value=${fmtShort(secs)} valueStyle=${{ fontFamily: 'var(--ct-mono)' }} /><//><//>
+        <${Col} span=${12}><${Card} size="small"><${Statistic} title="Sessões" value=${5} valueStyle=${{ fontFamily: 'var(--ct-mono)' }} /><//><//>
+      <//>
+    <//>`;
+
+    const notes = html`<${Card} size="small" style=${{ height: '100%' }} styles=${{ body: { padding: 0 } }}>
+      <${Flex} align="center" style=${{ padding: '0 8px 0 12px', borderBottom: '1px solid var(--ct-border)' }}>
+        <${Tabs} activeKey=${noteTab} onChange=${setNoteTab} size="small" items=${[{ key: 'notas', label: html`<${Space} size=${4}><${I.FileTextOutlined} />Notas<//>` }, { key: 'desenho', label: html`<${Space} size=${4}><${I.HighlightOutlined} />Desenho<//>` }]} style=${{ flex: 1, marginBottom: -1 }} tabBarStyle=${{ margin: 0 }} />
+        <${Tooltip} title=${focus ? 'Sair do modo foco (Esc)' : 'Modo foco'}><${Button} type="text" aria-label="Modo foco" icon=${html`<${I.ExpandOutlined} />`} onClick=${() => setFocus(!focus)} /><//>
+      <//>
+      <div style=${{ padding: '16px 20px' }}>
+        ${noteTab === 'notas' ? html`<div className="ct-note">
+          <h3>Escopo</h3>
+          <p>Pesquisar UI/UX para apps GTD, criar a pasta <code>docs/design</code>, o guia de orientação e um protótipo em Ant Design com paleta própria.</p>
+          <p>Não perder as <b>abas de status</b>. AppShell isolando crashes, responsivo e com modo escuro.</p>
+        </div>` : html`<${Empty} image=${html`<${I.HighlightOutlined} style=${{ fontSize: 40, color: 'var(--ct-text-3)' }} />`} description="Excalidraw carrega aqui sob demanda" />`}
+      </div>
+    <//>`;
+
+    const back = html`<${Button} type="text" icon=${html`<${I.ArrowLeftOutlined} />`} onClick=${() => go('tarefas')} style=${{ marginBottom: 12 }}>Tarefas<//>`;
+
+    if (focus) return html`<div className="ct-page">${back}<div style=${{ maxWidth: 760, margin: '0 auto' }}>${notes}</div></div>`;
+    if (screens.xl) return html`<div className="ct-page">${back}
+      <${Row} gutter=${16} wrap=${false}>
+        <${Col} flex=${screens.xxl ? '380px' : '320px'}><${Card} size="small" styles=${{ body: { padding: 16 } }}>${meta}<//><//>
+        <${Col} flex="1 1 0" style=${{ minWidth: 0 }}><${Card} size="small">${timer}<//><//>
+        <${Col} flex=${screens.xxl ? '1 1 0' : '0 0 40%'} style=${{ minWidth: 0 }}>${notes}<//>
+      <//>
+    </div>`;
+    if (screens.md) return html`<div className="ct-page">${back}
+      <${Row} gutter=${16}>
+        <${Col} span=${10}><${Card} size="small">${meta}<//><//>
+        <${Col} span=${14}><${Flex} vertical gap=${16}><${Card} size="small">${timer}<//>${notes}<//><//>
+      <//>
+    </div>`;
+    return html`<div className="ct-page-narrow">${back}
+      <${Tabs} items=${[{ key: 't', label: 'Timer', children: timer }, { key: 'n', label: 'Notas', children: notes }, { key: 'd', label: 'Dados', children: meta }]} />
+    </div>`;
+  }
+
+  function TodayPage({ mode, go }) {
+    const items = TASKS.filter(t => t.today);
+    const planned = 6.5;
+    const week = [['Seg', 7.5], ['Ter', planned], ['Qua', 4], ['Qui', 8.5], ['Sex', 3], ['Sáb', 0], ['Dom', 0]];
+    return html`<div className="ct-page">
+      <${Row} gutter=${[16, 16]}>
+        <${Col} xs=${24} lg=${16}>
+          <${Card} title="Plano de terça, 17 de novembro" extra=${html`<${Text} type="secondary" className="ct-mono">${planned}h de 8h<//>`}>
+            <${Progress} percent=${Math.round(planned / 8 * 100)} showInfo=${false} style=${{ marginBottom: 12 }} />
+            <${List} dataSource=${items} renderItem=${t => html`<${List.Item} actions=${[html`<span key="t" className="ct-mono">${t.dueTime || fmtShort(t.secs)}</span>`]}>
+              <${List.Item.Meta} avatar=${html`<span style=${{ cursor: 'grab', color: 'var(--ct-text-3)' }} aria-label="Arrastar">⋮⋮</span>`}
+                title=${html`<a onClick=${() => go('tarefa')} style=${{ color: 'var(--ct-text)' }}>${t.name}</a>`}
+                description=${html`<${Space} size=${6} wrap><${Chip} def=${STATUS[t.status]} mode=${mode} /><${ProjectLabel} id=${t.project} /><//>`} />
+            <//>`} />
+          <//>
+        <//>
+        <${Col} xs=${24} lg=${8}>
+          <${Card} title="Semana">
+            <${Flex} vertical gap=${10}>
+              ${week.map(([d, h]) => html`<${Flex} key=${d} align="center" gap=${10}>
+                <${Text} style=${{ width: 32 }} strong=${d === 'Ter'}>${d}<//>
+                <${Progress} percent=${Math.min(100, h / 8 * 100)} showInfo=${false} status=${h > 8 ? 'exception' : 'normal'} style=${{ flex: 1, margin: 0 }} />
+                <span className="ct-mono" style=${{ width: 40, textAlign: 'right' }}>${h ? h + 'h' : '—'}</span>
+              <//>`)}
+            <//>
+          <//>
+        <//>
+      <//>
+    </div>`;
+  }
+
+  function ProjectsPage({ mode }) {
+    return html`<div className="ct-page">
+      <${Flex} justify="space-between" align="center" wrap="wrap" gap=${8} style=${{ marginBottom: 16 }}>
+        <${Segmented} options=${['Ativos', 'Someday', 'Concluídos', 'Arquivados']} />
+        <${Button} type="primary" icon=${html`<${I.PlusOutlined} />`}>Novo projeto<//>
+      <//>
+      <div className="ct-grid-auto">
+        ${PROJECTS.map(p => html`<${Card} key=${p.id} hoverable size="small">
+          <${Flex} vertical gap=${10}>
+            <${Flex} align="center" gap=${8}><span className="ct-dot" style=${{ background: p.color, width: 10, height: 10 }}></span><${Text} strong>${p.name}<//><//>
+            <${Text} type="secondary">${p.outcome}<//>
+            <${Progress} percent=${Math.round(p.done / p.total * 100)} size="small" format=${() => html`<span className="ct-mono">${p.done}/${p.total}</span>`} />
+            ${p.next ? null : html`<${Alert} type="warning" showIcon message="Sem próxima ação definida" action=${html`<${Button} size="small" type="link">Definir<//>`} />`}
+            <${Text} type="secondary" style=${{ fontSize: 12 }}>${p.area}<//>
+          <//>
+        <//>`)}
+      </div>
+    </div>`;
+  }
+
+  function Swatch({ name, value, note }) {
+    return html`<div><div className="ct-swatch" style=${{ background: value }}></div>
+      <div style=${{ marginTop: 6, fontSize: 12 }}><b>${name}</b><br/><span className="ct-mono" style=${{ color: 'var(--ct-text-2)' }}>${value}</span>${note ? html`<br/><span style=${{ color: 'var(--ct-text-3)' }}>${note}</span>` : null}</div></div>`;
+  }
+
+  function IdentityPage({ mode }) {
+    const c = PALETTE[mode];
+    return html`<div className="ct-page">
+      <${Flex} vertical gap=${24}>
+        <div>
+          <div className="ct-eyebrow">Direção</div>
+          <${Title} level=${3} style=${{ margin: '4px 0 8px' }}>Bancada: calma para pensar, precisa para executar<//>
+          <${Paragraph} type="secondary" style=${{ maxWidth: '68ch' }}>Superfícies neutras com leve tom violeta, cor só onde existe estado. O roxo da marca marca a ação; verde só para o que está rodando agora. Números em fonte mono tabular, porque tempo é o dado mais lido do app.<//>
+        </div>
+        <${Card} title=${'Base — modo ' + (mode === 'dark' ? 'escuro' : 'claro')} size="small">
+          <div className="ct-grid-auto" style=${{ gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))' }}>
+            <${Swatch} name="Fundo" value=${c.bg} /><${Swatch} name="Superfície" value=${c.surface} /><${Swatch} name="Elevada" value=${c.elevated} />
+            <${Swatch} name="Borda" value=${c.border} /><${Swatch} name="Texto" value=${c.text} /><${Swatch} name="Texto 2" value=${c.text2} />
+            <${Swatch} name="Primária" value=${c.primary} note="ações" /><${Swatch} name="Marca" value=${c.brand} note="logo, destaques" />
+          </div>
+        <//>
+        <${Card} title="Status GTD — a cor reforça, o ícone e o texto informam" size="small">
+          <${Flex} gap=${8} wrap="wrap">${Object.entries(STATUS).map(([k, v]) => html`<${Chip} key=${k} def=${v} mode=${mode} />`)}<//>
+          <${Divider} />
+          <${Flex} gap=${8} wrap="wrap">${Object.entries(CATEGORY).map(([k, v]) => html`<${Chip} key=${k} def=${v} mode=${mode} />`)}
+            <${Flex} gap=${12} align="center" style=${{ marginInlineStart: 12 }}>${Object.keys(ENERGY).map(k => html`<${Space} key=${k} size=${4}><${Energy} level=${k} /><${Text} type="secondary">${ENERGY[k].label}<//><//>`)}<//>
+          <//>
+          <${Divider} />
+          <${Flex} gap=${8} wrap="wrap">
+            <div className="ct-leak-1" style=${{ padding: '8px 12px', borderRadius: 8 }}>Time leak 30 min+</div>
+            <div className="ct-leak-2" style=${{ padding: '8px 12px', borderRadius: 8 }}>1h+</div>
+            <div className="ct-leak-3" style=${{ padding: '8px 12px', borderRadius: 8 }}>2h+</div>
+          <//>
+        <//>
+        <${Card} title="Tipografia" size="small">
+          <${Flex} vertical gap=${8}>
+            <span className="ct-logo" style=${{ fontSize: 28 }}>CrafyTask</span><${Text} type="secondary" style=${{ fontSize: 12 }}>Denk One — só o logo<//>
+            <${Title} level=${3} style=${{ margin: 0 }}>Geist 24/600 — título de tela<//>
+            <${Text} style=${{ fontSize: 16, fontWeight: 600 }}>Geist 16/600 — título de seção<//>
+            <${Text}>Geist 14/400 — texto de interface e tabela<//>
+            <${Text} type="secondary" style=${{ fontSize: 12 }}>Geist 12/400 — metadados<//>
+            <span className="ct-hero-time" style=${{ fontSize: 40 }}>02:32:10</span><${Text} type="secondary" style=${{ fontSize: 12 }}>Geist Mono tabular — tempo, ids, contadores<//>
+          <//>
+        <//>
+        <${Card} title="Componentes antd com o tema" size="small">
+          <${Flex} gap=${8} wrap="wrap" align="center">
+            <${Button} type="primary">Primária<//><${Button}>Padrão<//><${Button} type="text">Texto<//><${Button} danger>Excluir<//>
+            <${Switch} defaultChecked /><${Segmented} options=${['Dia', 'Semana', 'Mês']} />
+            <${Badge} count=${5} color="var(--ct-primary)"><${Avatar} shape="square" icon=${html`<${I.InboxOutlined} />`} /><//>
+          <//>
+          <${Divider} />
+          <${Row} gutter=${[12, 12]}>
+            <${Col} xs=${24} md=${8}><${Alert} type="success" showIcon message="Sincronizado com o Notion" /><//>
+            <${Col} xs=${24} md=${8}><${Alert} type="warning" showIcon message="Projeto sem próxima ação" /><//>
+            <${Col} xs=${24} md=${8}><${Alert} type="error" showIcon message="Falha ao enviar worklog" /><//>
+          <//>
+        <//>
+      <//>
+    </div>`;
+  }
+
+  function Placeholder({ route, go }) {
+    return html`<div className="ct-page"><${Result} icon=${html`<${I.ProjectOutlined} style=${{ color: 'var(--ct-text-3)' }} />`} title="Fora deste protótipo"
+      subTitle="Esta tela segue o mesmo AppShell e os mesmos padrões. O plano de refatoração descreve cada uma."
+      extra=${html`<${Button} onClick=${() => go('tarefas')}>Voltar para Tarefas<//>`} /></div>`;
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(html`<${Shell} />`);
+})();
+</script>

@@ -1,0 +1,567 @@
+{
+  "prototipo": "https://claude.ai/artifact/Vvt5YdciJdFX6ut1sqfbAm",
+  "fases": {
+    "F0": "Fundação: antd, tema e tokens",
+    "F1": "AppShell e navegação",
+    "F2": "Lista de tarefas",
+    "F3": "Detalhe da tarefa",
+    "F4": "Hoje e calendário",
+    "F5": "Projetos, horizontes e revisão",
+    "F6": "Rótulos e arquivo",
+    "F7": "Cadernos, dashboard e configurações",
+    "F8": "Janelas auxiliares",
+    "F9": "Limpeza do legado"
+  },
+  "itens": [
+    {
+      "id": "F0.1",
+      "fase": "F0",
+      "titulo": "Ant Design instalado",
+      "check": { "tipo": "dependencia", "nome": "antd" }
+    },
+    {
+      "id": "F0.2",
+      "fase": "F0",
+      "titulo": "Fontes Geist e Geist Mono empacotadas (app offline)",
+      "check": {
+        "tipo": "dependencia",
+        "nome": ["@fontsource-variable/geist", "@fontsource-variable/geist-mono"]
+      }
+    },
+    {
+      "id": "F0.3",
+      "fase": "F0",
+      "titulo": "Tokens da paleta própria num módulo único",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/theme/tokens.ts",
+        "padrao": "colorPrimary"
+      }
+    },
+    {
+      "id": "F0.4",
+      "fase": "F0",
+      "titulo": "Cores semânticas de status, categoria e energia num só lugar",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/theme/semantic.ts",
+        "padrao": "executando|time_leak|alto",
+        "minimo": 3
+      }
+    },
+    {
+      "id": "F0.5",
+      "fase": "F0",
+      "titulo": "Tema escuro pelo darkAlgorithm",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/theme/**/*.{ts,tsx}",
+        "padrao": "darkAlgorithm"
+      }
+    },
+    {
+      "id": "F0.6",
+      "fase": "F0",
+      "titulo": "Densidade compacta pelo compactAlgorithm",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/theme/**/*.{ts,tsx}",
+        "padrao": "compactAlgorithm"
+      }
+    },
+    {
+      "id": "F0.7",
+      "fase": "F0",
+      "titulo": "ConfigProvider com cssVar e App do antd na raiz",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/{App,main}.tsx",
+        "padrao": "<ConfigProvider[\\s\\S]*?<(AntApp|App)\\b"
+      }
+    },
+    {
+      "id": "F0.8",
+      "fase": "F0",
+      "titulo": "Preferências de tema e densidade persistidas",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/**/*.{ts,tsx}",
+        "padrao": "ticktask:(theme|density)",
+        "minimo": 2
+      }
+    },
+    {
+      "id": "F0.9",
+      "fase": "F0",
+      "titulo": "Paleta e tipografia conferidas no app, claro e escuro",
+      "check": { "tipo": "manual" }
+    },
+    {
+      "id": "F1.1",
+      "fase": "F1",
+      "titulo": "AppShell com Layout e Sider",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/components/shell/AppShell.tsx",
+        "padrao": "<Sider|Layout\\.Sider",
+        "minimo": 1
+      }
+    },
+    {
+      "id": "F1.2",
+      "fase": "F1",
+      "titulo": "ErrorBoundary por região (navegação, header, conteúdo)",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/components/shell/AppShell.tsx",
+        "padrao": "<RegionBoundary",
+        "minimo": 3
+      }
+    },
+    {
+      "id": "F1.3",
+      "fase": "F1",
+      "titulo": "Boundary mostra Result com recarregar e copiar detalhes",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/components/shell/RegionBoundary.tsx",
+        "padrao": "<Result|getDerivedStateFromError|ErrorBoundary",
+        "minimo": 2
+      }
+    },
+    {
+      "id": "F1.4",
+      "fase": "F1",
+      "titulo": "Sider recolhe por breakpoint e vira Drawer abaixo de md",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/components/shell/*.tsx",
+        "padrao": "useBreakpoint|collapsedWidth|<Drawer",
+        "minimo": 3
+      }
+    },
+    {
+      "id": "F1.5",
+      "fase": "F1",
+      "titulo": "Navegação agrupada (Fluxo, Organizar, Conhecimento) em todas as rotas",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/components/shell/*.{ts,tsx}",
+        "padrao": "'Fluxo'|'Organizar'|'Conhecimento'",
+        "minimo": 3
+      }
+    },
+    {
+      "id": "F1.6",
+      "fase": "F1",
+      "titulo": "Captura rápida inline no header",
+      "check": {
+        "tipo": "arquivo",
+        "caminho": "src/renderer/src/components/shell/HeaderCapture.tsx"
+      }
+    },
+    {
+      "id": "F1.7",
+      "fase": "F1",
+      "titulo": "Pílula de timers em execução no header",
+      "check": {
+        "tipo": "arquivo",
+        "caminho": "src/renderer/src/components/shell/RunningTimersPill.tsx"
+      }
+    },
+    {
+      "id": "F1.8",
+      "fase": "F1",
+      "titulo": "Paleta de comandos com Ctrl+K",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/components/shell/CommandPalette.tsx",
+        "padrao": "'k'|\"k\"|KeyK"
+      }
+    },
+    {
+      "id": "F1.9",
+      "fase": "F1",
+      "titulo": "Barra de status com sync e MCP (substitui SyncNotification)",
+      "check": { "tipo": "arquivo", "caminho": "src/renderer/src/components/shell/StatusBar.tsx" }
+    },
+    {
+      "id": "F1.10",
+      "fase": "F1",
+      "titulo": "TitleBar antigo fora do App",
+      "check": { "tipo": "ausente", "arquivos": "src/renderer/src/App.tsx", "padrao": "TitleBar" }
+    },
+    {
+      "id": "F1.11",
+      "fase": "F1",
+      "titulo": "Janela principal aceita largura mínima de 400px",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/main/index.ts",
+        "padrao": "minWidth:\\s*(3\\d\\d|4[0-7]\\d|480)\\b"
+      }
+    },
+    {
+      "id": "F1.12",
+      "fase": "F1",
+      "titulo": "Shell conferido de 480px a 1920px e falha simulada isolada",
+      "check": { "tipo": "manual" }
+    },
+    {
+      "id": "F2.1",
+      "fase": "F2",
+      "titulo": "Abas de status com ícone e contagem por status",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/preload/index.ts",
+        "padrao": "task:statusCounts"
+      }
+    },
+    {
+      "id": "F2.2",
+      "fase": "F2",
+      "titulo": "Abas de status com Tabs do antd",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/pages/TaskListPage.tsx",
+        "padrao": "<Tabs"
+      }
+    },
+    {
+      "id": "F2.3",
+      "fase": "F2",
+      "titulo": "Tabela antd com rowSelection",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/components/tasks/TaskTable.tsx",
+        "padrao": "rowSelection"
+      }
+    },
+    {
+      "id": "F2.4",
+      "fase": "F2",
+      "titulo": "Barra de ações em massa flutuante, só com seleção",
+      "check": {
+        "tipo": "arquivo",
+        "caminho": "src/renderer/src/components/tasks/BulkActionBar.tsx"
+      }
+    },
+    {
+      "id": "F2.5",
+      "fase": "F2",
+      "titulo": "Filtros em Popover (Drawer no estreito)",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/components/tasks/TaskFilters.tsx",
+        "padrao": "<Popover|<Drawer",
+        "minimo": 1
+      }
+    },
+    {
+      "id": "F2.6",
+      "fase": "F2",
+      "titulo": "Visão vira cards abaixo de md",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/pages/TaskListPage.tsx",
+        "padrao": "useBreakpoint"
+      }
+    },
+    {
+      "id": "F2.7",
+      "fase": "F2",
+      "titulo": "Chips de status, categoria e energia padronizados",
+      "check": {
+        "tipo": "arquivo",
+        "caminho": [
+          "src/renderer/src/components/chips/StatusChip.tsx",
+          "src/renderer/src/components/chips/CategoryChip.tsx",
+          "src/renderer/src/components/chips/EnergyMeter.tsx"
+        ]
+      }
+    },
+    {
+      "id": "F2.8",
+      "fase": "F2",
+      "titulo": "Busca com debounce",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/{pages/TaskListPage.tsx,components/tasks/*.tsx,hooks/*.ts}",
+        "padrao": "useDebounce|debounce"
+      }
+    },
+    {
+      "id": "F2.9",
+      "fase": "F2",
+      "titulo": "Alerta de processamento do Inbox",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/pages/TaskListPage.tsx",
+        "padrao": "<Alert\\b"
+      }
+    },
+    {
+      "id": "F2.10",
+      "fase": "F2",
+      "titulo": "Lista conferida: tabela, cards, grupos e Kanban, claro e escuro",
+      "check": { "tipo": "manual" }
+    },
+    {
+      "id": "F3.1",
+      "fase": "F3",
+      "titulo": "Detalhe responsivo: 3 colunas (xl), 2 (md), abas (estreito)",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/pages/SingleTaskPage.tsx",
+        "padrao": "useBreakpoint|<Tabs",
+        "minimo": 2
+      }
+    },
+    {
+      "id": "F3.2",
+      "fase": "F3",
+      "titulo": "Editores (notas, desenho, terminal) isolados por boundary",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/{pages/SingleTaskPage.tsx,components/editor/*.tsx}",
+        "padrao": "<RegionBoundary",
+        "minimo": 2
+      }
+    },
+    {
+      "id": "F3.3",
+      "fase": "F3",
+      "titulo": "Cronômetro em Geist Mono tabular",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/**/*.{ts,tsx,css}",
+        "padrao": "Geist Mono|geist-mono",
+        "minimo": 1
+      }
+    },
+    {
+      "id": "F3.4",
+      "fase": "F3",
+      "titulo": "Modos normal, maximizado e zen preservados",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/pages/SingleTaskPage.tsx",
+        "padrao": "'zen'|'maximized'",
+        "minimo": 2
+      }
+    },
+    {
+      "id": "F3.5",
+      "fase": "F3",
+      "titulo": "Detalhe conferido nas três larguras",
+      "check": { "tipo": "manual" }
+    },
+    {
+      "id": "F4.1",
+      "fase": "F4",
+      "titulo": "Plano do dia com carga vs. jornada e semana lateral",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/pages/TodayPage.tsx",
+        "padrao": "<Progress|<List|<Card",
+        "minimo": 2
+      }
+    },
+    {
+      "id": "F4.2",
+      "fase": "F4",
+      "titulo": "Calendário com tokens de categoria (legenda correta)",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/pages/CalendarPage.tsx",
+        "padrao": "theme/semantic"
+      }
+    },
+    {
+      "id": "F4.3",
+      "fase": "F4",
+      "titulo": "Hoje e calendário conferidos",
+      "check": { "tipo": "manual" }
+    },
+    {
+      "id": "F5.1",
+      "fase": "F5",
+      "titulo": "Projetos em grade de Card com alerta de próxima ação",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/{pages/ProjectsPage.tsx,components/projects/*.tsx}",
+        "padrao": "<Card|<Alert",
+        "minimo": 2
+      }
+    },
+    {
+      "id": "F5.2",
+      "fase": "F5",
+      "titulo": "Criar tarefa dentro do projeto",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/pages/ProjectDetailPage.tsx",
+        "padrao": "TaskDialog|createTask|NewTask"
+      }
+    },
+    {
+      "id": "F5.3",
+      "fase": "F5",
+      "titulo": "Horizontes e revisão semanal no tema, com confirmação ao excluir área e meta",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/pages/{HorizonsPage,WeeklyReviewPage}.tsx",
+        "padrao": "Popconfirm|modal\\.confirm|DeleteConfirm",
+        "minimo": 1
+      }
+    },
+    {
+      "id": "F5.4",
+      "fase": "F5",
+      "titulo": "Projetos, horizontes e revisão conferidos",
+      "check": { "tipo": "manual" }
+    },
+    {
+      "id": "F6.1",
+      "fase": "F6",
+      "titulo": "Contextos e tags numa tela só, com abas",
+      "check": { "tipo": "arquivo", "caminho": "src/renderer/src/pages/LabelsPage.tsx" }
+    },
+    {
+      "id": "F6.2",
+      "fase": "F6",
+      "titulo": "Arquivo como visão da lista (sem tela própria pobre)",
+      "check": {
+        "tipo": "ausente",
+        "arquivos": "src/renderer/src/App.tsx",
+        "padrao": "ArchivedTasksPage"
+      }
+    },
+    {
+      "id": "F6.3",
+      "fase": "F6",
+      "titulo": "Um nome só para tag (sem 'Fonte / Tag')",
+      "check": {
+        "tipo": "ausente",
+        "arquivos": "src/renderer/src/**/*.tsx",
+        "padrao": "Fontes? / Tags?"
+      }
+    },
+    {
+      "id": "F7.1",
+      "fase": "F7",
+      "titulo": "Configurações com seção Aparência (tema e densidade)",
+      "check": {
+        "tipo": "arquivo",
+        "caminho": "src/renderer/src/components/settings/AppearanceSection.tsx"
+      }
+    },
+    {
+      "id": "F7.2",
+      "fase": "F7",
+      "titulo": "Gráficos do dashboard com paleta dos tokens",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/pages/DashboardPage.tsx",
+        "padrao": "theme/(semantic|tokens)|chartPalette"
+      }
+    },
+    {
+      "id": "F7.3",
+      "fase": "F7",
+      "titulo": "Cadernos, dashboard, terminal e configurações conferidos",
+      "check": { "tipo": "manual" }
+    },
+    {
+      "id": "F8.1",
+      "fase": "F8",
+      "titulo": "Timer flutuante e captura rápida com o mesmo tema",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/pages/{FloatTimerPage,QuickCapturePage}.tsx",
+        "padrao": "theme/|useAppTheme|ConfigProvider",
+        "minimo": 2
+      }
+    },
+    {
+      "id": "F8.2",
+      "fase": "F8",
+      "titulo": "Janelas auxiliares conferidas",
+      "check": { "tipo": "manual" }
+    },
+    {
+      "id": "F9.1",
+      "fase": "F9",
+      "titulo": "Sem cores de paleta do Tailwind no renderer",
+      "check": {
+        "tipo": "ausente",
+        "arquivos": "src/renderer/src/**/*.tsx",
+        "padrao": "\\b(bg|text|border|ring|from|to|fill|stroke)-(slate|gray|zinc|neutral|stone|blue|red|green|emerald|amber|yellow|orange|purple|indigo|teal|violet|sky|cyan|rose|pink|lime|fuchsia)-\\d{2,3}\\b"
+      }
+    },
+    {
+      "id": "F9.2",
+      "fase": "F9",
+      "titulo": "Sem primitivos shadcn/Radix",
+      "check": {
+        "tipo": "sem-dependencia",
+        "nome": [
+          "@radix-ui/react-alert-dialog",
+          "@radix-ui/react-context-menu",
+          "@radix-ui/react-dialog",
+          "@radix-ui/react-progress",
+          "@radix-ui/react-scroll-area",
+          "@radix-ui/react-select",
+          "@radix-ui/react-slot",
+          "@radix-ui/react-tabs",
+          "shadcn",
+          "class-variance-authority"
+        ]
+      }
+    },
+    {
+      "id": "F9.3",
+      "fase": "F9",
+      "titulo": "Toasts pelo App do antd (sem sonner)",
+      "check": { "tipo": "sem-dependencia", "nome": "sonner" }
+    },
+    {
+      "id": "F9.4",
+      "fase": "F9",
+      "titulo": "Nenhuma página com h-screen",
+      "check": {
+        "tipo": "ausente",
+        "arquivos": "src/renderer/src/{pages,components}/**/*.tsx",
+        "padrao": "\\bh-screen\\b"
+      }
+    },
+    {
+      "id": "F9.5",
+      "fase": "F9",
+      "titulo": "Sem hex de cor solto em componentes",
+      "check": {
+        "tipo": "ausente",
+        "arquivos": "src/renderer/src/{pages,components}/**/*.tsx",
+        "padrao": "['\"]#[0-9a-fA-F]{6}['\"]"
+      }
+    },
+    {
+      "id": "F9.6",
+      "fase": "F9",
+      "titulo": "Componentes mortos removidos (Timer, Versions)",
+      "check": {
+        "tipo": "sem-arquivo",
+        "caminho": [
+          "src/renderer/src/components/Timer.tsx",
+          "src/renderer/src/components/Versions.tsx"
+        ]
+      }
+    },
+    {
+      "id": "F9.7",
+      "fase": "F9",
+      "titulo": "docs/ui atualizado para a nova interface",
+      "check": { "tipo": "ausente", "arquivos": "docs/ui/*.md", "padrao": "bg-slate-900" }
+    }
+  ]
+}
