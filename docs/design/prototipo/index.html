@@ -273,7 +273,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       components: {
         Layout: { siderBg: c.sider, headerBg: c.surface, bodyBg: c.bg, headerHeight: 52, headerPadding: '0 16px', triggerBg: c.sider, triggerColor: c.text2 },
         Menu: { itemBg: 'transparent', subMenuItemBg: 'transparent', itemSelectedBg: c.primarySoft, itemSelectedColor: c.primary, itemHoverBg: mode === 'dark' ? '#25232F' : '#F0EFF6', itemBorderRadius: 8, itemMarginInline: 8, groupTitleColor: c.text3, groupTitleFontSize: 11, iconSize: 16, collapsedIconSize: 18 },
-        Tabs: { itemColor: c.text2, itemSelectedColor: c.text, inkBarColor: c.primary, horizontalItemGutter: 4, horizontalItemPadding: '10px 12px', titleFontSize: 14 },
+        Tabs: { itemColor: c.text2, itemSelectedColor: c.text, inkBarColor: c.primary, horizontalItemGutter: compact ? 16 : 24, horizontalItemPadding: '10px 4px', horizontalItemPaddingSM: '8px 4px', horizontalItemPaddingLG: '12px 4px', titleFontSize: 14 },
         Table: { headerBg: c.surface, headerColor: c.text3, headerSplitColor: 'transparent', rowHoverBg: mode === 'dark' ? '#201E2B' : '#F7F6FC', rowSelectedBg: c.primarySoft, rowSelectedHoverBg: c.primarySoft, cellPaddingBlock: compact ? 6 : 10, borderColor: c.border },
         Card: { headerFontSize: 14 },
         Segmented: { itemSelectedBg: c.surface, trackBg: mode === 'dark' ? '#15141D' : '#ECEBF3' },

@@ -94,6 +94,16 @@
       }
     },
     {
+      "id": "F0.10",
+      "fase": "F0",
+      "titulo": "Espaço entre abas definido no tema (gutter e padding SM/LG)",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/theme/**/*.{ts,tsx}",
+        "padroes": ["horizontalItemGutter", "horizontalItemPaddingSM", "horizontalItemPaddingLG"]
+      }
+    },
+    {
       "id": "F0.9",
       "fase": "F0",
       "titulo": "Paleta e tipografia conferidas no app, claro e escuro",

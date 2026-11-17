@@ -143,6 +143,11 @@ existem. Token antd: `fontFamily` (Geist) e `fontFamilyCode` (Geist Mono), `font
   cards, 8px entre controles de uma barra.
 - **Densidade:** padrão "confortável" (`controlHeight` 32, linhas de tabela com 10px). "Compacta"
   liga o `compactAlgorithm` e linhas de 6px. Alvo de clique nunca menor que 24px (WCAG 2.5.8).
+- **Abas:** espaço mínimo de 24px entre o fim de um rótulo e o início do próximo (16px na densidade
+  compacta), em todos os tamanhos. No tema: `Tabs.horizontalItemGutter` 24 (16 compacto) e padding
+  lateral de 4px em `horizontalItemPadding`, `horizontalItemPaddingSM` e `horizontalItemPaddingLG`;
+  nunca deixar o `size="small"` com o padding padrão (`8px 0`), que cola os rótulos. Rótulo com
+  ícone e contador conta como um só bloco.
 - **Metadado em texto, não em badge.** Uma linha de tabela tem no máximo dois chips (status e
   categoria); projeto é ponto + nome, contexto é tag sem borda.
 
