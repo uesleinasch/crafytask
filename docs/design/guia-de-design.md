@@ -215,37 +215,42 @@ ConfigProvider (tema, cssVar) → App (message, modal, notification) → RegionB
   notas numa coluna de leitura de ~68 caracteres, desenho na largura toda. Sai por `Esc` (menos
   com popup de sugestão aberto) ou pelo mesmo botão. Não aciona o fullscreen da janela; o modo
   maximizado de hoje vira este.
-- **Timer da task:** abaixo do cronômetro ficam Pausar/Iniciar, Finalizar e Zerar (`Popconfirm`),
-  os totais (Total, Sessões) e um `Collapse` com duas seções:
-  - **Sessões:** a sessão em andamento no topo (ponto verde, sem ações) e as encerradas com data,
-    início–fim e `+HH:MM:SS`. Cada encerrada tem **editar** (início e fim inline, recalcula o total)
-    e **excluir** (`Popconfirm` avisando que o worklog do Jira também é apagado). Editar e excluir
-    sessão são recursos novos: hoje a lista é só leitura e o IPC não existe.
-  - **Ajustes de tempo:** Adicionar tempo, Ajustar total e Limite de tempo (com Remover), os três de
-    hoje, em `HH:MM:SS`.
+- **Detalhe da task: cabeçalho, área de trabalho e inspetor.** A tela deixa de ser três colunas
+  disputando espaço (dados · timer · notas). As notas viram a área principal, porque é nelas que o
+  trabalho é retomado; o resto se organiza em volta. Nenhum recurso de hoje sai: a tabela abaixo diz
+  onde cada um foi parar.
 
-  Acima do cronômetro: botões **Campos do Jira** (só em task do Jira, abre o `JiraFieldsSheet` num
-  `Drawer`), **Notas** (mostra/esconde a coluna de notas) e **Terminal** (abre o painel na sessão
-  da task). Task bloqueada mostra `Alert` "Bloqueada por dependências" e Iniciar fica desabilitado.
-  O cronômetro fica em `text3` parado, `text` rodando e `error` ao passar do limite; a barra do
-  limite vai de `success` a `warning` (80%) e `error` (100%).
+  ```text
+  ┌ Cabeçalho ───────────────────────────────────────────────────────────────┐
+  │ ← Tarefas / Projeto                                                      │
+  │ [Status▾] #711 [Jira]                    ● 02:32:10 [Pausar] [✓]  ⌨ ◧ ⋯ │
+  │ Nome da tarefa                                                           │
+  │ descrição                                                                │
+  │ (Normal) (● CrafyTask) (💻 @dev) (⚑ Prazo 21/11) (▮▮▮ Energia) (+ Prop.) │
+  │ ⚠ Bloqueada por dependências: …                     [Ver dependências]   │
+  ├ Área de trabalho ─────────────────────────────┬ Inspetor (380–420px) ────┤
+  │ [Notas | Desenho]                   [Foco]    │ [Tempo|Detalhes|Relações]│
+  │                                               │                          │
+  │ editor                                        │ conteúdo da aba          │
+  └───────────────────────────────────────────────┴──────────────────────────┘
+  ```
 
-- **Painel de dados da task:** a migração troca o visual, não tira nada. Tudo o que o painel tem
-  hoje continua, na mesma ordem, em linhas rótulo + controle (rótulo de 92px):
+  | Onde                  | O que tem                                                                                                                                                                                                                                                                                                                                                            |
+  | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | Cabeçalho, linha 1    | Voltar para Tarefas e o nome do projeto (abre o projeto)                                                                                                                                                                                                                                                                                                             |
+  | Cabeçalho, linha 2    | Status (Executando desabilitado se bloqueada) · `#id` (clique copia) · etiqueta Jira com tipo, chave e status Jira · "Arquivada" · **bloco do timer** (ponto de executando, cronômetro mono 30px, Iniciar/Pausar, Finalizar) · Terminal · Campos do Jira (só Jira) · mostrar/esconder inspetor · menu `⋯` (Copiar `#id`, Zerar tempo, Arquivar/Desarquivar, Excluir) |
+  | Cabeçalho, linhas 3–4 | Nome e descrição editáveis no lugar                                                                                                                                                                                                                                                                                                                                  |
+  | Barra de propriedades | Pílulas que abrem um `Popover` de edição: Categoria, Projeto (+ "Abrir projeto →"), Contextos, Prazo (data + hora, cor de vencido/hoje), Energia (clicar no ativo limpa). Programado (data + início/fim), Recorrência, Tags e Link externo aparecem quando têm valor; vazias, entram por "+ Propriedade"                                                             |
+  | Aviso                 | `Alert` de bloqueio com "Ver dependências", que abre o inspetor em Relações                                                                                                                                                                                                                                                                                          |
+  | Área de trabalho      | Abas Notas e Desenho, botão de modo foco                                                                                                                                                                                                                                                                                                                             |
+  | Inspetor · Tempo      | Barra do limite (`success` → `warning` 80% → `error` 100%), Total e Sessões, lista de sessões (em andamento no topo; encerradas com editar início/fim e excluir), Ajustes de tempo (adicionar, ajustar total, limite, remover limite)                                                                                                                                |
+  | Inspetor · Detalhes   | Jira (issue, status com transição, pai, Campos do Jira) · Google Calendar (switch, ressincronizar) · Ambiente (diretório herdado/alterar/voltar a herdar, comando, abrir terminal)                                                                                                                                                                                   |
+  | Inspetor · Relações   | Subtarefas (aviso de pai bloqueado, progresso, checkbox + nome que navega, nova inline) · Depende de (verde/laranja, remover, adicionar com busca) · Issues filhas no Jira. A aba mostra cadeado se bloqueada e `feitas/total`                                                                                                                                       |
 
-  | Bloco                 | Elementos                                                                                                                                                                                                     |
-  | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-  | Topo                  | `#id` (clique copia), etiqueta "Arquivada" quando for o caso, seletor de categoria, nome e descrição editáveis no lugar                                                                                       |
-  | Organização           | Status (Executando desabilitado se bloqueada) · Jira: tipo, chave e transição (só task do Jira) · Pai no Jira (só com pai) · Projeto + "Abrir projeto →" · Contextos (alternáveis) · Tags                     |
-  | Agenda                | Programado (data + início/fim) · Prazo (data + hora) · Recorrência · Energia (três botões, clicar no ativo limpa) · Link externo + abrir · Google Calendar (switch + ressincronizar; só com Google conectado) |
-  | Ambiente              | Diretório de trabalho (herdado do projeto, Alterar, voltar a herdar) · Comando ao abrir o terminal                                                                                                            |
-  | Issues filhas no Jira | Tipo, chave, resumo e status; abre a task se importada, senão o Jira (só task do Jira com filhas)                                                                                                             |
-  | Subtarefas            | Aviso de pai bloqueado, progresso `feitas/total`, checkbox + nome que navega, "Nova subtarefa" inline (some quando a task já é subtarefa)                                                                     |
-  | Depende de            | Linha verde (concluída) ou laranja (pendente) com remover; "Adicionar dependência" com busca                                                                                                                  |
-  | Ações                 | Arquivar/Desarquivar e Excluir (com confirmação)                                                                                                                                                              |
-
-  O histórico de sessões sai deste painel e vai para a seção Sessões do timer, onde ganha editar e
-  excluir. O protótipo tem um seletor "Task local / Task do Jira" para mostrar os blocos que só
+  O cronômetro grande da coluna central sai: o tempo fica no bloco do cabeçalho (sempre visível),
+  na pílula do header do shell e no modo foco. O cronômetro fica em `text3` parado, `text` rodando
+  e `error` ao passar do limite. Editar e excluir sessão são recursos novos (hoje a lista é só
+  leitura). O protótipo tem um seletor "Task local / Task do Jira" para mostrar os blocos que só
   aparecem em task do Jira.
 
 ## 8. Responsividade
@@ -254,14 +259,14 @@ Breakpoints do antd para a casca; container queries para componentes dentro de p
 redimensionáveis (notas, terminal). A janela principal passa a aceitar `minWidth` 400 (hoje 800,
 o que impede ver qualquer layout estreito).
 
-| Faixa            | Sider                           | Header                              | Lista de tarefas                                     | Detalhe da task                          |
-| ---------------- | ------------------------------- | ----------------------------------- | ---------------------------------------------------- | ---------------------------------------- |
-| `< 576` (xs)     | `Drawer` pelo botão de menu     | sem captura, "Nova tarefa" só ícone | status em `Select`, cards                            | abas Timer / Notas / Dados               |
-| `576–767` (sm)   | `Drawer`                        | captura volta                       | status em `Select`, cards                            | abas                                     |
-| `768–991` (md)   | recolhido, 64px                 | sem pílula de timers no texto       | `Tabs` com contadores, tabela com colunas essenciais | 2 colunas: dados + (timer, notas)        |
-| `992–1199` (lg)  | recolhido, 64px (pode expandir) | completo                            | + status                                             | 2 colunas                                |
-| `1200–1599` (xl) | aberto, 232px                   | completo + atalho visível           | + projeto, energia                                   | 3 colunas: dados 320 · timer · notas 40% |
-| `≥ 1600` (xxl)   | aberto                          | completo                            | + contextos                                          | 3 colunas: dados 380 · timer · notas     |
+| Faixa            | Sider                           | Header                              | Lista de tarefas                                     | Detalhe da task                                      |
+| ---------------- | ------------------------------- | ----------------------------------- | ---------------------------------------------------- | ---------------------------------------------------- |
+| `< 576` (xs)     | `Drawer` pelo botão de menu     | sem captura, "Nova tarefa" só ícone | status em `Select`, cards                            | cabeçalho + abas Notas / Tempo / Detalhes / Relações |
+| `576–767` (sm)   | `Drawer`                        | captura volta                       | status em `Select`, cards                            | idem                                                 |
+| `768–991` (md)   | recolhido, 64px                 | sem pílula de timers no texto       | `Tabs` com contadores, tabela com colunas essenciais | cabeçalho + notas; inspetor em `Drawer`              |
+| `992–1199` (lg)  | recolhido, 64px (pode expandir) | completo                            | + status                                             | idem                                                 |
+| `1200–1599` (xl) | aberto, 232px                   | completo + atalho visível           | + projeto, energia                                   | cabeçalho + notas + inspetor 380px (pode esconder)   |
+| `≥ 1600` (xxl)   | aberto                          | completo                            | + contextos                                          | cabeçalho + notas + inspetor 420px                   |
 
 As abas de status são o centro da lista e continuam abas (não viram menu) enquanto couberem numa
 linha: seis status mais "Todas" estão no limite recomendado pela NN/g. Abaixo de `md` viram `Select`
