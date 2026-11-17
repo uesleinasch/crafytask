@@ -91,17 +91,19 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.13/dayjs.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/antd@5.22.5/dist/antd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.13/locale/pt-br.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/antd@5.22.5/dist/antd-with-locales.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@ant-design/icons@5.5.2/dist/index.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.umd.js"></script>
 <script>
 (function () {
   const { useState, useEffect, useMemo, useCallback, Component, createElement } = React;
   const html = htm.bind(createElement);
+  try { dayjs.locale('pt-br'); } catch (e) {}
   const {
     ConfigProvider, App: AntApp, theme, Layout, Menu, Button, Input, Tabs, Badge, Table, Tag, Segmented,
     Select, Space, Typography, Progress, Statistic, Card, Row, Col, Grid, Drawer, Modal, Result, Tooltip,
-    Popover, Popconfirm, Collapse, Checkbox, Divider, Empty, Alert, Flex, List, Avatar, Dropdown, Switch
+    Popover, Popconfirm, Collapse, Checkbox, Divider, DatePicker, TimePicker, InputNumber, Empty, Alert, Flex, List, Avatar, Dropdown, Switch
   } = antd;
   const I = icons;
   const { Sider, Header, Content } = Layout;
@@ -138,11 +140,66 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
 
   const PROJECTS = [
     { id: 13, name: 'CrafyTask', color: '#E5484D', outcome: 'App de tarefas sólido, bonito e responsivo', next: true, done: 18, total: 31, area: 'Produtos pessoais' },
-    { id: 4, name: 'Connect — Jacto', color: '#2A62D6', outcome: 'Squad entregando o roadmap do trimestre', next: true, done: 42, total: 60, area: 'Carreira' },
+    { id: 4, name: 'Squad Connect', color: '#2A62D6', outcome: 'Squad entregando o roadmap do trimestre', next: true, done: 42, total: 60, area: 'Carreira' },
     { id: 7, name: 'Day Zero Playbook', color: '#0B7A50', outcome: 'Versão em inglês publicada', next: false, done: 9, total: 22, area: 'Produtos pessoais' },
     { id: 9, name: 'Saúde 2026', color: '#A15C00', outcome: 'Treinar 4x por semana', next: true, done: 5, total: 8, area: 'Saúde' }
   ];
   const P = Object.fromEntries(PROJECTS.map(p => [p.id, p]));
+  const CONTEXTS = [
+    { name: '@dev', emoji: '💻' }, { name: '@reunião', emoji: '👥' }, { name: '@telefone', emoji: '📞' },
+    { name: '@escrita', emoji: '✍️' }, { name: '@leitura', emoji: '📖' }
+  ];
+  const RECURRENCE = [{ value: 'none', label: 'Não repete' }, { value: 'daily', label: 'Diária' }, { value: 'weekly', label: 'Semanal' }, { value: 'monthly', label: 'Mensal' }];
+  const DETAIL = {
+    local: {
+      id: 711, name: 'Criação de projeto para refatoração visual', description: 'Pesquisa, guia de design e protótipo da nova interface.',
+      status: 'executando', category: 'normal', project: 13, contexts: ['@dev'], tags: ['refactor'], energy: 'alto', recurrence: 'none',
+      scheduled: '2026-11-17', start: '09:00', end: '12:00', due: '2026-11-21', dueTime: null, url: '', gcal: true,
+      workingDir: '~/Code/pessoal/crafytask', dirInherited: true, startCommand: 'npm run dev', running: true, blocked: false, secs: 9130,
+      subtasks: [{ id: 801, name: 'Pesquisa de UI/UX', done: true }, { id: 802, name: 'Guia de design', done: true }, { id: 803, name: 'Protótipo navegável', done: false }],
+      deps: [{ id: 699, name: 'Publicar release v3.16.0', done: true }],
+      sessions: [
+        { id: 213, day: '17/11', start: '16:03', end: null },
+        { id: 207, day: '17/11', start: '10:08', end: '12:20', dur: 7957 },
+        { id: 202, day: '16/11', start: '13:53', end: '14:04', dur: 691 },
+        { id: 201, day: '16/11', start: '13:42', end: '13:43', dur: 8 }
+      ]
+    },
+    jira: {
+      id: 740, name: 'Ajustar sincronização de pedidos com o ERP', description: 'Pedidos com mais de 200 itens falham no envio.',
+      status: 'proximas', category: 'prioridade', project: 4, contexts: ['@dev'], tags: ['jira'], energy: 'medio', recurrence: 'none',
+      scheduled: null, start: null, end: null, due: '2026-11-20', dueTime: '18:00', url: 'https://exemplo.atlassian.net/browse/CONNECT-1234', gcal: false,
+      workingDir: '~/Code/squad/erp-sync', dirInherited: false, startCommand: '', running: false, blocked: true, secs: 3120,
+      jira: {
+        key: 'CONNECT-1234', type: 'História', status: 'Em andamento', parentKey: 'CONNECT-1100', parentSummary: 'Integração com o ERP',
+        children: [
+          { key: 'CONNECT-1240', type: 'Subtarefa', summary: 'Enviar pedidos em lotes de 100', status: 'Em andamento', imported: true },
+          { key: 'CONNECT-1241', type: 'Subtarefa', summary: 'Teste de carga com 500 itens', status: 'A fazer', imported: false }
+        ]
+      },
+      subtasks: [],
+      deps: [{ id: 702, name: 'Planejar sprint 48 com o time', done: false }],
+      sessions: [{ id: 301, day: '17/11', start: '09:00', end: '09:52', dur: 3120 }]
+    }
+  };
+
+  function Section({ icon, title, extra, children }) {
+    return html`<section style=${{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <${Flex} align="center" gap=${8}>
+        ${createElement(I[icon], { style: { color: 'var(--ct-text-3)', fontSize: 13 } })}
+        <span className="ct-eyebrow">${title}</span>
+        <span style=${{ flex: 1, height: 1, background: 'var(--ct-border)' }}></span>
+        ${extra ? html`<${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12 }}>${extra}<//>` : null}
+      <//>
+      ${children}
+    </section>`;
+  }
+  function Field({ label, children }) {
+    return html`<div style=${{ display: 'grid', gridTemplateColumns: '92px minmax(0, 1fr)', gap: 8, alignItems: 'center' }}>
+      <${Text} type="secondary" style=${{ fontSize: 13 }}>${label}<//>
+      <div style=${{ minWidth: 0 }}>${children}</div>
+    </div>`;
+  }
 
   const TASKS = [
     { id: 711, name: 'Criação de projeto para refatoração visual', status: 'executando', category: 'normal', project: 13, contexts: ['@dev'], due: '2026-11-21', secs: 9130, energy: 'alto', today: true, running: true, sub: [0, 0] },
@@ -280,7 +337,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
   ];
   const ROUTE_DOCS = { calendario: '04-calendario', revisao: '07-revisao-semanal', horizontes: '06-horizontes', rotulos: '09-contextos-e-tags', cadernos: '17-cadernos', dashboard: '08-dashboard', arquivo: '10-arquivadas', ajustes: '11-configuracoes' };
   const ROUTE_OF = Object.fromEntries(NAV.flatMap(g => g.children).concat(NAV_FOOT).map(i => [i.key, i]));
-  const TITLES = { tarefas: 'Tarefas', tarefa: 'Tarefa #711', hoje: 'Hoje', projetos: 'Projetos', identidade: 'Identidade visual' };
+  const TITLES = { tarefas: 'Tarefas', tarefa: 'Tarefa', hoje: 'Hoje', projetos: 'Projetos', identidade: 'Identidade visual' };
   const BUILT = ['tarefas', 'tarefa', 'hoje', 'projetos', 'identidade'];
 
   function toMenu(items, collapsed) {
@@ -312,7 +369,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       else document.documentElement.setAttribute('data-theme', themePref);
     }, [themePref]);
     const cfg = useMemo(() => buildTheme(mode, compact), [mode, compact]);
-    return html`<${ConfigProvider} theme=${cfg} componentSize=${compact ? 'small' : 'middle'}>
+    return html`<${ConfigProvider} theme=${cfg} locale=${antd.locales && antd.locales.pt_BR} componentSize=${compact ? 'small' : 'middle'}>
       <${AntApp} style=${{ height: '100%' }}>
         <${AppFrame} mode=${mode} themePref=${themePref} setThemePref=${setThemePref} compact=${compact} setCompact=${setCompact} />
       <//>
@@ -379,7 +436,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     };
 
     const content = route === 'tarefas' ? html`<${TasksPage} mode=${mode} go=${go} isMobile=${isMobile} screens=${screens} />`
-      : route === 'tarefa' ? html`<${TaskDetailPage} mode=${mode} go=${go} screens=${screens} />`
+      : route === 'tarefa' ? html`<${TaskDetailPage} mode=${mode} go=${go} screens=${screens} openTerminal=${() => setTerm(true)} />`
       : route === 'hoje' ? html`<${TodayPage} mode=${mode} go=${go} />`
       : route === 'projetos' ? html`<${ProjectsPage} mode=${mode} />`
       : route === 'identidade' ? html`<${IdentityPage} mode=${mode} />`
@@ -594,19 +651,36 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     </div>`;
   }
 
-  function TaskDetailPage({ mode, go, screens }) {
-    const t = TASKS[0];
-    const [running, setRunning] = useState(true);
+  function TaskDetailPage(props) {
+    const [sample, setSample] = useState('local');
+    return html`<${TaskDetailView} key=${sample} ...${props} sample=${sample} setSample=${setSample} />`;
+  }
+
+  function TaskDetailView({ mode, go, screens, openTerminal, sample, setSample }) {
+    const t = DETAIL[sample];
+    const [running, setRunning] = useState(t.running);
     const [secs, setSecs] = useState(t.secs);
+    const [category, setCategory] = useState(t.category);
+    const [status, setStatus] = useState(t.status);
+    const [project, setProject] = useState(t.project);
+    const [ctxs, setCtxs] = useState(t.contexts);
+    const [energy, setEnergy] = useState(t.energy);
+    const [recurrence, setRecurrence] = useState(t.recurrence);
+    const [gcal, setGcal] = useState(t.gcal);
+    const [dirInherited, setDirInherited] = useState(t.dirInherited);
+    const [jiraStatus, setJiraStatus] = useState(t.jira ? t.jira.status : null);
+    const [subs, setSubs] = useState(t.subtasks);
+    const [addingSub, setAddingSub] = useState(false);
+    const [subName, setSubName] = useState('');
+    const [deps, setDeps] = useState(t.deps);
+    const [archived, setArchived] = useState(false);
+    const [notesOpen, setNotesOpen] = useState(true);
+    const [jiraFields, setJiraFields] = useState(false);
+    const blocked = deps.some(d => !d.done);
     const [noteTab, setNoteTab] = useState('notas');
     const [focus, setFocus] = useState(false);
     const { message } = AntApp.useApp();
-    const [sessions, setSessions] = useState([
-      { id: 213, day: '17/11', start: '16:03', end: null },
-      { id: 207, day: '17/11', start: '10:08', end: '12:20', dur: 7957 },
-      { id: 202, day: '16/11', start: '13:53', end: '14:04', dur: 691 },
-      { id: 201, day: '16/11', start: '13:42', end: '13:43', dur: 8 }
-    ]);
+    const [sessions, setSessions] = useState(t.sessions);
     const [editing, setEditing] = useState(null);
     const [draft, setDraft] = useState({ start: '', end: '' });
     const [addValue, setAddValue] = useState('');
@@ -623,45 +697,172 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
     }, [focus]);
 
-    const meta = html`<${Flex} vertical gap=${16}>
+    const soft = (def) => def[mode][1];
+    const doneSubs = subs.filter(s => s.done).length;
+    const addSub = () => { if (!subName.trim()) return; setSubs([...subs, { id: Date.now(), name: subName.trim(), done: false }]); setSubName(''); setAddingSub(false); };
+    const meta = html`<${Flex} vertical gap=${20}>
       <div>
-        <${Flex} gap=${6} wrap="wrap" style=${{ marginBottom: 8 }}><${Chip} def=${STATUS[t.status]} mode=${mode} /><${Text} type="secondary" className="ct-mono">#711<//><//>
-        <${Title} level=${4} style=${{ margin: 0, textWrap: 'balance' }}>${t.name}<//>
-      </div>
-      <div>
-        <div className="ct-eyebrow" style=${{ marginBottom: 8 }}>Organização</div>
-        <${Flex} vertical gap=${8}>
-          <${Select} value="executando" options=${Object.entries(STATUS).map(([k, v]) => ({ value: k, label: html`<${Space}>${createElement(I[v.icon], { style: { color: v[mode][0] } })}${v.label}<//>` }))} />
-          <${Select} value=${13} options=${PROJECTS.map(p => ({ value: p.id, label: html`<${ProjectLabel} id=${p.id} />` }))} />
-          <${Select} mode="multiple" value=${['@dev']} options=${['@dev', '@reunião', '@escrita'].map(c => ({ value: c, label: c }))} />
-          <${Select} mode="tags" value=${['refactor']} />
+        <${Flex} align="center" gap=${6} wrap="wrap" style=${{ marginBottom: 6 }}>
+          <${Tooltip} title="Copiar número"><${Tag} bordered=${false} className="ct-mono" style=${{ cursor: 'pointer', margin: 0 }}
+            onClick=${() => { try { navigator.clipboard.writeText(String(t.id)).catch(() => {}); } catch (e) {} message.success('#' + t.id + ' copiado'); }}>#${t.id}<//><//>
+          ${archived ? html`<${Tag} bordered=${false} style=${{ margin: 0 }}>Arquivada<//>` : null}
+          <span style=${{ flex: 1 }}></span>
+          <${Select} size="small" value=${category} onChange=${setCategory} style=${{ width: 146 }} aria-label="Categoria"
+            options=${Object.entries(CATEGORY).map(([k, v]) => ({ value: k, label: html`<${Chip} def=${v} mode=${mode} />` }))} />
         <//>
+        <${Input} variant="borderless" defaultValue=${t.name} aria-label="Nome da tarefa" style=${{ fontSize: 18, fontWeight: 600, padding: '2px 0' }} />
+        <${Input.TextArea} variant="borderless" autoSize=${{ minRows: 1, maxRows: 6 }} placeholder="Adicionar descrição" defaultValue=${t.description} aria-label="Descrição" style=${{ padding: '2px 0', color: 'var(--ct-text-2)' }} />
       </div>
-      <div>
-        <div className="ct-eyebrow" style=${{ marginBottom: 8 }}>Agenda</div>
-        <${Flex} gap=${8} wrap="wrap">
-          <${Button} icon=${html`<${I.ScheduleOutlined} />`} type="primary" ghost>No plano de hoje<//>
-          <${Button} icon=${html`<${I.CalendarOutlined} />`}>Prazo 21/11<//>
+
+      <${Section} icon="FolderOutlined" title="Organização">
+        <${Field} label="Status">
+          <${Select} value=${status} onChange=${v => { setStatus(v); message.success('Status alterado'); }} style=${{ width: '100%' }} aria-label="Status"
+            options=${Object.entries(STATUS).map(([k, v]) => ({ value: k, disabled: k === 'executando' && blocked, label: html`<${Space}>${createElement(I[v.icon], { style: { color: v[mode][0] } })}${v.label}<//>` }))} />
         <//>
-      </div>
-      <div>
-        <div className="ct-eyebrow" style=${{ marginBottom: 8 }}>Ambiente</div>
-        <${Flex} gap=${8} wrap="wrap">
-          <${Button} icon=${html`<${I.CodeOutlined} />`}>Abrir terminal<//>
-          <${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12, alignSelf: 'center' }}>~/Code/pessoal/crafytask<//>
+        ${t.jira ? html`
+          <${Field} label="Jira">
+            <${Flex} gap=${6} align="center" wrap="wrap">
+              <${Tag} bordered=${false} style=${{ margin: 0 }}>${t.jira.type}<//>
+              <a className="ct-mono" href=${t.url} target="_blank" rel="noopener">${t.jira.key}</a>
+              <${Select} size="small" value=${jiraStatus} onChange=${v => { setJiraStatus(v); message.success('Transição enviada ao Jira'); }} style=${{ minWidth: 132 }} aria-label="Status no Jira"
+                options=${['A fazer', 'Em andamento', 'Em revisão', 'Concluído'].map(v => ({ value: v, label: v }))} />
+            <//>
+          <//>
+          <${Field} label="Pai no Jira">
+            <a href=${'https://exemplo.atlassian.net/browse/' + t.jira.parentKey} target="_blank" rel="noopener" style=${{ display: 'inline-flex', gap: 6, alignItems: 'center', minWidth: 0 }}>
+              <span className="ct-mono">${t.jira.parentKey}</span><span style=${{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>${t.jira.parentSummary}</span><${I.ExportOutlined} />
+            </a>
+          <//>` : null}
+        <${Field} label="Projeto">
+          <${Flex} vertical gap=${2}>
+            <${Select} showSearch allowClear placeholder="Sem projeto" value=${project} onChange=${setProject} optionFilterProp="title" aria-label="Projeto"
+              options=${PROJECTS.map(p => ({ value: p.id, title: p.name, label: html`<${ProjectLabel} id=${p.id} />` }))} />
+            ${project ? html`<a style=${{ fontSize: 12 }} onClick=${() => go('projetos')}>Abrir projeto →</a>` : null}
+          <//>
         <//>
-      </div>
+        <${Field} label="Contextos">
+          <${Flex} gap=${4} wrap="wrap">
+            ${CONTEXTS.map(c => html`<${Tag.CheckableTag} key=${c.name} checked=${ctxs.includes(c.name)} onChange=${on => setCtxs(on ? ctxs.concat(c.name) : ctxs.filter(x => x !== c.name))}>${c.emoji} ${c.name}<//>`)}
+          <//>
+        <//>
+        <${Field} label="Tags"><${Select} mode="tags" defaultValue=${t.tags} placeholder="Adicionar tag" style=${{ width: '100%' }} aria-label="Tags" options=${['refactor', 'design', 'jira', 'bug'].map(v => ({ value: v, label: v }))} /><//>
+      <//>
+
+      <${Section} icon="CalendarOutlined" title="Agenda">
+        <${Field} label="Programado">
+          <${Flex} gap=${6} wrap="wrap">
+            <${DatePicker} format="DD/MM/YYYY" placeholder="Data" defaultValue=${t.scheduled ? dayjs(t.scheduled) : null} style=${{ width: 132 }} aria-label="Programado para" />
+            <${TimePicker.RangePicker} format="HH:mm" placeholder=${['Início', 'Fim']} allowEmpty=${[true, true]} style=${{ width: 168 }} aria-label="Horário"
+              defaultValue=${t.start ? [dayjs('2026-01-01 ' + t.start), t.end ? dayjs('2026-01-01 ' + t.end) : null] : null} />
+          <//>
+        <//>
+        <${Field} label="Prazo">
+          <${Flex} gap=${6} wrap="wrap">
+            <${DatePicker} format="DD/MM/YYYY" placeholder="Data" defaultValue=${t.due ? dayjs(t.due) : null} style=${{ width: 132 }} aria-label="Prazo" />
+            <${TimePicker} format="HH:mm" placeholder="Hora" defaultValue=${t.dueTime ? dayjs('2026-01-01 ' + t.dueTime) : null} style=${{ width: 96 }} aria-label="Hora do prazo" />
+          <//>
+        <//>
+        <${Field} label="Recorrência"><${Select} value=${recurrence} onChange=${setRecurrence} options=${RECURRENCE} style=${{ width: '100%' }} aria-label="Recorrência" /><//>
+        <${Field} label="Energia">
+          <${Flex} gap=${4}>
+            ${Object.keys(ENERGY).map(k => html`<${Button} key=${k} size="small" type=${energy === k ? 'primary' : 'default'} ghost=${energy === k} style=${{ flex: 1 }}
+              onClick=${() => setEnergy(energy === k ? null : k)} aria-pressed=${energy === k}><${Energy} level=${k} />${ENERGY[k].label}<//>`)}
+          <//>
+        <//>
+        <${Field} label="Link">
+          <${Space.Compact} style=${{ width: '100%' }}>
+            <${Input} placeholder="https://…" defaultValue=${t.url} prefix=${html`<${I.LinkOutlined} style=${{ color: 'var(--ct-text-3)' }} />`} aria-label="Link externo" />
+            <${Tooltip} title="Abrir no navegador"><${Button} aria-label="Abrir link" icon=${html`<${I.ExportOutlined} />`} disabled=${!t.url} /><//>
+          <//>
+        <//>
+        <${Field} label="Google">
+          <${Flex} gap=${8} align="center">
+            <${Switch} size="small" checked=${gcal} onChange=${v => { setGcal(v); message.success(v ? 'Enviada para a agenda TickTask' : 'Eventos apagados do Google'); }} aria-label="Sincronizar com o Google Calendar" />
+            <${Text} type="secondary" style=${{ fontSize: 13 }}>${gcal ? 'Na agenda TickTask' : 'Fora do Google Calendar'}<//>
+            ${gcal ? html`<${Tooltip} title="Ressincronizar"><${Button} size="small" type="text" aria-label="Ressincronizar" icon=${html`<${I.SyncOutlined} />`} /><//>` : null}
+          <//>
+        <//>
+      <//>
+
+      <${Section} icon="CodeOutlined" title="Ambiente">
+        <${Field} label="Diretório">
+          <${Flex} gap=${6} align="center" wrap="wrap">
+            <${Tooltip} title=${t.workingDir}><${Text} className="ct-mono" style=${{ fontSize: 12 }} ellipsis>…/${t.workingDir.split('/').slice(-2).join('/')}<//><//>
+            ${dirInherited ? html`<${Tag} bordered=${false} style=${{ margin: 0 }}>do projeto<//>` : null}
+            <${Button} size="small" icon=${html`<${I.FolderOpenOutlined} />`} onClick=${() => { setDirInherited(false); message.info('Abre o seletor de pasta do sistema'); }}>Alterar<//>
+            ${!dirInherited ? html`<${Tooltip} title="Voltar a usar o diretório do projeto"><${Button} size="small" type="text" aria-label="Herdar do projeto" icon=${html`<${I.UndoOutlined} />`} onClick=${() => setDirInherited(true)} /><//>` : null}
+          <//>
+        <//>
+        <${Field} label="Comando"><${Input} className="ct-mono" placeholder="Comando ao abrir o terminal" defaultValue=${t.startCommand} aria-label="Comando ao abrir o terminal" /><//>
+      <//>
+
+      ${t.jira ? html`<${Section} icon="ApartmentOutlined" title="Issues filhas no Jira" extra=${t.jira.children.length}>
+        <${List} size="small" split=${false} dataSource=${t.jira.children} renderItem=${c => html`<${List.Item} style=${{ padding: '4px 0' }}>
+          <${Flex} gap=${6} align="center" style=${{ width: '100%', minWidth: 0 }}>
+            <${Tag} bordered=${false} style=${{ margin: 0 }}>${c.type}<//>
+            <a className="ct-mono" onClick=${() => c.imported ? go('tarefa') : null} href=${c.imported ? undefined : 'https://exemplo.atlassian.net/browse/' + c.key} target=${c.imported ? undefined : '_blank'} rel="noopener">${c.key}${c.imported ? null : html` <${I.ExportOutlined} />`}</a>
+            <span style=${{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>${c.summary}</span>
+            <${Text} type="secondary" style=${{ fontSize: 12 }}>${c.status}<//>
+          <//>
+        <//>`} />
+      <//>` : null}
+
+      <${Section} icon="CheckSquareOutlined" title="Subtarefas" extra=${subs.length ? doneSubs + '/' + subs.length : null}>
+        ${blocked && subs.length ? html`<${Alert} type="warning" showIcon message="Subtarefas bloqueadas: conclua as dependências da tarefa pai primeiro." />` : null}
+        ${subs.length ? html`<${Progress} percent=${Math.round(doneSubs / subs.length * 100)} size="small" />` : null}
+        ${subs.map(s => html`<${Flex} key=${s.id} gap=${8} align="center">
+          <${Checkbox} checked=${s.done} disabled=${blocked} onChange=${e => setSubs(subs.map(x => x.id === s.id ? { ...x, done: e.target.checked } : x))} aria-label=${'Concluir ' + s.name} />
+          <a className=${'ct-taskname' + (s.done ? ' done' : '')} style=${{ color: 'var(--ct-text)' }} onClick=${() => go('tarefa')}>${s.name}</a>
+        <//>`)}
+        ${addingSub
+          ? html`<${Space.Compact} style=${{ width: '100%' }}>
+              <${Input} autoFocus placeholder="Nome da subtarefa" value=${subName} onChange=${e => setSubName(e.target.value)} onPressEnter=${addSub} onKeyDown=${e => { if (e.key === 'Escape') setAddingSub(false); }} aria-label="Nome da subtarefa" />
+              <${Button} type="primary" onClick=${addSub}>Adicionar<//>
+              <${Button} onClick=${() => setAddingSub(false)}>Cancelar<//>
+            <//>`
+          : html`<${Button} size="small" type="dashed" icon=${html`<${I.PlusOutlined} />`} onClick=${() => setAddingSub(true)} style=${{ alignSelf: 'start' }}>Nova subtarefa<//>`}
+      <//>
+
+      <${Section} icon="LockOutlined" title="Depende de">
+        ${deps.map(d => html`<${Flex} key=${d.id} gap=${8} align="center" style=${{ padding: '6px 10px', borderRadius: 8, background: d.done ? soft(STATUS.executando) : soft(CATEGORY.prioridade) }}>
+          <${I.LockOutlined} style=${{ color: d.done ? STATUS.executando[mode][0] : CATEGORY.prioridade[mode][0] }} />
+          <span style=${{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>${d.name}</span>
+          ${d.done ? html`<${Text} style=${{ fontSize: 12, color: STATUS.executando[mode][0] }}>✓ concluída<//>` : html`<${Text} style=${{ fontSize: 12, color: CATEGORY.prioridade[mode][0] }}>pendente<//>`}
+          <${Tooltip} title="Remover dependência"><${Button} size="small" type="text" aria-label="Remover dependência" icon=${html`<${I.CloseOutlined} />`} onClick=${() => setDeps(deps.filter(x => x.id !== d.id))} /><//>
+        <//>`)}
+        <${Select} showSearch placeholder="Adicionar dependência…" value=${null} optionFilterProp="title" aria-label="Adicionar dependência"
+          onChange=${id => { const x = TASKS.find(z => z.id === id); if (x) setDeps(deps.concat({ id: x.id, name: x.name, done: x.status === 'finalizada' })); }}
+          options=${TASKS.filter(x => x.id !== t.id && !deps.some(d => d.id === x.id)).slice(0, 10).map(x => ({ value: x.id, title: x.name, label: html`<${Flex} justify="space-between" gap=${8}><span style=${{ overflow: 'hidden', textOverflow: 'ellipsis' }}>${x.name}</span><${Chip} def=${STATUS[x.status]} mode=${mode} /><//>` }))} />
+      <//>
+
+      <${Flex} gap=${8}>
+        <${Button} block icon=${html`<${archived ? I.UndoOutlined : I.ContainerOutlined} />`} onClick=${() => { setArchived(!archived); message.success(archived ? 'Tarefa desarquivada' : 'Tarefa arquivada'); }}>${archived ? 'Desarquivar' : 'Arquivar'}<//>
+        <${Popconfirm} title="Excluir esta tarefa?" description="Apaga a tarefa, as sessões, as notas e o desenho. No Notion e no Google também, se estiverem ligados." okText="Excluir" okButtonProps=${{ danger: true }} cancelText="Cancelar" onConfirm=${() => go('tarefas')}>
+          <${Button} block danger icon=${html`<${I.DeleteOutlined} />`}>Excluir<//>
+        <//>
+      <//>
     <//>`;
 
-    const timer = html`<${Flex} vertical align="center" gap=${16} style=${{ padding: '24px 8px' }}>
-      <${Text} type="secondary">${running ? 'Em andamento' : 'Pausado'}<//>
-      <div className="ct-hero-time" style=${{ fontSize: screens.xl ? 72 : 52 }}>${fmt(secs)}</div>
+    const pct = limit ? Math.round(secs / limit * 100) : 0;
+    const limitColor = pct >= 100 ? PALETTE[mode].error : pct >= 80 ? PALETTE[mode].warning : PALETTE[mode].success;
+    const timer = html`<${Flex} vertical align="center" gap=${16} style=${{ padding: '8px 8px 24px' }}>
+      <${Flex} gap=${8} wrap="wrap" justify="flex-end" style=${{ width: '100%' }}>
+        ${t.jira ? html`<${Button} icon=${html`<${I.ControlOutlined} />`} onClick=${() => setJiraFields(true)}>Campos do Jira<//>` : null}
+        <${Button} type=${notesOpen ? 'primary' : 'default'} ghost=${notesOpen} icon=${html`<${I.FileTextOutlined} />`} onClick=${() => setNotesOpen(!notesOpen)} aria-pressed=${notesOpen}>Notas<//>
+        <${Tooltip} title=${'Terminal em ' + t.workingDir}><${Button} icon=${html`<${I.CodeOutlined} />`} onClick=${openTerminal}>Terminal<//><//>
+      <//>
+      ${blocked ? html`<${Alert} type="warning" showIcon icon=${html`<${I.LockOutlined} />`} message="Bloqueada por dependências" style=${{ width: '100%', maxWidth: 360 }} />` : null}
+      <${Flex} align="center" gap=${8}>
+        ${running ? html`<span className="ct-live"></span>` : null}
+        <span className="ct-eyebrow">${running ? 'Em andamento' : 'Pronto para iniciar'}</span>
+      <//>
+      <div className="ct-hero-time" style=${{ fontSize: screens.xl ? (secs >= 3600 ? 64 : 72) : 52, color: limit && pct >= 100 ? PALETTE[mode].error : running ? 'var(--ct-text)' : 'var(--ct-text-3)' }}>${fmt(secs)}</div>
       ${limit ? html`<div style=${{ width: '100%', maxWidth: 360 }}>
-        <${Progress} percent=${Math.min(100, Math.round(secs / limit * 100))} showInfo=${false} strokeColor="var(--ct-primary)" />
+        <${Progress} percent=${Math.min(100, pct)} showInfo=${false} strokeColor=${limitColor} />
         <${Flex} justify="space-between"><${Text} type="secondary" style=${{ fontSize: 12 }}>Limite ${fmtShort(limit)}<//><${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12 }}>${Math.min(100, Math.round(secs / limit * 100))}%<//><//>
       </div>` : null}
       <${Space} wrap>
-        <${Button} type="primary" size="large" icon=${html`<${running ? I.PauseOutlined : I.CaretRightOutlined} />`} onClick=${() => setRunning(!running)}>${running ? 'Pausar' : 'Iniciar'}<//>
+        <${Button} type="primary" size="large" disabled=${blocked && !running} icon=${html`<${running ? I.PauseOutlined : I.CaretRightOutlined} />`} onClick=${() => setRunning(!running)}>${running ? 'Pausar' : 'Iniciar'}<//>
         <${Button} size="large" icon=${html`<${I.CheckOutlined} />`}>Finalizar<//>
         <${Popconfirm} title="Zerar o tempo da tarefa?" description="Todas as sessões são apagadas e o total volta a zero." okText="Zerar" okButtonProps=${{ danger: true }} cancelText="Cancelar"
           onConfirm=${() => { setRunning(false); setSecs(0); setSessions([]); message.success('Tempo zerado'); }}>
@@ -746,7 +947,21 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       </div>
     <//>`;
 
-    const back = html`<${Button} type="text" icon=${html`<${I.ArrowLeftOutlined} />`} onClick=${() => go('tarefas')} style=${{ marginBottom: 12 }}>Tarefas<//>`;
+    const back = html`<${Flex} align="center" gap=${8} wrap="wrap" style=${{ marginBottom: 12 }}>
+      <${Button} type="text" icon=${html`<${I.ArrowLeftOutlined} />`} onClick=${() => go('tarefas')}>Tarefas<//>
+      <span style=${{ flex: 1 }}></span>
+      <${Text} type="secondary" style=${{ fontSize: 12 }}>Exemplo do protótipo:<//>
+      <${Segmented} size="small" value=${sample} onChange=${setSample} options=${[{ value: 'local', label: 'Task local' }, { value: 'jira', label: 'Task do Jira' }]} />
+    <//>
+    <${Drawer} open=${jiraFields} onClose=${() => setJiraFields(false)} width=${380} title=${t.jira ? 'Campos do Jira · ' + t.jira.key : 'Campos do Jira'}>
+      <${Flex} vertical gap=${12}>
+        <${Field} label="Responsável"><${Select} defaultValue="eu" options=${[{ value: 'eu', label: 'Você' }, { value: 'time', label: 'Outra pessoa do time' }]} style=${{ width: '100%' }} /><//>
+        <${Field} label="Story points"><${InputNumber} defaultValue=${5} min=${0} style=${{ width: '100%' }} /><//>
+        <${Field} label="Sprint"><${Select} defaultValue="48" options=${[{ value: '47', label: 'Sprint 47' }, { value: '48', label: 'Sprint 48' }]} style=${{ width: '100%' }} /><//>
+        <${Field} label="Prioridade"><${Select} defaultValue="alta" options=${['Mais alta', 'Alta', 'Média', 'Baixa'].map(v => ({ value: v.toLowerCase(), label: v }))} style=${{ width: '100%' }} /><//>
+        <${Text} type="secondary" style=${{ fontSize: 12 }}>Campos lidos do editmeta da issue; cada um grava na hora (PUT na issue).<//>
+      <//>
+    <//>`;
 
     if (focus) return html`<div className="ct-zen" role="dialog" aria-modal="true" aria-label="Modo foco">
       <div className="ct-zen-bar">
@@ -769,15 +984,15 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     </div>`;
     if (screens.xl) return html`<div className="ct-page">${back}
       <${Row} gutter=${16} wrap=${false}>
-        <${Col} flex=${screens.xxl ? '380px' : '320px'}><${Card} size="small" styles=${{ body: { padding: 16 } }}>${meta}<//><//>
+        <${Col} flex=${screens.xxl ? '400px' : '360px'}><${Card} size="small" styles=${{ body: { padding: 16 } }}>${meta}<//><//>
         <${Col} flex="1 1 0" style=${{ minWidth: 0 }}><${Card} size="small">${timer}<//><//>
-        <${Col} flex=${screens.xxl ? '1 1 0' : '0 0 40%'} style=${{ minWidth: 0 }}>${notes}<//>
+        ${notesOpen ? html`<${Col} flex=${screens.xxl ? '1 1 0' : '0 0 40%'} style=${{ minWidth: 0 }}>${notes}<//>` : null}
       <//>
     </div>`;
     if (screens.md) return html`<div className="ct-page">${back}
       <${Row} gutter=${16}>
         <${Col} span=${10}><${Card} size="small">${meta}<//><//>
-        <${Col} span=${14}><${Flex} vertical gap=${16}><${Card} size="small">${timer}<//>${notes}<//><//>
+        <${Col} span=${14}><${Flex} vertical gap=${16}><${Card} size="small">${timer}<//>${notesOpen ? notes : null}<//><//>
       <//>
     </div>`;
     return html`<div className="ct-page-narrow">${back}

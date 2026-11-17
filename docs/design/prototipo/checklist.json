@@ -422,6 +422,30 @@
       }
     },
     {
+      "id": "F3.9",
+      "fase": "F3",
+      "titulo": "Painel de dados da task com todos os blocos de hoje",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/{pages/SingleTaskPage.tsx,components/**/*.tsx}",
+        "padroes": [
+          "TaskIdBadge",
+          "CategorySelect",
+          "StatusSelect",
+          "JiraTaskControls",
+          "RecurrenceSelect",
+          "ExternalLinkField",
+          "WorkingDirField",
+          "GoogleCalendarTaskToggle",
+          "JiraChildIssues",
+          "SubtaskList",
+          "DependencySelector",
+          "JiraFieldsSheet",
+          "Desarquivar"
+        ]
+      }
+    },
+    {
       "id": "F3.5",
       "fase": "F3",
       "titulo": "Detalhe conferido nas três larguras",
