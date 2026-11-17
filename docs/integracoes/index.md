@@ -17,4 +17,4 @@ explicam o que cada integração faz e não faz.
 !!! info "Nomes antigos preservados"
     Alguns nomes criados pelas integrações continuam com "TickTask" para não duplicar dados de
     quem já usava o app: a agenda **TickTask** no Google, a página **Cadernos TickTask** e o banco
-    **GTD APP** no Notion, e o servidor MCP registrado como `ticktask`.
+    **GTD APP** no Notion.

@@ -18,8 +18,10 @@ pasta de dados `~/.config/ticktask` e o pacote deb que faz upgrade do antigo) e 
 App"` (`/opt/TickTask App` e o perfil AppArmor), `app.setName('TickTask App')`,
 `appId`/`AppUserModelId` `com.ticktask.app`, `ticktask.db`, `ticktask-dev`, `TICKTASK_USER_DATA`,
 `ticktask-asset://`, `scripts/ticktask-backup.sh`, a agenda "TickTask" do Google e a descrição
-`TickTask #id` dos eventos, a raiz "Cadernos TickTask" e o banco "GTD APP" do Notion, `app:
-'TickTask'` do `server_info` do MCP. Identificadores de código também ficam como estão.
+`TickTask #id` dos eventos, a raiz "Cadernos TickTask" e o banco "GTD APP" do Notion.
+Identificadores de código também ficam como estão. O servidor MCP, ao contrário, já se chama
+`crafytask` (nome no `McpServer`, no comando de registro e no `server_info`): é o nome que o usuário
+fala com o assistente, e o antigo `ticktask` confundia.
 
 ## Where the docs are
 

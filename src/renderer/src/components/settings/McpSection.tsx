@@ -78,6 +78,11 @@ export function McpSection({
           Rode esse comando no terminal para registrar o servidor. Ele contém o token de acesso; não
           compartilhe.
         </p>
+        <p className="text-xs text-slate-500">
+          Registrou antes com o nome antigo? Remova com{' '}
+          <code className="font-mono text-slate-700">claude mcp remove ticktask --scope user</code>{' '}
+          antes de registrar de novo, ou o Claude Code verá o servidor duas vezes.
+        </p>
       </div>
 
       <div className="pt-4 border-t border-slate-200 flex items-center justify-between gap-4">

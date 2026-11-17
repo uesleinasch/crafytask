@@ -660,7 +660,7 @@ function buildMcpStatus(): McpStatus {
     running: isMcpRunning(),
     port: config.port,
     token: config.token,
-    command: `claude mcp add ticktask --scope user --env ELECTRON_RUN_AS_NODE=1 -- "${process.execPath}" "${bridge}"`
+    command: `claude mcp add crafytask --scope user --env ELECTRON_RUN_AS_NODE=1 -- "${process.execPath}" "${bridge}"`
   }
 }
 
