@@ -664,13 +664,12 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
 
     const nameCell = t => {
       const ss = t.subtasks || [];
-      const done = ss.filter(s => s.status === 'finalizada').length;
       const open = expanded.includes(t.rowKey);
       const others = groupBy === 'context' && t.groupCtx && t.contexts.length > 1 ? t.contexts.filter(c => c !== t.groupCtx) : [];
       return html`<${Flex} vertical gap=${4} style=${{ minWidth: 0 }}>
         <${Flex} align="center" gap=${6} style=${{ minWidth: 0 }}>
           ${ss.length
-            ? html`<${Button} size="small" type="text" className="ct-caret" aria-expanded=${open} aria-label=${(open ? 'Recolher' : 'Expandir') + ' subtarefas'}
+            ? html`<${Button} size="small" type="text" className="ct-caret" aria-expanded=${open} aria-label=${(open ? 'Recolher ' : 'Expandir ') + ss.length + ' subtarefas'} title=${ss.length + ' subtarefas'}
                 icon=${html`<${open ? I.CaretDownOutlined : I.CaretRightOutlined} />`} onClick=${e => { e.stopPropagation(); toggleExpand(t.rowKey); }} />`
             : t.isSub ? null : html`<span className="ct-caret-space"></span>`}
           ${t.isSub ? html`<${Checkbox} checked=${t.status === 'finalizada'} aria-label=${'Concluir ' + t.name} onClick=${e => e.stopPropagation()} onChange=${e => updateTasks([t.id], { status: e.target.checked ? 'finalizada' : 'inbox' })} />` : null}
@@ -678,13 +677,9 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           ${t.running ? html`<span className="ct-live" aria-label="Timer rodando"></span>` : null}
           <a className=${'ct-taskname' + (t.status === 'finalizada' ? ' done' : '')} onClick=${() => go('tarefa')} style=${{ color: 'var(--ct-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>${t.name}</a>
           ${t.isSub && !showStatusCol ? html`<${Chip} def=${STATUS[t.status]} mode=${mode} />` : null}
+          ${t.waiting ? html`<${Tooltip} title=${'Aguardando: ' + t.waiting}><${I.HourglassOutlined} aria-label=${'Aguardando: ' + t.waiting} style=${{ color: STATUS.aguardando[mode][0], fontSize: 12 }} /><//>` : null}
           ${others.length ? html`<${Tooltip} title=${'Também em ' + others.join(', ')}><${I.CopyOutlined} aria-label="Aparece em outros grupos" style=${{ color: 'var(--ct-text-3)', fontSize: 12 }} /><//>` : null}
         <//>
-        ${ss.length ? html`<${Flex} align="center" gap=${8} style=${{ paddingInlineStart: 30 }}>
-          <${Progress} percent=${Math.round(done / ss.length * 100)} size=${[120, 4]} showInfo=${false} strokeColor=${done === ss.length ? STATUS.executando[mode][0] : 'var(--ct-primary)'} />
-          <${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12 }}>${done}/${ss.length}<//>
-        <//>` : null}
-        ${t.waiting ? html`<${Text} type="secondary" style=${{ fontSize: 12, paddingInlineStart: 30 }}>aguardando: ${t.waiting}<//>` : null}
       <//>`;
     };
 

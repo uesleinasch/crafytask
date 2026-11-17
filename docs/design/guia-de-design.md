@@ -289,11 +289,16 @@ mais um badge (pesquisa: poucos elementos por linha; Hick e carga cognitiva).
   a coluna repetiria a aba) · Categoria (vazia quando normal) · Projeto · Contextos · Energia ·
   Prazo · Tempo · ações. As colunas entram por breakpoint (tabela acima) e somem quando viram
   agrupamento (agrupar por projeto tira Projeto; por contexto tira Contextos).
-- **Célula Tarefa:** linha 1 com cadeado de bloqueio, ponto de executando e o nome; logo abaixo do
-  nome, barra fina de 120px com `feitas/total` das subtarefas; abaixo, "aguardando: …" quando houver.
+- **Altura de linha constante:** toda linha da tabela tem uma linha de texto só. Nada de barra de
+  progresso, contador ou texto secundário embaixo do nome; o que for extra vira ícone com tooltip na
+  mesma linha.
+- **Célula Tarefa:** caret de subtarefas (quando houver), cadeado de bloqueio, ponto de executando,
+  o nome e, à direita dele, ícone de ampulheta com "Aguardando: …" no tooltip. O caret já diz que
+  há subtarefas; a quantidade fica no rótulo acessível e no tooltip, e o progresso aparece nos
+  cards, no detalhe da task (aba Relações) e ao expandir.
 - **Contextos:** o primeiro como tag e `+N` ao lado. Passar o mouse abre um popover com todos, já
   editáveis (marcar/desmarcar).
-- **Subtarefas:** linha expansível. Um caret ao lado do nome abre as subtarefas recuadas logo
+- **Subtarefas:** linha expansível. O caret ao lado do nome abre as subtarefas recuadas logo
   abaixo, cada uma com checkbox de concluir, status (como chip, quando a coluna Status está oculta),
   timer e menu. Por padrão ficam recolhidas e não entram na lista principal, para não duplicar
   linhas. Seleção não propaga do pai para as filhas (`checkStrictly`).
