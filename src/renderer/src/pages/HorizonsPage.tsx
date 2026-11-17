@@ -405,7 +405,7 @@ export function HorizonsPage(): React.JSX.Element {
         </div>
       </header>
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 h-0">
         <div className="max-w-4xl mx-auto px-6 py-6 space-y-6">
           {loading && (
             <div className="text-center py-12 text-slate-400">Carregando horizontes...</div>
