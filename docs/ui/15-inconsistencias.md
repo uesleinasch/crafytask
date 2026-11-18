@@ -262,8 +262,8 @@ Cada tecla digitada refaz a consulta.
 
 ### F7. O seletor de dependências carrega todas as tarefas
 
-`DependencySelector` chama `listTasks()` sem filtro e filtra no cliente — o único lugar do app que
-ainda faz isso.
+Resolvido na F3-c: o seletor "Adicionar dependência…" da aba Relações busca no main (`listTasks`
+com `search` e `limit`).
 
 ---
 

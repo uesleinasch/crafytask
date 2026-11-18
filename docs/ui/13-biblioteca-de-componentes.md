@@ -21,7 +21,7 @@ Consomem os tokens CSS (`--primary`, `--border`, `--radius`…) definidos em `as
 | `context-menu` | menu de sessão do terminal (`TerminalSessionMenu`); a lista de tarefas usa o `Dropdown` do antd |
 | `card` | **importado por nenhuma tela** — todas escrevem `bg-white border border-slate-200 rounded-sm` na mão |
 | `badge` | **importado por nenhuma tela** — status, categoria e energia usam os chips de `components/chips/` |
-| `progress` | só em `SubtaskList` e em H1 dos horizontes. As outras seis barras de progresso do app são `<div>` com `width` inline |
+| `progress` | só em H1 dos horizontes. As outras seis barras de progresso do app são `<div>` com `width` inline |
 | `scroll-area` | área rolável das sub-páginas |
 | `tabs` | **importado por nenhuma tela** — todas as abas são botões manuais |
 | `sonner` | toasts, ancorados em `bottom-right` |
@@ -90,8 +90,6 @@ primeira vista.
 | Componente | Comportamento |
 | --- | --- |
 | `TagInput` | pílulas removíveis + campo livre. Enter cria ou seleciona; Backspace com campo vazio remove a última; ↑↓ navegam nas sugestões; Esc fecha. Sem sugestão, oferece **"Criar tag «x»"**. Cria a tag via `getOrCreateTag` |
-| `SubtaskList` | progresso + checkboxes + adicionar inline. Respeita o bloqueio da tarefa-pai |
-| `DependencySelector` | lista verde/laranja conforme a dependência esteja concluída + busca embutida (até 10 resultados) |
 | `TimeEntryList` | sessões encerradas, `max-h-[250px]`, data à esquerda e `+ HH:MM:SS` à direita |
 | `DeleteConfirmDialog` | `AlertDialog` com título e descrição padrão sobrescrevíveis |
 

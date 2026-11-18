@@ -383,7 +383,13 @@ export function SingleTaskPage(): React.JSX.Element {
         onSetLimit={(seconds) => update({ time_limit_seconds: seconds })}
       />
     ),
-    detalhes: <TaskDetailsPanel task={task} refreshTask={refreshTask} />,
+    detalhes: (
+      <TaskDetailsPanel
+        task={task}
+        refreshTask={refreshTask}
+        onOpenJiraFields={() => setJiraFieldsOpen(true)}
+      />
+    ),
     relacoes: <TaskRelationsPanel task={task} refreshTask={refreshTask} />
   }
 

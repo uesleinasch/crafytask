@@ -87,7 +87,13 @@ export function JiraFieldsSheet({
           </SheetDescription>
           {issue && (
             <div className="pt-1">
-              <JiraStatusSelect taskId={taskId} status={issue.statusName} onChanged={load} />
+              <JiraStatusSelect
+                taskId={taskId}
+                status={issue.statusName}
+                onChanged={load}
+                style={{ width: 200 }}
+                getPopupContainer={(trigger) => trigger.parentElement ?? document.body}
+              />
             </div>
           )}
         </SheetHeader>
