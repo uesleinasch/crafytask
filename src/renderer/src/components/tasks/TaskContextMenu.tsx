@@ -1,19 +1,28 @@
-import { useContext } from 'react'
+import { useContext, useState } from 'react'
 import { Dropdown, type MenuProps } from 'antd'
 import {
   Archive,
   CalendarDays,
   CircleCheck,
   Copy,
+  ExternalLink,
   FileText,
   Flag,
   Folder,
   MapPin,
   Pause,
+  Plug,
   Play,
+  SlidersHorizontal,
   Trash2
 } from 'lucide-react'
-import { STATUS_LABELS, type Task, type TaskCategory, type TaskStatus } from '@shared/types'
+import {
+  STATUS_LABELS,
+  type JiraTransitionOption,
+  type Task,
+  type TaskCategory,
+  type TaskStatus
+} from '@shared/types'
 import { localDateString } from '@shared/dueState'
 import { TaskMenuChangedContext, TaskMenuDataContext } from '@renderer/components/taskMenuContext'
 import { toast } from '@renderer/components/ui/sonner'
@@ -22,6 +31,8 @@ import { STATUS_ICONS } from '@renderer/components/chips/statusMeta'
 import { useTimerStore } from '@renderer/stores/timerStore'
 import { STATUS_COLORS } from '@renderer/theme/semantic'
 import { useThemeSettings } from '@renderer/theme/themeSettings'
+import { JiraFieldsSheet } from '@renderer/components/jira/JiraFieldsSheet'
+import { isSafeHttpUrl } from '@shared/externalUrl'
 import { plural, todayToggle } from './bulkActionText'
 import { useTaskBulkActions } from './useTaskBulkActions'
 
@@ -50,6 +61,10 @@ export function TaskContextMenu({
   const startTimer = useTimerStore((s) => s.startTimer)
   const stopTimer = useTimerStore((s) => s.stopTimer)
   const bulk = useTaskBulkActions()
+  const [transitions, setTransitions] = useState<JiraTransitionOption[] | 'loading' | 'error'>(
+    'loading'
+  )
+  const [fieldsOpen, setFieldsOpen] = useState(false)
 
   const many = selectedIds.length > 1 && selectedIds.includes(task.id)
   const ids = many ? selectedIds : [task.id]
@@ -75,6 +90,30 @@ export function TaskContextMenu({
       onChanged()
     }
   }
+
+  const jiraUrl = task.external_url && isSafeHttpUrl(task.external_url) ? task.external_url : null
+
+  const loadTransitions = async (): Promise<void> => {
+    setTransitions('loading')
+    try {
+      setTransitions(await window.api.jiraListTransitions(task.id))
+    } catch (error) {
+      console.error('[TaskContextMenu] transições do Jira', error)
+      setTransitions('error')
+    }
+  }
+
+  const transitionItems: NonNullable<MenuProps['items']> =
+    transitions === 'loading'
+      ? [{ key: 'jira-loading', label: 'Carregando…', disabled: true }]
+      : transitions === 'error'
+        ? [{ key: 'jira-error', label: 'Não foi possível carregar', disabled: true }]
+        : transitions.length === 0
+          ? [{ key: 'jira-none', label: 'Nenhuma transição disponível', disabled: true }]
+          : transitions.map((transition) => ({
+              key: `jirast:${transition.id}`,
+              label: `${check(task.jira_status === transition.name)}${transition.name}`
+            }))
 
   const items: MenuProps['items'] = [
     ...(many
@@ -138,6 +177,29 @@ export function TaskContextMenu({
           }))
       ]
     },
+    ...(many || !task.jira_key
+      ? []
+      : [
+          {
+            key: 'jira',
+            icon: <Plug {...ICON} />,
+            label: 'Jira',
+            children: [
+              {
+                key: 'jira:open',
+                icon: <ExternalLink {...ICON} />,
+                label: 'Abrir no Jira',
+                disabled: !jiraUrl
+              },
+              { key: 'jira:status', label: 'Status no Jira', children: transitionItems },
+              {
+                key: 'jira:fields',
+                icon: <SlidersHorizontal {...ICON} />,
+                label: 'Campos do Jira…'
+              }
+            ]
+          }
+        ]),
     ...(many
       ? []
       : [
@@ -182,6 +244,21 @@ export function TaskContextMenu({
         : [...taskContextIds, contextId]
       void run(() => window.api.setTaskContexts(task.id, next), 'Contextos atualizados')
     }
+    if (kind === 'jira' && value === 'open' && jiraUrl) {
+      void window.api
+        .appOpenExternal(jiraUrl)
+        .catch(() => toast.error('Não foi possível abrir o link'))
+    }
+    if (kind === 'jira' && value === 'fields') setFieldsOpen(true)
+    if (kind === 'jirast') {
+      const target = Array.isArray(transitions)
+        ? transitions.find((transition) => transition.id === value)
+        : undefined
+      void run(
+        () => window.api.jiraTransition(task.id, value),
+        `Jira: ${target?.name ?? 'status alterado'}`
+      )
+    }
     if (kind === 'copy') {
       void navigator.clipboard
         .writeText(String(task.id))
@@ -193,8 +270,20 @@ export function TaskContextMenu({
   }
 
   return (
-    <Dropdown menu={{ items, onClick }} trigger={trigger} placement="bottomRight">
-      {children}
-    </Dropdown>
+    <>
+      <Dropdown
+        menu={{ items, onClick }}
+        trigger={trigger}
+        placement="bottomRight"
+        onOpenChange={(open) => {
+          if (open && task.jira_key && !many) void loadTransitions()
+        }}
+      >
+        {children}
+      </Dropdown>
+      {task.jira_key && (
+        <JiraFieldsSheet taskId={task.id} open={fieldsOpen} onOpenChange={setFieldsOpen} />
+      )}
+    </>
   )
 }
