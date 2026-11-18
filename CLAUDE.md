@@ -333,6 +333,10 @@ Defined in `electron.vite.config.ts` and the tsconfigs:
   in `StyleProvider layer`, so antd styles sit in their own layer above Tailwind's preflight.
 - New colors live in `src/renderer/src/theme/`: `tokens.ts` (palette + antd seed tokens) and
   `semantic.ts` (status, category, time leak, energy, charts, horizons), with a WCAG contrast test.
+  `ThemeProvider` (mounted in `main.tsx`) wraps the app in antd's `ConfigProvider` + `App`, built by
+  `buildTheme(mode, density)`. Preferences `ticktask:theme` (default `light` until every screen has
+  dark tokens) and `ticktask:density` live in `localStorage`; the main window sends the theme to
+  `app:setThemeSource` (`nativeTheme.themeSource`). Use `App.useApp()` for message/modal.
   Legacy screens still declare their own status/category colors (`StatusBadge`, `CategoryBadge`,
   local copies in `DashboardPage` and `CalendarPage`) and they **disagree** — check
   `docs/ui/14-design-tokens.md` until each screen is migrated.

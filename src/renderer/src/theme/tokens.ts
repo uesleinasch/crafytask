@@ -1,6 +1,7 @@
 import type { ThemeConfig } from 'antd'
+import type { ThemeMode } from '@shared/themePreference'
 
-export type ThemeMode = 'light' | 'dark'
+export type { ThemeMode }
 
 export interface Palette {
   bg: string

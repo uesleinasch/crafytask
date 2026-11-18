@@ -60,6 +60,7 @@ import type {
   PageLocation,
   PageSearchResult
 } from '../shared/types'
+import type { ThemePreference } from '../shared/themePreference'
 
 // Custom APIs for renderer
 const api = {
@@ -488,6 +489,8 @@ const api = {
   appOpenExternal: (url: string): Promise<void> => ipcRenderer.invoke('app:openExternal', url),
   appSetAutostart: (enabled: boolean): Promise<boolean> =>
     ipcRenderer.invoke('app:setAutostart', enabled),
+  appSetThemeSource: (preference: ThemePreference): Promise<void> =>
+    ipcRenderer.invoke('app:setThemeSource', preference),
 
   // ===================== BACKUP =====================
   backupGetStatus: (): Promise<BackupStatus> => ipcRenderer.invoke('backup:getStatus'),
