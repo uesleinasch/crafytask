@@ -56,7 +56,8 @@ O select mais usado do app — filtros, seleção de projeto, tarefa, tag. Não 
 | `tasks/TaskTable` | lista (modo tabela, com ou sem agrupamento) | `Table` do antd; colunas por breakpoint; subtarefas como linhas filhas; cabeçalho de grupo; time leak em 3 níveis |
 | `tasks/GroupHeader`, `TaskActions`, `ProjectLabel` | tabela e cards | cabeçalho de grupo; Hoje, timer e `⋯`; ponto + nome do projeto |
 | `TaskDialog` | criação de tarefa | 9 campos; navega para a tarefa criada |
-| `tasks/TaskContextMenu` | botão direito em `TaskCard` e nas linhas do `TaskTable`; `⋯` | `Dropdown` do antd: abrir, timer, hoje, status, categoria, projeto, contextos, copiar, arquivar, excluir; age sobre a seleção |
+| `tasks/TaskContextMenu` | botão direito em `TaskCard` e nas linhas do `TaskTable`; `⋯` | `Dropdown` do antd: abrir, timer, hoje, status, categoria, projeto, Jira (abrir, transições, campos), contextos, copiar, arquivar, excluir; age sobre a seleção |
+| `tasks/JiraKey` | tabela e cards | chave do Jira em mono discreto, tipo e status no tooltip |
 | `tasks/BulkActionBar` | lista, com seleção | barra flutuante: marcar como, mover para projeto, hoje, arquivar, excluir |
 
 ### Badges e seletores

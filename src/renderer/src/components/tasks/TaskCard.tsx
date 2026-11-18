@@ -6,12 +6,12 @@ import { StatusChip } from '@renderer/components/chips/StatusChip'
 import { CategoryChip } from '@renderer/components/chips/CategoryChip'
 import { LiveDot } from '@renderer/components/chips/LiveDot'
 import { TaskContextMenu } from './TaskContextMenu'
-import { JiraTaskControls } from '@renderer/components/jira/JiraTaskControls'
 import { toast } from '@renderer/components/ui/sonner'
 import { useLiveSeconds } from '@renderer/hooks/useLiveSeconds'
 import { CATEGORY_COLORS, timeLeakBackground, timeLeakLevel } from '@renderer/theme/semantic'
 import { useThemeSettings } from '@renderer/theme/themeSettings'
 import { ContextsCell } from './ContextsCell'
+import { JiraKey } from './JiraKey'
 import { ProjectLabel } from './ProjectLabel'
 import { TaskActions } from './TaskActions'
 import { blockedLabel, dueTone, formatDueShort, formatShortDuration } from './taskTableFormat'
@@ -211,7 +211,7 @@ export function TaskCard({
                   {formatDueShort(task.due_date, task.due_time)}
                 </Typography.Text>
               )}
-              <JiraTaskControls task={task} />
+              <JiraKey {...task} />
               <span style={{ ...mono, marginInlineStart: 'auto' }}>
                 {formatShortDuration(seconds)}
               </span>

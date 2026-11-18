@@ -151,12 +151,13 @@ flutua, presa ao fundo, e só com seleção.
 `Dropdown` do antd. Abre com o botão direito numa linha ou num card e com o `⋯`. Itens: **Abrir** ·
 **Iniciar/Pausar timer** (iniciar desabilitado em tarefa bloqueada) · **Planejar para hoje / Tirar do
 plano de hoje** · **Marcar como ▸** (os 6 status com ícone na cor do status) · **Categoria ▸** ·
-**Mover para projeto ▸** ("Sem projeto" e os projetos não arquivados) · **Contextos ▸** (marca e
+**Mover para projeto ▸** ("Sem projeto" e os projetos não arquivados) · **Jira ▸** (só em task do
+Jira; ver "Jira na lista") · **Contextos ▸** (marca e
 desmarca) · **Copiar #id** · **Arquivar** · **Excluir…** (`modal.confirm`). O valor atual de cada
 submenu leva `✓`.
 
 Se a linha faz parte de uma seleção maior, o menu age sobre a seleção toda: título "N tarefas
-selecionadas", rótulos com "(N)" e sem Abrir, timer, Contextos e Copiar. Projetos, contextos, ids
+selecionadas", rótulos com "(N)" e sem Abrir, timer, Jira, Contextos e Copiar. Projetos, contextos, ids
 selecionados e a busca de tarefa por id chegam pelo `TaskMenuDataContext`
 (`components/taskMenuContext.ts`), que a `TaskListPage` fornece junto com o
 `TaskMenuChangedContext` (recarregar a lista).
@@ -189,7 +190,7 @@ há subtarefas), `Lock` se bloqueada (tooltip e rótulo "Bloqueada: depende de #
 `blocked_by`, até três ids e "e mais N"), ponto pulsante (`LiveDot`) se rodando, o nome (500, reticências,
 riscado se finalizada; é um link `#/task/<id>`, então recebe foco pelo Tab), `Clock` com o horário
 agendado no tooltip e no rótulo acessível, `Copy` com "Também em …" ao agrupar por contexto e
-`JiraTaskControls` em task do Jira (ver abaixo; a forma do Jira na tabela é a F2-i).
+a chave do Jira em task importada (ver "Jira na lista").
 
 Clicar na linha abre a task. Botões, links, checkboxes, a célula de contextos e qualquer clique que
 venha de um popup em portal (popover, menu, diálogo) não abrem: o `onClick` da linha confere se o
@@ -220,23 +221,19 @@ no Kanban.
 níveis: 30 min, 1 h e 2 h (`TIME_LEAK_THRESHOLDS` e `timeLeakLevel` em `theme/semantic.ts`, com as
 cores de `TIME_LEAK_SCALE`). Hover e seleção do antd passam por cima da cor.
 
-**`JiraTaskControls`** (`components/jira/`) — usado no card, na tabela e no detalhe, só quando a
-task tem `jira_key`. Quatro peças, num wrapper que para a propagação do clique (senão abriria a task):
-- chip cinza com `Layers` e o **espaço** da issue (`tasks.jira_space`, gravado pela importação; antes
-  da primeira importação que o preenche, mostra o prefixo da chave, ex.: `CON`).
-- `JiraIssueTypeBadge`: chip colorido com o **tipo** da issue (`tasks.jira_issue_type`), cor e ícone
-  pela classe em `tasks.jira_issue_kind` — épico roxo, história verde, tarefa azul, bug vermelho,
-  subtarefa cinza. A classe vem de `classifyIssueType` (`jiraPlan.ts`): nível da hierarquia do
-  Jira primeiro (>0 épico, <0 subtarefa), nome do tipo depois. Some antes da primeira importação.
-- chip azul **Jira · {status}**: um `Select` que, ao abrir, busca as transições da issue
-  (`jira:listTransitions`) e aplica a escolhida (`jira:transition`). É independente do `StatusChip`
-  local — mudar um não muda o outro.
-- botão `SlidersHorizontal` (só no card e na tabela; o detalhe usa o botão azul "Campos do Jira",
-  ver `02-detalhe-da-tarefa.md`) que abre o `JiraFieldsSheet`: painel lateral direito com os campos
-  editáveis da issue (vindos do `editmeta`), um editor por tipo (texto, número, data, seleção,
-  múltipla escolha, rótulos, pessoa com "Atribuir a mim", sprint). Múltipla escolha (ex.: Cliente,
-  Equipe) é um `SearchableSelect` "Adicionar opção…" com as escolhidas em chips removíveis. Cada campo grava ao sair do
-  campo/escolher; erro do Jira volta como toast e o campo retorna ao valor anterior.
+**Jira na lista** — em task com `jira_key`, a célula Tarefa e o card mostram só a chave em Geist
+Mono, texto terciário (`components/tasks/JiraKey.tsx`), com "{tipo} · Jira: {status}" no tooltip e no
+rótulo acessível. O resto foi para o submenu **Jira ▸** do menu da tarefa (só sem seleção maior):
+**Abrir no Jira** (`app:openExternal` com `tasks.external_url` quando ele é o link da issue,
+`/browse/{chave}`; sem isso fica desabilitado com "(sem link da issue)"),
+**Status no Jira ▸** (o status atual aparece no topo, com `✓` e desabilitado; as transições vêm de
+`jira:listTransitions` ao abrir esse submenu, a resposta mais recente vence, e o erro do Jira
+aparece no item; aplicar usa `jira:transition`) e **Campos do Jira…** (abre o `JiraFieldsSheet`, que lê
+`issue?expand=editmeta` e grava cada campo com `jira:updateField`). O status do Jira continua
+independente do `StatusChip` local.
+
+O `JiraTaskControls` (`components/jira/`: espaço, tipo, status e botão de campos) ficou só no detalhe
+da tarefa até a F3.
 
 ### Modo cards (`components/tasks/TaskCardViews.tsx` → `TaskCard`)
 
@@ -252,7 +249,7 @@ na cor primária quando selecionado:
    riscado quando finalizada.
 4. **Linha de metadados:** `StatusChip` (só na aba "Todas"), `CategoryChip` (só fora de normal),
    projeto (some ao agrupar por projeto), `ContextsCell` (some ao agrupar por contexto), prazo em
-   mono, `JiraTaskControls` e, à direita, o tempo (`formatShortDuration`).
+   mono, a chave do Jira e, à direita, o tempo (`formatShortDuration`).
 
 Descrição, tags e limite de tempo saíram do card (ficam no detalhe). Clicar no card abre a task;
 botões, links, checkboxes e cliques vindos de popups não abrem.

@@ -20,7 +20,6 @@ import { EnergyMeter } from '@renderer/components/chips/EnergyMeter'
 import { LiveDot } from '@renderer/components/chips/LiveDot'
 import { TaskContextMenu } from './TaskContextMenu'
 import { TaskMenuChangedContext } from '@renderer/components/taskMenuContext'
-import { JiraTaskControls } from '@renderer/components/jira/JiraTaskControls'
 import { toast } from '@renderer/components/ui/sonner'
 import type { GroupBy, TaskGroup } from '@renderer/lib/taskGrouping'
 import { liveSeconds } from '@renderer/lib/liveSeconds'
@@ -28,6 +27,7 @@ import { useTimerStore } from '@renderer/stores/timerStore'
 import { CATEGORY_COLORS, timeLeakBackground, timeLeakLevel } from '@renderer/theme/semantic'
 import { useThemeSettings } from '@renderer/theme/themeSettings'
 import { ContextsCell } from './ContextsCell'
+import { JiraKey } from './JiraKey'
 import { GroupHeader } from './GroupHeader'
 import { ProjectLabel } from './ProjectLabel'
 import { TaskActions } from './TaskActions'
@@ -334,6 +334,7 @@ export function TaskTable({
             />
           </Tooltip>
         )}
+        <JiraKey {...task} />
         {otherContexts.length > 0 && (
           <Tooltip title={`Também em ${otherContexts.join(', ')}`}>
             <Copy
@@ -345,7 +346,6 @@ export function TaskTable({
             />
           </Tooltip>
         )}
-        <JiraTaskControls task={task} className="shrink-0" />
       </Flex>
     )
   }

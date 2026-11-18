@@ -58,7 +58,7 @@ export function JiraFieldsSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent onClick={(e) => e.stopPropagation()}>
+      <SheetContent onClick={(e) => e.stopPropagation()} onContextMenu={(e) => e.stopPropagation()}>
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <span className="font-mono">{issue?.key ?? 'Jira'}</span>
