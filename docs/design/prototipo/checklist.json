@@ -8,7 +8,7 @@
     "F4": "Hoje e calendário",
     "F5": "Projetos, horizontes e revisão",
     "F6": "Rótulos e arquivo",
-    "F7": "Cadernos, dashboard e configurações",
+    "F7": "Cadernos, dashboard, terminal e configurações",
     "F8": "Janelas auxiliares",
     "F9": "Limpeza do legado"
   },
@@ -46,10 +46,9 @@
       "fase": "F0",
       "titulo": "Cores semânticas de status, categoria e energia num só lugar",
       "check": {
-        "tipo": "contem",
+        "tipo": "contem-todos",
         "arquivos": "src/renderer/src/theme/semantic.ts",
-        "padrao": "executando|time_leak|alto",
-        "minimo": 3
+        "padroes": ["executando", "time_leak", "alto"]
       }
     },
     {
@@ -77,9 +76,9 @@
       "fase": "F0",
       "titulo": "ConfigProvider com cssVar e App do antd na raiz",
       "check": {
-        "tipo": "contem",
-        "arquivos": "src/renderer/src/{App,main}.tsx",
-        "padrao": "<ConfigProvider[\\s\\S]*?<(AntApp|App)\\b"
+        "tipo": "contem-todos",
+        "arquivos": ["src/renderer/src/{App,main}.tsx", "src/renderer/src/theme/**/*.{ts,tsx}"],
+        "padroes": ["<ConfigProvider", "cssVar", "App as AntApp|<AntApp\\b"]
       }
     },
     {
@@ -87,10 +86,9 @@
       "fase": "F0",
       "titulo": "Preferências de tema e densidade persistidas",
       "check": {
-        "tipo": "contem",
+        "tipo": "contem-todos",
         "arquivos": "src/renderer/src/**/*.{ts,tsx}",
-        "padrao": "ticktask:(theme|density)",
-        "minimo": 2
+        "padroes": ["ticktask:theme", "ticktask:density"]
       }
     },
     {
@@ -170,10 +168,9 @@
       "fase": "F1",
       "titulo": "Navegação agrupada (Fluxo, Organizar, Conhecimento) em todas as rotas",
       "check": {
-        "tipo": "contem",
+        "tipo": "contem-todos",
         "arquivos": "src/renderer/src/components/shell/*.{ts,tsx}",
-        "padrao": "'Fluxo'|'Organizar'|'Conhecimento'",
-        "minimo": 3
+        "padroes": ["'Fluxo'", "'Organizar'", "'Conhecimento'"]
       }
     },
     {
@@ -230,7 +227,7 @@
       "check": {
         "tipo": "contem",
         "arquivos": "src/main/index.ts",
-        "padrao": "minWidth:\\s*(3\\d\\d|4[0-7]\\d|480)\\b"
+        "padrao": "minWidth:\\s*400\\b"
       }
     },
     {
@@ -238,10 +235,20 @@
       "fase": "F1",
       "titulo": "Sidebar completa: as dez rotas do guia §7",
       "check": {
-        "tipo": "contem",
+        "tipo": "contem-todos",
         "arquivos": "src/renderer/src/components/shell/*.{ts,tsx}",
-        "padrao": "'/(today|calendar|review|projects|horizons|contexts|notebooks|dashboard|archived|settings)'",
-        "minimo": 10
+        "padroes": [
+          "'/today'",
+          "'/calendar'",
+          "'/review'",
+          "'/projects'",
+          "'/horizons'",
+          "'/contexts'",
+          "'/notebooks'",
+          "'/dashboard'",
+          "'/archived'",
+          "'/settings'"
+        ]
       }
     },
     {
@@ -249,10 +256,9 @@
       "fase": "F1",
       "titulo": "Terminais e recolher menu no rodapé da sidebar",
       "check": {
-        "tipo": "contem",
+        "tipo": "contem-todos",
         "arquivos": "src/renderer/src/components/shell/*.{ts,tsx}",
-        "padrao": "Terminais|Recolher menu",
-        "minimo": 2
+        "padroes": ["Terminais", "Recolher menu"]
       }
     },
     {
@@ -268,7 +274,7 @@
     {
       "id": "F1.12",
       "fase": "F1",
-      "titulo": "Shell conferido de 480px a 1920px e falha simulada isolada",
+      "titulo": "Shell conferido de 400px a 1920px e falha simulada isolada",
       "check": {
         "tipo": "manual"
       }
@@ -448,9 +454,9 @@
       "titulo": "Editores (notas, desenho, terminal) isolados por boundary",
       "check": {
         "tipo": "contem",
-        "arquivos": "src/renderer/src/{pages/SingleTaskPage.tsx,components/editor/*.tsx}",
+        "arquivos": "src/renderer/src/{pages/SingleTaskPage.tsx,components/editor/*.tsx,components/terminal/*.tsx}",
         "padrao": "<RegionBoundary",
-        "minimo": 2
+        "minimo": 3
       }
     },
     {
@@ -459,9 +465,8 @@
       "titulo": "Cronômetro do cabeçalho em Geist Mono tabular",
       "check": {
         "tipo": "contem",
-        "arquivos": "src/renderer/src/**/*.{ts,tsx,css}",
-        "padrao": "@fontsource-variable/geist-mono|fontFamilyCode",
-        "minimo": 1
+        "arquivos": "src/renderer/src/components/tasks/TaskHeader.tsx",
+        "padrao": "fontFamilyCode|tabular-nums"
       }
     },
     {
@@ -473,7 +478,8 @@
         "arquivos": "src/renderer/src/pages/SingleTaskPage.tsx",
         "padrao": "'zen'|'maximized'",
         "minimo": 2
-      }
+      },
+      "guarda": true
     },
     {
       "id": "F3.6",
@@ -495,7 +501,8 @@
         "arquivos": "src/renderer/src/{pages/SingleTaskPage.tsx,components/**/*.tsx,hooks/*.ts}",
         "padrao": "resetTask|addManualTime|setTotalTime",
         "minimo": 3
-      }
+      },
+      "guarda": true
     },
     {
       "id": "F3.8",
@@ -530,7 +537,8 @@
           "JiraFieldsSheet",
           "Desarquivar"
         ]
-      }
+      },
+      "guarda": true
     },
     {
       "id": "F3.10",
@@ -538,7 +546,7 @@
       "titulo": "Barra de propriedades com pílulas editáveis em Popover",
       "check": {
         "tipo": "contem",
-        "arquivos": "src/renderer/src/components/task/TaskPropertyBar.tsx",
+        "arquivos": "src/renderer/src/components/tasks/TaskPropertyBar.tsx",
         "padrao": "<Popover"
       }
     },
@@ -548,7 +556,7 @@
       "titulo": "Inspetor com abas Tempo, Detalhes e Relações",
       "check": {
         "tipo": "contem-todos",
-        "arquivos": "src/renderer/src/components/task/TaskInspector.tsx",
+        "arquivos": "src/renderer/src/components/tasks/TaskInspector.tsx",
         "padroes": ["<Tabs", "Tempo", "Detalhes", "Relações"]
       }
     },
@@ -602,6 +610,26 @@
       }
     },
     {
+      "id": "F4.7",
+      "fase": "F4",
+      "titulo": "Sessões por intervalo para a grade do calendário",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/preload/index.ts",
+        "padrao": "timeEntry:listRange"
+      }
+    },
+    {
+      "id": "F4.8",
+      "fase": "F4",
+      "titulo": "Calendário com A agendar e repetir bloco",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/{pages/CalendarPage.tsx,components/calendar/*.tsx}",
+        "padroes": ["A agendar", "Repetir no dia seguinte"]
+      }
+    },
+    {
       "id": "F4.6",
       "fase": "F4",
       "titulo": "Calendário: arrastar de A agendar, mover e redimensionar bloco, sessões e legenda conferidos",
@@ -641,12 +669,11 @@
     {
       "id": "F5.3",
       "fase": "F5",
-      "titulo": "Horizontes e revisão semanal no tema, com confirmação ao excluir área e meta",
+      "titulo": "Horizontes no tema, com confirmação ao excluir área e meta",
       "check": {
         "tipo": "contem",
-        "arquivos": "src/renderer/src/pages/{HorizonsPage,WeeklyReviewPage}.tsx",
-        "padrao": "Popconfirm|modal\\.confirm|DeleteConfirm",
-        "minimo": 1
+        "arquivos": "src/renderer/src/pages/HorizonsPage.tsx",
+        "padrao": "Popconfirm|modal\\.confirm"
       }
     },
     {
@@ -732,12 +759,30 @@
     {
       "id": "F5.12",
       "fase": "F5",
-      "titulo": "Indicadores de saúde compartilhados entre revisão e dashboard",
+      "titulo": "HealthCard compartilhado entre revisão e dashboard",
+      "check": {
+        "tipo": "arquivo",
+        "caminho": "src/renderer/src/components/health/HealthCard.tsx"
+      }
+    },
+    {
+      "id": "F5.14",
+      "fase": "F5",
+      "titulo": "Revisão: entrada com um primário, ritmo, HealthCard e histórico em Drawer",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/pages/WeeklyReviewPage.tsx",
+        "padroes": ["Começar revisão", "Ritmo", "HealthCard", "<Drawer"]
+      }
+    },
+    {
+      "id": "F5.15",
+      "fase": "F5",
+      "titulo": "Revisão guarda passos feitos e pulados",
       "check": {
         "tipo": "contem",
-        "arquivos": "src/renderer/src/pages/{WeeklyReviewPage,DashboardPage}.tsx",
-        "padrao": "HealthCard",
-        "minimo": 2
+        "arquivos": "src/main/**/*.ts",
+        "padrao": "'skipped'"
       }
     },
     {
@@ -816,6 +861,26 @@
       }
     },
     {
+      "id": "F6.8",
+      "fase": "F6",
+      "titulo": "Arquivo com a tabela de tarefas, filtros, desarquivar e limpar por idade",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/pages/ArchivePage.tsx",
+        "padroes": ["TaskTable", "Desarquivar", "Limpar o arquivo", "archived"]
+      }
+    },
+    {
+      "id": "F6.9",
+      "fase": "F6",
+      "titulo": "Data de arquivamento no banco",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/main/**/*.ts",
+        "padrao": "archived_at"
+      }
+    },
+    {
       "id": "F6.7",
       "fase": "F6",
       "titulo": "Contextos, tags e arquivo conferidos",
@@ -859,17 +924,18 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/theme/semantic.ts",
-        "padroes": ["#8F8BA6", "#A99DFF", "#4532C4", "#EB6834", "#8577F5", "#B7AEFF"]
+        "padroes": ["#8F8BA6", "#A99DFF", "#4532C4", "#EB6834", "#8577F5", "#B7AEFF"],
+        "flags": "i"
       }
     },
     {
       "id": "F7.9",
       "fase": "F7",
-      "titulo": "Dashboard com filtro de período e métricas clicáveis",
+      "titulo": "Dashboard com filtro de período e boundary por gráfico",
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/pages/DashboardPage.tsx",
-        "padroes": ["Segmented", "RangePicker", "navigate\\("]
+        "padroes": ["Segmented", "RangePicker", "RegionBoundary"]
       }
     },
     {
@@ -877,8 +943,7 @@
       "fase": "F7",
       "titulo": "Dashboard: saúde do sistema, heatmap por hora e visão de tabela conferidos",
       "check": {
-        "tipo": "manual",
-        "descricao": "Seção Agora com os seis cartões levando às listas filtradas, heatmap dia × hora, 'Ver como tabela' em todo gráfico e período vazio com atalhos."
+        "tipo": "manual"
       }
     },
     {
@@ -912,6 +977,46 @@
       }
     },
     {
+      "id": "F7.11",
+      "fase": "F7",
+      "titulo": "Cadernos com árvore do antd e editor isolado",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/{pages/NotebooksPage.tsx,components/notebooks/*.tsx}",
+        "padroes": ["<Tree\\b|<Menu\\b", "<RegionBoundary"]
+      }
+    },
+    {
+      "id": "F7.12",
+      "fase": "F7",
+      "titulo": "Consultas do dashboard recebem período",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/shared/types.ts",
+        "padrao": "interface StatsPeriod"
+      }
+    },
+    {
+      "id": "F7.13",
+      "fase": "F7",
+      "titulo": "Dashboard: cartões de saúde levam às listas filtradas",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/pages/DashboardPage.tsx",
+        "padroes": ["HealthCard", "navigate\\("]
+      }
+    },
+    {
+      "id": "F7.14",
+      "fase": "F7",
+      "titulo": "Terminal isolado por boundary e com cores dos tokens",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/components/terminal/*.tsx",
+        "padroes": ["RegionBoundary", "useToken"]
+      }
+    },
+    {
       "id": "F7.3",
       "fase": "F7",
       "titulo": "Cadernos, dashboard, terminal e configurações conferidos",
@@ -926,7 +1031,7 @@
       "check": {
         "tipo": "contem",
         "arquivos": "src/renderer/src/pages/{FloatTimerPage,QuickCapturePage}.tsx",
-        "padrao": "theme/|useAppTheme|ConfigProvider",
+        "padrao": "theme\\.useToken|useAppTheme|@renderer/theme",
         "minimo": 2
       }
     },
@@ -941,10 +1046,10 @@
     {
       "id": "F9.1",
       "fase": "F9",
-      "titulo": "Sem cores de paleta do Tailwind no renderer",
+      "titulo": "Sem cores de paleta do Tailwind no renderer e no shared",
       "check": {
         "tipo": "ausente",
-        "arquivos": "src/renderer/src/**/*.tsx",
+        "arquivos": "src/{renderer/src,shared}/**/*.{ts,tsx}",
         "padrao": "\\b(bg|text|border|ring|from|to|fill|stroke)-(slate|gray|zinc|neutral|stone|blue|red|green|emerald|amber|yellow|orange|purple|indigo|teal|violet|sky|cyan|rose|pink|lime|fuchsia)-\\d{2,3}\\b"
       }
     },
@@ -1000,12 +1105,21 @@
     {
       "id": "F9.6",
       "fase": "F9",
-      "titulo": "Componentes mortos removidos (Timer, Versions)",
+      "titulo": "Componentes e telas legados removidos",
       "check": {
         "tipo": "sem-arquivo",
         "caminho": [
           "src/renderer/src/components/Timer.tsx",
-          "src/renderer/src/components/Versions.tsx"
+          "src/renderer/src/components/Versions.tsx",
+          "src/renderer/src/components/StatusBadge.tsx",
+          "src/renderer/src/components/CategoryBadge.tsx",
+          "src/renderer/src/components/TitleBar.tsx",
+          "src/renderer/src/components/SyncNotification.tsx",
+          "src/renderer/src/components/RunningNowPanel.tsx",
+          "src/renderer/src/components/DeleteConfirmDialog.tsx",
+          "src/renderer/src/pages/ArchivedTasksPage.tsx",
+          "src/renderer/src/pages/ContextsPage.tsx",
+          "src/renderer/src/pages/TagsPage.tsx"
         ]
       }
     },

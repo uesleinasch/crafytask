@@ -6,6 +6,19 @@ import { fileURLToPath } from 'node:url'
 const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)))
 const CHECKLIST = join(ROOT, 'docs/design/prototipo/checklist.json')
 const SKIP_DIRS = new Set(['node_modules', 'out', 'dist', '.git', 'graphify-out', 'site'])
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
+
+const SCHEMA = {
+  manual: [],
+  arquivo: ['caminho'],
+  'sem-arquivo': ['caminho'],
+  dependencia: ['nome'],
+  'sem-dependencia': ['nome'],
+  contem: ['arquivos', 'padrao'],
+  'contem-todos': ['arquivos', 'padroes'],
+  ausente: ['arquivos', 'padrao']
+}
+const OPTIONAL = new Set(['tipo', 'minimo', 'flags'])
 
 const args = process.argv.slice(2)
 const flag = (name) => args.includes(`--${name}`)
@@ -24,12 +37,10 @@ function globBody(glob) {
       i += glob[i + 2] === '/' ? 2 : 1
     } else if (c === '*') re += '[^/]*'
     else if (c === '{') {
-      const end = glob.indexOf('}', i)
+      const end = closingBrace(glob, i)
       re +=
         '(?:' +
-        glob
-          .slice(i + 1, end)
-          .split(',')
+        splitTopLevel(glob.slice(i + 1, end))
           .map(globBody)
           .join('|') +
         ')'
@@ -37,6 +48,31 @@ function globBody(glob) {
     } else re += escape(c)
   }
   return re
+}
+
+function closingBrace(glob, open) {
+  let depth = 0
+  for (let i = open; i < glob.length; i++) {
+    if (glob[i] === '{') depth++
+    else if (glob[i] === '}' && --depth === 0) return i
+  }
+  throw new Error(`chave sem fechamento em ${glob}`)
+}
+
+function splitTopLevel(body) {
+  const parts = []
+  let depth = 0
+  let start = 0
+  for (let i = 0; i < body.length; i++) {
+    if (body[i] === '{') depth++
+    else if (body[i] === '}') depth--
+    else if (body[i] === ',' && depth === 0) {
+      parts.push(body.slice(start, i))
+      start = i + 1
+    }
+  }
+  parts.push(body.slice(start))
+  return parts
 }
 
 function escape(s) {
@@ -65,8 +101,8 @@ function matchFiles(globs) {
   return allFiles().filter((f) => res.some((re) => re.test(f)))
 }
 
-function countMatches(files, pattern) {
-  const re = new RegExp(pattern, 'gm')
+function countMatches(files, pattern, flags = '') {
+  const re = new RegExp(pattern, 'gm' + flags)
   const hits = []
   for (const f of files) {
     const text = readFileSync(join(ROOT, f), 'utf8')
@@ -81,8 +117,37 @@ function packageDeps() {
   return { ...pkg.dependencies, ...pkg.devDependencies }
 }
 
+function schemaErrors(item) {
+  const errs = []
+  const c = item.check
+  if (!item.id || !item.fase || !item.titulo) errs.push('falta id, fase ou titulo')
+  if (!c || !SCHEMA[c.tipo]) return errs.concat(`tipo desconhecido: ${c && c.tipo}`)
+  for (const k of SCHEMA[c.tipo]) if (c[k] === undefined) errs.push(`falta "${k}"`)
+  for (const k of Object.keys(c))
+    if (!SCHEMA[c.tipo].includes(k) && !OPTIONAL.has(k)) errs.push(`chave inesperada "${k}"`)
+  if (c.tipo === 'contem-todos' && !Array.isArray(c.padroes))
+    errs.push('"padroes" precisa ser lista')
+  if (c.minimo !== undefined && !(Number.isInteger(c.minimo) && c.minimo > 0))
+    errs.push('"minimo" precisa ser inteiro positivo')
+  if (c.flags !== undefined && !/^i?$/.test(c.flags)) errs.push('"flags" aceita só "i"')
+  if (item.validado !== undefined && !ISO_DATE.test(item.validado))
+    errs.push('"validado" precisa ser AAAA-MM-DD')
+  for (const p of [].concat(c.padrao ?? [], c.padroes ?? [])) {
+    try {
+      new RegExp(p)
+    } catch (e) {
+      errs.push(`regex inválida /${p}/: ${e.message}`)
+    }
+  }
+  return errs
+}
+
 function evaluate(item) {
   const c = item.check
+  const noFiles = () => ({
+    ok: false,
+    detalhe: `nenhum arquivo casa com ${[].concat(c.arquivos).join(', ')}`
+  })
   switch (c.tipo) {
     case 'manual':
       return item.validado
@@ -120,17 +185,17 @@ function evaluate(item) {
     }
     case 'contem-todos': {
       const files = matchFiles(c.arquivos)
-      const missing = c.padroes.filter((p) => countMatches(files, p).length === 0)
+      if (!files.length) return noFiles()
+      const missing = c.padroes.filter((p) => countMatches(files, p, c.flags).length === 0)
       return {
-        ok: files.length > 0 && missing.length === 0,
+        ok: missing.length === 0,
         detalhe: missing.length ? `faltando: ${missing.join(', ')}` : 'todos presentes'
       }
     }
     case 'contem': {
       const files = matchFiles(c.arquivos)
-      if (!files.length)
-        return { ok: false, detalhe: `nenhum arquivo casa com ${[].concat(c.arquivos).join(', ')}` }
-      const hits = countMatches(files, c.padrao)
+      if (!files.length) return noFiles()
+      const hits = countMatches(files, c.padrao, c.flags)
       const total = hits.reduce((s, h) => s + h.n, 0)
       const min = c.minimo ?? 1
       return {
@@ -140,7 +205,8 @@ function evaluate(item) {
     }
     case 'ausente': {
       const files = matchFiles(c.arquivos)
-      const hits = countMatches(files, c.padrao)
+      if (!files.length) return noFiles()
+      const hits = countMatches(files, c.padrao, c.flags)
       if (!hits.length) return { ok: true, detalhe: 'nenhuma ocorrência' }
       const top = hits
         .sort((a, b) => b.n - a.n)
@@ -152,38 +218,65 @@ function evaluate(item) {
         detalhe: `${total} ocorrência(s) em ${hits.length} arquivo(s): ${top.join(', ')}`
       }
     }
-    default:
-      return { ok: false, detalhe: `tipo de verificação desconhecido: ${c.tipo}` }
   }
 }
 
 const checklist = JSON.parse(readFileSync(CHECKLIST, 'utf8'))
+
+const ids = new Map()
+const invalid = []
+for (const it of checklist.itens) {
+  const errs = schemaErrors(it)
+  if (ids.has(it.id)) errs.push('id repetido')
+  ids.set(it.id, true)
+  if (it.fase && !checklist.fases?.[it.fase]) errs.push(`fase desconhecida: ${it.fase}`)
+  if (errs.length) invalid.push(`${it.id ?? '(sem id)'}: ${errs.join('; ')}`)
+}
+if (invalid.length) {
+  console.error('checklist.json inválido:\n  ' + invalid.join('\n  '))
+  process.exit(2)
+}
+
 const fase = option('fase')
+if (fase && !checklist.fases?.[fase]) {
+  console.error(
+    `fase desconhecida: ${fase}. Use uma de: ${Object.keys(checklist.fases).join(', ')}`
+  )
+  process.exit(2)
+}
+
 const results = checklist.itens
   .filter((it) => !fase || it.fase === fase)
   .map((it) => ({ ...it, resultado: evaluate(it) }))
+const shown = flag('pendentes') ? results.filter((r) => r.resultado.ok !== true) : results
 
 if (flag('json')) {
-  console.log(JSON.stringify(results, null, 2))
+  console.log(JSON.stringify(shown, null, 2))
 } else {
-  const icon = (r) => (r.ok === true ? '✓' : r.ok === null ? '○' : '✗')
+  const icon = (r) =>
+    r.guarda ? '◆' : r.resultado.ok === true ? '✓' : r.resultado.ok === null ? '○' : '✗'
   const byPhase = new Map()
   for (const r of results) byPhase.set(r.fase, [...(byPhase.get(r.fase) || []), r])
   for (const [f, items] of byPhase) {
     const title = checklist.fases?.[f] ?? ''
-    const done = items.filter((r) => r.resultado.ok === true).length
-    console.log(`\n${f} ${title} — ${done}/${items.length}`)
+    const progress = items.filter((r) => !r.guarda)
+    const done = progress.filter((r) => r.resultado.ok === true).length
+    console.log(`\n${f} ${title} — ${done}/${progress.length}`)
     for (const r of items) {
       if (flag('pendentes') && r.resultado.ok === true) continue
-      console.log(`  ${icon(r.resultado)} ${r.id} ${r.titulo}`)
+      console.log(`  ${icon(r)} ${r.id} ${r.titulo}`)
       if (r.resultado.ok !== true) console.log(`      ${r.resultado.detalhe}`)
     }
   }
-  const ok = results.filter((r) => r.resultado.ok === true).length
-  const manual = results.filter((r) => r.resultado.ok === null).length
-  const fail = results.length - ok - manual
+  const progress = results.filter((r) => !r.guarda)
+  const ok = progress.filter((r) => r.resultado.ok === true).length
+  const manual = progress.filter((r) => r.resultado.ok === null).length
+  const fail = progress.length - ok - manual
+  const guards = results.filter((r) => r.guarda)
+  const brokenGuards = guards.filter((r) => r.resultado.ok === false).length
   console.log(
-    `\nTotal: ${ok} ok · ${fail} faltando · ${manual} aguardando validação visual · ${results.length} itens`
+    `\nTotal: ${ok} ok · ${fail} faltando · ${manual} aguardando validação visual · ${progress.length} itens` +
+      (guards.length ? ` · ${guards.length} guardas (◆), ${brokenGuards} quebrada(s)` : '')
   )
 }
 

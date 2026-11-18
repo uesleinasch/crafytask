@@ -53,6 +53,7 @@ Este conjunto **não** é o guia de design: é o insumo dele. O estado atual da 
 8. **`#705EFF` com texto branco dá 4.44:1 e não passa AA.** (cálculo em
    [03-cor-acessibilidade-e-modo-escuro.md](03-cor-acessibilidade-e-modo-escuro.md)).
    _Implicação:_ `colorPrimary` de botão ≈ `#6854F1` (5.1:1) no claro; tom mais claro e dessaturado (≈ `#8482F2`) no escuro; `#705EFF` fica no logo.
+   _O guia decidiu:_ `#5B47EB` no claro (5,92:1) e `#8F82FF` no escuro.
 
 9. **Paleta em OKLCH, não HSL nem LCH.** Luminosidade percebida previsível e sem desvio de matiz
    na faixa do roxo ([Evil Martians](https://evilmartians.com/chronicles/oklch-in-css-why-quit-rgb-hsl);
@@ -80,6 +81,7 @@ Este conjunto **não** é o guia de design: é o insumo dele. O estado atual da 
     patch de React 19; CSS variables por padrão ([migração v6](https://ant.design/docs/react/migration-v6);
     [anúncio](https://github.com/ant-design/ant-design/issues/55804)).
     _Implicação:_ `antd@^6.7` + `@ant-design/icons@^6`; customizar por tokens e `classNames` semânticos, nunca por `.ant-*`.
+    _O guia decidiu:_ ícones continuam lucide; `@ant-design/icons` aparece só no protótipo, por rodar de CDN.
 
 15. **Uma região quebrada não pode levar o app.** Erros de render não capturados derrubam a UI;
     boundaries não pegam erro assíncrono ([React](https://react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary)).

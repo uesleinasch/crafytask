@@ -16,7 +16,7 @@ mínima de 800px impede qualquer layout estreito.
 - Adotar **Ant Design 6** (`antd@^6.7`, React 19 sem patch) como biblioteca de componentes, com
   `ConfigProvider` e `cssVar`.
 - **Paleta própria**, nunca a padrão do antd: tokens em `src/renderer/src/theme/` (base, status,
-  categoria, energia, time leak, gráficos), descritos no [guia de design](../design/guia-de-design.md).
+  categoria, energia, time leak, gráficos validados, escala de horizontes H0–H5), descritos no [guia de design](../design/guia-de-design.md).
 - **AppShell** com `Layout`/`Sider`/`Header` e `RegionBoundary` (`react-error-boundary` + `Result`)
   por região e por ilha pesada (Tiptap, Excalidraw, terminal, gráficos).
 - **Tailwind v4 continua só para layout**, em camada CSS abaixo do antd; classes de cor saem.
