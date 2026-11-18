@@ -95,6 +95,11 @@ Quanto de disposição a tarefa exige. Usado como filtro mental e alimenta o gr�
 Sobreposto: Toaster (sonner)
 ```
 
+Dentro do `Content`, a página usa `PageContainer` (`components/shell/`): 24px de margem lateral
+(12px abaixo de `md`), 20px em cima e 32px embaixo, e largura máxima de 1480px centralizada; com
+`fullWidth` a largura é livre (calendário, cadernos, modo foco). `padBlock` deixa só o padding de
+cima ou de baixo, para telas com cabeçalho fixo e conteúdo rolável, como a lista de tarefas.
+
 O shell é `components/shell/AppShell.tsx` (antd `Layout`), com as rotas aninhadas no `HashRouter`
 (`App.tsx`); `/float` e `/quick-capture` ficam fora dele. Sidebar, header e conteúdo têm cada um o
 seu `RegionBoundary`: se um quebra, os outros continuam.
@@ -248,7 +253,9 @@ Voltar às vezes é `<Button variant="ghost">` e às vezes um `<button>` cru; o 
 ```
 
 O `h-full` (não `h-screen`) é deliberado: o `Content` do shell já descontou a altura do header. O
-`pb-24` reservava espaço para o antigo `FloatingTimer`, que saiu na F1-d.
+`pb-24` reservava espaço para o antigo `FloatingTimer`, que saiu na F1-d. Telas migradas trocam o
+`p-6` pelo `PageContainer` (ver o início deste documento); a lista de tarefas já usa, com o
+cabeçalho fixo (`padBlock="top"`) e o conteúdo rolável (`padBlock="bottom"`).
 
 ### 3. Abas em pílula
 

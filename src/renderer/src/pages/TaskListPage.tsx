@@ -28,6 +28,7 @@ import { TaskMenuChangedContext } from '@renderer/components/taskMenuContext'
 import { onNewTaskRequest } from '@renderer/lib/newTaskRequest'
 import { cn } from '@renderer/lib/utils'
 import { StatusTabLabel } from '@renderer/components/tasks/StatusTabLabel'
+import { PageContainer } from '@renderer/components/shell/PageContainer'
 import { TaskFilters } from '@renderer/components/tasks/TaskFilters'
 import {
   EMPTY_TASK_FILTERS,
@@ -427,7 +428,7 @@ export function TaskListPage(): React.JSX.Element {
 
   return (
     <div className="flex flex-col h-full overflow-hidden bg-slate-50">
-      <div className="px-6 pt-4 pb-2">
+      <PageContainer padBlock="top">
         {screens.md === false ? (
           <Select
             value={statusFilter}
@@ -517,12 +518,12 @@ export function TaskListPage(): React.JSX.Element {
             ]}
           />
         </Flex>
-      </div>
+      </PageContainer>
 
       {/* Content */}
       <TaskMenuChangedContext.Provider value={handleMenuChanged}>
       <ScrollArea className="flex-1 h-0">
-        <div className="p-6 pt-2 pb-24">
+        <PageContainer padBlock="bottom" style={{ paddingTop: 12 }}>
           {!loading && tasks.length > 0 && (
             <div
               className={cn(
@@ -685,7 +686,7 @@ export function TaskListPage(): React.JSX.Element {
               Carregando mais {remaining} {remaining === 1 ? 'tarefa' : 'tarefas'}...
             </div>
           )}
-        </div>
+        </PageContainer>
       </ScrollArea>
       </TaskMenuChangedContext.Provider>
 
