@@ -1,4 +1,5 @@
-import { Layout, theme } from 'antd'
+import { Drawer, Grid, Layout, theme } from 'antd'
+import { useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { FloatingTimer } from '@renderer/components/FloatingTimer'
 import { SyncNotification } from '@renderer/components/SyncNotification'
@@ -21,29 +22,55 @@ export function AppShell(): React.JSX.Element {
   const location = useLocation()
   const { token } = theme.useToken()
   const [collapsed, setCollapsed] = usePersistedState('ticktask:siderCollapsed', false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const screens = Grid.useBreakpoint()
+  const drawerMode = screens.md === false
+  const forceCollapsed = screens.lg === false
   useShellEvents()
+
+  useEffect(() => {
+    if (!drawerMode) setDrawerOpen(false)
+  }, [drawerMode])
 
   return (
     <Layout hasSider style={{ height: '100vh' }}>
-      <Sider
-        width={SIDER_WIDTH}
-        collapsedWidth={SIDER_COLLAPSED_WIDTH}
-        collapsible
-        collapsed={collapsed}
-        trigger={null}
-        theme="light"
-        style={{ borderInlineEnd: `1px solid ${token.colorBorderSecondary}` }}
-      >
-        <RegionBoundary region="navegação">
-          <SiderNav collapsed={collapsed} onToggleCollapsed={() => setCollapsed(!collapsed)} />
-        </RegionBoundary>
-      </Sider>
+      {drawerMode ? (
+        <Drawer
+          placement="left"
+          size={SIDER_WIDTH}
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          closable={false}
+          styles={{ body: { padding: 0 } }}
+        >
+          <RegionBoundary region="navegação">
+            <SiderNav collapsed={false} onNavigate={() => setDrawerOpen(false)} />
+          </RegionBoundary>
+        </Drawer>
+      ) : (
+        <Sider
+          width={SIDER_WIDTH}
+          collapsedWidth={SIDER_COLLAPSED_WIDTH}
+          collapsible
+          collapsed={forceCollapsed || collapsed}
+          trigger={null}
+          theme="light"
+          style={{ borderInlineEnd: `1px solid ${token.colorBorderSecondary}` }}
+        >
+          <RegionBoundary region="navegação">
+            <SiderNav
+              collapsed={forceCollapsed || collapsed}
+              onToggleCollapsed={forceCollapsed ? undefined : () => setCollapsed(!collapsed)}
+            />
+          </RegionBoundary>
+        </Sider>
+      )}
       <Layout style={{ minWidth: 0 }}>
         <Header
           style={{ borderBottom: `1px solid ${token.colorBorderSecondary}`, lineHeight: 'normal' }}
         >
           <RegionBoundary region="barra superior">
-            <ShellHeader />
+            <ShellHeader onOpenMenu={drawerMode ? () => setDrawerOpen(true) : undefined} />
           </RegionBoundary>
         </Header>
         <Content style={{ minHeight: 0, overflow: 'hidden' }}>
