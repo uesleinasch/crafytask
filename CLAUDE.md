@@ -34,6 +34,11 @@ fala com o assistente, e o antigo `ticktask` confundia.
   inconsistencies. Start at `docs/ui/README.md`. **Read the relevant screen doc before touching a
   page** — it records behaviour that isn't obvious from the JSX (persisted preferences, why the float
   appears, which colors disagree with which).
+- **Design review is mandatory.** Every change to a screen, visual component, theme, tokens or
+  design docs loads the project skill `design-crafytask` before starting and runs the project
+  agent `design-reviewer` (`.claude/agents/`) on the branch diff before opening the PR; fix what it
+  reports or write down why not in the PR. A prototype feature that doesn't exist in the code and
+  has no subtask becomes a new subtask of CrafyTask #745 (the visual refactor epic).
 - **`docs/design/`** — the **target** interface of the visual refactor to Ant Design (pt-BR):
   `guia-de-design.md` (rules), `plano-de-refatoracao.md` (phases F0–F9, one subtask per PR, where the
   code lives), `prototipo/index.html` (the prototype the user approved) and `prototipo/checklist.json`,

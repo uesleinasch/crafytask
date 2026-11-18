@@ -40,7 +40,8 @@ Desempate: guia e protótipo discordando, vale o protótipo e o guia é corrigid
 9. Tempo, ids e contadores usam Geist Mono tabular; números de painel (dashboard) usam Geist proporcional.
 10. Gráfico novo ou paleta nova: carregue a skill `dataviz` e rode o `validate_palette.js` dela nos dois temas, com as superfícies do guia. Barra ordenada no lugar de pizza, rosca ou funil.
 11. Rode `npm run typecheck && npm run lint && npm run test` e `npm run design:audit -- --fase=<fase>`.
-12. Peça ao usuário para validar o visual no app rodando (`npm run dev`). Não automatize o navegador. Teste verde não é validação visual.
+12. Antes de abrir o PR, rode o agente `design-reviewer` (`.claude/agents/design-reviewer.md`) sobre o diff da branch e trate o que ele apontar. Recurso do protótipo que não existe no código nem tem subtarefa vira subtarefa nova do épico #745 no CrafyTask.
+13. Peça ao usuário para validar o visual no app rodando (`npm run dev`). Não automatize o navegador. Teste verde não é validação visual.
 
 ## Verificar: o protótipo foi implementado?
 
