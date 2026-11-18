@@ -182,6 +182,69 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
 .ct-rvtimeline { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 12px; }
 .ct-rvday { padding: 10px 12px; border: 1px solid var(--ct-border); border-radius: 12px; min-width: 0; }
 .ct-rvsummary { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
+:root { --ct-cal-block: #EFEDFF; --ct-cal-block-b: #C9C1FF; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ct-cal-block: #252047; --ct-cal-block-b: #3E3770; } }
+:root[data-theme="dark"] { --ct-cal-block: #252047; --ct-cal-block-b: #3E3770; }
+.ct-calscroll { position: relative; overflow: auto; max-height: calc(100vh - 200px); min-height: 360px; border: 1px solid var(--ct-border); border-radius: 12px; background: var(--ct-surface); }
+.ct-calsticky { position: sticky; top: 0; z-index: 8; background: var(--ct-surface); border-bottom: 1px solid var(--ct-border); min-width: max-content; }
+.ct-calhead, .ct-calallday, .ct-calgrid { display: grid; min-width: 100%; }
+.ct-calhead-day { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 6px 6px; min-width: 0; }
+.ct-calhead-btn { display: inline-flex; align-items: center; gap: 6px; border: 0; background: transparent; color: var(--ct-text); font: inherit; cursor: pointer; padding: 2px 6px; border-radius: 8px; }
+.ct-calhead-btn:hover { background: var(--ct-bg); }
+.ct-calnum { display: inline-grid; place-items: center; min-width: 28px; height: 28px; padding: 0 4px; border-radius: 999px; font-weight: 600; font-size: 15px; border: 0; background: transparent; color: var(--ct-text); font-family: inherit; cursor: pointer; }
+.ct-calnum.sm { min-width: 24px; height: 24px; font-size: 13px; font-weight: 500; }
+.ct-calnum.today { background: var(--ct-primary); color: #FFFFFF; }
+:root[data-theme="dark"] .ct-calnum.today { color: #111018; }
+.ct-calload { width: 100%; max-width: 120px; height: 4px; border-radius: 4px; background: var(--ct-bg); overflow: hidden; }
+.ct-calload span { display: block; height: 100%; border-radius: 4px; }
+.ct-calallday { border-top: 1px solid var(--ct-border); }
+.ct-calallday-cell { display: flex; flex-direction: column; gap: 3px; padding: 4px; min-height: 30px; min-width: 0; border-left: 1px solid var(--ct-border); }
+.ct-calhour { position: absolute; right: 8px; transform: translateY(-7px); font-family: var(--ct-mono); font-size: 11px; color: var(--ct-text-3); }
+.ct-calallday > .ct-calhour { position: static; text-align: right; padding-right: 8px; font-family: inherit; }
+.ct-calgrid { position: relative; min-width: max-content; }
+.ct-calcol { position: relative; border-left: 1px solid var(--ct-border); background-image: linear-gradient(to bottom, var(--ct-border) 1px, transparent 1px); cursor: cell; }
+.ct-calcol.weekend { background-color: var(--ct-bg); }
+.ct-calblock { position: relative; height: 100%; overflow: hidden; padding: 3px 6px 6px; border-radius: 6px; background: var(--ct-cal-block); border: 1px solid var(--ct-cal-block-b); color: var(--ct-text); font-size: 12px; line-height: 1.3; cursor: grab; touch-action: none; user-select: none; }
+.ct-calblock:hover { border-color: var(--ct-primary); }
+.ct-calblock.event { background: var(--ct-surface); border-color: var(--ct-border-strong); }
+.ct-calblock.leak { background: var(--ct-leak-1); border-color: var(--ct-border-strong); }
+.ct-calblock.done { opacity: .6; }
+.ct-calblock.done .ct-calblock-title span:last-child { text-decoration: line-through; }
+.ct-calblock.dragging { cursor: grabbing; box-shadow: 0 8px 24px rgba(17,16,24,.18); border-color: var(--ct-primary); opacity: .92; }
+.ct-calblock-title { display: flex; align-items: center; gap: 4px; font-weight: 500; min-width: 0; }
+.ct-calblock-title .anticon { font-size: 11px; flex: none; }
+.ct-calblock-time { font-size: 11px; color: var(--ct-text-2); margin-top: 1px; }
+.ct-calblock-resize { position: absolute; left: 0; right: 0; bottom: 0; height: 6px; cursor: ns-resize; }
+.ct-calblock-resize::after { content: ""; position: absolute; left: 50%; bottom: 2px; width: 16px; height: 2px; margin-left: -8px; border-radius: 2px; background: var(--ct-border-strong); opacity: 0; }
+.ct-calblock:hover .ct-calblock-resize::after { opacity: 1; }
+.ct-calsession { position: absolute; right: 1px; width: 4px; border-radius: 2px; background: var(--ct-primary); z-index: 3; }
+.ct-calsession.running { background: repeating-linear-gradient(to bottom, var(--ct-primary) 0 4px, transparent 4px 6px); }
+.ct-calnow { position: absolute; left: 0; right: 0; height: 2px; background: var(--ct-primary); z-index: 6; pointer-events: none; }
+.ct-calnow::before { content: ""; position: absolute; left: -5px; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--ct-primary); }
+.ct-calchip { display: flex; align-items: center; gap: 5px; width: 100%; min-width: 0; height: 22px; padding: 0 6px; border: 1px solid var(--ct-border); border-radius: 6px; background: var(--ct-bg); color: var(--ct-text); font: inherit; font-size: 12px; text-align: left; cursor: grab; }
+.ct-calchip:hover { border-color: var(--ct-border-strong); }
+.ct-calchip.due { background: var(--ct-surface); border-style: dashed; }
+.ct-calmore { border: 0; background: transparent; color: var(--ct-text-2); font: inherit; font-size: 12px; text-align: left; padding: 0 6px; cursor: pointer; }
+.ct-calmore:hover { color: var(--ct-primary); }
+.ct-calmonth { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border: 1px solid var(--ct-border); border-radius: 12px; overflow: hidden; background: var(--ct-surface); }
+.ct-calmonth-wd { padding: 8px; font-size: 12px; color: var(--ct-text-3); border-bottom: 1px solid var(--ct-border); }
+.ct-calmonth-cell { min-height: 112px; padding: 6px; display: flex; flex-direction: column; gap: 3px; border-right: 1px solid var(--ct-border); border-bottom: 1px solid var(--ct-border); min-width: 0; }
+.ct-calmonth-cell:nth-child(7n + 7) { border-right: 0; }
+.ct-calmonth-cell.out { background: var(--ct-bg); }
+.ct-calmonth-cell.out .ct-calnum { color: var(--ct-text-3); }
+.ct-calagenda { display: flex; flex-direction: column; border: 1px solid var(--ct-border); border-radius: 12px; background: var(--ct-surface); }
+.ct-calagenda-day { display: flex; gap: 16px; padding: 12px 16px; border-bottom: 1px solid var(--ct-border); }
+.ct-calagenda-day:last-child { border-bottom: 0; }
+.ct-calagenda-date { width: 56px; flex: none; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 12px; }
+.ct-calagenda-item { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 6px 8px; border: 0; border-radius: 8px; background: transparent; color: var(--ct-text); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.ct-calagenda-item:hover { background: var(--ct-bg); }
+.ct-calsw { display: inline-block; width: 14px; height: 12px; border-radius: 3px; flex: none; }
+.ct-calside { width: 272px; flex: none; display: flex; flex-direction: column; gap: 10px; position: sticky; top: 0; }
+.ct-drawer-body .ct-calside, .ant-drawer-body .ct-calside { width: 100%; position: static; }
+.ct-calplan { display: flex; align-items: center; gap: 8px; padding: 8px; border: 1px solid var(--ct-border); border-radius: 8px; background: var(--ct-surface); cursor: grab; }
+.ct-calplan:hover { border-color: var(--ct-border-strong); }
+.ct-calplan-grip { color: var(--ct-text-3); }
+.ct-calempty { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: var(--ct-elevated); border: 1px solid var(--ct-border); color: var(--ct-text-2); font-size: 13px; pointer-events: none; z-index: 9; max-width: 90%; }
 </style>
 <div id="root"><div class="ct-boot">Carregando protótipo…</div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
@@ -456,8 +519,8 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
   ];
   const ROUTE_DOCS = { calendario: '04-calendario', revisao: '07-revisao-semanal', horizontes: '06-horizontes', rotulos: '09-contextos-e-tags', cadernos: '17-cadernos', dashboard: '08-dashboard', arquivo: '10-arquivadas', ajustes: '11-configuracoes' };
   const ROUTE_OF = Object.fromEntries(NAV.flatMap(g => g.children).concat(NAV_FOOT).map(i => [i.key, i]));
-  const TITLES = { tarefas: 'Tarefas', tarefa: 'Tarefa', hoje: 'Hoje', projetos: 'Projetos', projeto: 'Projeto', ajustes: 'Configurações', horizontes: 'Horizontes', rotulos: 'Contextos e tags', identidade: 'Identidade visual', dashboard: 'Dashboard', revisao: 'Revisão semanal' };
-  const BUILT = ['tarefas', 'tarefa', 'hoje', 'projetos', 'projeto', 'ajustes', 'horizontes', 'rotulos', 'dashboard', 'revisao', 'identidade'];
+  const TITLES = { tarefas: 'Tarefas', tarefa: 'Tarefa', hoje: 'Hoje', projetos: 'Projetos', projeto: 'Projeto', ajustes: 'Configurações', horizontes: 'Horizontes', rotulos: 'Contextos e tags', identidade: 'Identidade visual', dashboard: 'Dashboard', revisao: 'Revisão semanal', calendario: 'Calendário' };
+  const BUILT = ['tarefas', 'tarefa', 'hoje', 'projetos', 'projeto', 'ajustes', 'horizontes', 'rotulos', 'dashboard', 'revisao', 'calendario', 'identidade'];
 
   function toMenu(items, collapsed) {
     return items.map(it => it.type === 'group'
@@ -564,6 +627,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       : route === 'ajustes' ? html`<${SettingsPage} mode=${mode} isMobile=${isMobile} screens=${screens} themePref=${themePref} setThemePref=${setThemePref} compact=${compact} setCompact=${setCompact} />`
       : route === 'horizontes' ? html`<${HorizonsPage} mode=${mode} go=${go} isMobile=${isMobile} screens=${screens} openProject=${openProject} />`
       : route === 'rotulos' ? html`<${LabelsPage} mode=${mode} go=${go} isMobile=${isMobile} screens=${screens} />`
+      : route === 'calendario' ? html`<${CalendarPage} key=${screens.lg ? 'w' : screens.md ? 'm' : 's'} mode=${mode} go=${go} isMobile=${isMobile} screens=${screens} compact=${compact} />`
       : route === 'revisao' ? html`<${WeeklyReviewPage} mode=${mode} go=${go} isMobile=${isMobile} screens=${screens} openProject=${openProject} />`
       : route === 'dashboard' ? html`<${DashboardPage} mode=${mode} go=${go} isMobile=${isMobile} screens=${screens} openProject=${openProject} />`
       : route === 'identidade' ? html`<${IdentityPage} mode=${mode} />`
@@ -3137,6 +3201,363 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
             </div>
           </div>`
         : html`<${Flex} vertical gap=${12}>${mobileNav}${panel}${side}<//>`}
+    </div>`;
+  }
+
+  const CAL_NOW = '16:20';
+  const CAL_RANGE = [7, 22];
+  const WORKDAY_H = 8;
+  const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+  const fromMin = m => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+  const durTxt = m => m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? String(m % 60).padStart(2, '0') : ''}` : `${m} min`;
+  const weekStartOf = d => d.subtract((d.day() + 6) % 7, 'day').startOf('day');
+  const CAL_SEED = [
+    { id: 1, kind: 'block', task: 705, date: '2026-11-16', start: '09:00', end: '09:15' },
+    { id: 2, kind: 'block', task: 711, date: '2026-11-16', start: '10:00', end: '12:30', gcal: true },
+    { id: 3, kind: 'event', task: 698, date: '2026-11-16', start: '14:00', end: '15:00' },
+    { id: 4, kind: 'block', task: 705, date: '2026-11-17', start: '09:00', end: '09:15' },
+    { id: 5, kind: 'block', task: 711, date: '2026-11-17', start: '09:00', end: '12:00', gcal: true },
+    { id: 6, kind: 'block', task: 731, date: '2026-11-17', start: '14:00', end: '15:30' },
+    { id: 7, kind: 'event', task: 702, date: '2026-11-17', start: '14:00', end: '15:00' },
+    { id: 8, kind: 'block', task: 711, date: '2026-11-17', start: '16:00', end: '18:00', gcal: true },
+    { id: 10, kind: 'block', task: 705, date: '2026-11-18', start: '09:00', end: '09:15' },
+    { id: 11, kind: 'block', task: 731, date: '2026-11-18', start: '09:30', end: '11:00' },
+    { id: 12, kind: 'block', task: 705, date: '2026-11-19', start: '09:00', end: '09:15' },
+    { id: 13, kind: 'block', task: 708, date: '2026-11-19', start: '09:30', end: '11:30' },
+    { id: 14, kind: 'event', task: 712, date: '2026-11-19', start: '15:00', end: '15:30' },
+    { id: 16, kind: 'block', task: 705, date: '2026-11-20', start: '09:00', end: '09:15' },
+    { id: 17, kind: 'block', task: 711, date: '2026-11-20', start: '13:00', end: '17:00', gcal: true }
+  ];
+  const CAL_SESSIONS = [
+    { task: 705, date: '2026-11-16', start: '09:00', end: '09:40' },
+    { task: 711, date: '2026-11-16', start: '13:42', end: '14:04' },
+    { task: 705, date: '2026-11-17', start: '09:00', end: '10:13' },
+    { task: 711, date: '2026-11-17', start: '10:08', end: '12:20' },
+    { task: 711, date: '2026-11-17', start: '16:03', end: CAL_NOW, running: true }
+  ];
+  const CAL_ALLDAY = [
+    { id: 'a1', kind: 'scheduled', task: 710, date: '2026-11-18' },
+    { id: 'a2', kind: 'scheduled', task: 709, date: '2026-11-21' }
+  ];
+  const CAL_SHOW = [
+    { key: 'block', label: 'Blocos de tempo', swatch: 'block' },
+    { key: 'event', label: 'Tarefas com horário', swatch: 'event' },
+    { key: 'scheduled', label: 'Agendadas sem horário', swatch: 'chip' },
+    { key: 'due', label: 'Prazos', swatch: 'due' },
+    { key: 'sessions', label: 'Sessões registradas', swatch: 'session' },
+    { key: 'weekend', label: 'Fins de semana', swatch: null }
+  ];
+
+  function layoutDay(items) {
+    const sorted = items.slice().sort((a, b) => toMin(a.start) - toMin(b.start) || toMin(b.end) - toMin(a.end));
+    const out = []; let cluster = []; let clusterEnd = -1;
+    const flush = () => { const cols = []; cluster.forEach(it => { let c = cols.findIndex(end => end <= toMin(it.start)); if (c < 0) { c = cols.length; cols.push(0); } cols[c] = toMin(it.end); it._col = c; }); cluster.forEach(it => { it._cols = cols.length; out.push(it); }); cluster = []; };
+    sorted.forEach(it => { const it2 = { ...it }; if (cluster.length && toMin(it2.start) >= clusterEnd) flush(); cluster.push(it2); clusterEnd = Math.max(clusterEnd, toMin(it2.end)); });
+    flush();
+    return out;
+  }
+
+  function CalSwatch({ kind, mode }) {
+    if (kind === 'block') return html`<span className="ct-calsw ct-calblock" style=${{ position: 'static' }}></span>`;
+    if (kind === 'event') return html`<span className="ct-calsw ct-calblock event" style=${{ position: 'static' }}></span>`;
+    if (kind === 'chip') return html`<span className="ct-calsw" style=${{ background: 'var(--ct-bg)', border: '1px solid var(--ct-border-strong)' }}></span>`;
+    if (kind === 'due') return html`<${I.FlagOutlined} style=${{ color: STATUS.aguardando[mode][0] }} />`;
+    if (kind === 'session') return html`<span className="ct-calsw" style=${{ width: 4, background: 'var(--ct-primary)' }}></span>`;
+    return null;
+  }
+
+  function CalendarPage({ mode, go, isMobile, screens, compact }) {
+    const { message, modal } = AntApp.useApp();
+    const [cursor, setCursor] = useState(() => dayjs(TODAY));
+    const defView = screens.lg ? 'week' : screens.md ? '3days' : 'day';
+    const [view, setView] = useState(defView);
+    const [items, setItems] = useState(CAL_SEED);
+    const [allday, setAllday] = useState(CAL_ALLDAY);
+    const [dueMap, setDueMap] = useState(() => Object.fromEntries(TASKS.filter(t => t.due && t.status !== 'finalizada').map(t => [t.id, t.due])));
+    const [show, setShow] = useState(() => new Set(['block', 'event', 'scheduled', 'due', 'sessions', 'weekend']));
+    const [panel, setPanel] = useState(!!screens.xl);
+    const [openId, setOpenId] = useState(null);
+    const [draft, setDraft] = useState(null);
+    const [drag, setDrag] = useState(null);
+    const [panelQ, setPanelQ] = useState('');
+    const hourH = compact ? 40 : 48;
+    const pxMin = hourH / 60;
+    const [h0, h1] = CAL_RANGE;
+    const gridRef = React.useRef(null);
+    const scrollRef = React.useRef(null);
+    const T = id => TASKS.find(t => t.id === id) || { id, name: 'Tarefa', project: null, category: 'normal', status: 'proximas' };
+
+    useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = Math.max(0, (toMin(CAL_NOW) - h0 * 60) * pxMin - 160); }, [view]);
+
+    const days = view === 'week' ? Array.from({ length: 7 }, (_, i) => weekStartOf(cursor).add(i, 'day'))
+      : view === '3days' ? Array.from({ length: 3 }, (_, i) => cursor.add(i, 'day'))
+      : view === 'day' ? [cursor] : [];
+    const visibleDays = show.has('weekend') || view !== 'week' ? days : days.filter(d => d.day() !== 0 && d.day() !== 6);
+    const step = { week: [1, 'week'], '3days': [3, 'day'], day: [1, 'day'], month: [1, 'month'], agenda: [14, 'day'] }[view];
+    const label = view === 'month' ? cursor.format('MMMM [de] YYYY')
+      : view === 'day' ? cursor.format('dddd, D [de] MMMM')
+      : view === 'agenda' ? `${cursor.format('D MMM')} – ${cursor.add(13, 'day').format('D MMM YYYY')}`
+      : (() => { const a = days[0], b = days[days.length - 1]; return a.month() === b.month() ? `${a.format('D')}–${b.format('D [de] MMMM [de] YYYY')}` : `${a.format('D MMM')} – ${b.format('D MMM YYYY')}`; })();
+
+    const ofDay = d => { const k = d.format('YYYY-MM-DD'); return items.filter(b => b.date === k && show.has(b.kind)); };
+    const plannedMin = d => { const k = d.format('YYYY-MM-DD'); return items.filter(b => b.date === k && b.kind === 'block').reduce((a, b) => a + toMin(b.end) - toMin(b.start), 0); };
+    const alldayOf = d => { const k = d.format('YYYY-MM-DD');
+      const sch = show.has('scheduled') ? allday.filter(a => a.date === k).map(a => ({ ...a, t: T(a.task) })) : [];
+      const due = show.has('due') ? Object.entries(dueMap).filter(([, v]) => v === k).map(([id]) => ({ id: 'd' + id, kind: 'due', task: +id, t: T(+id) })) : [];
+      return sch.concat(due); };
+
+    const updateItem = (id, patch) => setItems(xs => xs.map(b => b.id === id ? { ...b, ...patch } : b));
+    const removeItem = b => { setItems(xs => xs.filter(x => x.id !== b.id)); setOpenId(null);
+      message.success({ content: html`<span>Bloco excluído · <a onClick=${() => { setItems(xs => xs.concat([b])); message.destroy('undo'); }}>Desfazer</a></span>`, key: 'undo', duration: 5 }); };
+    const createAt = (d, startMin, taskId) => {
+      const s = Math.min(Math.max(h0 * 60, Math.round(startMin / 15) * 15), h1 * 60 - 60);
+      if (taskId) { const id = Date.now(); setItems(xs => xs.concat([{ id, kind: 'block', task: taskId, date: d.format('YYYY-MM-DD'), start: fromMin(s), end: fromMin(s + 60) }])); message.success(`Bloco de 1h para ${T(taskId).name}`); return; }
+      setDraft({ date: d, start: fromMin(s), end: fromMin(s + 60), task: null });
+    };
+
+    const onPointerDown = (e, b, kind) => {
+      if (e.button !== 0) return;
+      e.stopPropagation();
+      const grid = gridRef.current; const cols = grid ? grid.querySelectorAll('.ct-calcol') : [];
+      const dayW = cols.length ? cols[0].getBoundingClientRect().width : 120;
+      setDrag({ id: b.id, kind, x: e.clientX, y: e.clientY, dx: 0, dy: 0, dayW, orig: b });
+    };
+    useEffect(() => {
+      if (!drag) return;
+      const move = e => setDrag(d => d && { ...d, dx: e.clientX - d.x, dy: e.clientY - d.y });
+      const up = () => setDrag(d => {
+        if (!d) return null;
+        const moved = Math.abs(d.dx) > 4 || Math.abs(d.dy) > 4;
+        if (!moved) { setOpenId(d.id); return null; }
+        const dm = Math.round(d.dy / pxMin / 15) * 15;
+        const o = d.orig, len = toMin(o.end) - toMin(o.start);
+        if (d.kind === 'resize') { const end = Math.min(h1 * 60, Math.max(toMin(o.start) + 15, toMin(o.end) + dm)); updateItem(o.id, { end: fromMin(end) }); message.success(`${T(o.task).name}: até ${fromMin(end)}`); }
+        else { const dd = view === 'day' ? 0 : Math.round(d.dx / d.dayW); const s = Math.min(h1 * 60 - len, Math.max(h0 * 60, toMin(o.start) + dm)); const date = dayjs(o.date).add(dd, 'day').format('YYYY-MM-DD');
+          updateItem(o.id, { start: fromMin(s), end: fromMin(s + len), date }); message.success(`Movido para ${dayjs(date).format('ddd DD/MM')}, ${fromMin(s)}`); }
+        return null;
+      });
+      window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+      return () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    }, [!!drag]);
+
+    const preview = b => {
+      if (!drag || drag.id !== b.id) return b;
+      const dm = Math.round(drag.dy / pxMin / 15) * 15; const len = toMin(b.end) - toMin(b.start);
+      if (drag.kind === 'resize') return { ...b, end: fromMin(Math.min(h1 * 60, Math.max(toMin(b.start) + 15, toMin(b.end) + dm))) };
+      const s = Math.min(h1 * 60 - len, Math.max(h0 * 60, toMin(b.start) + dm));
+      return { ...b, start: fromMin(s), end: fromMin(s + len), _dx: view === 'day' ? 0 : Math.round(drag.dx / drag.dayW) * drag.dayW };
+    };
+
+    const blockMenu = b => ({ items: [
+      { key: 'open', icon: createElement(I.ExportOutlined), label: 'Abrir tarefa' },
+      { key: 'timer', icon: createElement(I.PlayCircleOutlined), label: 'Iniciar timer' },
+      { key: 'dup', icon: createElement(I.CopyOutlined), label: 'Repetir no dia seguinte' },
+      { type: 'divider' },
+      { key: 'del', icon: createElement(I.DeleteOutlined), label: 'Excluir bloco', danger: true }
+    ], onClick: ({ key, domEvent }) => { if (domEvent) domEvent.stopPropagation();
+      if (key === 'open') go('tarefa');
+      if (key === 'timer') message.success('Timer iniciado: ' + T(b.task).name);
+      if (key === 'dup') { setItems(xs => xs.concat([{ ...b, id: Date.now(), date: dayjs(b.date).add(1, 'day').format('YYYY-MM-DD') }])); message.success('Bloco repetido em ' + dayjs(b.date).add(1, 'day').format('ddd DD/MM')); }
+      if (key === 'del') removeItem(b); } });
+
+    const blockPop = b => { const t = T(b.task); const len = toMin(b.end) - toMin(b.start);
+      return html`<div style=${{ width: 280, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <${Flex} align="center" gap=${8}><${Tag} bordered=${false}>${b.kind === 'event' ? 'Tarefa com horário' : 'Bloco de tempo'}<//>${b.gcal ? html`<${Tooltip} title="Na agenda TickTask do Google"><${I.GoogleOutlined} style=${{ color: 'var(--ct-text-3)' }} /><//>` : null}<//>
+        <a onClick=${() => go('tarefa')} style=${{ color: 'var(--ct-text)', fontWeight: 600, fontSize: 15 }}>${t.name}</a>
+        <${Flex} gap=${10} wrap="wrap" align="center" style=${{ fontSize: 12 }}><${ProjectLabel} id=${t.project} /><${Chip} def=${STATUS[t.status]} mode=${mode} />${t.category !== 'normal' ? html`<${Chip} def=${CATEGORY[t.category]} mode=${mode} />` : null}<//>
+        <${Flex} align="center" gap=${8}>
+          <${TimePicker.RangePicker} size="small" format="HH:mm" minuteStep=${15} value=${[dayjs(b.date + ' ' + b.start), dayjs(b.date + ' ' + b.end)]} allowClear=${false}
+            onChange=${v => v && updateItem(b.id, { start: v[0].format('HH:mm'), end: v[1].format('HH:mm') })} style=${{ flex: 1 }} aria-label="Horário" />
+          <span className="ct-mono" style=${{ fontSize: 12, color: 'var(--ct-text-3)' }}>${durTxt(len)}</span>
+        <//>
+        <${Flex} gap=${6} wrap="wrap">
+          <${Button} size="small" type="primary" icon=${html`<${I.PlayCircleOutlined} />`} onClick=${() => { setOpenId(null); message.success('Timer iniciado: ' + t.name); }}>Iniciar timer<//>
+          <${Button} size="small" icon=${html`<${I.ExportOutlined} />`} onClick=${() => go('tarefa')}>Abrir<//>
+          <${Button} size="small" type="text" danger icon=${html`<${I.DeleteOutlined} />`} aria-label="Excluir bloco" onClick=${() => removeItem(b)} />
+        <//>
+      </div>`; };
+
+    const blockEl = (raw, d) => { const b = preview(raw); const t = T(b.task);
+      const top = (toMin(b.start) - h0 * 60) * pxMin, height = Math.max(18, (toMin(b.end) - toMin(b.start)) * pxMin - 2);
+      const w = 100 / b._cols, left = b._col * w;
+      const leak = t.category === 'time_leak', done = t.status === 'finalizada', running = t.running && b.date === TODAY && toMin(b.start) <= toMin(CAL_NOW) && toMin(b.end) >= toMin(CAL_NOW);
+      const catIcon = t.category === 'urgente' ? 'FireOutlined' : t.category === 'prioridade' ? 'FlagOutlined' : leak ? 'FieldTimeOutlined' : null;
+      const short = height < 34;
+      return html`<${Dropdown} key=${b.id} menu=${blockMenu(raw)} trigger=${['contextMenu']}>
+        <div style=${{ position: 'absolute', top, height, left: `calc(${left}% + 2px)`, width: `calc(${w}% - 4px)`, transform: b._dx ? `translateX(${b._dx}px)` : null, zIndex: drag && drag.id === b.id ? 5 : openId === b.id ? 4 : 2 }}>
+          <${Popover} open=${openId === b.id} onOpenChange=${o => !o && setOpenId(null)} trigger="click" placement=${screens.md ? 'right' : 'bottom'} content=${blockPop(raw)} destroyTooltipOnHide>
+            <div role="button" tabIndex=${0} className=${'ct-calblock' + (b.kind === 'event' ? ' event' : '') + (leak ? ' leak' : '') + (done ? ' done' : '') + (drag && drag.id === b.id ? ' dragging' : '')}
+              aria-label=${`${t.name}, ${b.start} a ${b.end}${b.kind === 'event' ? ', tarefa com horário' : ', bloco de tempo'}`}
+              onPointerDown=${e => onPointerDown(e, raw, 'move')} onKeyDown=${e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpenId(b.id); } if (e.key === 'Delete') removeItem(raw); }}>
+              <div className="ct-calblock-title">
+                ${running ? html`<span className="ct-live" style=${{ width: 7, height: 7 }}></span>` : null}
+                ${t.project ? html`<span className="ct-dot" style=${{ background: P[t.project].color, width: 6, height: 6 }}></span>` : null}
+                ${b.kind === 'event' ? html`<${I.CalendarOutlined} />` : null}${catIcon ? createElement(I[catIcon], { style: { color: CATEGORY[t.category][mode][0] } }) : null}${done ? html`<${I.CheckOutlined} />` : null}
+                <span className="ct-ellipsis">${t.name}</span>
+              </div>
+              ${short ? null : html`<div className="ct-calblock-time ct-mono">${b.start}–${b.end}${b.gcal ? html` <${I.GoogleOutlined} style=${{ fontSize: 10 }} />` : null}</div>`}
+              <span className="ct-calblock-resize" aria-hidden="true" onPointerDown=${e => onPointerDown(e, raw, 'resize')}></span>
+            </div>
+          <//>
+        </div>
+      <//>`; };
+
+    const sessionsEl = d => { if (!show.has('sessions')) return null; const k = d.format('YYYY-MM-DD');
+      return CAL_SESSIONS.filter(s => s.date === k).map((s, i) => html`<${Tooltip} key=${'s' + i} title=${`Sessão ${s.start}–${s.running ? 'agora' : s.end} · ${T(s.task).name}`} placement="right">
+        <span className=${'ct-calsession' + (s.running ? ' running' : '')} style=${{ top: (toMin(s.start) - h0 * 60) * pxMin, height: Math.max(3, (toMin(s.end) - toMin(s.start)) * pxMin) }}></span><//>`); };
+
+    const chip = (a, small) => { const t = a.t; const isDue = a.kind === 'due'; const overdue = isDue && a.task && dueMap[a.task] < TODAY; const today = isDue && dueMap[a.task] === TODAY;
+      const tone = overdue ? CATEGORY.urgente[mode][0] : today ? STATUS.aguardando[mode][0] : 'var(--ct-text-3)';
+      return html`<button key=${a.id} type="button" className=${'ct-calchip' + (isDue ? ' due' : '')} draggable="true" onDragStart=${e => { e.dataTransfer.setData('text/plain', JSON.stringify({ chip: a.id, kind: a.kind, task: a.task })); }} onClick=${() => go('tarefa')}
+        title=${(isDue ? 'Prazo: ' : 'Agendada: ') + t.name + (t.dueTime && isDue ? ' às ' + t.dueTime : '')}>
+        ${isDue ? html`<${I.FlagOutlined} style=${{ color: tone }} />` : t.project ? html`<span className="ct-dot" style=${{ background: P[t.project].color, width: 6, height: 6 }}></span>` : null}
+        <span className="ct-ellipsis">${t.name}</span>${isDue && t.dueTime && !small ? html`<span className="ct-mono" style=${{ color: 'var(--ct-text-3)' }}>${t.dueTime}</span>` : null}
+      </button>`; };
+    const dropOnDay = (e, d) => { e.preventDefault(); let data; try { data = JSON.parse(e.dataTransfer.getData('text/plain')); } catch (x) { return; } const k = d.format('YYYY-MM-DD');
+      if (data.chip) { if (data.kind === 'due') { setDueMap(m => ({ ...m, [data.task]: k })); message.success('Prazo movido para ' + d.format('ddd DD/MM')); } else { setAllday(xs => xs.map(a => a.id === data.chip ? { ...a, date: k } : a)); message.success('Reagendada para ' + d.format('ddd DD/MM')); } return true; }
+      return data; };
+
+    const timeGrid = html`<div className="ct-calscroll" ref=${scrollRef}>
+      <div className="ct-calsticky">
+      <div className="ct-calhead" style=${{ gridTemplateColumns: `52px repeat(${visibleDays.length}, minmax(${view === 'week' ? 96 : 140}px, 1fr))` }}>
+        <span></span>
+        ${visibleDays.map(d => { const k = d.format('YYYY-MM-DD'); const isToday = k === TODAY; const pm = plannedMin(d); const over = pm > WORKDAY_H * 60;
+          return html`<div key=${k} className="ct-calhead-day">
+            <button type="button" className="ct-calhead-btn" onClick=${() => { setCursor(d); setView('day'); }} aria-label=${'Ver ' + d.format('dddd, D [de] MMMM')}>
+              <span style=${{ textTransform: 'lowercase', color: 'var(--ct-text-3)', fontSize: 12 }}>${d.format('ddd')}</span>
+              <span className=${'ct-calnum' + (isToday ? ' today' : '')}>${d.format('D')}</span>
+            </button>
+            <${Tooltip} title=${pm ? `${durTxt(pm)} em blocos de ${WORKDAY_H}h da jornada${over ? ' · passa da jornada' : ''}` : 'Nenhum bloco'}>
+              <div className="ct-calload" aria-label=${`${durTxt(pm)} planejadas`}><span style=${{ width: Math.min(100, pm / (WORKDAY_H * 60) * 100) + '%', background: over ? STATUS.aguardando[mode][0] : 'var(--ct-primary)' }}></span></div>
+            <//>
+          </div>`; })}
+      </div>
+      <div className="ct-calallday" style=${{ gridTemplateColumns: `52px repeat(${visibleDays.length}, minmax(${view === 'week' ? 96 : 140}px, 1fr))` }}>
+        <span className="ct-calhour" style=${{ alignSelf: 'center', transform: 'none' }}>Dia</span>
+        ${visibleDays.map(d => { const list = alldayOf(d); const max = view === 'day' ? 6 : 2;
+          return html`<div key=${d.format('YYYY-MM-DD')} className="ct-calallday-cell" onDragOver=${e => e.preventDefault()} onDrop=${e => dropOnDay(e, d)}>
+            ${list.slice(0, max).map(a => chip(a))}
+            ${list.length > max ? html`<${Popover} trigger="click" content=${html`<div style=${{ width: 240, display: 'flex', flexDirection: 'column', gap: 4 }}>${list.map(a => chip(a))}</div>`}><button type="button" className="ct-calmore">+${list.length - max}</button><//>` : null}
+          </div>`; })}
+      </div>
+      </div>
+      <div className="ct-calgrid" ref=${gridRef} style=${{ gridTemplateColumns: `52px repeat(${visibleDays.length}, minmax(${view === 'week' ? 96 : 140}px, 1fr))`, height: (h1 - h0) * hourH }}>
+        <div style=${{ position: 'relative' }}>${Array.from({ length: h1 - h0 }, (_, i) => html`<span key=${i} className="ct-calhour" style=${{ top: i * hourH }}>${String(h0 + i).padStart(2, '0')}:00</span>`)}</div>
+        ${visibleDays.map(d => { const k = d.format('YYYY-MM-DD'); const weekend = d.day() === 0 || d.day() === 6;
+          return html`<div key=${k} className=${'ct-calcol' + (weekend ? ' weekend' : '')} style=${{ backgroundSize: `100% ${hourH}px` }}
+            onClick=${e => { if (e.target !== e.currentTarget) return; const r = e.currentTarget.getBoundingClientRect(); createAt(d, h0 * 60 + (e.clientY - r.top) / pxMin - 30); }}
+            onDragOver=${e => e.preventDefault()} onDrop=${e => { const r = e.currentTarget.getBoundingClientRect(); const data = dropOnDay(e, d); if (data && data !== true && data.task) createAt(d, h0 * 60 + (e.clientY - r.top) / pxMin, data.task); }}>
+            ${layoutDay(ofDay(d)).map(b => blockEl(b, d))}
+            ${sessionsEl(d)}
+            ${k === TODAY ? html`<span className="ct-calnow" style=${{ top: (toMin(CAL_NOW) - h0 * 60) * pxMin }} aria-label=${'Agora, ' + CAL_NOW}></span>` : null}
+          </div>`; })}
+      </div>
+    </div>`;
+
+    const monthGrid = (() => { const start = weekStartOf(cursor.startOf('month')); const cells = Array.from({ length: 42 }, (_, i) => start.add(i, 'day'));
+      const weeks = cells[35].month() !== cursor.month() ? cells.slice(0, 35) : cells;
+      return html`<div className="ct-calmonth" role="grid" aria-label=${cursor.format('MMMM YYYY')}>
+        ${['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom'].map(w => html`<span key=${w} className="ct-calmonth-wd">${w}</span>`)}
+        ${weeks.map(d => { const k = d.format('YYYY-MM-DD'); const out = d.month() !== cursor.month(); const list = alldayOf(d);
+          const bl = items.filter(b => b.date === k && show.has(b.kind)); const mins = bl.reduce((a, b) => a + toMin(b.end) - toMin(b.start), 0); const max = screens.xl ? 3 : 2;
+          return html`<div key=${k} role="gridcell" className=${'ct-calmonth-cell' + (out ? ' out' : '')} onDragOver=${e => e.preventDefault()} onDrop=${e => dropOnDay(e, d)}>
+            <${Flex} align="center" justify="space-between" gap=${4}>
+              <button type="button" className=${'ct-calnum sm' + (k === TODAY ? ' today' : '')} onClick=${() => { setCursor(d); setView('day'); }} aria-label=${'Ver ' + d.format('D [de] MMMM')}>${d.format('D')}</button>
+              ${bl.length ? html`<${Tooltip} title=${bl.map(b => `${b.start}–${b.end} ${T(b.task).name}`).join(' · ')}><span className="ct-mono" style=${{ fontSize: 11, color: 'var(--ct-text-3)' }}>${bl.length} · ${durTxt(mins)}</span><//>` : null}
+            <//>
+            ${list.slice(0, max).map(a => chip(a, true))}
+            ${list.length > max ? html`<${Popover} trigger="click" content=${html`<div style=${{ width: 240, display: 'flex', flexDirection: 'column', gap: 4 }}>${list.map(a => chip(a))}</div>`}><button type="button" className="ct-calmore">+${list.length - max} mais</button><//>` : null}
+          </div>`; })}
+      </div>`; })();
+
+    const agenda = (() => { const ds = Array.from({ length: 14 }, (_, i) => cursor.add(i, 'day'));
+      const rows = ds.map(d => { const k = d.format('YYYY-MM-DD'); return { d, k, all: alldayOf(d), bl: items.filter(b => b.date === k && show.has(b.kind)).sort((a, b) => toMin(a.start) - toMin(b.start)) }; }).filter(r => r.all.length || r.bl.length);
+      if (!rows.length) return html`<${Empty} image=${Empty.PRESENTED_IMAGE_SIMPLE} description="Nada nas próximas duas semanas." />`;
+      return html`<div className="ct-calagenda">${rows.map(r => html`<div key=${r.k} className="ct-calagenda-day">
+        <div className="ct-calagenda-date"><span className=${'ct-calnum sm' + (r.k === TODAY ? ' today' : '')}>${r.d.format('D')}</span><span style=${{ textTransform: 'capitalize' }}>${r.d.format('ddd')}</span><${Text} type="secondary" style=${{ fontSize: 12 }}>${r.d.format('MMM')}<//></div>
+        <div style=${{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+          ${r.all.map(a => chip(a))}
+          ${r.bl.map(b => { const t = T(b.task); return html`<button key=${b.id} type="button" className="ct-calagenda-item" onClick=${() => go('tarefa')}>
+            <span className="ct-mono" style=${{ width: 92, flex: 'none', color: 'var(--ct-text-2)' }}>${b.start}–${b.end}</span>
+            <span className=${'ct-calsw ct-calblock' + (b.kind === 'event' ? ' event' : '') + (t.category === 'time_leak' ? ' leak' : '')} style=${{ position: 'static', height: 14 }}></span>
+            <span className="ct-ellipsis" style=${{ flex: 1 }}>${t.name}</span><${ProjectLabel} id=${t.project} />
+          </button>`; })}
+        </div>
+      </div>`)}</div>`; })();
+
+    const weekKeys = days.map(d => d.format('YYYY-MM-DD'));
+    const scheduledIds = new Set(items.filter(b => weekKeys.includes(b.date)).map(b => b.task));
+    const needle = panelQ.trim().toLowerCase();
+    const toPlan = TASKS.filter(t => (t.status === 'proximas' || t.status === 'executando') && !scheduledIds.has(t.id) && (!needle || t.name.toLowerCase().includes(needle)));
+    const planned = TASKS.filter(t => (t.status === 'proximas' || t.status === 'executando') && scheduledIds.has(t.id));
+    const sidePanel = html`<div className="ct-calside">
+      <${Flex} align="center" justify="space-between"><span className="ct-eyebrow">A agendar · ${toPlan.length}</span>
+        ${screens.xl ? html`<${Tooltip} title="Esconder painel"><${Button} size="small" type="text" icon=${html`<${I.MenuFoldOutlined} />`} aria-label="Esconder painel" onClick=${() => setPanel(false)} /><//>` : null}<//>
+      <${Text} type="secondary" style=${{ fontSize: 12 }}>Próximas ações sem bloco ${view === 'month' ? 'neste mês' : 'nestes dias'}. Arraste para a grade para reservar tempo.<//>
+      <${Input} size="small" allowClear placeholder="Filtrar" prefix=${html`<${I.SearchOutlined} />`} value=${panelQ} onChange=${e => setPanelQ(e.target.value)} aria-label="Filtrar tarefas a agendar" />
+      <div style=${{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        ${toPlan.length ? toPlan.map(t => html`<div key=${t.id} className="ct-calplan" draggable="true" onDragStart=${e => e.dataTransfer.setData('text/plain', JSON.stringify({ task: t.id }))}>
+          <span className="ct-calplan-grip" aria-hidden="true"><${I.HolderOutlined} /></span>
+          <div style=${{ flex: 1, minWidth: 0 }}>
+            <div className="ct-ellipsis" style=${{ fontWeight: 500, fontSize: 13 }}>${t.name}</div>
+            <${Flex} gap=${8} align="center" style=${{ fontSize: 12 }}><${ProjectLabel} id=${t.project} />${t.energy ? html`<${Energy} level=${t.energy} />` : null}${t.due ? html`<${Text} type="secondary" className="ct-mono">${fmtDate(t.due)}<//>` : null}<//>
+          </div>
+          <${Dropdown} trigger=${['click']} menu=${{ items: days.slice(0, 7).map(d => ({ key: d.format('YYYY-MM-DD'), label: d.format('ddd DD/MM') + ', 1h' })), onClick: ({ key }) => createAt(dayjs(key), 9 * 60, t.id) }}>
+            <${Button} size="small" type="text" icon=${html`<${I.PlusOutlined} />`} aria-label=${'Reservar tempo para ' + t.name} /><//>
+        </div>`) : html`<div className="ct-rvempty" style=${{ fontSize: 13 }}><${I.CheckCircleOutlined} style=${{ color: STATUS.executando[mode][0] }} />Toda próxima ação tem tempo reservado.</div>`}
+      </div>
+      ${planned.length ? html`<${Text} type="secondary" style=${{ fontSize: 12 }}>${planned.length} já com bloco nestes dias.<//>` : null}
+    </div>`;
+
+    const showMenu = html`<${Popover} trigger="click" placement="bottomRight" content=${html`<div style=${{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 220 }}>
+      ${CAL_SHOW.map(s => html`<${Checkbox} key=${s.key} checked=${show.has(s.key)} onChange=${e => { const n = new Set(show); e.target.checked ? n.add(s.key) : n.delete(s.key); setShow(n); }}>
+        <span style=${{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>${s.swatch ? html`<span style=${{ width: 18, display: 'inline-flex', justifyContent: 'center' }}><${CalSwatch} kind=${s.swatch} mode=${mode} /></span>` : html`<span style=${{ width: 18 }}></span>`}${s.label}</span><//>`)}
+      <${Divider} style=${{ margin: '4px 0' }} />
+      <${Text} type="secondary" style=${{ fontSize: 12 }}>Ícones: <${I.FireOutlined} /> urgente · <${I.FlagOutlined} /> prioridade · <${I.FieldTimeOutlined} /> time leak · <${I.GoogleOutlined} /> no Google<//>
+    </div>`}><${Button} icon=${html`<${I.EyeOutlined} />`}>${screens.md ? 'Mostrar' : null}<//><//>`;
+
+    const viewOpts = [{ value: 'day', label: 'Dia' }, { value: '3days', label: '3 dias' }, { value: 'week', label: 'Semana' }, { value: 'month', label: 'Mês' }, { value: 'agenda', label: 'Agenda' }];
+    const toolbar = html`<${Flex} gap=${8} wrap="wrap" align="center" style=${{ marginBottom: 12 }}>
+      ${screens.lg && !screens.xl || (screens.xl && !panel) ? html`<${Tooltip} title="Mostrar a agendar"><${Button} icon=${html`<${I.MenuUnfoldOutlined} />`} aria-label="Mostrar painel a agendar" onClick=${() => setPanel(true)} /><//>` : null}
+      ${!screens.lg ? html`<${Button} icon=${html`<${I.UnorderedListOutlined} />`} onClick=${() => setPanel(true)}>${screens.sm ? 'A agendar' : null}<//>` : null}
+      <${Button} onClick=${() => setCursor(dayjs(TODAY))}>Hoje<//>
+      <${Space.Compact}>
+        <${Button} icon=${html`<${I.LeftOutlined} />`} aria-label="Anterior" onClick=${() => setCursor(c => c.subtract(step[0], step[1]))} />
+        <${Button} icon=${html`<${I.RightOutlined} />`} aria-label="Próximo" onClick=${() => setCursor(c => c.add(step[0], step[1]))} />
+      <//>
+      <${DatePicker} value=${cursor} onChange=${v => v && setCursor(v)} allowClear=${false} variant="borderless" format=${() => label} inputReadOnly suffixIcon=${html`<${I.DownOutlined} style=${{ fontSize: 10 }} />`}
+        style=${{ fontWeight: 600, fontSize: 15, width: 'auto', minWidth: 200 }} aria-label="Ir para a data" />
+      <div style=${{ flex: 1 }}></div>
+      ${screens.md ? html`<${Segmented} value=${view} onChange=${setView} options=${viewOpts} aria-label="Visão" />` : html`<${Select} value=${view} onChange=${setView} options=${viewOpts} style=${{ width: 110 }} aria-label="Visão" />`}
+      ${showMenu}
+      <${Button} type="primary" icon=${html`<${I.PlusOutlined} />`} onClick=${() => setDraft({ date: cursor, start: '09:00', end: '10:00', task: null })}>${screens.sm ? 'Novo bloco' : null}<//>
+    <//>`;
+
+    const draftModal = html`<${Modal} open=${!!draft} title="Novo bloco de tempo" okText="Reservar" cancelText="Cancelar" onCancel=${() => setDraft(null)} okButtonProps=${{ disabled: !draft || !draft.task }}
+      onOk=${() => { setItems(xs => xs.concat([{ id: Date.now(), kind: 'block', task: draft.task, date: draft.date.format('YYYY-MM-DD'), start: draft.start, end: draft.end }])); message.success('Bloco reservado'); setDraft(null); }}>
+      ${draft ? html`<${Flex} vertical gap=${12}>
+        <${Field} label="Tarefa"><${Select} showSearch autoFocus placeholder="Buscar próxima ação" optionFilterProp="label" value=${draft.task} onChange=${v => setDraft({ ...draft, task: v })} style=${{ width: '100%' }} aria-label="Tarefa"
+          options=${TASKS.filter(t => t.status !== 'finalizada').map(t => ({ value: t.id, label: t.name }))} /><//>
+        <${Field} label="Dia"><${DatePicker} value=${draft.date} onChange=${v => v && setDraft({ ...draft, date: v })} format="ddd, DD/MM/YYYY" allowClear=${false} style=${{ width: '100%' }} /><//>
+        <${Field} label="Horário"><${Flex} align="center" gap=${8}><${TimePicker.RangePicker} format="HH:mm" minuteStep=${15} allowClear=${false} value=${[dayjs('2026-01-01 ' + draft.start), dayjs('2026-01-01 ' + draft.end)]}
+          onChange=${v => v && setDraft({ ...draft, start: v[0].format('HH:mm'), end: v[1].format('HH:mm') })} style=${{ flex: 1 }} /><span className="ct-mono" style=${{ color: 'var(--ct-text-3)', fontSize: 12 }}>${durTxt(toMin(draft.end) - toMin(draft.start))}</span><//><//>
+        <${Text} type="secondary" style=${{ fontSize: 12 }}>Dica: arraste uma tarefa do painel "A agendar" direto para a grade.<//>
+      <//>` : null}
+    <//>`;
+
+    const body = view === 'month' ? monthGrid : view === 'agenda' ? agenda : timeGrid;
+    const empty = (view === 'week' || view === '3days' || view === 'day') && visibleDays.every(d => !ofDay(d).length && !alldayOf(d).length);
+    return html`<div className=${isMobile ? 'ct-page-narrow' : 'ct-page'} style=${{ maxWidth: 'none' }}>
+      ${toolbar}
+      <div style=${{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+        ${screens.lg && panel ? sidePanel : null}
+        <div style=${{ flex: 1, minWidth: 0, position: 'relative' }}>
+          <${Boundary} region="grade do calendário" resetKey=${view}>${body}<//>
+          ${empty ? html`<div className="ct-calempty"><${I.CalendarOutlined} /> Nada nestes dias. Clique na grade ou arraste uma tarefa de "A agendar" para reservar tempo.</div>` : null}
+        </div>
+      </div>
+      ${!screens.lg ? html`<${Drawer} open=${panel} onClose=${() => setPanel(false)} placement="left" width=${Math.min(340, typeof window !== 'undefined' ? window.innerWidth - 40 : 320)} title="A agendar">${sidePanel}<//>` : null}
+      ${draftModal}
     </div>`;
   }
 

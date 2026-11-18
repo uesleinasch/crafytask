@@ -443,6 +443,57 @@ Mesmo esqueleto das outras telas, com navegação própria porque são muitas se
   atalho da captura e backup automático. Tudo isso hoje é fixo no código (E8) e precisa de backend;
   no protótipo leva a etiqueta "novo".
 
+### Calendário
+
+O calendário é onde a próxima ação ganha hora: o _time blocking_ que Masicampo e Baumeister (2011)
+mostram liberar a mente. Ele junta o plano (blocos), o compromisso (tarefa com horário), o prazo e
+o que de fato aconteceu (sessões do timer) na mesma grade.
+
+- **Barra da tela:** Hoje, `‹ ›`, o período como botão que abre um `DatePicker` para pular de data,
+  `Segmented` Dia / 3 dias / Semana / Mês / Agenda, "Mostrar" e **"Novo bloco"** (primário na cor
+  do tema; sai o azul exclusivo desta tela). Visão inicial por largura: Semana a partir de `lg`,
+  3 dias em `md`, Dia abaixo disso.
+- **"Mostrar"** é ao mesmo tempo filtro e legenda (corrige D4): Blocos de tempo, Tarefas com
+  horário, Agendadas sem horário, Prazos, Sessões registradas e Fins de semana, cada um com a
+  amostra do que aparece na grade, mais a chave dos ícones (urgente, prioridade, time leak, Google).
+- **Painel "A agendar"** (novo, à esquerda a partir de `lg`, recolhível; `Drawer` abaixo): próximas
+  ações sem bloco nos dias visíveis, com busca, projeto, energia e prazo. Arrastar para a grade cria
+  um bloco de 1h na hora em que soltou; o `+` reserva 1h num dia escolhido. Vazio diz "Toda
+  próxima ação tem tempo reservado".
+- **Cabeçalho do dia:** dia da semana, número (hoje em círculo da cor primária) e um medidor fino
+  das horas em blocos contra a jornada das configurações. Passou da jornada, o medidor fica âmbar
+  e o tooltip diz "passa da jornada" — aviso, não alarme. Clicar no dia abre a visão Dia.
+- **Faixa "Dia":** agendadas sem horário (chip com ponto do projeto) e prazos (bandeira, borda
+  tracejada; âmbar no dia, vermelho só se venceu; mostra a hora do prazo quando tem). `+N` abre um
+  `Popover` com o resto. Arrastar um chip para outro dia reagenda ou move o prazo.
+- **Grade:** faixa de horas das configurações (padrão 07–22), 48px por hora (40 no compacto), snap
+  de 15 minutos, linha de hora em `border`, fim de semana em `bg`. A linha do agora é da cor
+  primária (vermelho é só para erro) e a tela abre rolada até ela. Rola dentro do próprio card, com
+  cabeçalho e faixa "Dia" fixos.
+- **Bloco de tempo:** fundo `primarySoft` com borda suave, ponto do projeto, ícone da categoria
+  quando não é normal, nome, horário em mono e ícone do Google quando está na agenda TickTask. Time
+  leak usa o fundo da escala de time leak (a única semântica que pinta fundo). Tarefa concluída fica
+  apagada e riscada; a que está rodando ganha o ponto pulsante. A cor do projeto nunca vira fundo.
+- **Tarefa com horário** (`scheduled_time`–`scheduled_end_time`): mesmo formato, fundo `surface`,
+  borda forte e ícone de calendário — é compromisso, não reserva.
+- **Sobreposição:** blocos que se cruzam dividem a largura da coluna lado a lado.
+- **Sessões registradas** (novo): uma faixa de 4px na borda direita da coluna para cada sessão do
+  timer, tracejada enquanto roda. Planejado × feito lado a lado, sem julgamento.
+- **Editar direto na grade** (novo): arrastar o bloco move (inclusive para outro dia), a alça de
+  baixo muda o fim, clique abre um `Popover` com tarefa, projeto, status, `TimePicker.RangePicker`,
+  duração, "Iniciar timer", "Abrir" e excluir. Botão direito: abrir, iniciar timer, repetir no dia
+  seguinte, excluir. Teclado: Enter abre, Delete exclui. Exclusão mostra "Desfazer" na mensagem.
+- **Criar:** clicar num espaço vazio abre o `Modal` "Novo bloco de tempo" já com dia e hora (1h),
+  com busca da tarefa e duração calculada.
+- **Mês:** semana começando na segunda (configuração "início da semana"), número do dia como botão
+  que abre o Dia, "N blocos · Xh" em texto no lugar do selo laranja, chips de agendadas e prazos
+  arrastáveis, `+N mais`. Hoje só no círculo do número, sem pintar a célula.
+- **Agenda:** lista dos próximos 14 dias com algo marcado, por dia: agendadas, prazos e blocos com
+  horário. É a visão acessível e a melhor no celular.
+- **Vazio:** dias sem nada mostram uma dica sobre a grade ("clique ou arraste de A agendar").
+- **Backend novo:** sessões por intervalo de datas para a grade, mover/redimensionar bloco
+  (`timeBlock:update` já existe), jornada, faixa de horas e início da semana das configurações.
+
 ### Revisão semanal
 
 A revisão é o hábito que mantém o sistema confiável (Heylighen e Vidal 2008). A tela deixa de ser

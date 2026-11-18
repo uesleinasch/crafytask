@@ -582,6 +582,34 @@
       }
     },
     {
+      "id": "F4.4",
+      "fase": "F4",
+      "titulo": "Calendário com visões Dia, 3 dias, Semana, Mês e Agenda",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/pages/CalendarPage.tsx",
+        "padroes": ["Segmented", "3days|threeDays", "agenda"]
+      }
+    },
+    {
+      "id": "F4.5",
+      "fase": "F4",
+      "titulo": "Calendário sem azul próprio nem vermelho na linha do agora",
+      "check": {
+        "tipo": "ausente",
+        "arquivos": "src/renderer/src/pages/CalendarPage.tsx",
+        "padrao": "bg-blue-|bg-red-|bg-orange-|bg-yellow-|text-blue-"
+      }
+    },
+    {
+      "id": "F4.6",
+      "fase": "F4",
+      "titulo": "Calendário: arrastar de A agendar, mover e redimensionar bloco, sessões e legenda conferidos",
+      "check": {
+        "tipo": "manual"
+      }
+    },
+    {
       "id": "F4.3",
       "fase": "F4",
       "titulo": "Hoje e calendário conferidos",
