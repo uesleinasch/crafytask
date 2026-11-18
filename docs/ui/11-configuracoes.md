@@ -5,8 +5,8 @@
 
 ## Função
 
-Preferências do app e as três integrações (Notion, Google Calendar, servidor MCP). Acessível só pelo
-botão-ícone de engrenagem no `TitleBar`.
+Preferências do app e as três integrações (Notion, Google Calendar, servidor MCP). Acessível pelo item
+**Configurações** no rodapé da sidebar.
 
 ## Estrutura
 

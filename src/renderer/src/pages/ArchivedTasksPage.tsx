@@ -1,16 +1,14 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { Button } from '@renderer/components/ui/button'
 import { ScrollArea } from '@renderer/components/ui/scroll-area'
 import { StatusBadge } from '@renderer/components/StatusBadge'
 import { DeleteConfirmDialog } from '@renderer/components/DeleteConfirmDialog'
 import { useTasks } from '@renderer/hooks/useTasks'
 import { formatTime } from '@renderer/lib/utils'
-import { ArrowLeft, Undo2, Trash2 } from 'lucide-react'
+import { Undo2, Trash2 } from 'lucide-react'
 import { toast } from '@renderer/components/ui/sonner'
 
 export function ArchivedTasksPage(): React.JSX.Element {
-  const navigate = useNavigate()
   const { tasks, loading, refreshTasks } = useTasks({ archived: true })
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [taskToDelete, setTaskToDelete] = useState<number | null>(null)
@@ -78,13 +76,6 @@ export function ArchivedTasksPage(): React.JSX.Element {
     <div className="flex flex-col h-full bg-slate-50">
       {/* Header */}
       <header className="flex items-center gap-4 px-6 py-4 bg-white border-b border-slate-200">
-        <Button
-          variant="ghost"
-          onClick={() => navigate('/')}
-          className="pl-0 text-slate-500 hover:text-slate-900 hover:bg-transparent"
-        >
-          <ArrowLeft size={18} className="mr-2" /> Voltar
-        </Button>
         <h1 className="text-lg font-bold text-slate-900">Arquivo Morto</h1>
         {tasks.length > 0 && (
           <div className="ml-auto flex items-center gap-3 text-sm">

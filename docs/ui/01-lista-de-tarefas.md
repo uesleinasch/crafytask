@@ -2,8 +2,8 @@
 
 `src/renderer/src/pages/TaskListPage.tsx` (~1000 linhas)
 
-A tela inicial e o centro de gravidade do app. É a única rota em que o `TitleBar` exibe navegação, e
-a única com ações em massa. Concentra quatro modos de visualização diferentes sobre o mesmo conjunto
+A tela inicial e o centro de gravidade do app (item **Tarefas** da sidebar) e a única com ações em
+massa. Concentra quatro modos de visualização diferentes sobre o mesmo conjunto
 de dados.
 
 ## Função
@@ -291,7 +291,7 @@ vez.
 
 ## Diálogo "Nova Tarefa" (`TaskDialog`)
 
-Aberto pelo botão do `TitleBar`. `max-h-[90vh] overflow-y-auto`. Campos, na ordem:
+Aberto pelo botão **Nova tarefa** do header. `max-h-[90vh] overflow-y-auto`. Campos, na ordem:
 
 | Campo | Controle | Obrigatório |
 | --- | --- | --- |

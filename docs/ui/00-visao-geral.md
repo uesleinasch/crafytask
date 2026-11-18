@@ -82,57 +82,54 @@ Quanto de disposição a tarefa exige. Usado como filtro mental e alimenta o gr�
 ## Estrutura da janela principal
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│ TitleBar — h-14, bg-white, border-b slate-200                │
-│ CrafyTask (logo em texto)          [ações — só na rota "/"]  │
-├──────────────────────────────────────────────────────────────┤
-│                                                              │
-│ <main class="flex-1 overflow-hidden">                        │
-│   ← a rota ativa ocupa 100% desta área (h-full, nunca 100vh) │
-│                                                              │
-├──────────────────────────────────────────────────────────────┤
-│ Sobrepostos (position: fixed):                               │
-│  • FloatingTimer   — bottom-6 right-6, só fora de sub-páginas│
-│  • SyncNotification— top-14 right-4                          │
-│  • Toaster (sonner)— bottom-right                            │
-└──────────────────────────────────────────────────────────────┘
+┌──────────┬───────────────────────────────────────────────────┐
+│ Sider    │ Header — 52px: título da tela · [Nova tarefa]     │
+│ 232px    ├───────────────────────────────────────────────────┤
+│ (64px    │ Content — a rota ativa (h-full, nunca 100vh)      │
+│ recolhida)│                                                  │
+│          ├───────────────────────────────────────────────────┤
+│          │ TerminalPanel (quando aberto)                     │
+└──────────┴───────────────────────────────────────────────────┘
+Sobrepostos: FloatingTimer (só em "/"), SyncNotification, Toaster (sonner)
 ```
 
+O shell é `components/shell/AppShell.tsx` (antd `Layout`), com as rotas aninhadas no `HashRouter`
+(`App.tsx`); `/float` e `/quick-capture` ficam fora dele. Sidebar, header e conteúdo têm cada um o
+seu `RegionBoundary`: se um quebra, os outros continuam.
+
 Dimensões da janela: `1024 × 700`, mínimo `800 × 600`, moldura nativa do SO com menu escondido
-(`autoHideMenuBar`). O `TitleBar` é conteúdo do app, não uma barra de título customizada — os canais
-`window:minimize` / `maximize` / `close` existem no preload mas **não estão ligados a nenhum botão**
-da interface atual.
+(`autoHideMenuBar`). Os canais `window:minimize` / `maximize` / `close` existem no preload mas **não
+estão ligados a nenhum botão**.
 
-### TitleBar (`components/TitleBar.tsx`)
+### Sidebar (`components/shell/SiderNav.tsx`)
 
-- **Esquerda:** o logo em texto "CrafyTask" em `font-brand text-2xl text-brand` (fonte Denk One,
-  cor `#705EFF`, tokens `--font-brand` e `--color-brand` em `main.css`).
-- **Direita:** a barra de navegação inteira, **renderizada apenas quando `location.pathname === '/'`**.
-  Em qualquer outra rota o lado direito fica vazio e a navegação depende do botão "Voltar" da própria
-  tela.
+Em todas as rotas. Logo "CrafyTask" (Denk One; só "C" com a sidebar recolhida) e três grupos, como
+no guia de design §7. Itens e rotas em `navigation.ts`:
 
-Ordem dos botões (todos `size="sm" h-9`):
-
-| # | Rótulo | Ícone | Destino | Variante |
+| Grupo | Item | Ícone | Rota | Indicador |
 | --- | --- | --- | --- | --- |
-| 1 | *(só ícone)* | `Settings` | `/settings` | ghost |
-| 2 | Calendário | `Calendar` | `/calendar` | outline |
-| 3 | Hoje | `CalendarDays` | `/today` | outline |
-| 4 | Cadernos | `NotebookTabs` | `/notebooks` | outline |
-| 5 | Revisão | `ClipboardCheck` | `/review` | outline |
-| 6 | Contextos | `MapPin` | `/contexts` | outline |
-| 7 | Tags | `Tag` | `/tags` | outline |
-| 8 | Horizontes | `Mountain` | `/horizons` | outline |
-| 9 | Projetos | `FolderKanban` | `/projects` | outline |
-| 10 | Dashboard | `BarChart3` | `/dashboard` | outline |
-| 11 | Arquivadas | `Archive` | `/archived` | outline |
-| 12 | Nova Tarefa | `Plus` | *abre diálogo* | primária (`bg-slate-900`) |
+| Fluxo | Tarefas | `ListTodo` | `/` (marcado também em `/task/:id`) | tarefas no Inbox |
+| Fluxo | Hoje | `CalendarDays` | `/today` | tarefas não finalizadas no plano de hoje |
+| Fluxo | Calendário | `Calendar` | `/calendar` | — |
+| Fluxo | Revisão semanal | `ClipboardCheck` | `/review` | ponto âmbar sem revisão concluída em 7 dias |
+| Organizar | Projetos | `FolderKanban` | `/projects` (e `/project/:id`) | projetos ativos |
+| Organizar | Horizontes | `Mountain` | `/horizons` | — |
+| Organizar | Contextos e tags | `Tags` | `/contexts` (e `/tags`) | — |
+| Conhecimento | Cadernos | `NotebookTabs` | `/notebooks` | — |
+| Conhecimento | Dashboard | `BarChart3` | `/dashboard` | — |
+| Rodapé | Terminais | `SquareTerminal` | alterna o painel (`Ctrl + '`); desabilitado sem sessão | sessões abertas |
+| Rodapé | Arquivo | `Archive` | `/archived` | — |
+| Rodapé | Configurações | `Settings` | `/settings` | — |
+| Rodapé | Recolher menu | `PanelLeftClose` | alterna 232px ⇄ 64px (`ticktask:siderCollapsed`) | — |
 
-"Nova Tarefa" não navega: emite `open-new-task-dialog` num `eventEmitter` global definido em
-`App.tsx`, e a `TaskListPage` escuta esse evento para abrir o `TaskDialog`.
+Os contadores (`useNavCounts`) são relidos a cada troca de rota e a cada `tasks:refresh`. Até a
+tela única de rótulos (F6-a), Contextos e Tags se ligam por um link no cabeçalho de cada uma.
 
-> **Doze botões numa linha só.** Em 1024px — a largura padrão da janela — essa barra é o principal
-> ponto de pressão do layout atual e o candidato mais óbvio a virar uma sidebar ou um menu agrupado.
+### Header (`components/shell/ShellHeader.tsx`)
+
+Título da tela (`screenTitle`) e **Nova tarefa**. Fora de `/`, o botão volta para a lista e o pedido
+fica guardado (`lib/newTaskRequest.ts`) até a `TaskListPage` montar e abrir o `TaskDialog`. As telas
+não têm mais botão "Voltar"; só os detalhes (tarefa e projeto) mantêm o seu.
 
 ## Rotas
 
@@ -208,7 +205,7 @@ Voltar às vezes é `<Button variant="ghost">` e às vezes um `<button>` cru; o 
 </div>
 ```
 
-O `h-full` (não `h-screen`) é deliberado: o `<main>` do App já descontou a altura do TitleBar. O
+O `h-full` (não `h-screen`) é deliberado: o `Content` do shell já descontou a altura do header. O
 `pb-24` reserva espaço para o `FloatingTimer` não cobrir a última linha.
 
 ### 3. Abas em pílula
@@ -244,7 +241,7 @@ botão de ação. Formulações e tamanhos variam de tela para tela.
 ### 8. Feedback de ação
 
 `toast` (sonner) no canto inferior direito para sucesso e erro. A sincronização com o Notion tem seu
-próprio banner (`SyncNotification`) no topo direito, logo abaixo do TitleBar.
+próprio banner (`SyncNotification`) no topo direito, logo abaixo do header.
 
 ## Como os dados chegam à tela
 

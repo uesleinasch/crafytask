@@ -615,10 +615,10 @@ export function SingleTaskPage(): React.JSX.Element {
   return (
     <div
       className={cn(
-        // h-full, não h-screen: a página vive dentro do <main> do App, que já desconta a altura
-        // do TitleBar. Com 100vh ela sobra 56px, e um scrollIntoView (o Excalidraw dá foco ao
-        // canvas ao selecionar) rola esse excesso — overflow-hidden não impede scroll
-        // programático — escondendo a barra do modo foco atrás do TitleBar, sem volta.
+        // h-full, não h-screen: a página vive dentro do Content do AppShell, que já desconta o
+        // header. Com 100vh ela sobra a altura do header, e um scrollIntoView (o Excalidraw dá
+        // foco ao canvas ao selecionar) rola esse excesso — overflow-hidden não impede scroll
+        // programático — escondendo a barra do modo foco atrás do header, sem volta.
         'flex h-full overflow-hidden bg-slate-50',
         dragWidth !== null && 'select-none cursor-col-resize'
       )}

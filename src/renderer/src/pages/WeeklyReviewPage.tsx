@@ -1,11 +1,9 @@
 import { useState, useCallback, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { ScrollArea } from '@renderer/components/ui/scroll-area'
 import { Button } from '@renderer/components/ui/button'
 import { Textarea } from '@renderer/components/ui/textarea'
 import { useWeeklyReview } from '@renderer/hooks/useWeeklyReview'
 import {
-  ArrowLeft,
   ClipboardCheck,
   Play,
   CheckCircle2,
@@ -82,7 +80,6 @@ const CHECKLIST_ITEMS: ChecklistItem[] = [
 ]
 
 export function WeeklyReviewPage(): React.JSX.Element {
-  const navigate = useNavigate()
   const {
     currentReview,
     reviews,
@@ -147,14 +144,6 @@ export function WeeklyReviewPage(): React.JSX.Element {
       {/* Header */}
       <header className="shrink-0 px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/')}
-            className="pl-0 text-slate-500 hover:text-slate-900 hover:bg-transparent"
-          >
-            <ArrowLeft size={18} className="mr-2" /> Voltar
-          </Button>
-          <div className="h-6 w-px bg-slate-200" />
           <ClipboardCheck size={20} className="text-slate-700" />
           <h1 className="text-lg font-bold text-slate-900">Revisão Semanal</h1>
         </div>

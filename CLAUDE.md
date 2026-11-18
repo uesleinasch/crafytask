@@ -8,7 +8,7 @@ CrafyTask (antigo TickTask) is an Electron desktop app for personal task and tim
 
 ## Rebrand: só visual
 
-O nome visível é **CrafyTask** (título das janelas, TitleBar, bandeja, autostart, notificações,
+O nome visível é **CrafyTask** (título das janelas, sidebar, bandeja, autostart, notificações,
 textos de Configurações, nome do atalho no menu do Linux e dos pacotes `crafytask-<versão>.*`). A
 logo é só texto, na fonte **Denk One** (`@fontsource/denk-one`, empacotada — o app é offline e a CSP
 não deixa buscar fonte remota), classes `font-brand` e `text-brand` (`#705EFF`) em `main.css`.
@@ -112,12 +112,14 @@ renderer (React)  →  preload (window.api)  →  main (ipcMain.handle)  →  da
 
 A typical new capability touches, in order: `src/shared/types.ts` → a query fn in `src/main/database.ts` → an `ipcMain.handle('domain:action', …)` in `src/main/index.ts` (inside `setupIpcHandlers`) → a wrapper in `src/preload/index.ts` **and** its type in `index.d.ts` → a hook in `src/renderer/src/hooks/` → page/component + (if a new screen) a `<Route>` in `App.tsx`.
 
-A **new screen** needs three more touches in `App.tsx`/`TitleBar.tsx`, all easy to miss:
-its `<Route>`; the `isSubPage` list in `AppContent` (which decides whether the `FloatingTimer`
-overlay renders); and a button in `TitleBar` — whose whole nav bar only renders on `/`, so a screen
-with no `TitleBar` entry is reachable only by code. The page shell itself must use `h-full`, never
-`h-screen`: `<main>` already subtracted the TitleBar, and the extra 56px can be scrolled by a
-programmatic `scrollIntoView` (see `docs/ui/02-detalhe-da-tarefa.md`).
+A **new screen** needs two more touches: its `<Route>` nested under `<AppShell>` in `App.tsx`
+(`/float` and `/quick-capture` stay outside the shell), and an entry in
+`components/shell/navigation.ts` (`NAV_GROUPS`/`NAV_FOOTER`, plus `navKeyFor`/`screenTitle` if the
+route has an id) with its lucide icon in `SiderNav.tsx`. `AppShell` (antd `Layout`) renders the
+sidebar, the header (screen title + "Nova tarefa") and the route inside a `RegionBoundary`, on every
+route. The page itself must use `h-full`, never `h-screen`: the `Content` already subtracted the
+header, and the extra height can be scrolled by a programmatic `scrollIntoView` (see
+`docs/ui/02-detalhe-da-tarefa.md`).
 
 ## Database
 

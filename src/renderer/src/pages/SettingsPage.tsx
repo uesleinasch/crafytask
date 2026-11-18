@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import {
-  ArrowLeft,
   BookOpen,
   CalendarDays,
   DatabaseBackup,
@@ -12,7 +10,6 @@ import {
   Ticket
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { Button } from '@renderer/components/ui/button'
 import { ScrollArea } from '@renderer/components/ui/scroll-area'
 import { usePersistedState } from '@renderer/hooks/usePersistedState'
 import { cn } from '@renderer/lib/utils'
@@ -49,7 +46,6 @@ const DOT_CLASSES: Record<StatusTone, string> = {
 }
 
 export function SettingsPage(): React.JSX.Element {
-  const navigate = useNavigate()
   const [section, setSection] = usePersistedState<SectionId>('settings.section', 'geral')
   const [notion, setNotion] = useState<NotionConfig | null>(null)
   const [gcal, setGcal] = useState<GcalStatus | null>(null)
@@ -104,13 +100,6 @@ export function SettingsPage(): React.JSX.Element {
   return (
     <div className="flex flex-col h-full bg-slate-50">
       <header className="shrink-0 px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between">
-        <Button
-          variant="ghost"
-          onClick={() => navigate('/')}
-          className="pl-0 text-slate-500 hover:text-slate-900 hover:bg-transparent"
-        >
-          <ArrowLeft size={18} className="mr-2" /> Voltar
-        </Button>
         <div className="flex items-center gap-2">
           <Settings size={20} className="text-slate-600" />
           <h1 className="text-lg font-semibold text-slate-900">Configurações</h1>
