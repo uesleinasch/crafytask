@@ -134,6 +134,42 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
 .ct-zen-body { flex: 1; overflow: auto; padding-block: 40px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 .ct-zen-body .ct-note { margin: 0 auto; font-size: 17px; }
 .ct-zen-draw { height: 100%; display: grid; place-items: center; border: 1px dashed var(--ct-border-strong); border-radius: 12px; }
+.ct-ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.ct-hero-figure { font-size: 48px; font-weight: 600; line-height: 1; letter-spacing: -.02em; color: var(--ct-text); }
+.ct-tile-figure { font-size: 26px; font-weight: 600; line-height: 1.15; color: var(--ct-text); }
+.ct-hbar { display: grid; grid-template-columns: minmax(0, 190px) minmax(0, 1fr) minmax(104px, auto); align-items: center; gap: 12px; width: 100%; min-height: 36px; padding: 4px 8px; border: 0; border-radius: 8px; background: transparent; color: var(--ct-text); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.ct-hbar:hover { background: var(--ct-bg); }
+.ct-hbar:disabled { cursor: default; }
+.ct-hbar-name { min-width: 0; display: flex; }
+.ct-hbar-label { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.ct-hbar-track { height: 16px; display: flex; align-items: center; border-left: 1px solid var(--ct-border-strong); }
+.ct-hbar-fill { height: 12px; min-width: 2px; border-radius: 0 4px 4px 0; }
+.ct-hbar-val { text-align: right; font-size: 12px; color: var(--ct-text-2); white-space: nowrap; }
+@media (max-width: 575px) { .ct-hbar { grid-template-columns: minmax(0, 1fr) auto; row-gap: 4px; } .ct-hbar-track { grid-column: 1 / -1; grid-row: 2; } }
+.ct-colchart { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 8px; }
+.ct-colchart-y { height: 180px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end; font-size: 11px; color: var(--ct-text-3); transform: translateY(-6px); }
+.ct-colchart-plot { position: relative; height: 180px; display: flex; align-items: flex-end; border-bottom: 1px solid var(--ct-border-strong); }
+.ct-gridline { position: absolute; left: 0; right: 0; border-top: 1px solid var(--ct-border); pointer-events: none; }
+.ct-colslot { position: relative; flex: 1 1 0; min-width: 0; height: 100%; display: flex; align-items: flex-end; justify-content: center; border-radius: 4px; }
+.ct-colslot:hover { background: var(--ct-bg); }
+.ct-colbar { width: 100%; max-width: 24px; min-height: 0; border-radius: 4px 4px 0 0; }
+.ct-colchart-x { display: flex; margin-top: 6px; font-size: 11px; color: var(--ct-text-3); }
+.ct-colchart-x span { flex: 1 1 0; min-width: 0; text-align: center; white-space: nowrap; overflow: visible; }
+.ct-heatcell { display: block; width: 100%; aspect-ratio: 1; min-width: 12px; border-radius: 3px; }
+.ct-heatcell:focus-visible { outline-offset: 1px; }
+.ct-hourheat { display: grid; grid-template-columns: 32px repeat(18, minmax(14px, 1fr)); gap: 3px; min-width: 360px; max-width: 760px; }
+.ct-heat-x { font-size: 11px; color: var(--ct-text-3); white-space: nowrap; height: 16px; }
+.ct-heat-y { font-size: 11px; color: var(--ct-text-3); align-self: center; }
+.ct-calheat { display: flex; gap: 3px; width: max-content; }
+.ct-calheat-col, .ct-calheat-y { display: grid; grid-template-rows: 16px repeat(7, 13px); gap: 3px; }
+.ct-calheat-col { width: 13px; }
+.ct-calheat-col .ct-heatcell { min-width: 0; width: 13px; height: 13px; }
+.ct-calheat-y { font-size: 10px; color: var(--ct-text-3); padding-right: 4px; line-height: 13px; }
+.ct-health-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 12px; }
+.ct-health { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--ct-border); border-radius: 12px; background: var(--ct-surface); color: var(--ct-text); font: inherit; text-align: left; cursor: pointer; min-width: 0; }
+.ct-health:hover { border-color: var(--ct-border-strong); background: var(--ct-bg); }
+.ct-health-icon { width: 36px; height: 36px; flex: none; border-radius: 8px; display: grid; place-items: center; font-size: 17px; }
+.ct-health-val { font-size: 20px; font-weight: 600; white-space: nowrap; }
 </style>
 <div id="root"><div class="ct-boot">Carregando protótipo…</div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
@@ -408,8 +444,8 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
   ];
   const ROUTE_DOCS = { calendario: '04-calendario', revisao: '07-revisao-semanal', horizontes: '06-horizontes', rotulos: '09-contextos-e-tags', cadernos: '17-cadernos', dashboard: '08-dashboard', arquivo: '10-arquivadas', ajustes: '11-configuracoes' };
   const ROUTE_OF = Object.fromEntries(NAV.flatMap(g => g.children).concat(NAV_FOOT).map(i => [i.key, i]));
-  const TITLES = { tarefas: 'Tarefas', tarefa: 'Tarefa', hoje: 'Hoje', projetos: 'Projetos', projeto: 'Projeto', ajustes: 'Configurações', horizontes: 'Horizontes', rotulos: 'Contextos e tags', identidade: 'Identidade visual' };
-  const BUILT = ['tarefas', 'tarefa', 'hoje', 'projetos', 'projeto', 'ajustes', 'horizontes', 'rotulos', 'identidade'];
+  const TITLES = { tarefas: 'Tarefas', tarefa: 'Tarefa', hoje: 'Hoje', projetos: 'Projetos', projeto: 'Projeto', ajustes: 'Configurações', horizontes: 'Horizontes', rotulos: 'Contextos e tags', identidade: 'Identidade visual', dashboard: 'Dashboard' };
+  const BUILT = ['tarefas', 'tarefa', 'hoje', 'projetos', 'projeto', 'ajustes', 'horizontes', 'rotulos', 'dashboard', 'identidade'];
 
   function toMenu(items, collapsed) {
     return items.map(it => it.type === 'group'
@@ -516,6 +552,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       : route === 'ajustes' ? html`<${SettingsPage} mode=${mode} isMobile=${isMobile} screens=${screens} themePref=${themePref} setThemePref=${setThemePref} compact=${compact} setCompact=${setCompact} />`
       : route === 'horizontes' ? html`<${HorizonsPage} mode=${mode} go=${go} isMobile=${isMobile} screens=${screens} openProject=${openProject} />`
       : route === 'rotulos' ? html`<${LabelsPage} mode=${mode} go=${go} isMobile=${isMobile} screens=${screens} />`
+      : route === 'dashboard' ? html`<${DashboardPage} mode=${mode} go=${go} isMobile=${isMobile} screens=${screens} openProject=${openProject} />`
       : route === 'identidade' ? html`<${IdentityPage} mode=${mode} />`
       : html`<${Placeholder} route=${route} go=${go} />`;
 
@@ -2341,6 +2378,355 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           <${Select} showSearch placeholder="Mesclar em…" value=${mergeTo} onChange=${setMergeTo} optionFilterProp="title" aria-label="Destino"
             options=${list.filter(x => x.name !== merging.name).map(x => ({ value: x.name, title: x.name, label: html`<${Flex} justify="space-between" gap=${8}><span>${isCtx ? x.emoji + ' ' : ''}${display(x)}</span><span className="ct-mono" style=${{ color: 'var(--ct-text-3)' }}>${x.uses}</span><//>` }))} />
         <//>` : null}
+      <//>
+    </div>`;
+  }
+
+  const CHART = {
+    light: { cat: ['#5B47EB', '#EB6834', '#1BAF7A', '#EDA100', '#E87BA4', '#008300', '#2A78D6', '#E34948'], seq: ['#ECEBF3', '#A99DFF', '#8F80FA', '#7462F2', '#5B47EB', '#4532C4'], bar: '#5B47EB', muted: '#8F8BA6' },
+    dark: { cat: ['#8577F5', '#D95926', '#199E70', '#C98500', '#D55181', '#0CA30C', '#3987E5', '#E66767'], seq: ['#24222F', '#4A3F94', '#5F50B8', '#7766DA', '#9185FF', '#B7AEFF'], bar: '#8F82FF', muted: '#6C6884' }
+  };
+  const DASH_PERIODS = [{ value: 7, label: '7 dias' }, { value: 30, label: '30 dias' }, { value: 90, label: '90 dias' }, { value: 365, label: '12 meses' }];
+  const PROJECT_SHARE = { 13: 0.38, 4: 0.31, 7: 0.12, 9: 0.08, 21: 0, 0: 0.11 };
+  const CONTEXT_SHARE = [['@dev', 0.52], ['@reunião', 0.18], ['@escrita', 0.12], ['@leitura', 0.06], ['@telefone', 0.04], ['Sem contexto', 0.08]];
+  const CATEGORY_SHARE = [['normal', 0.58], ['prioridade', 0.2], ['time_leak', 0.13], ['urgente', 0.09]];
+  const ENERGY_SHARE = [['alto', 0.44, 0.38], ['medio', 0.38, 0.4], ['baixo', 0.18, 0.22]];
+  const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  const HOURS = Array.from({ length: 18 }, (_, i) => i + 6);
+
+  const fmtN = n => Number(n).toLocaleString('pt-BR');
+  const fmtHM = s => { if (!s) return '0 min'; const t = Math.round(s / 60), h = Math.floor(t / 60), m = t % 60; return h ? `${fmtN(h)}h${m ? ' ' + String(m).padStart(2, '0') + 'min' : ''}` : `${m} min`; };
+  const pct = (v, t) => t ? Math.round(v / t * 100) + '%' : '—';
+  function seeded(n) { let s = n % 233280; return () => (s = (s * 9301 + 49297) % 233280) / 233280; }
+
+  function dashData(days, projectId) {
+    const rnd = seeded(days * 31 + (projectId || 0) * 7 + 3);
+    const share = projectId ? (PROJECT_SHARE[projectId] || 0) : 1;
+    const end = dayjs(TODAY);
+    const daily = Array.from({ length: days }, (_, i) => {
+      const d = end.subtract(days - 1 - i, 'day');
+      const weekend = d.day() === 0 || d.day() === 6;
+      const raw = rnd() < 0.08 ? 0 : Math.max(0, (weekend ? 0.7 : 4.4) + (rnd() - 0.4) * 3);
+      return { date: d.format('YYYY-MM-DD'), d, secs: Math.round(raw * 3600 * share) };
+    });
+    const total = daily.reduce((a, x) => a + x.secs, 0);
+    const prev = Math.round(total * (0.82 + rnd() * 0.3));
+    const sessions = Math.round(total / 2500);
+    const prevSessions = Math.round(prev / 2600);
+    const done = Math.round(total / 3600 / 2.4);
+    const prevDone = Math.round(prev / 3600 / 2.6);
+    const workdays = daily.filter(x => x.d.day() !== 0 && x.d.day() !== 6 && x.secs > 0).length;
+
+    let buckets;
+    if (days <= 31) buckets = daily.map((x, i) => ({ key: x.date, secs: x.secs, label: days <= 7 ? WEEKDAYS[x.d.day()].toLowerCase() : x.d.format('DD/MM'), title: x.d.format('ddd, DD/MM'), showLabel: days <= 7 || i % 5 === (days - 1) % 5 }));
+    else {
+      const unit = days <= 120 ? 'week' : 'month';
+      const map = new Map();
+      daily.forEach(x => { const k = x.d.startOf(unit).format('YYYY-MM-DD'); if (!map.has(k)) map.set(k, { key: k, secs: 0, d: x.d.startOf(unit) }); map.get(k).secs += x.secs; });
+      buckets = Array.from(map.values()).map((b, i, arr) => ({ ...b, label: unit === 'week' ? b.d.format('DD/MM') : b.d.format('MMM'), title: unit === 'week' ? 'Semana de ' + b.d.format('DD/MM') : b.d.format('MMMM [de] YYYY'), showLabel: unit === 'month' || i % 2 === (arr.length - 1) % 2 }));
+    }
+    const unitLabel = days <= 31 ? 'dia' : days <= 120 ? 'semana' : 'mês';
+    const currentLabel = days <= 31 ? 'hoje' : days <= 120 ? 'esta semana' : 'este mês';
+
+    const projects = projectId
+      ? [{ key: projectId, name: P[projectId].name, color: P[projectId].color, secs: total }]
+      : Object.entries(PROJECT_SHARE).filter(([, s]) => s > 0).map(([id, s]) => ({ key: +id, name: +id ? P[id].name : 'Sem projeto', color: +id ? P[id].color : null, secs: Math.round(total * s) })).sort((a, b) => b.secs - a.secs);
+    const areaMap = {};
+    projects.forEach(p => { const a = p.key && P[p.key] ? P[p.key].area || 'Sem área' : 'Sem área'; areaMap[a] = (areaMap[a] || 0) + p.secs; });
+    const areas = Object.entries(areaMap).map(([name, secs]) => ({ key: name, name, secs })).sort((a, b) => b.secs - a.secs);
+    const contexts = CONTEXT_SHARE.map(([name, s]) => ({ key: name, name, emoji: (CONTEXTS.find(c => c.name === name) || {}).emoji, secs: Math.round(total * s) }));
+    const categories = CATEGORY_SHARE.map(([k, s]) => ({ key: k, secs: Math.round(total * s), tasks: Math.max(total ? 1 : 0, Math.round(done * s * 1.4)) }));
+    const energy = ENERGY_SHARE.map(([k, s, ts]) => { const tasks = Math.max(total ? 1 : 0, Math.round(done * ts * 1.3)); const secs = Math.round(total * s); return { key: k, secs, tasks, avg: tasks ? Math.round(secs / tasks) : 0 }; });
+    const tasks = TASKS.filter(t => t.secs > 0 && (!projectId || t.project === projectId))
+      .map(t => ({ key: t.id, name: t.name, project: t.project, secs: Math.round(t.secs * days / 30 * 4 * (0.6 + rnd() * 0.8)) }))
+      .sort((a, b) => b.secs - a.secs).slice(0, 8);
+
+    const heat = WEEKDAYS.map((_, wd) => HOURS.map(h => {
+      if (!total) return 0;
+      const weekend = wd === 0 || wd === 6;
+      const shape = h >= 9 && h <= 11 ? 1 : h >= 14 && h <= 17 ? 0.75 : h === 12 || h === 13 ? 0.25 : h >= 19 && h <= 21 ? 0.3 : h < 8 || h > 22 ? 0.02 : 0.15;
+      return Math.round(shape * (weekend ? 0.25 : 1) * (0.6 + rnd() * 0.8) * (days / 7) * 1500 * share);
+    }));
+    return { days, daily, total, prev, sessions, prevSessions, done, prevDone, workdays, buckets, unitLabel, currentLabel, projects, areas, contexts, categories, energy, tasks, heat };
+  }
+
+  function niceMaxHours(maxSecs) {
+    const h = Math.max(1, maxSecs / 3600);
+    const step = [1, 2, 5, 10, 20, 50, 100, 200].find(s => h / s <= 4) || 500;
+    return Math.ceil(h / step) * step;
+  }
+  function levelOf(v, max) { if (!v || !max) return 0; return Math.min(5, Math.max(1, Math.ceil(v / max * 5))); }
+
+  function Delta({ cur, prev, fmtV, period }) {
+    if (!prev && !cur) return null;
+    const diff = cur - prev;
+    const Ic = diff > 0 ? I.ArrowUpOutlined : diff < 0 ? I.ArrowDownOutlined : I.MinusOutlined;
+    return html`<${Text} type="secondary" style=${{ fontSize: 12 }}><${Ic} style=${{ fontSize: 11 }} /> ${diff > 0 ? '+' : diff < 0 ? '−' : ''}${fmtV(Math.abs(diff))} <span>vs ${period} anteriores</span><//>`;
+  }
+
+  function ChartCard({ title, icon, extra, table, empty, children }) {
+    const [asTable, setAsTable] = useState(false);
+    const toggle = table ? html`<${Tooltip} title=${asTable ? 'Ver gráfico' : 'Ver como tabela'}>
+      <${Button} size="small" type="text" aria-pressed=${asTable} aria-label=${asTable ? 'Ver gráfico' : 'Ver como tabela'} icon=${html`<${asTable ? I.BarChartOutlined : I.TableOutlined} />`} onClick=${() => setAsTable(!asTable)} /><//>` : null;
+    return html`<${Card} size="small" style=${{ height: '100%' }}
+      title=${html`<span style=${{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>${createElement(I[icon], { style: { color: 'var(--ct-text-3)' } })}${title}</span>`}
+      extra=${html`<${Flex} align="center" gap=${4}>${extra}${toggle}<//>`}>
+      <${Boundary} region=${'gráfico ' + title} resetKey=${asTable}>
+        ${empty ? html`<${Empty} image=${Empty.PRESENTED_IMAGE_SIMPLE} description=${empty} />`
+          : asTable ? html`<${Table} size="small" rowKey="key" pagination=${false} columns=${table.columns} dataSource=${table.data} scroll=${{ x: 'max-content' }} />`
+          : children}
+      <//>
+    <//>`;
+  }
+
+  function HBarList({ rows, total, onOpen, lead, mode, sub }) {
+    const max = Math.max(...rows.map(r => r.secs), 1);
+    return html`<div style=${{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      ${rows.map(r => html`<${Tooltip} key=${r.key} trigger=${['hover', 'focus']} placement="topLeft" title=${html`<span><b className="ct-mono">${fmtHM(r.secs)}</b> · ${pct(r.secs, total)} do total${sub ? ' · ' + sub(r) : ''}</span>`}>
+        <button type="button" className="ct-hbar" onClick=${onOpen ? () => onOpen(r) : undefined} disabled=${!onOpen} aria-label=${`${r.name || r.key}: ${fmtHM(r.secs)}, ${pct(r.secs, total)}`}>
+          <span className="ct-hbar-name">${lead(r)}</span>
+          <span className="ct-hbar-track"><span className="ct-hbar-fill" style=${{ width: (r.secs / max * 100) + '%', background: CHART[mode].bar }}></span></span>
+          <span className="ct-hbar-val ct-mono">${fmtHM(r.secs)}<span style=${{ color: 'var(--ct-text-3)', marginLeft: 6 }}>${pct(r.secs, total)}</span></span>
+        </button>
+      <//>`)}
+    </div>`;
+  }
+
+  function ColumnChart({ buckets, mode, unitLabel, currentLabel }) {
+    const maxH = niceMaxHours(Math.max(...buckets.map(b => b.secs), 0));
+    const ticks = [maxH, maxH / 2, 0];
+    const gap = buckets.length > 40 ? 1 : 2;
+    return html`<div className="ct-colchart" role="img" aria-label=${`Tempo focado por ${unitLabel}. Destaque: ${currentLabel}.`}>
+      <div className="ct-colchart-y">${ticks.map(t => html`<span key=${t} className="ct-mono">${t}h</span>`)}</div>
+      <div>
+        <div className="ct-colchart-plot" style=${{ gap }}>
+          ${[0, 50].map(p => html`<span key=${p} className="ct-gridline" style=${{ top: p + '%' }}></span>`)}
+          ${buckets.map((b, i) => { const last = i === buckets.length - 1;
+            return html`<${Tooltip} key=${b.key} trigger=${['hover', 'focus']} title=${html`<span><b className="ct-mono">${fmtHM(b.secs)}</b> · ${b.title}${last ? ' (' + currentLabel + ')' : ''}</span>`}>
+              <span className="ct-colslot" tabIndex=${0} aria-label=${`${b.title}: ${fmtHM(b.secs)}`}>
+                <span className="ct-colbar" style=${{ height: (b.secs / 3600 / maxH * 100) + '%', background: last ? CHART[mode].bar : CHART[mode].muted }}></span>
+              </span>
+            <//>`; })}
+        </div>
+        <div className="ct-colchart-x" style=${{ gap }}>${buckets.map(b => html`<span key=${b.key}>${b.showLabel ? b.label : ''}</span>`)}</div>
+      </div>
+    </div>`;
+  }
+
+  function HeatLegend({ mode }) {
+    return html`<${Flex} align="center" gap=${4} style=${{ fontSize: 12, color: 'var(--ct-text-3)' }}>Menos ${CHART[mode].seq.map((c, i) => html`<span key=${i} className="ct-heatcell" style=${{ background: c, width: 12, height: 12 }}></span>`)} Mais<//>`;
+  }
+
+  function HourHeatmap({ heat, mode }) {
+    const max = Math.max(...heat.flat(), 1);
+    const order = [1, 2, 3, 4, 5, 6, 0];
+    return html`<div style=${{ overflowX: 'auto' }}>
+      <div className="ct-hourheat" role="grid" aria-label="Tempo focado por dia da semana e hora">
+        <span></span>${HOURS.map(h => html`<span key=${h} className="ct-heat-x">${h % 3 === 0 ? h + 'h' : ''}</span>`)}
+        ${order.map(wd => [html`<span key=${'l' + wd} className="ct-heat-y">${WEEKDAYS[wd]}</span>`].concat(HOURS.map((h, j) => { const v = heat[wd][j];
+          return html`<${Tooltip} key=${wd + '-' + h} trigger=${['hover', 'focus']} title=${html`<span><b className="ct-mono">${fmtHM(v)}</b> · ${WEEKDAYS[wd]}, ${h}h–${h + 1}h</span>`}>
+            <span className="ct-heatcell" tabIndex=${0} role="gridcell" aria-label=${`${WEEKDAYS[wd]} ${h}h: ${fmtHM(v)}`} style=${{ background: CHART[mode].seq[levelOf(v, max)] }}></span>
+          <//>`; })))}
+      </div>
+    </div>`;
+  }
+
+  function CalendarHeat({ daily, mode }) {
+    const max = Math.max(...daily.map(x => x.secs), 1);
+    const lead = (daily[0].d.day() + 6) % 7;
+    const cells = Array.from({ length: lead }, () => null).concat(daily);
+    const weeks = [];
+    for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+    return html`<div style=${{ overflowX: 'auto' }}>
+      <div className="ct-calheat">
+        <div className="ct-calheat-y"><span></span>${['Seg', '', 'Qua', '', 'Sex', '', 'Dom'].map((l, i) => html`<span key=${i}>${l}</span>`)}</div>
+        ${weeks.map((w, wi) => { const first = w.find(Boolean); const prevFirst = wi > 0 ? weeks[wi - 1].find(Boolean) : null;
+          const month = first && (!prevFirst || first.d.month() !== prevFirst.d.month()) ? first.d.format('MMM') : '';
+          return html`<div key=${wi} className="ct-calheat-col"><span className="ct-heat-x">${month}</span>
+            ${Array.from({ length: 7 }, (_, k) => { const x = w[k];
+              if (!x) return html`<span key=${k} className="ct-heatcell" style=${{ visibility: 'hidden' }}></span>`;
+              return html`<${Tooltip} key=${k} trigger=${['hover', 'focus']} title=${html`<span><b className="ct-mono">${fmtHM(x.secs)}</b> · ${x.d.format('ddd, DD/MM/YYYY')}</span>`}>
+                <span className="ct-heatcell" tabIndex=${0} aria-label=${`${x.d.format('DD/MM')}: ${fmtHM(x.secs)}`} style=${{ background: CHART[mode].seq[levelOf(x.secs, max)], outline: x.date === TODAY ? '1px solid var(--ct-text-2)' : null, outlineOffset: 1 }}></span>
+              <//>`; })}
+          </div>`; })}
+      </div>
+    </div>`;
+  }
+
+  function HealthCard({ item, mode }) {
+    const tone = item.tone || (item.value ? 'warning' : 'ok');
+    const tones = { ok: { icon: 'CheckCircleOutlined', c: STATUS.executando[mode] }, warning: { icon: item.icon, c: STATUS.aguardando[mode] }, error: { icon: item.icon, c: CATEGORY.urgente[mode] } };
+    const t = tones[tone];
+    return html`<button type="button" className="ct-health" onClick=${item.onClick} aria-label=${`${item.title}: ${item.valueText || item.value}. ${item.cta}`}>
+      <span className="ct-health-icon" style=${{ color: t.c[0], background: t.c[1] }}>${createElement(I[t.icon])}</span>
+      <span style=${{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <span style=${{ fontWeight: 500 }}>${item.title}</span>
+        <span style=${{ fontSize: 12, color: 'var(--ct-text-3)' }}>${tone === 'ok' ? item.okText : item.detail}</span>
+      </span>
+      <span className="ct-health-val">${item.valueText || item.value}</span>
+      <${I.RightOutlined} style=${{ color: 'var(--ct-text-3)', fontSize: 11 }} />
+    </button>`;
+  }
+
+  function DashboardPage({ mode, go, isMobile, screens, openProject }) {
+    const { message } = AntApp.useApp();
+    const [days, setDays] = useState(30);
+    const [range, setRange] = useState(null);
+    const [projectId, setProjectId] = useState(0);
+    const [dim, setDim] = useState('project');
+    const [busy, setBusy] = useState(false);
+    const period = range ? Math.min(365, range[1].diff(range[0], 'day') + 1) : days;
+    const data = useMemo(() => dashData(period, projectId), [period, projectId]);
+    useEffect(() => { setBusy(true); const t = setTimeout(() => setBusy(false), 320); return () => clearTimeout(t); }, [period, projectId]);
+    const periodName = range ? `${period} dias` : (DASH_PERIODS.find(p => p.value === days) || {}).label;
+    const toTasks = msg => { message.info(msg); go('tarefas'); };
+
+    const counts = {}; TASKS.forEach(t => { counts[t.status] = (counts[t.status] || 0) + 1; });
+    const noNext = PROJECTS.filter(p => { const st = projectStats(p, TASKS); return p.status === 'active' && st.open > 0 && !st.next; }).length;
+    const overdue = TASKS.filter(t => t.due && t.due < TODAY && t.status !== 'finalizada').length;
+    const health = [
+      { key: 'inbox', icon: 'InboxOutlined', title: 'Inbox para processar', value: counts.inbox || 0, detail: 'O item mais antigo chegou há 4 dias · 82% processado nesta semana', okText: 'Inbox zero', cta: 'Abre a aba Inbox', onClick: () => toTasks('Abre Tarefas na aba Inbox') },
+      { key: 'nonext', icon: 'ForwardOutlined', title: 'Projetos sem próxima ação', value: noNext, detail: 'Ativos, com tarefas abertas e nenhuma em Próximas', okText: 'Todo projeto ativo tem um próximo passo', cta: 'Abre Projetos filtrado', onClick: () => { message.info('Abre Projetos com "Mostrar só esses" ligado'); go('projetos'); } },
+      { key: 'stalled', icon: 'PauseCircleOutlined', title: 'Projetos parados', value: 1, detail: 'Sem sessão nem tarefa concluída há mais de 7 dias', okText: 'Todos tiveram atividade na semana', cta: 'Abre Projetos', onClick: () => { message.info('Abre Projetos ordenado por atividade, mostrando os parados'); go('projetos'); } },
+      { key: 'waiting', icon: 'HourglassOutlined', title: 'Aguardando sem resposta', value: 2, detail: 'Há mais de 14 dias em Aguardando: hora de cobrar', okText: 'Nada esperando há mais de 14 dias', cta: 'Abre a aba Aguardando', onClick: () => toTasks('Abre Tarefas na aba Aguardando, só as paradas há mais de 14 dias') },
+      { key: 'overdue', icon: 'CalendarOutlined', title: 'Prazos vencidos', value: overdue, tone: overdue ? 'error' : 'ok', detail: 'Tarefas abertas com prazo antes de hoje', okText: 'Nenhum prazo vencido', cta: 'Abre a lista filtrada', onClick: () => toTasks('Abre Tarefas com o filtro "Prazo vencido"') },
+      { key: 'review', icon: 'SyncOutlined', title: 'Revisão semanal', value: 0, valueText: 'há 6 dias', detail: '', okText: 'Próxima até domingo, 23/11', cta: 'Abre a revisão semanal', onClick: () => go('revisao') }
+    ];
+    const statusRows = ['inbox', 'proximas', 'executando', 'aguardando', 'someday'].map(k => ({ key: k, name: STATUS[k].label, secs: counts[k] || 0 }));
+    const openCount = statusRows.reduce((a, r) => a + r.secs, 0);
+
+    const dims = {
+      project: { rows: data.projects, lead: r => html`<span className="ct-hbar-label">${r.color ? html`<span className="ct-dot" style=${{ background: r.color }}></span>` : html`<span className="ct-dot" style=${{ border: '1px dashed var(--ct-border-strong)' }}></span>`}<span className="ct-ellipsis">${r.name}</span></span>`, open: r => r.key ? openProject(r.key) : toTasks('Abre Tarefas filtrada por "Sem projeto"') },
+      area: { rows: data.areas, lead: r => html`<span className="ct-hbar-label"><${I.RiseOutlined} style=${{ color: 'var(--ct-text-3)' }} /><span className="ct-ellipsis">${r.name}</span></span>`, open: () => go('horizontes') },
+      context: { rows: data.contexts, lead: r => html`<span className="ct-hbar-label"><span aria-hidden="true">${r.emoji || '·'}</span><span className="ct-ellipsis">${r.name}</span></span>`, open: r => toTasks('Abre Tarefas filtrada por ' + r.name) }
+    };
+    const dimDef = dims[dim];
+    const timeCols = name => [{ title: name, dataIndex: 'name', key: 'name' }, { title: 'Tempo', key: 't', align: 'right', render: (_, r) => html`<span className="ct-mono">${fmtHM(r.secs)}</span>` }, { title: '%', key: 'p', align: 'right', render: (_, r) => html`<span className="ct-mono">${pct(r.secs, data.total)}</span>` }];
+    const empty = data.total === 0;
+    const periodEmpty = 'Nenhuma sessão de tempo neste período.';
+
+    const filterRow = html`<${Flex} gap=${8} wrap="wrap" align="center" style=${{ marginBottom: 12 }}>
+      <${Segmented} value=${range ? null : days} onChange=${v => { setRange(null); setDays(v); }} options=${DASH_PERIODS} aria-label="Período" />
+      <${DatePicker.RangePicker} value=${range} onChange=${v => setRange(v && v[0] && v[1] ? v : null)} format="DD/MM/YYYY" allowClear placeholder=${['Início', 'Fim']} aria-label="Período personalizado" style=${{ width: isMobile ? '100%' : 240 }} disabledDate=${d => d.isAfter(dayjs(TODAY), 'day')} />
+      <${Select} value=${projectId} onChange=${setProjectId} style=${{ width: isMobile ? '100%' : 220 }} aria-label="Projeto"
+        options=${[{ value: 0, label: 'Todos os projetos' }].concat(PROJECTS.filter(p => p.status === 'active' || p.status === 'someday').map(p => ({ value: p.id, label: html`<span style=${{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><span className="ct-dot" style=${{ background: p.color }}></span>${p.name}</span>` })))} />
+      <div style=${{ flex: 1 }}></div>
+      <${Button} icon=${html`<${I.FilePdfOutlined} />`} disabled=${empty} onClick=${() => { const k = 'pdf'; message.loading({ content: 'Gerando relatório…', key: k }); setTimeout(() => message.success({ content: `Relatório de ${periodName} salvo em ~/Documentos`, key: k }), 700); }}>${screens.sm ? 'Exportar PDF' : null}<//>
+    <//>`;
+
+    const hero = html`<${Card} size="small" style=${{ height: '100%' }} title=${html`<span style=${{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><${I.FieldTimeOutlined} style=${{ color: 'var(--ct-text-3)' }} />Tempo focado<//>`}
+      extra=${html`<${Text} type="secondary" style=${{ fontSize: 12 }}>por ${data.unitLabel}<//>`}>
+      <${Flex} vertical gap=${16}>
+        <${Flex} wrap="wrap" align="baseline" gap="4px 16px">
+          <span className="ct-hero-figure">${fmtHM(data.total)}</span>
+          <${Flex} vertical gap=${2}>
+            <${Delta} cur=${data.total} prev=${data.prev} fmtV=${fmtHM} period=${periodName} />
+            <${Text} type="secondary" style=${{ fontSize: 12 }}>${data.workdays ? `média de ${fmtHM(Math.round(data.total / data.workdays))} por dia útil com sessão` : ''}<//>
+          <//>
+        <//>
+        <${ColumnChart} buckets=${data.buckets} mode=${mode} unitLabel=${data.unitLabel} currentLabel=${data.currentLabel} />
+      <//>
+    <//>`;
+    const tile = (icon, label, value, delta) => html`<${Card} size="small" style=${{ height: '100%' }}>
+      <${Flex} vertical gap=${4}>
+        <${Text} type="secondary" style=${{ fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 6 }}>${createElement(I[icon])}${label}<//>
+        <span className="ct-tile-figure">${value}</span>
+        ${delta}
+      <//>
+    <//>`;
+    const avg = data.sessions ? Math.round(data.total / data.sessions) : 0;
+    const prevAvg = data.prevSessions ? Math.round(data.prev / data.prevSessions) : 0;
+    const tiles = [
+      tile('CheckCircleOutlined', 'Tarefas concluídas', fmtN(data.done), html`<${Delta} cur=${data.done} prev=${data.prevDone} fmtV=${fmtN} period=${periodName} />`),
+      tile('ThunderboltOutlined', 'Sessões de foco', fmtN(data.sessions), html`<${Delta} cur=${data.sessions} prev=${data.prevSessions} fmtV=${fmtN} period=${periodName} />`),
+      tile('HistoryOutlined', 'Média por sessão', fmtHM(avg), html`<${Delta} cur=${avg} prev=${prevAvg} fmtV=${fmtHM} period=${periodName} />`)
+    ];
+
+    const gut = [16, 16];
+    return html`<div className=${isMobile ? 'ct-page-narrow' : 'ct-page'}>
+      <${Flex} vertical gap=${24}>
+        <${Section} icon="DashboardOutlined" title="Agora" extra="estado do sistema, sem filtro">
+          <${Row} gutter=${gut}>
+            <${Col} xs=${24} xl=${16}>
+              <div className="ct-health-grid">${health.map(h => html`<${HealthCard} key=${h.key} item=${h} mode=${mode} />`)}</div>
+            <//>
+            <${Col} xs=${24} xl=${8}>
+              <${ChartCard} title="Tarefas abertas por status" icon="UnorderedListOutlined"
+                table=${{ columns: [{ title: 'Status', dataIndex: 'name', key: 'name' }, { title: 'Tarefas', dataIndex: 'secs', key: 'n', align: 'right' }], data: statusRows }}>
+                <div style=${{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  ${statusRows.map(r => { const max = Math.max(...statusRows.map(x => x.secs), 1);
+                    return html`<button key=${r.key} type="button" className="ct-hbar" onClick=${() => toTasks('Abre Tarefas na aba ' + r.name)} aria-label=${`${r.name}: ${r.secs} tarefas`}>
+                      <span className="ct-hbar-name"><${Chip} def=${STATUS[r.key]} mode=${mode} /></span>
+                      <span className="ct-hbar-track"><span className="ct-hbar-fill" style=${{ width: (r.secs / max * 100) + '%', background: CHART[mode].bar }}></span></span>
+                      <span className="ct-hbar-val ct-mono">${r.secs}<span style=${{ color: 'var(--ct-text-3)', marginLeft: 6 }}>${pct(r.secs, openCount)}</span></span>
+                    </button>`; })}
+                </div>
+              <//>
+            <//>
+          <//>
+        <//>
+
+        <${Section} icon="LineChartOutlined" title="No período" extra=${periodName + (projectId ? ' · ' + P[projectId].name : '')}>
+          ${filterRow}
+          <div style=${{ opacity: busy ? 0.55 : 1, transition: 'opacity .16s' }} aria-busy=${busy}>
+            ${empty ? html`<${Card} size="small"><${Empty} image=${Empty.PRESENTED_IMAGE_SIMPLE} description=${html`<span>${periodEmpty}<br /><${Text} type="secondary">Os gráficos aparecem quando houver tempo registrado.<//></span>`}>
+                <${Flex} gap=${8} justify="center" wrap="wrap">
+                  ${projectId ? html`<${Button} onClick=${() => setProjectId(0)}>Todos os projetos<//>` : null}
+                  ${period < 365 ? html`<${Button} onClick=${() => { setRange(null); setDays(365); }}>Ver 12 meses<//>` : null}
+                <//>
+              <//><//>`
+            : html`<${Row} gutter=${gut}>
+              <${Col} xs=${24} xl=${16}>${hero}<//>
+              <${Col} xs=${24} xl=${8}><${Row} gutter=${gut} style=${{ height: screens.xl ? '100%' : 'auto' }}>${tiles.map((t, i) => html`<${Col} key=${i} xs=${24} sm=${8} xl=${24}>${t}<//>`)}<//><//>
+
+              <${Col} xs=${24} lg=${12}>
+                <${ChartCard} title="Para onde foi o tempo" icon="FolderOutlined" table=${{ columns: timeCols(dim === 'project' ? 'Projeto' : dim === 'area' ? 'Área' : 'Contexto'), data: dimDef.rows }}
+                  extra=${html`<${Segmented} size="small" value=${dim} onChange=${setDim} aria-label="Agrupar por" options=${[{ value: 'project', label: 'Projeto' }, { value: 'area', label: 'Área' }, { value: 'context', label: 'Contexto' }]} />`}>
+                  <${HBarList} rows=${dimDef.rows} total=${data.total} mode=${mode} lead=${dimDef.lead} onOpen=${dimDef.open} />
+                <//>
+              <//>
+              <${Col} xs=${24} lg=${12}>
+                <${ChartCard} title="Tarefas com mais tempo" icon="OrderedListOutlined" empty=${data.tasks.length ? null : 'Nenhuma tarefa com tempo.'}
+                  table=${{ columns: [{ title: 'Tarefa', dataIndex: 'name', key: 'name' }, { title: 'Projeto', key: 'p', render: (_, r) => r.project ? P[r.project].name : '—' }, { title: 'Tempo', key: 't', align: 'right', render: (_, r) => html`<span className="ct-mono">${fmtHM(r.secs)}</span>` }], data: data.tasks }}>
+                  <${HBarList} rows=${data.tasks} total=${data.total} mode=${mode} onOpen=${() => go('tarefa')} sub=${r => r.project ? P[r.project].name : 'sem projeto'}
+                    lead=${r => html`<span className="ct-hbar-label"><span className="ct-dot" style=${{ background: r.project ? P[r.project].color : 'transparent', border: r.project ? 0 : '1px dashed var(--ct-border-strong)' }}></span><span className="ct-ellipsis">${r.name}</span></span>`} />
+                <//>
+              <//>
+
+              <${Col} xs=${24} lg=${12}>
+                <${ChartCard} title="Por categoria" icon="FlagOutlined"
+                  table=${{ columns: [{ title: 'Categoria', key: 'c', render: (_, r) => CATEGORY[r.key].label }, { title: 'Tarefas', dataIndex: 'tasks', key: 'n', align: 'right' }, { title: 'Tempo', key: 't', align: 'right', render: (_, r) => html`<span className="ct-mono">${fmtHM(r.secs)}</span>` }], data: data.categories }}>
+                  <${HBarList} rows=${data.categories.map(r => ({ ...r, name: CATEGORY[r.key].label }))} total=${data.total} mode=${mode} sub=${r => r.tasks + ' tarefas'}
+                    onOpen=${r => toTasks('Abre Tarefas filtrada por ' + CATEGORY[r.key].label)} lead=${r => html`<${Chip} def=${CATEGORY[r.key]} mode=${mode} />`} />
+                  ${data.categories.find(c => c.key === 'time_leak').secs / data.total > 0.1 ? html`<${Text} type="secondary" style=${{ fontSize: 12, display: 'block', marginTop: 8, paddingInline: 8 }}>
+                    Time leak é tempo que escapou do plano. Vale olhar na revisão semanal, sem culpa.<//>` : null}
+                <//>
+              <//>
+              <${Col} xs=${24} lg=${12}>
+                <${ChartCard} title="Por nível de energia" icon="ThunderboltOutlined"
+                  table=${{ columns: [{ title: 'Energia', key: 'e', render: (_, r) => ENERGY[r.key].label }, { title: 'Tarefas', dataIndex: 'tasks', key: 'n', align: 'right' }, { title: 'Tempo', key: 't', align: 'right', render: (_, r) => html`<span className="ct-mono">${fmtHM(r.secs)}</span>` }, { title: 'Média', key: 'a', align: 'right', render: (_, r) => html`<span className="ct-mono">${fmtHM(r.avg)}</span>` }], data: data.energy }}>
+                  <${HBarList} rows=${data.energy.map(r => ({ ...r, name: 'Energia ' + ENERGY[r.key].label.toLowerCase() }))} total=${data.total} mode=${mode} sub=${r => `${r.tasks} tarefas · média ${fmtHM(r.avg)}`}
+                    onOpen=${r => toTasks('Abre Tarefas filtrada por energia ' + ENERGY[r.key].label.toLowerCase())} lead=${r => html`<span className="ct-hbar-label"><${Energy} level=${r.key} /><span>${ENERGY[r.key].label}</span></span>`} />
+                <//>
+              <//>
+
+              <${Col} xs=${24} xl=${14}>
+                <${ChartCard} title="Quando você foca" icon="ClockCircleOutlined" extra=${screens.sm ? html`<${HeatLegend} mode=${mode} />` : null}
+                  table=${{ columns: [{ title: 'Dia', dataIndex: 'name', key: 'name', fixed: 'left' }].concat(HOURS.map((h, j) => ({ title: h + 'h', key: 'h' + h, align: 'right', render: (_, r) => html`<span className="ct-mono">${r.vals[j] ? Math.round(r.vals[j] / 60) : ''}</span>` }))), data: [1, 2, 3, 4, 5, 6, 0].map(wd => ({ key: wd, name: WEEKDAYS[wd], vals: data.heat[wd] })) }}>
+                  <${HourHeatmap} heat=${data.heat} mode=${mode} />
+                  <${Text} type="secondary" style=${{ fontSize: 12, display: 'block', marginTop: 8 }}>Seus horários de mais foco: use para marcar as tarefas de energia alta.<//>
+                <//>
+              <//>
+              <${Col} xs=${24} xl=${10}>
+                <${ChartCard} title="Constância" icon="CalendarOutlined" extra=${screens.sm ? html`<${HeatLegend} mode=${mode} />` : null}
+                  table=${{ columns: [{ title: 'Dia', key: 'd', render: (_, r) => r.d.format('ddd, DD/MM/YYYY') }, { title: 'Tempo', key: 't', align: 'right', render: (_, r) => html`<span className="ct-mono">${fmtHM(r.secs)}</span>` }], data: data.daily.slice().reverse().map(x => ({ ...x, key: x.date })) }}>
+                  <${CalendarHeat} daily=${data.daily} mode=${mode} />
+                  <${Text} type="secondary" style=${{ fontSize: 12, display: 'block', marginTop: 8 }}>${data.daily.filter(x => x.secs > 0).length} de ${data.days} dias com sessão de foco.<//>
+                <//>
+              <//>
+            <//>`}
+          </div>
+        <//>
       <//>
     </div>`;
   }

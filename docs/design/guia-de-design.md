@@ -103,10 +103,25 @@ níveis, nos limiares atuais: `#FFF6DD` → `#FFF0E5` → `#FDECEE` no claro, `#
 **Projetos, contextos e tags** — cor livre escolhida pelo usuário, mostrada só como ponto de 8px ao
 lado do nome. Nunca como fundo de texto.
 
-**Gráficos** — oito cores categóricas na mesma luminosidade, na ordem:
-`#5B47EB #2A62D6 #0F6E7A #0B7A50 #A15C00 #A84803 #B8327A #5D6B82` (claro) e
-`#8F82FF #7AA5FF #5CC8D4 #4CD69A #F0B44C #FF9A55 #F07AB8 #9AA8C0` (escuro). Gráfico de status usa as
-cores de status, não estas.
+**Gráficos** — a cor segue o trabalho do dado:
+
+| Uso                                     | Claro                                                                          | Escuro                                                                         |
+| --------------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| Série única e destaque                  | `#5B47EB`                                                                      | `#8F82FF`                                                                      |
+| Série recuada (contexto do destaque)    | `#8F8BA6`                                                                      | `#6C6884`                                                                      |
+| Sequencial (heatmap, vazio → mais)      | `#ECEBF3 #A99DFF #8F80FA #7462F2 #5B47EB #4532C4`                              | `#24222F #4A3F94 #5F50B8 #7766DA #9185FF #B7AEFF`                              |
+| Categórica (só quando a série é o tema) | `#5B47EB #EB6834 #1BAF7A #EDA100 #E87BA4 #008300 #2A78D6 #E34948`, nessa ordem | `#8577F5 #D95926 #199E70 #C98500 #D55181 #0CA30C #3987E5 #E66767`, nessa ordem |
+
+As quatro passaram no validador da skill `dataviz` (`validate_palette.js`): faixa de luminosidade,
+croma, separação para daltonismo (ΔE ≥ 8 entre vizinhas), visão normal (ΔE ≥ 15) e contraste
+sobre `surface`. A paleta categórica anterior (`#2A62D6 #0F6E7A…`) reprovou: laranja e âmbar
+vizinhos com ΔE 4,7 e cinza sem croma. No claro, verde-água, amarelo e rosa ficam abaixo de 3:1,
+então gráfico categórico sempre tem legenda com nome e a visão de tabela. A ordem é fixa: uma
+série nova pega o próximo slot, nunca uma cor gerada; acima de oito, o resto vira "Outros".
+
+Status, categoria e energia **não** viram cor de série: as cores de status reprovaram como paleta
+categórica (inbox e próximas com ΔE 14,8). Nesses gráficos a barra é da cor única e a identidade
+vem do chip com ícone e texto ao lado.
 
 ### 3.3 Regras
 
@@ -118,15 +133,16 @@ cores de status, não estas.
 
 ## 4. Tipografia
 
-| Papel           | Fonte                      | Tamanho / peso                                | Onde                                     |
-| --------------- | -------------------------- | --------------------------------------------- | ---------------------------------------- |
-| Marca           | Denk One                   | 22px (header), 28px (vitrine)                 | só o logo                                |
-| Título de tela  | Geist                      | 20–24 / 600                                   | cabeçalho da página                      |
-| Título de seção | Geist                      | 16 / 600                                      | card, painel                             |
-| Interface       | Geist                      | 14 / 400–500                                  | texto, tabela, controles                 |
-| Metadado        | Geist                      | 12 / 400                                      | ids, datas, legendas; nunca abaixo de 12 |
-| Rótulo de seção | Geist                      | 11 / 600, maiúsculas, `letter-spacing: .08em` | "ORGANIZAÇÃO", "AGENDA"                  |
-| Números         | Geist Mono, `tabular-nums` | 12–14 em listas; 52–72 no timer               | tempo, ids, contadores, prazos           |
+| Papel            | Fonte                           | Tamanho / peso                                | Onde                                              |
+| ---------------- | ------------------------------- | --------------------------------------------- | ------------------------------------------------- |
+| Marca            | Denk One                        | 22px (header), 28px (vitrine)                 | só o logo                                         |
+| Título de tela   | Geist                           | 20–24 / 600                                   | cabeçalho da página                               |
+| Título de seção  | Geist                           | 16 / 600                                      | card, painel                                      |
+| Interface        | Geist                           | 14 / 400–500                                  | texto, tabela, controles                          |
+| Metadado         | Geist                           | 12 / 400                                      | ids, datas, legendas; nunca abaixo de 12          |
+| Rótulo de seção  | Geist                           | 11 / 600, maiúsculas, `letter-spacing: .08em` | "ORGANIZAÇÃO", "AGENDA"                           |
+| Números          | Geist Mono, `tabular-nums`      | 12–14 em listas; 52–72 no timer               | tempo, ids, contadores, prazos                    |
+| Número de painel | Geist, algarismos proporcionais | 48 / 600 (herói, um por tela); 26 / 600       | totais do dashboard, que não se alinham em coluna |
 
 Geist e Geist Mono entram por `@fontsource-variable/*` (o app é offline e a CSP bloqueia fonte
 remota). Isso também corrige `--font-sans`/`--font-mono`, que hoje apontam para variáveis que não
@@ -426,6 +442,55 @@ Mesmo esqueleto das outras telas, com navegação própria porque são muitas se
   calendário, avisos de prazo, intervalo do envio das notas ao Notion). Também novos: alterar o
   atalho da captura e backup automático. Tudo isso hoje é fixo no código (E8) e precisa de backend;
   no protótipo leva a etiqueta "novo".
+
+### Dashboard
+
+O dashboard responde duas perguntas, nessa ordem: **o sistema está em dia?** e **para onde foi o
+tempo?** Toda métrica abre o que ela conta (E4). Base: NN/g (comprimento e posição leem melhor que
+área e ângulo), Kim et al. 2016 (enquadramento neutro), Mark et al. 2014 (foco varia por hora e dia).
+
+- **Duas seções.** "Agora" mostra o estado atual e não tem filtro. "No período" começa com a linha
+  de filtros, e os filtros valem para tudo abaixo dela; nenhum card tem filtro próprio.
+- **Saúde do sistema** (Agora): seis cartões clicáveis em grade — Inbox para processar (com o item
+  mais antigo e a taxa processada na semana), Projetos sem próxima ação (novo), Projetos parados
+  (> 7 dias), Aguardando sem resposta (> 14 dias), Prazos vencidos (novo) e Revisão semanal (dias
+  desde a última). Ícone num quadrado tingido: verde com check quando está em dia, âmbar quando
+  pede atenção, vermelho **só** para prazo vencido. Cada cartão leva à lista já filtrada.
+- **Tarefas abertas por status** (Agora): barras horizontais ordenadas pelo fluxo, chip do status
+  ao lado, contagem e %. Substitui o funil, que punha Aguardando como etapa depois de Executando.
+- **Filtros** (No período): `Segmented` 7 dias / 30 dias / 90 dias / 12 meses (padrão 30),
+  `RangePicker` para período livre e `Select` de projeto. "Exportar PDF" fica na mesma linha e
+  exporta o período escolhido. Ao trocar o filtro, o conteúdo fica com 55% de opacidade até os
+  dados novos chegarem, sem skeleton e sem pulo de layout.
+- **Tempo focado** (o único número herói da tela, 48px, sans, algarismos proporcionais): total do
+  período, diferença para o período anterior e média por dia útil. Embaixo, colunas por dia (até
+  31 dias), por semana (até 120) ou por mês. Colunas na cor recuada e a atual (hoje, esta semana,
+  este mês) na cor primária. Ao lado, três números: tarefas concluídas, sessões de foco e média por
+  sessão, cada um com a diferença para o período anterior.
+- **Diferenças são neutras.** Seta e texto secundário, sem verde nem vermelho: menos horas não é
+  erro (Kim et al. 2016).
+- **Barras horizontais ordenadas** no lugar de toda pizza e rosca: "Para onde foi o tempo" (com
+  `Segmented` Projeto / Área / Contexto no cabeçalho do card — troca a visão, não filtra), "Tarefas
+  com mais tempo" (oito), "Por categoria" e "Por nível de energia". Uma cor só; a identidade vem do
+  ponto do projeto, do chip ou do medidor de energia. Cada linha mostra tempo e %, e clicar abre o
+  projeto, a tarefa ou a lista filtrada.
+- **Quando você foca** (novo): heatmap dia da semana × hora (6h–23h) com a escala sequencial, para
+  achar os horários bons para tarefas de energia alta. Precisa de consulta nova sobre o início das
+  sessões.
+- **Constância**: o heatmap anual de hoje, agora com rótulo de mês e de dia da semana, a escala
+  sequencial dos tokens e o período do filtro. Hoje fica contornado.
+- **Todo gráfico** tem tooltip no hover e no foco do teclado, e um botão "Ver como tabela" no
+  cabeçalho do card (acessibilidade e números exatos). Cada card tem `RegionBoundary` próprio.
+- **Vazio:** período sem sessão mostra um `Empty` só no lugar dos gráficos, com atalhos "Todos os
+  projetos" e "Ver 12 meses". A seção Agora continua visível.
+- **Sai do dashboard:** o painel "Em execução agora" (o timer já está no Header e na barra de
+  status), o gráfico "Tempo por status" (tempo somado pelo status atual da tarefa não responde
+  nada útil) e o título "Dashboard Avançado".
+- **Biblioteca:** fica o Recharts, que já está no projeto, com cores, fonte, grade e tooltip dos
+  tokens; barras horizontais, cartões e heatmaps são HTML com tokens, sem biblioteca.
+- **Responsivo:** grade `Row`/`Col` — dois cards por linha a partir de `lg`, herói + números lado a
+  lado a partir de `xl`. No celular os filtros ocupam a largura toda e os heatmaps rolam na
+  horizontal dentro do card.
 
 ## 9. Modo escuro
 
