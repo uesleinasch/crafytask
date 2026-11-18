@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   buildTaskCountQuery,
+  buildTaskIdsQuery,
   buildTaskListQuery,
   buildTaskStatusCountQuery,
   buildTaskListWhere,
@@ -262,5 +263,39 @@ describe('escapeLike', () => {
 
   it('deixa texto comum intacto', () => {
     expect(escapeLike('relatório final')).toBe('relatório final')
+  })
+})
+
+describe('arquivo', () => {
+  it('filtra pela data de arquivamento', () => {
+    const { clause, params } = buildTaskListWhere({
+      archived: true,
+      archivedAfter: '2026-01-01',
+      archivedBefore: '2026-06-01'
+    })
+
+    expect(clause).toContain('t.archived_at IS NOT NULL AND t.archived_at >= ?')
+    expect(clause).toContain('t.archived_at IS NOT NULL AND t.archived_at < ?')
+    expect(params).toEqual([1, '2026-01-01', '2026-06-01'])
+  })
+
+  it('ordena por arquivamento, nome e tempo', () => {
+    expect(buildTaskListQuery(COLUMNS, { sort: 'archived' }).sql).toContain(
+      'ORDER BY t.archived_at IS NULL, t.archived_at DESC'
+    )
+    expect(buildTaskListQuery(COLUMNS, { sort: 'name' }).sql).toContain(
+      'ORDER BY t.name COLLATE NOCASE ASC'
+    )
+    expect(buildTaskListQuery(COLUMNS, { sort: 'total_time' }).sql).toContain(
+      'ORDER BY t.total_seconds DESC'
+    )
+  })
+
+  it('lista os ids com o mesmo filtro da listagem', () => {
+    const { sql, params } = buildTaskIdsQuery({ archived: true, archivedBefore: '2025-11-18' })
+
+    expect(sql).toContain('SELECT t.id FROM tasks t WHERE t.is_archived = ?')
+    expect(sql).toContain('t.parent_task_id IS NULL')
+    expect(params).toEqual([1, '2025-11-18'])
   })
 })

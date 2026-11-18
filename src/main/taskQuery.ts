@@ -2,7 +2,10 @@ import type { TaskListFilters, TaskSort } from '@shared/types'
 
 const ORDER_BY: Record<TaskSort, string> = {
   updated: 't.updated_at DESC',
-  due_date: 't.due_date IS NULL, t.due_date ASC'
+  due_date: 't.due_date IS NULL, t.due_date ASC',
+  archived: 't.archived_at IS NULL, t.archived_at DESC, t.id DESC',
+  name: 't.name COLLATE NOCASE ASC, t.id ASC',
+  total_time: 't.total_seconds DESC, t.id DESC'
 }
 
 export function escapeLike(value: string): string {
@@ -70,6 +73,16 @@ export function buildTaskListWhere(filters: TaskListFilters): {
     params.push(filters.dueBefore)
   }
 
+  if (filters.archivedAfter) {
+    conditions.push('t.archived_at IS NOT NULL AND t.archived_at >= ?')
+    params.push(filters.archivedAfter)
+  }
+
+  if (filters.archivedBefore) {
+    conditions.push('t.archived_at IS NOT NULL AND t.archived_at < ?')
+    params.push(filters.archivedBefore)
+  }
+
   if (filters.overdueAt) {
     conditions.push(
       't.due_date IS NOT NULL AND (substr(t.due_date, 1, 10) < ? OR (substr(t.due_date, 1, 10) = ? AND t.due_time IS NOT NULL AND t.due_time < ?))'
@@ -116,6 +129,11 @@ export function buildTaskListQuery(
   }
 
   return { sql, params }
+}
+
+export function buildTaskIdsQuery(filters: TaskListFilters): { sql: string; params: unknown[] } {
+  const { clause, params } = buildTaskListWhere(filters)
+  return { sql: `SELECT t.id FROM tasks t WHERE ${clause} ORDER BY t.id`, params }
 }
 
 export function buildTaskCountQuery(filters: TaskListFilters): {

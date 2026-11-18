@@ -1,3 +1,4 @@
+import { isIsoDate } from '@shared/archiveAge'
 import {
   app,
   shell,
@@ -41,6 +42,7 @@ import {
   deleteTasks,
   getChildTaskIds,
   archiveTask,
+  listTaskIds,
   unarchiveTask,
   setTasksArchived,
   updateTaskStatus,
@@ -376,6 +378,33 @@ async function afterJiraIssueChange(taskId: number): Promise<void> {
 
 // Renomear, mesclar ou excluir uma tag muda o multi_select das tarefas no Notion, que só é
 // reescrito quando a tarefa inteira é sincronizada de novo.
+async function deleteTasksWithEffects(taskIds: number[]): Promise<void> {
+  if (taskIds.length === 0) return
+
+  const calendarIds = filterGcalSyncedIds([
+    ...taskIds,
+    ...taskIds.flatMap((id) => getChildTaskIds(id))
+  ])
+  const config = getNotionConfig()
+  if (config?.autoSync && config.databaseId) {
+    // Incluir as subtarefas de cada tarefa para excluí-las também do Notion
+    const idsToDelete = [...taskIds, ...taskIds.flatMap((id) => getChildTaskIds(id))]
+    await Promise.all(
+      idsToDelete.map(async (id) => {
+        try {
+          await deleteTaskFromNotion(id)
+        } catch (error) {
+          console.error(`Erro ao deletar tarefa ${id} do Notion:`, error)
+        }
+      })
+    )
+  }
+
+  disposeTerminalsForTasks([...taskIds, ...taskIds.flatMap((id) => getChildTaskIds(id))])
+  deleteTasks(taskIds)
+  pushToGoogle(calendarIds)
+}
+
 async function syncTasksAfterTagChange(taskIds: number[]): Promise<void> {
   if (taskIds.length === 0) return
   const config = getNotionConfig()
@@ -815,31 +844,16 @@ function setupIpcHandlers(): void {
     pushToGoogle(calendarIds)
   })
   ipcMain.handle('task:bulkDelete', async (_, ids: number[]) => {
-    const taskIds = normalizeTaskIds(ids)
-    if (taskIds.length === 0) return
-
-    const calendarIds = filterGcalSyncedIds([
-      ...taskIds,
-      ...taskIds.flatMap((id) => getChildTaskIds(id))
-    ])
-    const config = getNotionConfig()
-    if (config?.autoSync && config.databaseId) {
-      // Incluir as subtarefas de cada tarefa para excluí-las também do Notion
-      const idsToDelete = [...taskIds, ...taskIds.flatMap((id) => getChildTaskIds(id))]
-      await Promise.all(
-        idsToDelete.map(async (id) => {
-          try {
-            await deleteTaskFromNotion(id)
-          } catch (error) {
-            console.error(`Erro ao deletar tarefa ${id} do Notion:`, error)
-          }
-        })
-      )
-    }
-
-    disposeTerminalsForTasks([...taskIds, ...taskIds.flatMap((id) => getChildTaskIds(id))])
-    deleteTasks(taskIds)
-    pushToGoogle(calendarIds)
+    await deleteTasksWithEffects(normalizeTaskIds(ids))
+  })
+  ipcMain.handle('task:countArchivedBefore', (_, cutoff: string) =>
+    isIsoDate(cutoff) ? listTaskIds({ archived: true, archivedBefore: cutoff }).length : 0
+  )
+  ipcMain.handle('task:deleteArchivedBefore', async (_, cutoff: string) => {
+    if (!isIsoDate(cutoff)) throw new Error('Data de corte inválida.')
+    const taskIds = listTaskIds({ archived: true, archivedBefore: cutoff })
+    await deleteTasksWithEffects(taskIds)
+    return taskIds.length
   })
   ipcMain.handle('task:bulkUpdateStatus', (_, ids: number[], status: TaskStatus) => {
     const refused: string[] = []

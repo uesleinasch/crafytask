@@ -158,6 +158,10 @@ const api = {
   syncTaskNotes: (id: number): Promise<void> => ipcRenderer.invoke('notion:syncTaskNotes', id),
   deleteTask: (id: number): Promise<void> => ipcRenderer.invoke('task:delete', id),
   bulkDeleteTasks: (ids: number[]): Promise<void> => ipcRenderer.invoke('task:bulkDelete', ids),
+  countArchivedBefore: (cutoff: string): Promise<number> =>
+    ipcRenderer.invoke('task:countArchivedBefore', cutoff),
+  deleteArchivedBefore: (cutoff: string): Promise<number> =>
+    ipcRenderer.invoke('task:deleteArchivedBefore', cutoff),
   bulkUpdateStatus: (ids: number[], status: TaskStatus): Promise<void> =>
     ipcRenderer.invoke('task:bulkUpdateStatus', ids, status),
   bulkMoveToProject: (ids: number[], projectId: number | null): Promise<void> =>

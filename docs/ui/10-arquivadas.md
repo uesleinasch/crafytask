@@ -8,6 +8,12 @@ Consultar tarefas arquivadas, restaurá-las ou apagá-las de vez. Arquivar (`is_
 diferente de finalizar (`status = 'finalizada'`): uma tarefa pode ser arquivada em qualquer status,
 e some de todas as outras listagens.
 
+Desde a F6-b1, arquivar grava `tasks.archived_at` e desarquivar limpa (as já arquivadas antes da
+coluna receberam o `updated_at`). `listTasks` aceita `archivedAfter`/`archivedBefore` e as ordenações
+`archived`, `name` e `total_time`; `task:countArchivedBefore` e `task:deleteArchivedBefore` contam e
+apagam as arquivadas antes de uma data, com os mesmos efeitos de `task:bulkDelete` (Notion, Google,
+terminais). A tela ainda não usa nada disso: vem na F6-b2.
+
 O título na tela é **"Arquivo Morto"**, enquanto o botão que leva até aqui diz **"Arquivadas"**.
 
 ## Cabeçalho
