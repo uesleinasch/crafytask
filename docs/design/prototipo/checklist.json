@@ -560,6 +560,26 @@
       }
     },
     {
+      "id": "F2.19",
+      "fase": "F2",
+      "titulo": "Aguardando o quê: ampulheta na lista e pílula no detalhe",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/components/tasks/{TaskTable,TaskCard}.tsx",
+        "padroes": ["waiting_for", "Hourglass", "Aguardando: "]
+      }
+    },
+    {
+      "id": "F2.20",
+      "fase": "F2",
+      "titulo": "Jira discreto na lista: chave em mono e submenu Jira no menu",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/components/tasks/{TaskTable,TaskCard,TaskContextMenu}.tsx",
+        "padroes": ["jira_key", "Abrir no Jira", "Status no Jira", "Campos do Jira"]
+      }
+    },
+    {
       "id": "F2.10",
       "fase": "F2",
       "titulo": "Lista conferida: tabela, cards, grupos e Kanban, claro e escuro",

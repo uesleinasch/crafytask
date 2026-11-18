@@ -385,6 +385,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     { id: 731, name: 'Corrigir rolagem do terminal ao redimensionar', status: 'proximas', category: 'prioridade', project: 13, contexts: ['@dev'], due: '2026-11-18', secs: 1860, energy: 'medio', today: true },
     { id: 698, name: 'Revisar PR de sync de worklog do Jira', status: 'aguardando', category: 'normal', project: 13, contexts: ['@dev', '@github'], due: null, secs: 600, energy: 'baixo', waiting: 'Revisor externo' },
     { id: 702, name: 'Planejar sprint 48 com o time', status: 'proximas', category: 'urgente', project: 4, contexts: ['@reunião', '@dev', '@telefone'], due: '2026-11-17', dueTime: '14:00', secs: 0, energy: 'alto', today: true },
+    { id: 740, name: 'Ajustar sincronização de pedidos com o ERP', status: 'proximas', category: 'prioridade', project: 4, contexts: ['@dev'], due: '2026-11-20', dueTime: '18:00', secs: 3120, energy: 'medio', blocked: true, jira: { key: 'CONNECT-1234', type: 'História', status: 'Em andamento' } },
     { id: 705, name: 'Reunião diária', status: 'executando', category: 'time_leak', project: 4, contexts: ['@reunião'], due: null, secs: 4380, energy: 'baixo', running: true, leak: 2 },
     { id: 706, name: 'Responder e-mails do fornecedor', status: 'inbox', category: 'normal', project: null, contexts: [], due: null, secs: 0, energy: 'baixo' },
     { id: 707, name: 'Ideia: modo apresentação para a revisão semanal', status: 'inbox', category: 'normal', project: 13, contexts: [], due: null, secs: 0, energy: 'medio' },
@@ -785,6 +786,11 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           disabled: k === 'executando' && ids.some(id => (findTask(id) || {}).blocked) })) },
         { key: 'cat', icon: createElement(I.FlagOutlined), label: tag('Categoria'), children: Object.entries(CATEGORY).map(([k, v]) => ({ key: 'cat:' + k, label: (many ? '' : check(r.category === k)) + v.label })) },
         { key: 'proj', icon: createElement(I.FolderOutlined), label: tag('Mover para projeto'), children: [{ key: 'proj:0', label: (many ? '' : check(!r.project)) + 'Sem projeto' }].concat(PROJECTS.map(p => ({ key: 'proj:' + p.id, label: (many ? '' : check(r.project === p.id)) + p.name }))) },
+        ...(many || !r.jira ? [] : [{ key: 'jira', icon: createElement(I.ApiOutlined), label: 'Jira', children: [
+          { key: 'jira:open', icon: createElement(I.ExportOutlined), label: 'Abrir no Jira' },
+          { key: 'jira:status', label: 'Status no Jira', children: ['A fazer', 'Em andamento', 'Em revisão', 'Concluído'].map(v => ({ key: 'jirast:' + v, label: check(r.jira.status === v) + v })) },
+          { key: 'jira:fields', icon: createElement(I.ControlOutlined), label: 'Campos do Jira…' }
+        ] }]),
         ...(many ? [] : [{ key: 'ctx', icon: createElement(I.EnvironmentOutlined), label: 'Contextos', children: CONTEXTS.map(c => ({ key: 'ctx:' + c.name, label: check(r.contexts.includes(c.name)) + c.emoji + ' ' + c.name })) }]),
         { type: 'divider' },
         ...(many ? [] : [{ key: 'copy', icon: createElement(I.CopyOutlined), label: 'Copiar #' + r.id }]),
@@ -801,6 +807,8 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         if (kind === 'cat') { updateTasks(ids, { category: val }); message.success('Categoria: ' + CATEGORY[val].label); }
         if (kind === 'proj') { updateTasks(ids, { project: Number(val) || null }); message.success(Number(val) ? 'Movida para ' + P[val].name : 'Sem projeto'); }
         if (kind === 'ctx') updateTasks([r.id], t => ({ contexts: t.contexts.includes(val) ? t.contexts.filter(x => x !== val) : t.contexts.concat(val) }));
+        if (kind === 'jira') message.info(val === 'open' ? 'Abre ' + r.jira.key + ' no navegador' : val === 'fields' ? 'Abre o painel Campos do Jira · ' + r.jira.key : 'Busca as transições da issue');
+        if (kind === 'jirast') { updateTasks([r.id], t => ({ jira: { ...t.jira, status: val } })); message.success('Transição enviada ao Jira: ' + val); }
         if (kind === 'copy') { try { navigator.clipboard.writeText(String(r.id)).catch(() => {}); } catch (e) {} message.success('#' + r.id + ' copiado'); }
         if (kind === 'archive') { removeTasks(ids); message.success(plural(n, 'tarefa arquivada', 'tarefas arquivadas')); }
         if (kind === 'delete') modal.confirm({
@@ -827,7 +835,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       <${Button} size="small" type=${today.has(t.id) ? 'primary' : 'text'} ghost=${today.has(t.id)} aria-label="Hoje" aria-pressed=${today.has(t.id)} icon=${html`<${I.ScheduleOutlined} />`}
         onClick=${e => { e.stopPropagation(); toggleToday([t.id]); }} />
     <//>`;
-    const timerBtn = t => html`<${Tooltip} title=${t.blocked ? 'Bloqueada por dependências' : t.running ? 'Pausar timer' : 'Iniciar timer'}>
+    const timerBtn = t => html`<${Tooltip} title=${t.blocked ? 'Bloqueada: depende de #702' : t.running ? 'Pausar timer' : 'Iniciar timer'}>
       <${Button} size="small" type="text" disabled=${t.blocked && !t.running} aria-label=${t.running ? 'Pausar timer' : 'Iniciar timer'} icon=${html`<${t.running ? I.PauseOutlined : I.CaretRightOutlined} />`}
         onClick=${e => { e.stopPropagation(); updateTasks([t.id], { running: !t.running }); }} />
     <//>`;
@@ -853,6 +861,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           <a className=${'ct-taskname' + (t.status === 'finalizada' ? ' done' : '')} onClick=${() => go('tarefa')} style=${{ color: 'var(--ct-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>${t.name}</a>
           ${t.isSub && !showStatusCol ? html`<${Chip} def=${STATUS[t.status]} mode=${mode} />` : null}
           ${t.waiting ? html`<${Tooltip} title=${'Aguardando: ' + t.waiting}><${I.HourglassOutlined} aria-label=${'Aguardando: ' + t.waiting} style=${{ color: STATUS.aguardando[mode][0], fontSize: 12 }} /><//>` : null}
+          ${t.jira ? html`<${Tooltip} title=${t.jira.type + ' · Jira: ' + t.jira.status}><span className="ct-mono" aria-label=${'Jira ' + t.jira.key + ', ' + t.jira.type + ', ' + t.jira.status} style=${{ fontSize: 12, color: 'var(--ct-text-3)', flex: 'none' }}>${t.jira.key}</span><//>` : null}
           ${others.length ? html`<${Tooltip} title=${'Também em ' + others.join(', ')}><${I.CopyOutlined} aria-label="Aparece em outros grupos" style=${{ color: 'var(--ct-text-3)', fontSize: 12 }} /><//>` : null}
         <//>
       <//>`;
@@ -940,6 +949,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
             ${t.category !== 'normal' ? html`<${Chip} def=${CATEGORY[t.category]} mode=${mode} />` : null}
             ${groupBy !== 'project' && !projectId ? html`<${ProjectLabel} id=${t.project} />` : null}
             ${groupBy !== 'context' && t.contexts.length ? ctxCell(t) : null}
+            ${t.jira ? html`<${Tooltip} title=${t.jira.type + ' · Jira: ' + t.jira.status}><span className="ct-mono" aria-label=${'Jira ' + t.jira.key + ', ' + t.jira.type + ', ' + t.jira.status} style=${{ fontSize: 12, color: 'var(--ct-text-3)', flex: 'none' }}>${t.jira.key}</span><//>` : null}
             <span style=${{ marginInlineStart: 'auto' }} className="ct-mono">${fmtShort(t.secs)}</span>
           <//>
         <//>
@@ -1046,6 +1056,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const [sched, setSched] = useState(t.scheduled ? { date: t.scheduled, start: t.start, end: t.end } : null);
     const [due, setDue] = useState(t.due ? { date: t.due, time: t.dueTime } : null);
     const [url, setUrl] = useState(t.url);
+    const [waiting, setWaiting] = useState(t.waiting || '');
     const [shown, setShown] = useState([]);
     const [gcal, setGcal] = useState(t.gcal);
     const [dirInherited, setDirInherited] = useState(t.dirInherited);
@@ -1140,6 +1151,12 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const hidden = optional.filter(o => !visible(o.key));
 
     const propBar = html`<div className="ct-propbar">
+      ${status === 'aguardando' || waiting ? html`<${PropPill} label="Aguardando" icon="HourglassOutlined" muted=${!waiting} tone=${waiting ? STATUS.aguardando[mode][0] : null} content=${html`<${Flex} vertical gap=${8}>
+          <${Input} autoFocus allowClear placeholder="Quem ou o quê? Ex.: Revisor externo" value=${waiting} onChange=${e => setWaiting(e.target.value)} maxLength=${120} />
+          <${Text} type="secondary" style=${{ fontSize: 12 }}>Aparece na lista (ampulheta) e no passo Aguardando da revisão semanal. Fica guardado se o status mudar.<//>
+        <//>`}>
+        ${waiting ? 'Aguardando: ' + waiting : 'Aguardando quem?'}
+      <//>` : null}
       <${PropPill} label="Categoria" content=${html`<${Flex} vertical gap=${6}>${Object.entries(CATEGORY).map(([k, v]) => html`<${Button} key=${k} type=${category === k ? 'primary' : 'text'} ghost=${category === k} style=${{ justifyContent: 'flex-start' }} onClick=${() => setCategory(k)}><${Chip} def=${v} mode=${mode} /><//>`)}<//>`}>
         ${category === 'normal' ? html`<span style=${{ color: 'var(--ct-text-2)' }}>Normal</span>` : html`<${Chip} def=${CATEGORY[category]} mode=${mode} />`}
       <//>
