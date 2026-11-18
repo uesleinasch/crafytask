@@ -42,24 +42,26 @@ Cada princípio vem de uma conclusão da pesquisa ([lista completa](pesquisa/REA
 Neutros com croma baixo puxado para o violeta (matiz ≈ 282 em OKLCH), nunca cinza puro. Valores
 calculados e conferidos: todo texto passa WCAG AA (4,5:1) sobre a superfície onde aparece.
 
-| Token          | Claro     | Escuro    | Uso                            | Token antd                                   |
-| -------------- | --------- | --------- | ------------------------------ | -------------------------------------------- |
-| `bg`           | `#F6F5FA` | `#111018` | fundo do layout                | `colorBgLayout`                              |
-| `surface`      | `#FFFFFF` | `#1A1923` | cards, tabela, header          | `colorBgContainer`                           |
-| `elevated`     | `#FFFFFF` | `#22202E` | popover, modal, dropdown       | `colorBgElevated`                            |
-| `sider`        | `#FBFAFE` | `#15141D` | navegação lateral              | `Layout.siderBg`                             |
-| `border`       | `#E4E2EE` | `#2E2B3C` | divisórias, borda de card      | `colorBorderSecondary`                       |
-| `borderStrong` | `#8A8796` | `#706C85` | borda de controle              | `colorBorder`                                |
-| `text`         | `#1B1A27` | `#ECEAF6` | texto principal                | `colorText`                                  |
-| `text2`        | `#5B5970` | `#A9A6BE` | texto secundário               | `colorTextSecondary`                         |
-| `text3`        | `#6B6980` | `#8C89A1` | metadado, rótulo de seção      | `colorTextTertiary`                          |
-| `primary`      | `#5B47EB` | `#8F82FF` | ação primária, link, seleção   | `colorPrimary`, `colorLink`                  |
-| `primarySoft`  | `#EFEDFF` | `#221E3D` | item selecionado               | `Menu.itemSelectedBg`, `Table.rowSelectedBg` |
-| `onPrimary`    | `#FFFFFF` | `#111018` | texto sobre `primary` (botão)  | `colorTextLightSolid`                        |
-| `brand`        | `#705EFF` | `#8F82FF` | logo                           | —                                            |
-| `hover`        | `#F0EFF6` | `#25232F` | item de menu sob o ponteiro    | `Menu.itemHoverBg`                           |
-| `rowHover`     | `#F7F6FC` | `#201E2B` | linha de tabela sob o ponteiro | `Table.rowHoverBg`                           |
-| `track`        | `#ECEBF3` | `#15141D` | trilho do `Segmented`          | `Segmented.trackBg`                          |
+| Token            | Claro     | Escuro    | Uso                                   | Token antd                                   |
+| ---------------- | --------- | --------- | ------------------------------------- | -------------------------------------------- |
+| `bg`             | `#F6F5FA` | `#111018` | fundo do layout                       | `colorBgLayout`                              |
+| `surface`        | `#FFFFFF` | `#1A1923` | cards, tabela, header                 | `colorBgContainer`                           |
+| `elevated`       | `#FFFFFF` | `#22202E` | popover, modal, dropdown              | `colorBgElevated`                            |
+| `sider`          | `#FBFAFE` | `#15141D` | navegação lateral                     | `Layout.siderBg`                             |
+| `border`         | `#E4E2EE` | `#2E2B3C` | divisórias, borda de card             | `colorBorderSecondary`                       |
+| `borderStrong`   | `#8A8796` | `#706C85` | borda de controle                     | `colorBorder`                                |
+| `text`           | `#1B1A27` | `#ECEAF6` | texto principal                       | `colorText`                                  |
+| `text2`          | `#5B5970` | `#A9A6BE` | texto secundário                      | `colorTextSecondary`                         |
+| `text3`          | `#6B6980` | `#8C89A1` | metadado, rótulo de seção             | `colorTextTertiary`, `colorTextQuaternary`   |
+| `primary`        | `#5B47EB` | `#8F82FF` | ação primária, link, seleção          | `colorPrimary`, `colorLink`                  |
+| `primarySoft`    | `#EFEDFF` | `#221E3D` | item selecionado                      | `Menu.itemSelectedBg`, `Table.rowSelectedBg` |
+| `onPrimary`      | `#FFFFFF` | `#111018` | texto sobre `primary` (botão)         | `colorTextLightSolid`                        |
+| `brand`          | `#705EFF` | `#8F82FF` | logo                                  | —                                            |
+| `hover`          | `#F0EFF6` | `#25232F` | item de menu sob o ponteiro           | `Menu.itemHoverBg`                           |
+| `rowHover`       | `#F7F6FC` | `#201E2B` | linha de tabela sob o ponteiro        | `Table.rowHoverBg`                           |
+| `track`          | `#ECEBF3` | `#15141D` | trilho do `Segmented`                 | `Segmented.trackBg`                          |
+| `calBlock`       | `#EFEDFF` | `#252047` | fundo do bloco de tempo no calendário | `semantic.ts`                                |
+| `calBlockBorder` | `#C9C1FF` | `#3E3770` | borda do bloco de tempo no calendário | `semantic.ts`                                |
 
 `#705EFF` com texto branco dá 4,44:1 e não passa AA; por isso o botão usa `#5B47EB` (5,92:1) e o
 `#705EFF` fica no logo, que é texto grande ([cálculo](pesquisa/03-cor-acessibilidade-e-modo-escuro.md)).
@@ -73,6 +75,11 @@ de time leak do escuro. O teste `theme/contrast.test.ts` confere cada par.
 Feedback do sistema: sucesso `#0B7A50` / `#4CD69A`, aviso `#A15C00` / `#F0B44C`, erro `#C02331` /
 `#FF7A82`, informação `#2A62D6` / `#7AA5FF` (`colorSuccess`, `colorWarning`, `colorError`,
 `colorInfo`).
+
+O ponto pulsante de executando (chip, pílula de timers, bloco do calendário, modo foco) usa
+`success`: `#0B7A50` no claro, `#4CD69A` no escuro. O anel do pulso é a mesma cor com transparência
+(`color-mix`), nunca outro verde. O ponto de integração em dia na barra de status também usa
+`success`.
 
 ### 3.2 Domínio GTD
 
@@ -103,16 +110,36 @@ médio para aguardando, baixo para inbox, someday e finalizada.
 Time leak é âmbar em todo lugar. O roxo que ele usa hoje no acento da task e no dashboard sai
 (inconsistência A1).
 
-**Escala de time leak** — a única semântica que pinta o fundo da linha ou do card inteiro. Três
-níveis pelo quanto a tarefa passou do limite de tempo — qualquer excesso, 30 min ou mais, 60 min
-ou mais (os limiares de hoje em `TaskTable`; viram preferência em F7-f): `#FFF6DD` → `#FFF0E5` → `#FDECEE` no claro, `#2A2412` → `#2E2016` →
-`#301A1E` no escuro. O texto continua `text`.
+**Escala de time leak** — a única semântica que pinta o fundo da linha ou do card inteiro. Vale
+para tarefa da categoria time leak e sobe com o tempo acumulado nela: 30 min ou mais pinta o nível
+1 (âmbar), 1 h ou mais o nível 2 (laranja), 2 h ou mais o nível 3 (vermelho). Cores: `#FFF6DD` →
+`#FFF0E5` → `#FDECEE` no claro, `#2A2412` → `#2E2016` → `#301A1E` no escuro. O texto continua
+`text`. Os três limiares viram preferência na F7-f (Configurações → Fluxo de trabalho). Hoje o
+`TaskTable` usa outros (qualquer tempo, 30 min e 60 min); a F2-d troca para estes.
 
 **Energia** — não usa cor: um medidor de três barras na cor primária (cheias = nível), com tooltip
 "Energia alta/média/baixa". O emoji atual sai.
 
-**Projetos, contextos e tags** — cor livre escolhida pelo usuário, mostrada só como ponto de 8px ao
-lado do nome. Nunca como fundo de texto.
+**Projetos, contextos e tags** — cor escolhida pelo usuário numa paleta fixa de dez, `USER_COLORS`
+em `semantic.ts`: `#E5484D #A84803 #A15C00 #0B7A50 #0F6E7A #2A62D6 #5B47EB #7647B0 #B8327A #5D6B82`.
+Os seletores oferecem só essas dez. Uma cor já gravada fora delas continua valendo e
+aparece como está. A cor aparece como ponto de 8px ao lado do nome, nunca como fundo de texto. A
+exceção é o emoji do contexto: fica num quadrado com a cor do contexto a ~14% de opacidade (sufixo
+hex `24`, como em `#2A62D624`).
+
+**Status do projeto** — `ProjectStatusChip` reaproveita as cores dos status de task, com ícone
+próprio:
+
+| Status do projeto | Ícone (lucide) | Cores de   |
+| ----------------- | -------------- | ---------- |
+| Ativo             | `FolderOpen`   | Próximas   |
+| Someday           | `Lightbulb`    | Someday    |
+| Concluído         | `CircleCheck`  | Finalizada |
+| Arquivado         | `Archive`      | Inbox      |
+
+**Sem próxima ação** — o chip e o aviso em texto usam as cores de Aguardando (tom de aviso), com
+`TriangleAlert`, em todo lugar: lista e detalhe do projeto, Horizontes e Revisão semanal. Nunca o
+âmbar do time leak, que é categoria.
 
 **Gráficos** — a cor segue o trabalho do dado:
 
@@ -150,20 +177,25 @@ propósito), usada só no chip `H0`…`H5` (fundo / texto): claro `#F1EFFF/#4B3B
 
 ## 4. Tipografia
 
-| Papel            | Fonte                           | Tamanho / peso                                                             | Onde                                              |
-| ---------------- | ------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------- |
-| Marca            | Denk One                        | 22px (header), 28px (vitrine)                                              | só o logo                                         |
-| Título de tela   | Geist                           | 15 / 600 no Header; 20–24 / 600 só em cabeçalho próprio (detalhe, revisão) | o Header do shell mostra o nome da tela           |
-| Título de seção  | Geist                           | 15 / 600; 14 no card pequeno (`Card.headerFontSize`, `headerFontSizeSM`)   | card, painel                                      |
-| Interface        | Geist                           | 14 / 400–500                                                               | texto, tabela, controles                          |
-| Metadado         | Geist                           | 12 / 400                                                                   | ids, datas, legendas; nunca abaixo de 12          |
-| Rótulo de seção  | Geist                           | 11 / 600, maiúsculas, `letter-spacing: .08em`                              | "ORGANIZAÇÃO", "AGENDA"                           |
-| Números          | Geist Mono, `tabular-nums`      | 12–14 em listas; 24–30 no cronômetro da task; 40 na vitrine                | tempo, ids, contadores, prazos                    |
-| Número de painel | Geist, algarismos proporcionais | 48 / 600 (herói, um por tela); 26 / 600 (`Statistic.contentFontSize`)      | totais do dashboard, que não se alinham em coluna |
+| Papel                  | Fonte                           | Tamanho / peso                                                             | Onde                                                          |
+| ---------------------- | ------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Marca                  | Denk One                        | 22px (header), 28px (vitrine)                                              | só o logo                                                     |
+| Título de tela         | Geist                           | 15 / 600 no Header; 20–24 / 600 só em cabeçalho próprio (detalhe, revisão) | o Header do shell mostra o nome da tela                       |
+| Título de seção        | Geist                           | 15 / 600; 14 no card pequeno (`Card.headerFontSize`, `headerFontSizeSM`)   | card, painel                                                  |
+| Interface              | Geist                           | 14 / 400–500                                                               | texto, tabela, controles                                      |
+| Metadado               | Geist                           | 12 / 400                                                                   | ids, datas, legendas; nunca abaixo de 12                      |
+| Rótulo de seção        | Geist                           | 11 / 600, maiúsculas, `letter-spacing: .08em`                              | "ORGANIZAÇÃO", "AGENDA"                                       |
+| Números                | Geist Mono, `tabular-nums`      | 12–14 em listas; 24–30 no cronômetro da task; 40 na vitrine                | tempo, ids, contadores, prazos                                |
+| Número de painel       | Geist, algarismos proporcionais | 48 / 600 (herói, um por tela); 26 / 600 (`Statistic.contentFontSize`)      | totais do dashboard, que não se alinham em coluna             |
+| Valor de saúde         | Geist                           | 20 / 600                                                                   | valor do `HealthCard` (dashboard e revisão)                   |
+| Número de card pequeno | Geist Mono, `tabular-nums`      | 20 (`Statistic` com `valueStyle`)                                          | card Progresso do projeto (abertas, bloqueadas, tempo, prazo) |
 
 Geist e Geist Mono entram por `@fontsource-variable/*` (o app é offline e a CSP bloqueia fonte
 remota). Isso também corrige `--font-sans`/`--font-mono`, que hoje apontam para variáveis que não
 existem. Token antd: `fontFamily` (Geist) e `fontFamilyCode` (Geist Mono), `fontSize: 14`.
+
+A "vitrine" é a tela Identidade visual do protótipo (`IdentityPage`), que mostra tokens, chips e
+tipografia juntos. Ela existe só no protótipo: nenhuma fase a constrói no app.
 
 ## 5. Forma, espaço e densidade
 
@@ -176,12 +208,17 @@ existem. Token antd: `fontFamily` (Geist) e `fontFamilyCode` (Geist Mono), `font
   ganha 12px de padding vertical via `styles.header`, nunca encostando nas bordas; entre o
   marcador (chip, ícone) e o título, 12–14px. Tokens: `Card.headerHeightSM`, `headerPaddingSM`,
   `bodyPaddingSM` (e as versões normais).
-- **Sombra:** só no que flutua (popover, modal, barra de ações em massa). Card na página tem borda,
-  sem sombra.
-- **Espaço:** múltiplos de 4. Página com 24px de margem lateral (12px abaixo de `md`), 16px entre
-  cards, 8px entre controles de uma barra.
+- **Sombra:** um token só, `boxShadowSecondary`: `0 8px 24px rgba(17,16,24,.10)` no claro,
+  `0 8px 24px rgba(0,0,0,.45)` no escuro. Vale para tudo que flutua: popover, modal, barra de ações
+  em massa e o bloco do calendário enquanto é arrastado. Card na página tem borda, sem sombra.
+- **Contêiner de página:** `PageContainer` (em `components/shell/`) dá à página padding de 20px 24px
+  32px (12px 12px 24px abaixo de `md`) e largura máxima de 1480px, centralizada. Calendário,
+  Cadernos, modo foco e terminal usam a variante de largura total. No protótipo são as classes
+  `.ct-page` e `.ct-page-narrow`.
+- **Espaço:** múltiplos de 4. 16px entre cards, 8px entre controles de uma barra.
 - **Densidade:** padrão "confortável" (`controlHeight` 32, linhas de tabela com 10px). "Compacta"
-  liga o `compactAlgorithm` e linhas de 6px. Alvo de clique nunca menor que 24px (WCAG 2.5.8).
+  liga o `compactAlgorithm`, passa `componentSize="small"` ao `ConfigProvider` e usa linhas de 6px.
+  Alvo de clique nunca menor que 24px (WCAG 2.5.8).
 - **Abas:** espaço mínimo de 24px entre o fim de um rótulo e o início do próximo (16px na densidade
   compacta), em todos os tamanhos. No tema: `Tabs.horizontalItemGutter` 24 (16 compacto) e padding
   lateral de 4px em `horizontalItemPadding`, `horizontalItemPaddingSM` e `horizontalItemPaddingLG`;
@@ -195,7 +232,15 @@ existem. Token antd: `fontFamily` (Geist) e `fontFamilyCode` (Geist Mono), `font
 Lucide continua sendo o único conjunto de ícones do produto, em 16px (18px no Sider recolhido),
 `strokeWidth` 1.75. Componentes do antd aceitam qualquer `ReactNode` como ícone. Os ícones internos
 do antd (setas de select, fechar de modal) continuam os dele. O protótipo usa `@ant-design/icons`
-só porque roda de CDN; os nomes lucide de cada lugar estão nas tabelas acima.
+só porque roda de CDN; os nomes lucide de cada lugar estão nas tabelas acima e nestas:
+
+| Lugar                 | Item → ícone (lucide)                                                                                                                                                                                                                          |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Abas do inspetor      | Tempo `Timer` · Detalhes `FileText` · Relações `Network`                                                                                                                                                                                       |
+| `HealthCard`          | em dia `CircleCheck` · Inbox `Inbox` · sem próxima ação `CircleArrowRight` · projetos parados `CirclePause` · aguardando `Hourglass` · próximas paradas `Clock` · prazos vencidos `CalendarX` · revisão `ClipboardCheck` · someday `Lightbulb` |
+| Configurações         | Geral `Settings` · Aparência `Palette` · Fluxo de trabalho `Workflow` · Terminal `SquareTerminal` · Backup `DatabaseBackup` · Notion `BookOpen` · Google Calendar `Calendar` · Jira `Plug` · Servidor MCP `Cable` · Sobre `Info`               |
+| Passos da revisão     | `collect` `Download` · `inbox` `Inbox` · `mind` `Brain` · `next` `CircleArrowRight` · `past` `History` · `upcoming` `CalendarDays` · `waiting` `Hourglass` · `projects` `FolderKanban` · `someday` `Lightbulb` · `creative` `Rocket`           |
+| Legenda do calendário | urgente `Flame` · prioridade `Flag` · time leak `Clock` · no Google `CalendarSync`                                                                                                                                                             |
 
 ## 7. AppShell
 
@@ -233,18 +278,29 @@ ConfigProvider (tema, cssVar) → App (message, modal, notification) → RegionB
   | Rodapé       | Configurações                       | `Settings`                         | `/settings`                                              | —                                          |
   | Rodapé       | Recolher / Expandir menu            | `PanelLeftClose` / `PanelLeftOpen` | alterna 232px ⇄ 64px; some abaixo de `lg`                | —                                          |
 
-  Recolhida, cada item mostra só o ícone e o rótulo (com o indicador) em tooltip à direita. Abaixo
-  de `md` a mesma lista abre num `Drawer` pelo botão de menu do header. O terminal sai do header (o
+  A sidebar fica aberta (232px) a partir de `lg` e recolhida (64px) abaixo de `lg`. Recolhida, cada
+  item mostra só o ícone e o rótulo (com o indicador) em tooltip à direita. Abaixo de `md` a mesma
+  lista abre num `Drawer` pelo botão de menu do header. O terminal sai do header (o
   botão laranja de hoje) e passa a viver só aqui e no atalho.
 
-- **Header (52px)** em três zonas de grid (`minmax(max-content, 1fr) · 200–520px · minmax(max-content, 1fr)`: os lados nunca ficam menores que o conteúdo, e com folga ficam iguais, o que centraliza a captura): à esquerda, botão de menu (só
-  abaixo de `md`) e título da tela; **no centro, o campo "Capturar para o Inbox…"** (Enter grava,
-  mesmo IPC da captura rápida); à direita, pílula com os timers rodando, busca `Ctrl+K`, menu de
-  aparência e "Nova tarefa". O centro dá à captura uma posição fixa, que não anda com o tamanho do
-  título nem com quantos botões há à direita; posição estável vira memória espacial e a captura,
-  que é a ação de menor esforço do GTD (Bellotti 2004), fica sempre no mesmo lugar e larga como
-  alvo (Fitts). Abaixo de `sm` a captura sai do header e vai para a paleta de comandos.
-- **Paleta de comandos (`Ctrl+K`):** navegar, buscar tasks e páginas, iniciar timer, mudar tema.
+- **Header (52px)** em três zonas de grid
+  (`minmax(max-content, 1fr) · 200–520px · minmax(max-content, 1fr)`: os lados nunca ficam
+  menores que o conteúdo, e com folga ficam iguais, o que centraliza a captura): à esquerda, botão de menu (só abaixo de `md`) e título da tela; **no
+  centro, o campo "Capturar para o Inbox…"** (Enter grava, mesmo IPC da captura rápida); à direita,
+  pílula com os timers rodando, busca `Ctrl+K`, menu de aparência e "Nova tarefa". "Nova tarefa"
+  fica só com o ícone abaixo de `lg`; o texto "Ctrl K" dentro do botão Buscar aparece a partir de
+  `xxl`. O centro dá à captura uma posição fixa, que não anda com o tamanho do título nem com
+  quantos botões há à direita; posição estável vira memória espacial e a captura, que é a ação de
+  menor esforço do GTD (Bellotti 2004), fica sempre no mesmo lugar e larga como alvo (Fitts). Abaixo
+  de `sm` a captura sai do header e vai para a paleta de comandos.
+- **Pílula de timers:** ponto ao vivo, tempo do timer mais recente e o contador de timers; clicar
+  abre o `Popover` com a lista. Abaixo de `md` ela continua no header, compacta: só o ponto e o
+  tempo, sem contador, com o mesmo popover.
+- **Menu de aparência:** até a F7-d tem só a densidade (confortável ou compacta). Na F7-d entram as
+  opções de tema (Seguir o sistema, Claro, Escuro), no menu do header e em Configurações →
+  Aparência ao mesmo tempo. O protótipo já mostra o estado final.
+- **Paleta de comandos (`Ctrl+K`):** navegar, buscar tasks, projetos (abre o projeto) e páginas,
+  iniciar timer e, a partir da F7-d, mudar tema.
   Componente próprio sobre `Modal` + `Input` + `List` (o antd não tem um).
 - **Barra de status (28px):** indicadores passivos de integração. Substitui o banner
   `SyncNotification`. Erro de sync vira ponto vermelho com tooltip e ação, não toast.
@@ -306,14 +362,14 @@ Breakpoints do antd para a casca; container queries para componentes dentro de p
 redimensionáveis (notas, terminal). A janela principal passa a aceitar `minWidth` 400 (hoje 800,
 o que impede ver qualquer layout estreito).
 
-| Faixa            | Sider                           | Header                              | Lista de tarefas                                                   | Detalhe da task                                      |
-| ---------------- | ------------------------------- | ----------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------- |
-| `< 576` (xs)     | `Drawer` pelo botão de menu     | sem captura, "Nova tarefa" só ícone | status em `Select`, cards                                          | cabeçalho + abas Notas / Tempo / Detalhes / Relações |
-| `576–767` (sm)   | `Drawer`                        | captura volta                       | status em `Select`, cards                                          | idem                                                 |
-| `768–991` (md)   | recolhido, 64px                 | sem pílula de timers no texto       | `Tabs` com contadores; tabela com ID, tarefa, prazo, tempo e ações | cabeçalho + notas; inspetor em `Drawer`              |
-| `992–1199` (lg)  | recolhido, 64px (pode expandir) | completo                            | + categoria, contextos                                             | idem                                                 |
-| `1200–1599` (xl) | aberto, 232px                   | completo + atalho visível           | + projeto, energia                                                 | cabeçalho + notas + inspetor 380px (pode esconder)   |
-| `≥ 1600` (xxl)   | aberto                          | completo                            | idem, linhas mais altas                                            | cabeçalho + notas + inspetor 420px                   |
+| Faixa            | Sider                         | Header                                                 | Lista de tarefas                                                   | Detalhe da task                                      |
+| ---------------- | ----------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------ | ---------------------------------------------------- |
+| `< 576` (xs)     | `Drawer` pelo botão de menu   | sem captura; pílula compacta; "Nova tarefa" só ícone   | status em `Select`, cards                                          | cabeçalho + abas Notas / Tempo / Detalhes / Relações |
+| `576–767` (sm)   | `Drawer`                      | captura volta; pílula compacta; "Nova tarefa" só ícone | status em `Select`, cards                                          | idem                                                 |
+| `768–991` (md)   | recolhido, 64px               | pílula com contador; "Nova tarefa" só ícone            | `Tabs` com contadores; tabela com ID, tarefa, prazo, tempo e ações | cabeçalho + notas; inspetor em `Drawer`              |
+| `992–1199` (lg)  | aberto, 232px (pode recolher) | completo                                               | + categoria, contextos                                             | idem                                                 |
+| `1200–1599` (xl) | aberto, 232px                 | completo                                               | + projeto, energia                                                 | cabeçalho + notas + inspetor 380px (pode esconder)   |
+| `≥ 1600` (xxl)   | aberto                        | completo + "Ctrl K" no botão Buscar                    | idem, linhas mais altas                                            | cabeçalho + notas + inspetor 420px                   |
 
 As abas de status são o centro da lista e continuam abas (não viram menu) enquanto couberem numa
 linha: seis status mais "Todas" estão no limite recomendado pela NN/g. Abaixo de `md` viram `Select`
@@ -431,7 +487,7 @@ mesmos recursos nas duas (C4, D1):
 - **Tabela:** rótulo, tarefas, abertas, `⋯`.
 - **Menu** (`⋯` e botão direito): Ver tarefas · Editar · Mesclar em… · Excluir…
 - **Editar/criar** com prévia ao vivo para os dois (hoje só contexto tem), emoji só em contexto,
-  paleta de cores dos tokens. Nome repetido é recusado com a dica de usar Mesclar.
+  paleta `USER_COLORS` (§3.2). Nome repetido é recusado com a dica de usar Mesclar.
 - **Mesclar** vale para tags e, agora, para contextos (novo): diz quantas tarefas passam e que o
   rótulo de origem deixa de existir.
 - **Excluir** confirma citando o uso, no modelo da exclusão de tag de hoje (D3).
@@ -444,9 +500,10 @@ Mesmo esqueleto das outras telas, com navegação própria porque são muitas se
   palavras-chave, como "tema", "worklog", "porta"); grupos **Aplicativo** (Geral, Aparência, Fluxo de
   trabalho, Terminal, Backup) e **Integrações** (Notion, Google Calendar, Jira, Servidor MCP), e
   Sobre no fim. Integração mostra um `Badge` de estado (conectado, desligado, erro) com o texto no
-  tooltip. A seção aberta fica salva. Abaixo de `md` a navegação vira um `Select` agrupado.
-- **Cabeçalho da seção:** ícone em quadrado `primarySoft`, título, `Tag` de estado (integrações) e
-  uma frase do que a seção faz.
+  tooltip. A seção aberta fica salva. Abaixo de `md` a navegação vira um `Select` agrupado. O
+  conteúdo da seção tem largura máxima de 780px.
+- **Cabeçalho da seção:** ícone em quadrado `primarySoft`, título, `Tag` neutra de estado com o
+  ponto do `Badge` (integrações) e uma frase do que a seção faz.
 - **Linha de ajuste** (`SettingRow`): título e descrição curta à esquerda, controle à direita
   (`Switch`, `Select`, `Segmented`, `InputNumber`, botão). Quebra para baixo quando falta espaço.
   Linhas relacionadas ficam num `Card` com título ("Inicialização", "Time leak").
@@ -455,11 +512,11 @@ Mesmo esqueleto das outras telas, com navegação própria porque são muitas se
   `Collapse` para trocar credenciais.
 - **Confirmações** destrutivas (restaurar backup, regenerar token, limpar Notion) dizem o que
   acontece e o que não acontece.
-- **Seções novas:** **Aparência** (tema Sistema/Claro/Escuro com miniaturas, densidade) e **Fluxo de
-  trabalho** (jornada diária, início da semana, níveis e repetição do time leak, faixa de horas do
-  calendário, avisos de prazo, intervalo do envio das notas ao Notion). Também novos: alterar o
-  atalho da captura e backup automático. Tudo isso hoje é fixo no código (E8) e precisa de backend;
-  no protótipo leva a etiqueta "novo".
+- **Seções novas:** **Aparência** (tema Sistema/Claro/Escuro com miniaturas montadas dos tokens, sem
+  hex, e densidade) e **Fluxo de trabalho** (jornada diária, início da semana, níveis e repetição do
+  time leak, faixa de horas do calendário, os quatro avisos de prazo, intervalo do envio das notas
+  ao Notion). Também novos: alterar o atalho da captura e backup automático (diário, guarda 14).
+  Tudo isso hoje é fixo no código (E8) e precisa de backend; no protótipo leva a etiqueta "novo".
 
 ### Arquivo
 
@@ -495,8 +552,9 @@ fazer hoje e em que ordem.
 
 - **Card "Plano de {dia da semana}, {data}"**: lista ordenável por arrasto (alça ⋮⋮), cada linha com
   nome (abre a tarefa), chip de status, projeto e, à direita, a hora do prazo ou o tempo em mono.
-  No cabeçalho do card, a carga planejada contra a jornada ("6,5h de 8h", `Progress` fino). Passou
-  da jornada: âmbar e "passa da jornada", nunca vermelho (aviso, não alarme).
+  No cabeçalho do card, a carga planejada contra a jornada ("6,5h de 8h", `Progress` fino). A carga
+  é a soma dos blocos de tempo do dia, a mesma conta do calendário (`plannedMin`). Passou da
+  jornada: âmbar e "passa da jornada", nunca vermelho (aviso, não alarme).
 - **Card "Semana"** ao lado (abaixo de `lg`, embaixo): um `Progress` por dia com as horas
   planejadas; hoje em negrito; dia acima da jornada em âmbar.
 - **Vazio:** "Nada planejado para hoje" com o atalho para marcar tarefas como Hoje na lista (D5).
@@ -511,12 +569,14 @@ o que de fato aconteceu (sessões do timer) na mesma grade.
 - **Barra da tela:** Hoje, `‹ ›`, o período como botão que abre um `DatePicker` para pular de data,
   `Segmented` Dia / 3 dias / Semana / Mês / Agenda, "Mostrar" e **"Novo bloco"** (primário na cor
   do tema; sai o azul exclusivo desta tela). Visão inicial por largura: Semana a partir de `lg`,
-  3 dias em `md`, Dia abaixo disso.
+  3 dias em `md`, Dia abaixo disso. Abaixo de `md` o `Segmented` de visão vira `Select`. O
+  calendário ocupa a largura toda do conteúdo (variante de largura total do `PageContainer`).
 - **"Mostrar"** é ao mesmo tempo filtro e legenda (corrige D4): Blocos de tempo, Tarefas com
   horário, Agendadas sem horário, Prazos, Sessões registradas e Fins de semana, cada um com a
   amostra do que aparece na grade, mais a chave dos ícones (urgente, prioridade, time leak, Google).
-- **Painel "A agendar"** (novo, à esquerda a partir de `lg`, recolhível; `Drawer` abaixo): próximas
-  ações sem bloco nos dias visíveis, com busca, projeto, energia e prazo. Arrastar para a grade cria
+- **Painel "A agendar"** (novo, à esquerda): aberto por padrão a partir de `xl`, fechado com botão
+  para abrir em `lg`, `Drawer` abaixo de `lg`. Lista as tarefas em Próximas e Executando sem bloco
+  nos dias visíveis, com busca, projeto, energia e prazo. Arrastar para a grade cria
   um bloco de 1h na hora em que soltou; o `+` reserva 1h num dia escolhido. Vazio diz "Toda
   próxima ação tem tempo reservado".
 - **Cabeçalho do dia:** dia da semana, número (hoje em círculo da cor primária) e um medidor fino
@@ -529,10 +589,11 @@ o que de fato aconteceu (sessões do timer) na mesma grade.
   de 15 minutos, linha de hora em `border`, fim de semana em `bg`. A linha do agora é da cor
   primária (vermelho é só para erro) e a tela abre rolada até ela. Rola dentro do próprio card, com
   cabeçalho e faixa "Dia" fixos.
-- **Bloco de tempo:** fundo `primarySoft` com borda suave, ponto do projeto, ícone da categoria
-  quando não é normal, nome, horário em mono e ícone do Google quando está na agenda TickTask. Time
-  leak usa o fundo da escala de time leak (a única semântica que pinta fundo). Tarefa concluída fica
-  apagada e riscada; a que está rodando ganha o ponto pulsante. A cor do projeto nunca vira fundo.
+- **Bloco de tempo:** fundo `calBlock` com borda `calBlockBorder` (§3.1), ponto do projeto, ícone da
+  categoria quando não é normal, nome, horário em mono e ícone do Google quando está na agenda
+  TickTask. Time leak usa a escala de time leak de três níveis (a única semântica que pinta fundo).
+  Tarefa concluída fica apagada e riscada; a que está rodando ganha o ponto pulsante. A cor do
+  projeto nunca vira fundo.
 - **Tarefa com horário** (`scheduled_time`–`scheduled_end_time`): mesmo formato, fundo `surface`,
   borda forte e ícone de calendário — é compromisso, não reserva.
 - **Sobreposição:** blocos que se cruzam dividem a largura da coluna lado a lado.
@@ -566,11 +627,11 @@ as ações para resolver ali mesmo (E5).
     duas semanas · Revisar aguardando · Revisar projetos;
   - **Criar** — Revisar someday · Pensar adiante.
 - **Antes de começar:** cartão com dias desde a última revisão, as três fases e **um** botão
-  primário "Começar revisão" (some o botão duplicado do cabeçalho, B3). Ao lado, "Ritmo": as
-  últimas 12 semanas em quadrados (com ou sem revisão) e o texto "9 de 12 semanas". Sem contador
-  de sequência e sem vermelho por semana perdida (Kim et al. 2016). Embaixo, "Como está o sistema"
-  com os mesmos `HealthCard` do dashboard e o histórico em `Table` paginada; a linha abre um
-  `Drawer` com os passos feitos e pulados e as notas.
+  primário "Começar revisão" (some o botão duplicado do cabeçalho, B3). Ao lado, "Ritmo": as últimas
+  12 semanas em quadrados (com ou sem revisão) e o texto "9 de 12 semanas". Sem contador de
+  sequência e sem vermelho por semana perdida (Kim et al. 2016). Embaixo, "Como está o sistema" com
+  os mesmos `HealthCard` do dashboard (mesmos tons) e o histórico em `Table` paginada; a linha abre
+  um `Drawer` com os passos feitos e pulados e as notas.
 - **Durante:** cabeçalho com "Revisão da semana", há quanto tempo começou, progresso `N/10` e
   "Pausar". À esquerda, trilho com um `Steps` vertical por fase; clicar num passo vai até ele, e o
   passo pulado mostra "Pulado". No centro, o card do passo: fase e número, título, a pergunta do
@@ -580,7 +641,9 @@ as ações para resolver ali mesmo (E5).
   com cada indicador no começo → agora, e "Notas da revisão", salvas sozinhas.
 - **O que cada passo traz:**
   - Coletar, Esvaziar a cabeça, Semana que passou e Próximas semanas: um campo de captura (Enter
-    manda para o Inbox) e a lista do que foi capturado nesta revisão;
+    manda para o Inbox) e a lista do que foi capturado nesta revisão. Semana que passou mostra
+    também as sessões, as tarefas concluídas e os eventos dos últimos 7 dias (usa a consulta por
+    intervalo da F4-b1);
   - Processar o Inbox: cada item com Próxima, Aguardando, Someday, Feito (< 2 min) e Excluir;
     vazio vira "Inbox zero" em tom positivo;
   - Próximas ações e Aguardando: ordenadas pela mais parada, com chip âmbar "parada há N dias"
@@ -602,9 +665,11 @@ as ações para resolver ali mesmo (E5).
 - **Responsivo:** trilho a partir de `lg`; abaixo disso, um `Select` agrupado por fase com ✓ e –
   no lugar do trilho. As ações das linhas mostram texto a partir de `lg` e só ícone com tooltip
   abaixo.
-- **Backend novo:** `checklist_state` guarda `done` ou `skipped` por passo (as chaves novas `mind` e
-  `past` entram no JSON, sem migração), contadores da sessão, data da última mudança de status para
-  "parada há N dias", e a revisão concluída com passos pulados.
+- **Backend novo:** `checklist_state` guarda `done` ou `skipped` por passo. As chaves dos oito
+  passos antigos migram para as dez novas (`collect`, `inbox`, `mind`, `next`, `past`, `upcoming`,
+  `waiting`, `projects`, `someday`, `creative`); revisão antiga aparece no histórico sobre 8.
+  Também: contadores da sessão, data da última mudança de status para "parada há N dias", e a
+  revisão concluída com passos pulados.
 
 ### Dashboard
 
@@ -615,16 +680,17 @@ tempo?** Toda métrica abre o que ela conta (E4). Base: NN/g (comprimento e posi
 - **Duas seções.** "Agora" mostra o estado atual e não tem filtro. "No período" começa com a linha
   de filtros, e os filtros valem para tudo abaixo dela; nenhum card tem filtro próprio.
 - **Saúde do sistema** (Agora): seis cartões clicáveis em grade — Inbox para processar (com o item
-  mais antigo e a taxa processada na semana), Projetos sem próxima ação (novo), Projetos parados
-  (> 7 dias), Aguardando sem resposta (> 7 dias), Prazos vencidos (novo) e Revisão semanal (dias
-  desde a última). Ícone num quadrado tingido: verde com check quando está em dia, âmbar quando
-  pede atenção, vermelho **só** para prazo vencido, cinza para o que só informa (Someday). Cada
-  cartão leva à lista já filtrada. Os limiares são os mesmos da revisão semanal e tudo vem de uma
-  consulta só (`review:healthIndicators`), para as duas telas nunca discordarem. A consulta traz
-  oito indicadores: Inbox, sem próxima ação, projetos parados (> 7 dias), aguardando (> 7 dias),
-  próximas paradas (> 14 dias), prazos vencidos, someday e dias desde a última revisão. O dashboard
-  mostra seis (sem próximas paradas e someday); a revisão mostra seis (sem projetos parados e a
-  própria revisão).
+  mais antigo e a taxa processada na semana), Projetos sem próxima ação (novo), Projetos parados (>
+  7 dias), Aguardando sem resposta (> 7 dias), Prazos vencidos (novo) e Revisão semanal (dias desde
+  a última). Ícone num quadrado tingido, com os tons do `HealthCard`: **em dia** usa as cores de
+  Executando com `CircleCheck`; **atenção**, as de Aguardando com o ícone do indicador; **erro**, as
+  de Urgente, **só** para prazo vencido; **neutro**, as de Inbox, para o que só informa (Someday).
+  Valor em 20/600. Cada cartão leva à lista já filtrada. Os limiares são os mesmos da revisão
+  semanal e tudo vem de uma consulta só (`review:healthIndicators`), para as duas telas nunca
+  discordarem. A consulta traz oito indicadores: Inbox, sem próxima ação, projetos parados (> 7
+  dias), aguardando (> 7 dias), próximas paradas (> 14 dias), prazos vencidos, someday e dias desde
+  a última revisão. O dashboard mostra seis (sem próximas paradas e someday); a revisão mostra seis
+  (sem projetos parados e a própria revisão).
 - **Tarefas abertas por status** (Agora): barras horizontais ordenadas pelo fluxo, chip do status
   ao lado, contagem e %. Substitui o funil, que punha Aguardando como etapa depois de Executando.
 - **Filtros** (No período): `Segmented` 7 dias / 30 dias / 90 dias / 12 meses (padrão 30),
@@ -642,7 +708,9 @@ tempo?** Toda métrica abre o que ela conta (E4). Base: NN/g (comprimento e posi
   `Segmented` Projeto / Área / Contexto no cabeçalho do card — troca a visão, não filtra), "Tarefas
   com mais tempo" (oito), "Por categoria" e "Por nível de energia". Uma cor só; a identidade vem do
   ponto do projeto, do chip ou do medidor de energia. Cada linha mostra tempo e %, e clicar abre o
-  projeto, a tarefa ou a lista filtrada.
+  projeto, a tarefa ou a lista filtrada. "Por categoria" mostra "N tarefas" em cada linha e, quando
+  time leak passa de 10% do tempo do período, uma frase avisa. "Por nível de energia" mostra a
+  média por tarefa.
 - **Quando você foca** (novo): heatmap dia da semana × hora (6h–23h) com a escala sequencial, para
   achar os horários bons para tarefas de energia alta. Precisa de consulta nova sobre o início das
   sessões.
@@ -670,8 +738,12 @@ tempo?** Toda métrica abre o que ela conta (E4). Base: NN/g (comprimento e posi
   por isso o claro é o tema de referência e o escuro é cuidado com o mesmo rigor, não uma inversão.
 - Fundo cinza-violeta escuro, nunca preto. Elevação por luminosidade (`bg` < `surface` <
   `elevated`), cores dessaturadas e mais claras, texto em três níveis.
-- Tiptap, Excalidraw e xterm recebem fundo, texto e borda dos tokens (via variáveis CSS).
-- Até a fase F7 o seletor fica escondido (as telas antigas não têm tokens escuros).
+- Tiptap e Excalidraw recebem fundo, texto e borda dos tokens (via variáveis CSS).
+- O terminal embutido é escuro nos dois temas, com paleta fixa tirada dos tokens escuros: fundo
+  `#15141D` (`sider`), texto e cursor `#ECEAF6` (`text`), metadado `#8C89A1` (`text3`) e sucesso
+  `#4CD69A` (`success`). Ela mora em `theme/semantic.ts` como `TERMINAL` (F7-c).
+- Até a fase F7 o seletor fica escondido (as telas antigas não têm tokens escuros). Na F7-d ele
+  aparece no menu de aparência do header, em Configurações → Aparência e na paleta de comandos.
 
 ## 10. Componentes: do atual para o antd
 
@@ -707,6 +779,16 @@ tempo?** Toda métrica abre o que ela conta (E4). Base: NN/g (comprimento e posi
   acontece (o modelo é a confirmação de exclusão de tag).
 - **Alerta GTD inline:** `Alert` com ação, como "Sem próxima ação definida · Definir" nos projetos e
   "N itens para processar" no topo do inbox.
+- **Cabeçalho de seção** (`SectionHeader`, criado na F3-c): rótulo 11/600 em maiúsculas com
+  `letter-spacing: .08em`, uma linha em `border` até o fim e, à direita, um número em mono (total,
+  contagem). Usado no inspetor, no dashboard e na revisão.
+- **Tecla** (`Kbd`, criado na F7-d, a partir do `.ct-kbd` do protótipo): tecla em mono 12px, borda
+  `borderStrong` mais grossa embaixo, fundo `bg`. Usado onde um atalho aparece como texto
+  (Configurações, captura).
+- **Atalho no tooltip:** todo controle que tem atalho diz o atalho no tooltip: "Buscar e comandos
+  (Ctrl+K)", "Modo foco (Esc sai)", "Terminais (Ctrl+')".
+- **Anel de foco:** elemento clicável próprio (que não é componente do antd) usa o `:focus-visible`
+  global: contorno de 2px na cor primária, afastado 2px.
 
 ## 12. Movimento
 
@@ -722,8 +804,10 @@ Erros dizem o que houve e o que fazer, sem pedir desculpa.
 
 ## 14. Proibido
 
-- Paleta padrão do antd, cor de marca como fundo decorativo, gradiente decorativo (gradiente
-  funcional, como a linha da grade ou a sessão em andamento no calendário, pode).
+- Paleta padrão do antd, inclusive as cores prontas de `Tag` (`color="blue"`, `"success"` e
+  afins): tag de estado é neutra, com o ponto do `Badge status`. Cor de marca como fundo
+  decorativo, gradiente decorativo (gradiente funcional, como a linha da grade ou a sessão em
+  andamento no calendário, pode).
 - Pizza, rosca e funil em gráfico; status, categoria ou energia como cor de série.
 - Hex solto e classe de cor do Tailwind em componente.
 - CSS mirando classes internas `.ant-*` (o DOM interno muda entre versões); customizar por token,
@@ -734,6 +818,8 @@ Erros dizem o que houve e o que fazer, sem pedir desculpa.
 ## 15. Stack e verificação
 
 - `antd@^6.7` e React 19 (a v6 não precisa do patch de React 19), `cssVar` ligado, `hashed: false`.
+- Tokens de componente do shell no `buildTheme`: `Layout.headerPadding` `'0 16px'` e
+  `Menu.itemMarginInline` 8. Em `tokens.ts`, `colorTextQuaternary` recebe o mesmo `text3`.
 - Tailwind v4 só para layout, com `@layer theme, base, antd, components, utilities;` antes do
   `@import 'tailwindcss'` e `StyleProvider layer` no antd. O preflight continua ligado.
 - `npm run design:audit` confere o que do protótipo já existe no código
