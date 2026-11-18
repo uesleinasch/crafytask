@@ -89,6 +89,9 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
 .ct-taskname-input { font-size: 22px !important; font-weight: 600; padding: 2px 0 !important; letter-spacing: -.01em; }
 .ct-timerblock { display: inline-flex; align-items: center; gap: 10px; padding: 6px 6px 6px 12px; border: 1px solid var(--ct-border); border-radius: 12px; background: var(--ct-bg); }
 .ct-propbar { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.ct-archived-banner { margin-bottom: 12px; }
+.ct-readonly .ct-propbar, .ct-readonly .ct-workspace .ct-note, .ct-readonly .ct-workspace .ct-draw-area, .ct-readonly .ct-inspector .ant-tabs-tabpane { pointer-events: none; }
+.ct-readonly .ct-propbar .ct-prop { border-style: dashed; color: var(--ct-text-3); }
 .ct-prop { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 9px; max-width: 100%; border: 1px solid var(--ct-border); border-radius: 6px; background: var(--ct-surface); color: var(--ct-text); font: inherit; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
 .ct-prop:hover { border-color: var(--ct-border-strong); background: var(--ct-bg); }
 .ct-prop.muted { color: var(--ct-text-3); border-style: dashed; }
@@ -1028,8 +1031,12 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     </div>`;
   }
 
+  DETAIL.arquivada = { ...DETAIL.local, running: false, archivedAt: '2026-03-12' };
+
   function TaskDetailPage(props) {
-    const [sample, setSample] = useState('local');
+    const [sample, setSample] = useState(() => {
+      try { const s = sessionStorage.getItem('ct:detailSample'); sessionStorage.removeItem('ct:detailSample'); return s || 'local'; } catch (e) { return 'local'; }
+    });
     return html`<${TaskDetailView} key=${sample} ...${props} sample=${sample} setSample=${setSample} />`;
   }
 
@@ -1081,7 +1088,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const [addingSub, setAddingSub] = useState(false);
     const [subName, setSubName] = useState('');
     const [deps, setDeps] = useState(t.deps);
-    const [archived, setArchived] = useState(false);
+    const [archived, setArchived] = useState(!!t.archivedAt);
     const [inspectorOpen, setInspectorOpen] = useState(true);
     const [inspectorDrawer, setInspectorDrawer] = useState(false);
     const [inspTab, setInspTab] = useState('tempo');
@@ -1122,7 +1129,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const showRelations = () => { setInspTab('relacoes'); setNarrowTab('r'); if (wide) setInspectorOpen(true); else if (!narrow) setInspectorDrawer(true); };
     const toggleInspector = () => { if (wide) setInspectorOpen(!inspectorOpen); else setInspectorDrawer(true); };
 
-    const statusSelect = html`<${Select} size="small" variant="filled" value=${status} onChange=${v => { setStatus(v); message.success('Status alterado'); }} style=${{ width: 152 }} aria-label="Status" popupMatchSelectWidth=${false}
+    const statusSelect = html`<${Select} size="small" variant="filled" disabled=${archived} value=${status} onChange=${v => { setStatus(v); message.success('Status alterado'); }} style=${{ width: 152 }} aria-label="Status" popupMatchSelectWidth=${false}
       options=${Object.entries(STATUS).map(([k, v]) => ({ value: k, disabled: k === 'executando' && blocked, label: html`<${Space} size=${6}>${createElement(I[v.icon], { style: { color: v[mode][0] } })}${v.label}<//>` }))} />`;
 
     const moreMenu = {
@@ -1145,9 +1152,9 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       ${running ? html`<span className="ct-live" aria-label="Timer rodando"></span>` : null}
       <span className="ct-hero-time" style=${{ fontSize: narrow ? 24 : 30, color: overLimit ? PALETTE[mode].error : running ? 'var(--ct-text)' : 'var(--ct-text-3)' }}>${fmt(secs)}</span>
       <${Tooltip} title=${blocked && !running ? 'Bloqueada por dependências' : ''}>
-        <${Button} type="primary" disabled=${blocked && !running} icon=${html`<${running ? I.PauseOutlined : I.CaretRightOutlined} />`} onClick=${() => setRunning(!running)}>${screens.lg ? (running ? 'Pausar' : 'Iniciar') : null}<//>
+        <${Button} type="primary" disabled=${archived || (blocked && !running)} icon=${html`<${running ? I.PauseOutlined : I.CaretRightOutlined} />`} onClick=${() => setRunning(!running)}>${screens.lg ? (running ? 'Pausar' : 'Iniciar') : null}<//>
       <//>
-      <${Tooltip} title="Finalizar tarefa"><${Button} aria-label="Finalizar" icon=${html`<${I.CheckOutlined} />`} onClick=${() => { setRunning(false); setStatus('finalizada'); message.success('Tarefa finalizada'); }} /><//>
+      <${Tooltip} title="Finalizar tarefa"><${Button} aria-label="Finalizar" disabled=${archived} icon=${html`<${I.CheckOutlined} />`} onClick=${() => { setRunning(false); setStatus('finalizada'); message.success('Tarefa finalizada'); }} /><//>
     </div>`;
 
     const headActions = html`<${Flex} gap=${4} align="center">
@@ -1225,13 +1232,18 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       <//>` : null}
     </div>`;
 
+    const archivedBanner = archived ? html`<${Alert} type="info" showIcon icon=${html`<${I.ContainerOutlined} />`} className="ct-archived-banner"
+      message=${'Arquivada' + (t.archivedAt ? ' em ' + t.archivedAt.split('-').reverse().join('/') : '') + ' · só leitura'}
+      description="Notas, desenho, campos e timer ficam travados. Desarquive para editar; a tarefa volta ao status que tinha."
+      action=${html`<${Button} size="small" icon=${html`<${I.UndoOutlined} />`} onClick=${() => { setArchived(false); message.success('Tarefa desarquivada'); }}>Desarquivar<//>`} />` : null;
+
     const head = html`<div className="ct-taskhead">
       <${Flex} align="center" gap=${6} wrap="wrap">
         <${Button} size="small" type="text" icon=${html`<${I.ArrowLeftOutlined} />`} onClick=${() => go('tarefas')}>Tarefas<//>
         ${project ? html`<${Text} type="secondary">/<//><a onClick=${() => openProject(project)} style=${{ color: 'var(--ct-text-2)' }}>${P[project].name}</a>` : null}
         <span style=${{ flex: 1 }}></span>
         <${Text} type="secondary" style=${{ fontSize: 12 }}>Exemplo:<//>
-        <${Segmented} size="small" value=${sample} onChange=${setSample} options=${[{ value: 'local', label: 'Task local' }, { value: 'jira', label: 'Task do Jira' }]} />
+        <${Segmented} size="small" value=${sample} onChange=${setSample} options=${[{ value: 'local', label: 'Task local' }, { value: 'jira', label: 'Task do Jira' }, { value: 'arquivada', label: 'Task arquivada' }]} />
       <//>
       <div className="ct-taskhead-main">
         <div style=${{ flex: '1 1 380px', minWidth: 0 }}>
@@ -1241,8 +1253,8 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
             ${t.jira ? html`<${Tag} bordered=${false} style=${{ margin: 0 }}>${t.jira.type} · ${t.jira.key} · ${jiraStatus}<//>` : null}
             ${archived ? html`<${Tag} bordered=${false} style=${{ margin: 0 }}>Arquivada<//>` : null}
           <//>
-          <${Input} variant="borderless" defaultValue=${t.name} aria-label="Nome da tarefa" className="ct-taskname-input" />
-          <${Input.TextArea} variant="borderless" autoSize=${{ minRows: 1, maxRows: 4 }} placeholder="Adicionar descrição" defaultValue=${t.description} aria-label="Descrição" style=${{ padding: '0', color: 'var(--ct-text-2)' }} />
+          <${Input} variant="borderless" readOnly=${archived} defaultValue=${t.name} aria-label="Nome da tarefa" className="ct-taskname-input" />
+          <${Input.TextArea} variant="borderless" readOnly=${archived} autoSize=${{ minRows: 1, maxRows: 4 }} placeholder="Adicionar descrição" defaultValue=${t.description} aria-label="Descrição" style=${{ padding: '0', color: 'var(--ct-text-2)' }} />
         </div>
         <${Flex} align="center" gap=${8} wrap="wrap" style=${{ flex: 'none' }}>${timerBlock}${headActions}<//>
       </div>
@@ -1441,7 +1453,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       </div>
     </div>`;
 
-    if (narrow) return html`<div className="ct-page-narrow">${head}
+    if (narrow) return html`<div className=${'ct-page-narrow' + (archived ? ' ct-readonly' : '')}>${archivedBanner}${head}
       <${Tabs} activeKey=${narrowTab} onChange=${setNarrowTab} items=${[
         { key: 'n', label: 'Notas', children: workspace },
         { key: 't', label: 'Tempo', children: tempoTab },
@@ -1451,7 +1463,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       ${jiraDrawer}
     </div>`;
 
-    return html`<div className="ct-page">${head}
+    return html`<div className=${'ct-page' + (archived ? ' ct-readonly' : '')}>${archivedBanner}${head}
       <${Row} gutter=${16} wrap=${false} style=${{ marginTop: 16 }}>
         <${Col} flex="1 1 0" style=${{ minWidth: 0 }}>${workspace}<//>
         ${wide && inspectorOpen ? html`<${Col} flex=${screens.xxl ? '0 0 420px' : '0 0 380px'} style=${{ minWidth: 0 }}><${Card} size="small" className="ct-inspector" styles=${{ body: { paddingTop: 4 } }}>${inspector}<//><//>` : null}
@@ -3650,18 +3662,19 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         content: `Apaga ${ids.length === 1 ? 'a tarefa' : 'as tarefas'}, ${secs ? fmtHM(secs) + ' de sessões, ' : ''}notas e desenhos. No Notion e no Google também, se estiverem ligados. Não dá para desfazer.`,
         okText: 'Excluir de vez', okButtonProps: { danger: true }, cancelText: 'Cancelar',
         onOk: () => { setRows(rs => rs.filter(t => !ids.includes(t.id))); setSel(s => s.filter(x => !ids.includes(x))); message.success(plural(ids.length, 'tarefa excluída', 'tarefas excluídas')); } }); };
+    const openArchived = () => { try { sessionStorage.setItem('ct:detailSample', 'arquivada'); } catch (e) {} go('tarefa'); };
     const menuFor = t => ({ items: [
       { key: 'open', icon: createElement(I.ExportOutlined), label: 'Abrir (só leitura)' },
       { key: 'restore', icon: createElement(I.RollbackOutlined), label: 'Desarquivar' },
       { type: 'divider' },
       { key: 'delete', icon: createElement(I.DeleteOutlined), label: 'Excluir de vez…', danger: true }
     ], onClick: ({ key, domEvent }) => { if (domEvent) domEvent.stopPropagation();
-      if (key === 'open') { message.info('Abre a tarefa só leitura, com a faixa "Arquivada · Desarquivar"'); go('tarefa'); }
+      if (key === 'open') openArchived();
       if (key === 'restore') restore([t.id]);
       if (key === 'delete') destroy([t.id]); } });
 
     const nameCell = t => html`<${Flex} vertical gap=${2} style=${{ minWidth: 0 }}>
-      <a onClick=${() => { message.info('Abre a tarefa só leitura, com a faixa "Arquivada · Desarquivar"'); go('tarefa'); }} className="ct-ellipsis" style=${{ color: 'var(--ct-text)', fontWeight: 500 }}>${t.name}</a>
+      <a onClick=${openArchived} className="ct-ellipsis" style=${{ color: 'var(--ct-text)', fontWeight: 500 }}>${t.name}</a>
       ${!screens.lg ? html`<${Flex} gap=${8} wrap="wrap" style=${{ fontSize: 12 }}><${ProjectLabel} id=${t.project} /><${Text} type="secondary">arquivada ${fmtDate(t.archivedAt)}<//><//>` : null}
     <//>`;
     const cols = [
