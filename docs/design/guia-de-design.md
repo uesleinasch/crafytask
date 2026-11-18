@@ -114,8 +114,8 @@ Time leak é âmbar em todo lugar. O roxo que ele usa hoje no acento da task e n
 para tarefa da categoria time leak e sobe com o tempo acumulado nela: 30 min ou mais pinta o nível
 1 (âmbar), 1 h ou mais o nível 2 (laranja), 2 h ou mais o nível 3 (vermelho). Cores: `#FFF6DD` →
 `#FFF0E5` → `#FDECEE` no claro, `#2A2412` → `#2E2016` → `#301A1E` no escuro. O texto continua
-`text`. Os três limiares viram preferência na F7-f (Configurações → Fluxo de trabalho). Hoje o
-`TaskTable` usa outros (qualquer tempo, 30 min e 60 min); a F2-d troca para estes.
+`text`. Os três limiares viram preferência na F7-f (Configurações → Fluxo de trabalho); até lá
+ficam em `TIME_LEAK_THRESHOLDS`, e `timeLeakLevel` (ambos em `theme/semantic.ts`) diz o nível.
 
 **Energia** — não usa cor: um medidor de três barras na cor primária (cheias = nível), com tooltip
 "Energia alta/média/baixa". O emoji atual sai.

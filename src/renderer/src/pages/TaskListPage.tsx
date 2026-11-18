@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Flex, Grid, Input as AntInput, Segmented, Select, Tabs } from 'antd'
 import { useNavigate } from 'react-router-dom'
-import { ScrollArea } from '@renderer/components/ui/scroll-area'
 import { SearchableSelect } from '@renderer/components/ui/searchable-select'
 import {
   AlertDialog,
@@ -15,7 +14,7 @@ import {
 } from '@renderer/components/ui/alert-dialog'
 import { toast } from '@renderer/components/ui/sonner'
 import { TaskList } from '@renderer/components/TaskList'
-import { TaskTable } from '@renderer/components/TaskTable'
+import { TaskTable } from '@renderer/components/tasks/TaskTable'
 import { TaskDialog } from '@renderer/components/TaskDialog'
 import { useTasks } from '@renderer/hooks/useTasks'
 import { usePersistedState } from '@renderer/hooks/usePersistedState'
@@ -427,8 +426,8 @@ export function TaskListPage(): React.JSX.Element {
   )
 
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-slate-50">
-      <PageContainer padBlock="top">
+    <div className="h-full overflow-y-auto">
+      <PageContainer>
         {screens.md === false ? (
           <Select
             value={statusFilter}
@@ -518,177 +517,178 @@ export function TaskListPage(): React.JSX.Element {
             ]}
           />
         </Flex>
+
+        <TaskMenuChangedContext.Provider value={handleMenuChanged}>
+          <div style={{ paddingTop: 12 }}>
+            {!loading && tasks.length > 0 && (
+              <div
+                className={cn(
+                  'mb-4 bg-white border border-slate-200 rounded-sm p-4',
+                  selectedCount > 0 && 'sticky top-0 z-20 border-slate-300'
+                )}
+              >
+                <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-2 text-sm">
+                    <span className="font-semibold text-slate-800">
+                      {selectedCount} selecionada(s)
+                    </span>
+                    <button
+                      onClick={() => toggleSelectAllVisible(true)}
+                      disabled={tasks.length === selectedCount}
+                      className="text-slate-600 hover:text-slate-900 disabled:text-slate-300"
+                    >
+                      Selecionar todas visíveis ({tasks.length})
+                    </button>
+                    <button
+                      onClick={() => setSelectedTaskIds([])}
+                      disabled={selectedCount === 0}
+                      className="text-slate-600 hover:text-slate-900 disabled:text-slate-300"
+                    >
+                      Limpar seleção
+                    </button>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="min-w-[180px]">
+                      <SearchableSelect
+                        value={bulkStatusValue}
+                        onChange={(value) => setBulkStatusValue(value as TaskStatus | 'none')}
+                        options={bulkStatusOptions}
+                        placeholder="Marcar como..."
+                        searchPlaceholder="Buscar status..."
+                      />
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (bulkStatusValue === 'none') {
+                          toast.error('Selecione um status para marcar')
+                          return
+                        }
+                        openConfirm({ type: 'status', status: bulkStatusValue })
+                      }}
+                      disabled={selectedCount === 0 || bulkLoading}
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      <CheckCheck size={15} />
+                      Marcar
+                    </button>
+
+                    <div className="min-w-[200px]">
+                      <SearchableSelect
+                        value={bulkProjectValue}
+                        onChange={setBulkProjectValue}
+                        options={bulkProjectOptions}
+                        placeholder="Mover para projeto..."
+                        searchPlaceholder="Buscar projeto..."
+                      />
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (bulkProjectValue === 'none') {
+                          toast.error('Selecione um projeto para mover')
+                          return
+                        }
+                        openConfirm({
+                          type: 'project',
+                          projectId:
+                            bulkProjectValue === 'no-project' ? null : Number(bulkProjectValue)
+                        })
+                      }}
+                      disabled={selectedCount === 0 || bulkLoading}
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      <FolderInput size={15} />
+                      Mover
+                    </button>
+
+                    <button
+                      onClick={() => openConfirm({ type: 'archive' })}
+                      disabled={selectedCount === 0 || bulkLoading}
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      <Archive size={15} />
+                      Arquivar
+                    </button>
+
+                    <button
+                      onClick={() => openConfirm({ type: 'delete' })}
+                      disabled={selectedCount === 0 || bulkLoading}
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-red-50 border border-red-200 text-red-700 hover:bg-red-100 disabled:opacity-50"
+                    >
+                      <Trash2 size={15} />
+                      Excluir
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                <p>Carregando...</p>
+              </div>
+            ) : tasks.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-64 text-slate-400">
+                <div className="bg-slate-100 p-4 rounded-full mb-4">
+                  <ListTodo size={32} />
+                </div>
+                <p>
+                  {statusFilter === 'all'
+                    ? 'Nenhuma tarefa ainda. Crie uma nova!'
+                    : `Nenhuma tarefa com status "${statusFilter}"`}
+                </p>
+              </div>
+            ) : kanbanActive ? (
+              <TaskKanban
+                columns={taskGroups}
+                onTaskClick={handleTaskClick}
+                selectedTaskIds={selectedTaskIdSet}
+                onToggleTaskSelection={toggleTaskSelection}
+                onScheduleForToday={handleScheduleForToday}
+                onReorderColumns={handleReorderGroups}
+              />
+            ) : groupingEnabled && viewMode === 'cards' ? (
+              <TaskGroups
+                groups={taskGroups}
+                onTaskClick={handleTaskClick}
+                selectedTaskIds={selectedTaskIdSet}
+                onToggleTaskSelection={toggleTaskSelection}
+                onScheduleForToday={handleScheduleForToday}
+                onReorderGroups={handleReorderGroups}
+              />
+            ) : viewMode === 'cards' ? (
+              <TaskList
+                tasks={renderedTasks}
+                onTaskClick={handleTaskClick}
+                selectedTaskIds={selectedTaskIdSet}
+                onToggleTaskSelection={toggleTaskSelection}
+                onScheduleForToday={handleScheduleForToday}
+              />
+            ) : (
+              <TaskTable
+                key={groupingEnabled ? activeGroupBy : 'none'}
+                tasks={renderedTasks}
+                groups={groupingEnabled ? taskGroups : null}
+                groupBy={groupingEnabled ? activeGroupBy : null}
+                status={statusFilter}
+                contexts={availableContexts}
+                onTaskClick={handleTaskClick}
+                selectedTaskIds={selectedTaskIdSet}
+                onToggleTaskSelection={toggleTaskSelection}
+                onToggleSelectAll={toggleSelectAllVisible}
+                onToggleGroupSelection={toggleGroupSelection}
+                onScheduleForToday={handleScheduleForToday}
+              />
+            )}
+
+            {hasMore && !showGroups && (
+              <div ref={sentinelRef} className="py-6 text-center text-xs text-slate-400">
+                Carregando mais {remaining} {remaining === 1 ? 'tarefa' : 'tarefas'}...
+              </div>
+            )}
+          </div>
+        </TaskMenuChangedContext.Provider>
       </PageContainer>
-
-      {/* Content */}
-      <TaskMenuChangedContext.Provider value={handleMenuChanged}>
-      <ScrollArea className="flex-1 h-0">
-        <PageContainer padBlock="bottom" style={{ paddingTop: 12 }}>
-          {!loading && tasks.length > 0 && (
-            <div
-              className={cn(
-                'mb-4 bg-white border border-slate-200 rounded-sm p-4',
-                selectedCount > 0 && 'sticky top-0 z-20 border-slate-300'
-              )}
-            >
-              <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3">
-                <div className="flex flex-wrap items-center gap-2 text-sm">
-                  <span className="font-semibold text-slate-800">
-                    {selectedCount} selecionada(s)
-                  </span>
-                  <button
-                    onClick={() => toggleSelectAllVisible(true)}
-                    disabled={tasks.length === selectedCount}
-                    className="text-slate-600 hover:text-slate-900 disabled:text-slate-300"
-                  >
-                    Selecionar todas visíveis ({tasks.length})
-                  </button>
-                  <button
-                    onClick={() => setSelectedTaskIds([])}
-                    disabled={selectedCount === 0}
-                    className="text-slate-600 hover:text-slate-900 disabled:text-slate-300"
-                  >
-                    Limpar seleção
-                  </button>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="min-w-[180px]">
-                    <SearchableSelect
-                      value={bulkStatusValue}
-                      onChange={(value) => setBulkStatusValue(value as TaskStatus | 'none')}
-                      options={bulkStatusOptions}
-                      placeholder="Marcar como..."
-                      searchPlaceholder="Buscar status..."
-                    />
-                  </div>
-                  <button
-                    onClick={() => {
-                      if (bulkStatusValue === 'none') {
-                        toast.error('Selecione um status para marcar')
-                        return
-                      }
-                      openConfirm({ type: 'status', status: bulkStatusValue })
-                    }}
-                    disabled={selectedCount === 0 || bulkLoading}
-                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-                  >
-                    <CheckCheck size={15} />
-                    Marcar
-                  </button>
-
-                  <div className="min-w-[200px]">
-                    <SearchableSelect
-                      value={bulkProjectValue}
-                      onChange={setBulkProjectValue}
-                      options={bulkProjectOptions}
-                      placeholder="Mover para projeto..."
-                      searchPlaceholder="Buscar projeto..."
-                    />
-                  </div>
-                  <button
-                    onClick={() => {
-                      if (bulkProjectValue === 'none') {
-                        toast.error('Selecione um projeto para mover')
-                        return
-                      }
-                      openConfirm({
-                        type: 'project',
-                        projectId:
-                          bulkProjectValue === 'no-project' ? null : Number(bulkProjectValue)
-                      })
-                    }}
-                    disabled={selectedCount === 0 || bulkLoading}
-                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-                  >
-                    <FolderInput size={15} />
-                    Mover
-                  </button>
-
-                  <button
-                    onClick={() => openConfirm({ type: 'archive' })}
-                    disabled={selectedCount === 0 || bulkLoading}
-                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-                  >
-                    <Archive size={15} />
-                    Arquivar
-                  </button>
-
-                  <button
-                    onClick={() => openConfirm({ type: 'delete' })}
-                    disabled={selectedCount === 0 || bulkLoading}
-                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-red-50 border border-red-200 text-red-700 hover:bg-red-100 disabled:opacity-50"
-                  >
-                    <Trash2 size={15} />
-                    Excluir
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-12 text-slate-400">
-              <p>Carregando...</p>
-            </div>
-          ) : tasks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-64 text-slate-400">
-              <div className="bg-slate-100 p-4 rounded-full mb-4">
-                <ListTodo size={32} />
-              </div>
-              <p>
-                {statusFilter === 'all'
-                  ? 'Nenhuma tarefa ainda. Crie uma nova!'
-                  : `Nenhuma tarefa com status "${statusFilter}"`}
-              </p>
-            </div>
-          ) : kanbanActive ? (
-            <TaskKanban
-              columns={taskGroups}
-              onTaskClick={handleTaskClick}
-              selectedTaskIds={selectedTaskIdSet}
-              onToggleTaskSelection={toggleTaskSelection}
-              onScheduleForToday={handleScheduleForToday}
-              onReorderColumns={handleReorderGroups}
-            />
-          ) : groupingEnabled ? (
-            <TaskGroups
-              groups={taskGroups}
-              viewMode={viewMode}
-              onTaskClick={handleTaskClick}
-              selectedTaskIds={selectedTaskIdSet}
-              onToggleTaskSelection={toggleTaskSelection}
-              onToggleGroupSelection={toggleGroupSelection}
-              onScheduleForToday={handleScheduleForToday}
-              onReorderGroups={handleReorderGroups}
-            />
-          ) : viewMode === 'cards' ? (
-            <TaskList
-              tasks={renderedTasks}
-              onTaskClick={handleTaskClick}
-              selectedTaskIds={selectedTaskIdSet}
-              onToggleTaskSelection={toggleTaskSelection}
-              onScheduleForToday={handleScheduleForToday}
-            />
-          ) : (
-            <TaskTable
-              tasks={renderedTasks}
-              onTaskClick={handleTaskClick}
-              selectedTaskIds={selectedTaskIdSet}
-              onToggleTaskSelection={toggleTaskSelection}
-              onToggleSelectAll={toggleSelectAllVisible}
-              onScheduleForToday={handleScheduleForToday}
-            />
-          )}
-
-          {hasMore && !showGroups && (
-            <div ref={sentinelRef} className="py-6 text-center text-xs text-slate-400">
-              Carregando mais {remaining} {remaining === 1 ? 'tarefa' : 'tarefas'}...
-            </div>
-          )}
-        </PageContainer>
-      </ScrollArea>
-      </TaskMenuChangedContext.Provider>
 
       {/* Create Task Dialog */}
       <TaskDialog open={dialogOpen} onOpenChange={setDialogOpen} onSubmit={handleCreateTask} />

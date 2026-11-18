@@ -4,24 +4,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { formatTime } from '@renderer/lib/utils'
 import { useTimerStore } from '@renderer/stores/timerStore'
+import { LiveDot } from '@renderer/components/chips/LiveDot'
 import { sortByLatestStart } from './runningTimers'
-
-function LiveDot(): React.JSX.Element {
-  const { token } = theme.useToken()
-  return (
-    <span
-      aria-hidden
-      className="animate-pulse-slow motion-reduce:animate-none"
-      style={{
-        width: 8,
-        height: 8,
-        flex: 'none',
-        borderRadius: 999,
-        background: token.colorSuccess
-      }}
-    />
-  )
-}
 
 export function RunningTimersPill(): React.JSX.Element | null {
   const { token } = theme.useToken()

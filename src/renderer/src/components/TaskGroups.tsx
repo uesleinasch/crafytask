@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import type { Task } from '@shared/types'
 import { TaskList } from './TaskList'
-import { TaskTable } from './TaskTable'
 import { SortableGroups, GroupDragHandle } from './SortableGroups'
 
 export interface TaskGroup {
@@ -15,22 +14,18 @@ export interface TaskGroup {
 
 interface TaskGroupsProps {
   groups: TaskGroup[]
-  viewMode: 'cards' | 'table'
   onTaskClick: (taskId: number) => void
   selectedTaskIds: Set<number>
   onToggleTaskSelection: (taskId: number, selected: boolean) => void
-  onToggleGroupSelection: (taskIds: number[], selected: boolean) => void
   onScheduleForToday?: (taskId: number) => void
   onReorderGroups?: (activeKey: string, overKey: string) => void
 }
 
 export function TaskGroups({
   groups,
-  viewMode,
   onTaskClick,
   selectedTaskIds,
   onToggleTaskSelection,
-  onToggleGroupSelection,
   onScheduleForToday,
   onReorderGroups
 }: TaskGroupsProps): React.JSX.Element {
@@ -90,29 +85,13 @@ export function TaskGroups({
             </div>
             {!isCollapsed && (
               <div className="p-4 pt-0">
-                {viewMode === 'cards' ? (
-                  <TaskList
-                    tasks={group.tasks}
-                    onTaskClick={onTaskClick}
-                    selectedTaskIds={selectedTaskIds}
-                    onToggleTaskSelection={onToggleTaskSelection}
-                    onScheduleForToday={onScheduleForToday}
-                  />
-                ) : (
-                  <TaskTable
-                    tasks={group.tasks}
-                    onTaskClick={onTaskClick}
-                    selectedTaskIds={selectedTaskIds}
-                    onToggleTaskSelection={onToggleTaskSelection}
-                    onToggleSelectAll={(selected) =>
-                      onToggleGroupSelection(
-                        group.tasks.map((task) => task.id),
-                        selected
-                      )
-                    }
-                    onScheduleForToday={onScheduleForToday}
-                  />
-                )}
+                <TaskList
+                  tasks={group.tasks}
+                  onTaskClick={onTaskClick}
+                  selectedTaskIds={selectedTaskIds}
+                  onToggleTaskSelection={onToggleTaskSelection}
+                  onScheduleForToday={onScheduleForToday}
+                />
               </div>
             )}
           </SortableGroups.Item>
