@@ -53,11 +53,11 @@ O select mais usado do app — filtros, seleção de projeto, tarefa, tag. Não 
 | --- | --- | --- |
 | `TaskCard` | lista (modo cards), agrupado, Kanban | 8 regiões; acento lateral; expande subtarefas inline. Ver [01](01-lista-de-tarefas.md) |
 | `TaskList` | wrapper do `TaskCard` | grade `1 / 2 / 3` colunas |
-| `TaskTable` | lista (modo tabela), agrupado | 8 colunas; linhas de subtarefa; coloração time leak |
-| `TaskGroups` | lista com agrupamento | cabeçalho recolhível + delega para `TaskList` ou `TaskTable` |
+| `tasks/TaskTable` | lista (modo tabela, com ou sem agrupamento) | `Table` do antd; colunas por breakpoint; subtarefas como linhas filhas; cabeçalho de grupo; time leak em 3 níveis |
+| `TaskGroups` | lista com agrupamento em cards | cabeçalho recolhível + `TaskList` |
 | `TaskKanban` | aba Executando com Kanban | colunas de 300px com cabeçalho tingido; sem drag-and-drop |
 | `TaskDialog` | criação de tarefa | 9 campos; navega para a tarefa criada |
-| `TaskContextMenu` | botão direito em `TaskCard` e nas linhas do `TaskTable` | abrir, timer, plano de hoje, status, arquivar, excluir |
+| `TaskContextMenu` | botão direito em `TaskCard` e nas linhas do `TaskTable`; `⋯` da linha | `Dropdown` do antd: abrir, timer, plano de hoje, status, arquivar, excluir |
 
 ### Badges e seletores
 
