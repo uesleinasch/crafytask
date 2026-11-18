@@ -44,7 +44,6 @@ import {
   unarchiveTask,
   setTasksArchived,
   updateTaskStatus,
-  updateTasksStatus,
   moveTasksToProject,
   startTask,
   stopTask,
@@ -674,6 +673,46 @@ function buildMcpStatus(): McpStatus {
 
 // ===================== IPC HANDLERS =====================
 
+function applyStatusChange(id: number, status: TaskStatus): void {
+  const task = getTask(id)
+  if (!task) return
+
+  if (status === 'executando' && task.is_blocked) {
+    throw new Error('Tarefa bloqueada por dependências não concluídas')
+  }
+  if (status === 'finalizada' && task.parent_task_id) {
+    const parentTask = getTask(task.parent_task_id)
+    if (parentTask?.is_blocked) {
+      throw new Error('A tarefa pai possui dependências não concluídas')
+    }
+  }
+
+  const previousStatus: string = task.status
+  updateTaskStatus(id, status)
+
+  if (status === 'finalizada') {
+    if (task.recurrence_rule && !task.parent_task_id) {
+      const next = createNextRecurrence(id)
+      if (next) autoSyncToGoogle(next.id)
+    }
+    if (task.parent_task_id && completeSubtasksCheck(task.parent_task_id)) {
+      autoSyncToGoogle(task.parent_task_id)
+    }
+    for (const depTaskId of getTaskDependents(id)) {
+      const depTask = getTask(depTaskId)
+      if (depTask && !depTask.is_blocked) {
+        mainWindow?.webContents.send('task:unblocked', depTaskId, depTask.name)
+      }
+    }
+  } else if (previousStatus === 'finalizada' && task.recurrence_rule && !task.parent_task_id) {
+    const calendarIds = filterGcalSyncedIds(getNextRecurrenceIds(id))
+    deleteNextRecurrence(id)
+    pushToGoogle(calendarIds)
+  }
+
+  autoSyncTask(id)
+}
+
 function setupIpcHandlers(): void {
   registerTerminalIpc(() => mainWindow)
   registerNotebookIpc(() => mainWindow)
@@ -797,12 +836,16 @@ function setupIpcHandlers(): void {
     pushToGoogle(calendarIds)
   })
   ipcMain.handle('task:bulkUpdateStatus', (_, ids: number[], status: TaskStatus) => {
-    const taskIds = normalizeTaskIds(ids)
-    if (taskIds.length === 0) return
-
-    updateTasksStatus(taskIds, status)
-    for (const id of taskIds) {
-      autoSyncTask(id)
+    const refused: string[] = []
+    for (const id of normalizeTaskIds(ids)) {
+      try {
+        applyStatusChange(id, status)
+      } catch (error) {
+        refused.push(`#${id}: ${error instanceof Error ? error.message : String(error)}`)
+      }
+    }
+    if (refused.length > 0) {
+      throw new Error(`Não foi possível mudar ${refused.length} tarefa(s). ${refused.join('; ')}`)
     }
   })
   ipcMain.handle('task:bulkMoveToProject', (_, ids: number[], projectId: number | null) => {
@@ -864,57 +907,9 @@ function setupIpcHandlers(): void {
   })
 
   // Status
-  ipcMain.handle('task:updateStatus', (_, id: number, status: TaskStatus) => {
-    const task = getTask(id)
-    if (!task) return
-
-    // Block setting 'executando' for blocked tasks
-    if (status === 'executando' && task.is_blocked) {
-      throw new Error('Tarefa bloqueada por dependências não concluídas')
-    }
-
-    // Block completing a subtask when the parent task has unresolved dependencies
-    if (status === 'finalizada' && task.parent_task_id) {
-      const parentTask = getTask(task.parent_task_id)
-      if (parentTask?.is_blocked) {
-        throw new Error('A tarefa pai possui dependências não concluídas')
-      }
-    }
-
-    const previousStatus: string = task.status
-    updateTaskStatus(id, status)
-
-    if (status === 'finalizada') {
-      // Recurrence: create next instance for top-level recurring tasks
-      if (task.recurrence_rule && !task.parent_task_id) {
-        const next = createNextRecurrence(id)
-        if (next) autoSyncToGoogle(next.id)
-      }
-
-      // Subtask: check if parent should auto-complete
-      if (task.parent_task_id && completeSubtasksCheck(task.parent_task_id)) {
-        autoSyncToGoogle(task.parent_task_id)
-      }
-
-      // Notify dependents that a dependency was resolved
-      const dependents = getTaskDependents(id)
-      for (const depTaskId of dependents) {
-        const depTask = getTask(depTaskId)
-        if (depTask && !depTask.is_blocked) {
-          mainWindow?.webContents.send('task:unblocked', depTaskId, depTask.name)
-        }
-      }
-    } else if (previousStatus === 'finalizada') {
-      // Undo completion: delete auto-created recurrence instance
-      if (task.recurrence_rule && !task.parent_task_id) {
-        const calendarIds = filterGcalSyncedIds(getNextRecurrenceIds(id))
-        deleteNextRecurrence(id)
-        pushToGoogle(calendarIds)
-      }
-    }
-
-    autoSyncTask(id)
-  })
+  ipcMain.handle('task:updateStatus', (_, id: number, status: TaskStatus) =>
+    applyStatusChange(id, status)
+  )
 
   // Time Entries
   ipcMain.handle('task:getTimeEntries', (_, taskId: number) => getTimeEntries(taskId))

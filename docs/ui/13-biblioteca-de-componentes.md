@@ -18,7 +18,7 @@ Consomem os tokens CSS (`--primary`, `--border`, `--radius`…) definidos em `as
 | `searchable-select` | **componente próprio**, não do shadcn — ver abaixo |
 | `dialog` | diálogos de criação/edição |
 | `alert-dialog` | confirmações destrutivas |
-| `context-menu` | menu do botão direito nas tarefas da lista (`TaskContextMenu`) |
+| `context-menu` | menu de sessão do terminal (`TerminalSessionMenu`); a lista de tarefas usa o `Dropdown` do antd |
 | `card` | **importado por nenhuma tela** — todas escrevem `bg-white border border-slate-200 rounded-sm` na mão |
 | `badge` | **importado por nenhuma tela** — status, categoria e energia usam os chips de `components/chips/` |
 | `progress` | só em `SubtaskList` e em H1 dos horizontes. As outras seis barras de progresso do app são `<div>` com `width` inline |
@@ -56,7 +56,8 @@ O select mais usado do app — filtros, seleção de projeto, tarefa, tag. Não 
 | `tasks/TaskTable` | lista (modo tabela, com ou sem agrupamento) | `Table` do antd; colunas por breakpoint; subtarefas como linhas filhas; cabeçalho de grupo; time leak em 3 níveis |
 | `tasks/GroupHeader`, `TaskActions`, `ProjectLabel` | tabela e cards | cabeçalho de grupo; Hoje, timer e `⋯`; ponto + nome do projeto |
 | `TaskDialog` | criação de tarefa | 9 campos; navega para a tarefa criada |
-| `TaskContextMenu` | botão direito em `TaskCard` e nas linhas do `TaskTable`; `⋯` da linha | `Dropdown` do antd: abrir, timer, plano de hoje, status, arquivar, excluir |
+| `tasks/TaskContextMenu` | botão direito em `TaskCard` e nas linhas do `TaskTable`; `⋯` | `Dropdown` do antd: abrir, timer, hoje, status, categoria, projeto, contextos, copiar, arquivar, excluir; age sobre a seleção |
+| `tasks/BulkActionBar` | lista, com seleção | barra flutuante: marcar como, mover para projeto, hoje, arquivar, excluir |
 
 ### Badges e seletores
 

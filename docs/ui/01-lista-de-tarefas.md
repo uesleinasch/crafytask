@@ -24,14 +24,17 @@ Ver, filtrar e triar todas as tarefas não arquivadas. Na prática cumpre três 
 │ ② BARRA DE FERRAMENTAS                                                 │
 │ [🔍 Buscar…] [Filtros ③ 2]      [Tabela|Cards|Kanban] [Agrupar por ▾]  │
 ├────────────────────────────────────────────────────────────────────────┤
-│ ④ BARRA DE AÇÕES EM MASSA                                              │
-│ N selecionada(s) · Selecionar todas visíveis · Limpar seleção          │
-│       [Marcar como▾][Marcar] [Projeto▾][Mover] [Arquivar] [Excluir]    │
+│ ALERTA DO INBOX (só na aba Inbox, com tarefas)                         │
 ├────────────────────────────────────────────────────────────────────────┤
 │ ⑤ CONTEÚDO — Tabela | Cards | Grupos | Kanban                          │
 │                                                                        │
 │    ⑥ sentinela "Carregando mais N tarefas…"                            │
+│ ④ BARRA DE AÇÕES EM MASSA (flutuante, só com seleção)                  │
+│ N selecionadas · Limpar   [Marcar como▾][Projeto▾][Hoje][Arquivar][Excluir] │
 └────────────────────────────────────────────────────────────────────────┘
+
+Na aba Inbox, um `Alert` informativo acima do conteúdo: "**N itens para processar.** Para cada um: é
+acionável? Leva menos de 2 minutos? É de um projeto?".
 ```
 
 ---
@@ -95,38 +98,28 @@ de baixo). Campos, em `Select` do antd com busca onde a lista é longa:
 No pé: `Mostrando {tasks.length} de {totalTasks}` e **Limpar filtros** (não mexe na aba nem na
 busca). A contagem do botão soma os campos acima (`taskFilterState.ts`, testado).
 
-## ④ Barra de ações em massa
+## ④ Barra de ações em massa (`components/tasks/BulkActionBar.tsx`)
 
-Renderizada **sempre que houver ao menos uma tarefa carregada** — inclusive com nenhuma tarefa
-selecionada, quando mostra "0 selecionada(s)" e botões desabilitados. Com ao menos uma tarefa
-selecionada, a barra fica presa no topo da área rolável (`sticky top-0`), para as ações continuarem
-à mão enquanto se rola a lista; sem seleção, ela rola junto com o conteúdo.
+Só aparece **com ao menos uma tarefa selecionada**, depois do conteúdo, presa a 12px do fundo da área
+rolável (`position: sticky; bottom: 12px`). É uma faixa flutuante (`colorBgElevated`, borda,
+`borderRadiusLG`, `boxShadowSecondary`) com:
 
-Cartão branco em duas metades (`flex-col xl:flex-row`):
+- `{N} selecionada(s)` (anunciado por leitor de tela), **Selecionar todas (N)** quando faltam
+  visíveis, **Limpar**;
+- `Select` **Marcar como…** (os 6 status; Executando desabilitado se alguma está bloqueada) e
+  `Select` **Mover para projeto…** (com busca e "Sem projeto"): aplicam ao escolher;
+- **Hoje** (planeja todas para hoje, ou tira do plano se todas já estão), **Arquivar** e
+  **Excluir** (`danger`, pede confirmação com `modal.confirm`: "Excluir N tarefas?").
 
-**Esquerda:**
-- `{N} selecionada(s)` em `font-semibold`
-- "Selecionar todas visíveis ({total})" — desabilitado quando já estão todas
-- "Limpar seleção" — desabilitado com zero selecionadas
-
-**Direita:**
-- `SearchableSelect` "Marcar como…" (os 6 status) + botão **Marcar** (`CheckCheck`)
-- `SearchableSelect` "Mover para projeto…" (inclui "Sem projeto") + botão **Mover** (`FolderInput`)
-- Botão **Arquivar** (`Archive`) — manda as selecionadas para o Arquivo Morto (`task:bulkSetArchived`)
-- Botão **Excluir** (`Trash2`) em `bg-red-50 border-red-200 text-red-700`
-
-Cada ação abre um `AlertDialog` cujo texto é montado dinamicamente:
-
-| Ação | Título | Descrição |
-| --- | --- | --- |
-| Excluir | `Deletar N tarefa(s)?` | Avisa que a exclusão também ocorre no Notion se a sincronização automática estiver ativa |
-| Marcar | `Marcar N tarefa(s)?` | Cita o status de destino |
-| Mover | `Mover N tarefa(s)?` | Texto diferente para "sem projeto" e para um projeto escolhido |
-| Arquivar | `Arquivar N tarefa(s)?` | Avisa que as tarefas vão para o Arquivo Morto e podem ser desarquivadas |
-
-Durante a execução, o botão de confirmação vira `Loader2` girando + "Aplicando…". Ao terminar, a
-seleção é limpa e a lista recarregada. A seleção também é podada automaticamente quando os filtros
-mudam: IDs que saíram do resultado deixam de estar selecionados.
+As ações vêm de `useTaskBulkActions` (`components/tasks/`), o mesmo do menu de contexto. No main,
+`task:updateStatus` e `task:bulkUpdateStatus` passam pela mesma `applyStatusChange` (bloqueio,
+subtarefa de pai bloqueado, recorrência, fechar o pai, aviso de desbloqueio); o lote aplica a cada
+tarefa e, se alguma for recusada, devolve um erro com os ids. Cada ação mostra um toast com a
+quantidade e recarrega a lista, mesmo quando parte falha. "Selecionar todas" soma as visíveis à
+seleção atual (subtarefas marcadas continuam). A seleção é podada quando os filtros mudam: ids que
+saíram do resultado (e não são subtarefas carregadas) deixam de estar selecionados. Quando a barra
+some com o foco dentro (depois de arquivar ou excluir), o foco vai para a área das tarefas. Um
+`aria-live` sempre montado anuncia a contagem.
 
 ## ⑤ Conteúdo
 
@@ -151,18 +144,22 @@ grupos passa do total."
 
 A página inteira rola num só contêiner (`h-full overflow-y-auto`, dentro do `PageContainer`):
 abas, barra de ferramentas e conteúdo sobem juntos, como no protótipo. Só a barra de ações em massa
-fica presa no topo, e só com seleção.
+flutua, presa ao fundo, e só com seleção.
 
-### Menu de contexto (`TaskContextMenu`)
+### Menu de contexto (`components/tasks/TaskContextMenu.tsx`)
 
-`Dropdown` do antd. Abre com o botão direito num card (cards, grupos, Kanban) ou numa linha da
-tabela, e com o clique no botão `⋯` da linha (`trigger={['click']}`): **Abrir** · **Iniciar timer** /
-**Parar timer** (iniciar fica desabilitado em tarefa bloqueada) · **Planejar para hoje** / **Tirar
-do plano de hoje** · **Marcar como ▸** (os 6 status, o atual com `✓`; Executando desabilitado em
-tarefa bloqueada) · **Arquivar** · **Excluir** (vermelho, abre o `DeleteConfirmDialog`). Cada ação
-mostra um toast e recarrega a lista pelo `TaskMenuChangedContext` (`components/taskMenuContext.ts`),
-que a `TaskListPage` fornece. Linhas de subtarefa também têm o menu. Categoria, projeto, contextos,
-copiar `#id` e a ação sobre a seleção entram na F2-f.
+`Dropdown` do antd. Abre com o botão direito numa linha ou num card e com o `⋯`. Itens: **Abrir** ·
+**Iniciar/Pausar timer** (iniciar desabilitado em tarefa bloqueada) · **Planejar para hoje / Tirar do
+plano de hoje** · **Marcar como ▸** (os 6 status com ícone na cor do status) · **Categoria ▸** ·
+**Mover para projeto ▸** ("Sem projeto" e os projetos não arquivados) · **Contextos ▸** (marca e
+desmarca) · **Copiar #id** · **Arquivar** · **Excluir…** (`modal.confirm`). O valor atual de cada
+submenu leva `✓`.
+
+Se a linha faz parte de uma seleção maior, o menu age sobre a seleção toda: título "N tarefas
+selecionadas", rótulos com "(N)" e sem Abrir, timer, Contextos e Copiar. Projetos, contextos, ids
+selecionados e a busca de tarefa por id chegam pelo `TaskMenuDataContext`
+(`components/taskMenuContext.ts`), que a `TaskListPage` fornece junto com o
+`TaskMenuChangedContext` (recarregar a lista).
 
 ### Modo tabela (`components/tasks/TaskTable.tsx`) — padrão
 

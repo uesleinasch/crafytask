@@ -240,6 +240,7 @@ só porque roda de CDN; os nomes lucide de cada lugar estão nas tabelas acima e
 | `HealthCard`          | em dia `CircleCheck` · Inbox `Inbox` · sem próxima ação `CircleArrowRight` · projetos parados `CirclePause` · aguardando `Hourglass` · próximas paradas `Clock` · prazos vencidos `CalendarX` · revisão `ClipboardCheck` · someday `Lightbulb` |
 | Configurações         | Geral `Settings` · Aparência `Palette` · Fluxo de trabalho `Workflow` · Terminal `SquareTerminal` · Backup `DatabaseBackup` · Notion `BookOpen` · Google Calendar `Calendar` · Jira `Plug` · Servidor MCP `Cable` · Sobre `Info`               |
 | Passos da revisão     | `collect` `Download` · `inbox` `Inbox` · `mind` `Brain` · `next` `CircleArrowRight` · `past` `History` · `upcoming` `CalendarDays` · `waiting` `Hourglass` · `projects` `FolderKanban` · `someday` `Lightbulb` · `creative` `Rocket`           |
+| Menu da tarefa e ações em massa | Abrir `FileText` · timer `Play`/`Pause` · hoje `CalendarDays` · marcar como `CircleCheck` · categoria `Flag` · projeto `Folder` · contextos `MapPin` · copiar `Copy` · arquivar `Archive` · excluir `Trash2` |
 | Legenda do calendário | urgente `Flame` · prioridade `Flag` · time leak `Clock` · no Google `CalendarSync`                                                                                                                                                             |
 
 ## 7. AppShell
@@ -403,6 +404,9 @@ mais um badge (pesquisa: poucos elementos por linha; Hick e carga cognitiva).
   Agrupar por contexto repete a tarefa em cada contexto dela, com um ícone discreto "Também em …" e
   um aviso acima da tabela de que a soma dos grupos passa do total.
 - **Ações da linha:** Hoje, timer e `⋯`. O `⋯` abre o mesmo menu do botão direito.
+- **Barra de ações em massa:** flutua no fundo, só com seleção: contagem, "Selecionar todas (N)"
+  quando faltam visíveis, Limpar, Marcar como…, Mover para projeto… (com "Sem projeto"), Hoje,
+  Arquivar (sem confirmação, é reversível) e Excluir (com `modal.confirm` citando a quantidade).
 - **Cards** (visão Cards, grupos em cards e Kanban): `#id` em mono com a checkbox de seleção ao lado
   (a seleção vale em todas as visões, para as ações em massa), nome, progresso das subtarefas
   (`feitas/total`, abre a lista), Hoje e `⋯` (sem timer); embaixo, status (só em "Todas"),

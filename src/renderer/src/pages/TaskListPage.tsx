@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
+  Alert,
   Button,
   Empty,
   Flex,
@@ -12,17 +13,6 @@ import {
   Typography
 } from 'antd'
 import { useNavigate } from 'react-router-dom'
-import { SearchableSelect } from '@renderer/components/ui/searchable-select'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle
-} from '@renderer/components/ui/alert-dialog'
 import { toast } from '@renderer/components/ui/sonner'
 import { TaskTable } from '@renderer/components/tasks/TaskTable'
 import { TaskDialog } from '@renderer/components/TaskDialog'
@@ -37,9 +27,14 @@ import {
   type TaskGroup
 } from '@renderer/lib/taskGrouping'
 import { TaskCardGrid, TaskCardGroups, TaskKanban } from '@renderer/components/tasks/TaskCardViews'
-import { TaskMenuChangedContext } from '@renderer/components/taskMenuContext'
+import {
+  TaskMenuChangedContext,
+  TaskMenuDataContext,
+  type TaskMenuData
+} from '@renderer/components/taskMenuContext'
+import { BulkActionBar } from '@renderer/components/tasks/BulkActionBar'
+import { plural } from '@renderer/components/tasks/bulkActionText'
 import { onNewTaskRequest } from '@renderer/lib/newTaskRequest'
-import { cn } from '@renderer/lib/utils'
 import { StatusTabLabel } from '@renderer/components/tasks/StatusTabLabel'
 import { PageContainer } from '@renderer/components/shell/PageContainer'
 import { RegionBoundary } from '@renderer/components/shell/RegionBoundary'
@@ -62,7 +57,7 @@ import {
 import { TASK_STATUSES, type TaskStatusCounts } from '@shared/taskStatusCounts'
 import { localDateString } from '@shared/dueState'
 import {
-  STATUS_LABELS,
+  type Task,
   type TaskStatus,
   type CreateTaskInput,
   type Tag,
@@ -70,25 +65,9 @@ import {
   type Project,
   type TaskListFilters
 } from '../../../shared/types'
-import {
-  Copy,
-  LayoutGrid,
-  Search,
-  Trash2,
-  Archive,
-  FolderInput,
-  CheckCheck,
-  Loader2,
-  Columns3,
-  Table2
-} from 'lucide-react'
+import { Copy, LayoutGrid, Search, Columns3, Table2 } from 'lucide-react'
 
 type FilterStatus = TaskStatus | 'all'
-type BulkAction =
-  | { type: 'delete' }
-  | { type: 'archive' }
-  | { type: 'status'; status: TaskStatus }
-  | { type: 'project'; projectId: number | null }
 
 const STATUS_TABS: FilterStatus[] = ['all', ...TASK_STATUSES]
 const SEARCH_DEBOUNCE_MS = 250
@@ -149,12 +128,8 @@ export function TaskListPage(): React.JSX.Element {
       : listGroup
   const viewMode: 'cards' | 'table' = view === 'cards' ? 'cards' : 'table'
   const [selectedTaskIds, setSelectedTaskIds] = useState<number[]>([])
-  const [loadedSubtaskIds, setLoadedSubtaskIds] = useState<number[]>([])
-  const [bulkStatusValue, setBulkStatusValue] = useState<TaskStatus | 'none'>('none')
-  const [bulkProjectValue, setBulkProjectValue] = useState<string>('none')
-  const [bulkAction, setBulkAction] = useState<BulkAction | null>(null)
-  const [confirmOpen, setConfirmOpen] = useState(false)
-  const [bulkLoading, setBulkLoading] = useState(false)
+  const [loadedSubtasks, setLoadedSubtasks] = useState<Task[]>([])
+  const contentRef = useRef<HTMLDivElement>(null)
 
   const filters = useMemo<TaskListFilters>(
     () => ({
@@ -235,6 +210,20 @@ export function TaskListPage(): React.JSX.Element {
       return next
     })
   }, [])
+  const tasksById = useMemo(
+    () => new Map([...loadedSubtasks, ...tasks].map((task) => [task.id, task])),
+    [tasks, loadedSubtasks]
+  )
+  const taskById = useCallback((id: number) => tasksById.get(id), [tasksById])
+  const menuData = useMemo<TaskMenuData>(
+    () => ({
+      projects: availableProjects,
+      contexts: availableContexts,
+      selectedIds: selectedTaskIds,
+      taskById
+    }),
+    [availableProjects, availableContexts, selectedTaskIds, taskById]
+  )
   const filtering = searchQuery.trim() !== '' || activeFilterCount(filterValue) > 0
   const contextGroupingRepeats =
     !loading &&
@@ -262,15 +251,23 @@ export function TaskListPage(): React.JSX.Element {
     [groupOrder, activeGroupBy, taskGroups, setGroupOrder]
   )
   const selectedTaskIdSet = useMemo(() => new Set(selectedTaskIds), [selectedTaskIds])
-  const selectedCount = selectedTaskIds.length
 
   useEffect(() => {
     setSelectedTaskIds((current) => {
-      const allowedIds = new Set([...filteredTaskIds, ...loadedSubtaskIds])
+      const allowedIds = new Set([...filteredTaskIds, ...loadedSubtasks.map((t) => t.id)])
       const next = current.filter((id) => allowedIds.has(id))
       return next.length === current.length ? current : next
     })
-  }, [filteredTaskIds, loadedSubtaskIds])
+  }, [filteredTaskIds, loadedSubtasks])
+
+  const hadSelection = useRef(false)
+  useEffect(() => {
+    const hasSelection = selectedTaskIds.length > 0
+    if (hadSelection.current && !hasSelection && document.activeElement === document.body) {
+      contentRef.current?.focus()
+    }
+    hadSelection.current = hasSelection
+  }, [selectedTaskIds])
 
   const handleScheduleForToday = useCallback(
     async (taskId: number): Promise<void> => {
@@ -280,7 +277,7 @@ export function TaskListPage(): React.JSX.Element {
       try {
         await window.api.scheduleTaskForDate(taskId, isAlreadyToday ? null : today)
         await refreshTasks()
-        toast.success(isAlreadyToday ? 'Removido do plano de hoje' : 'Adicionado ao plano de hoje')
+        toast.success(isAlreadyToday ? 'Fora do plano de hoje' : 'No plano de hoje')
       } catch (err) {
         console.error('Erro ao programar tarefa:', err)
         toast.error('Erro ao atualizar agendamento')
@@ -339,126 +336,6 @@ export function TaskListPage(): React.JSX.Element {
       return current.filter((id) => !removed.has(id))
     })
   }, [])
-
-  const openConfirm = (action: BulkAction): void => {
-    if (selectedCount === 0) {
-      toast.error('Selecione pelo menos uma tarefa')
-      return
-    }
-    setBulkAction(action)
-    setConfirmOpen(true)
-  }
-
-  const handleBulkActionConfirm = useCallback(async (): Promise<void> => {
-    if (!bulkAction || selectedCount === 0) return
-
-    setBulkLoading(true)
-    try {
-      if (bulkAction.type === 'delete') {
-        await window.api.bulkDeleteTasks(selectedTaskIds)
-        toast.success(`${selectedCount} tarefa(s) deletada(s) com sucesso`)
-      }
-
-      if (bulkAction.type === 'archive') {
-        await window.api.bulkSetArchived(selectedTaskIds, true)
-        toast.success(`${selectedCount} tarefa(s) arquivada(s)`)
-      }
-
-      if (bulkAction.type === 'status') {
-        await window.api.bulkUpdateStatus(selectedTaskIds, bulkAction.status)
-        toast.success(
-          `${selectedCount} tarefa(s) marcadas como ${STATUS_LABELS[bulkAction.status]}`
-        )
-      }
-
-      if (bulkAction.type === 'project') {
-        await window.api.bulkMoveToProject(selectedTaskIds, bulkAction.projectId)
-        const targetProjectName =
-          bulkAction.projectId === null
-            ? 'sem projeto'
-            : availableProjects.find((project) => project.id === bulkAction.projectId)?.name ||
-              'projeto selecionado'
-        toast.success(`${selectedCount} tarefa(s) movidas para ${targetProjectName}`)
-      }
-
-      setSelectedTaskIds([])
-      setConfirmOpen(false)
-      setBulkAction(null)
-      await refreshTasks()
-    } catch (error) {
-      console.error('Erro ao executar ação em massa:', error)
-      toast.error('Não foi possível aplicar a ação em massa')
-    } finally {
-      setBulkLoading(false)
-    }
-  }, [bulkAction, selectedCount, selectedTaskIds, refreshTasks, availableProjects])
-
-  const confirmDialogContent = useMemo(() => {
-    if (!bulkAction) {
-      return {
-        title: 'Confirmar ação em massa',
-        description: 'Confirme para continuar.',
-        actionLabel: 'Confirmar'
-      }
-    }
-
-    if (bulkAction.type === 'delete') {
-      return {
-        title: `Deletar ${selectedCount} tarefa(s)?`,
-        description:
-          'Essa ação remove as tarefas selecionadas localmente e também no Notion quando a sincronização automática estiver ativa.',
-        actionLabel: 'Deletar'
-      }
-    }
-
-    if (bulkAction.type === 'archive') {
-      return {
-        title: `Arquivar ${selectedCount} tarefa(s)?`,
-        description:
-          'As tarefas selecionadas saem das listagens e vão para o Arquivo Morto, de onde podem ser desarquivadas.',
-        actionLabel: 'Arquivar'
-      }
-    }
-
-    if (bulkAction.type === 'status') {
-      return {
-        title: `Marcar ${selectedCount} tarefa(s)?`,
-        description: `As tarefas selecionadas terão o status alterado para ${STATUS_LABELS[bulkAction.status]}.`,
-        actionLabel: 'Marcar'
-      }
-    }
-
-    return {
-      title: `Mover ${selectedCount} tarefa(s)?`,
-      description:
-        bulkAction.projectId === null
-          ? 'As tarefas selecionadas serão desvinculadas de qualquer projeto.'
-          : 'As tarefas selecionadas serão movidas para o projeto escolhido.',
-      actionLabel: 'Mover'
-    }
-  }, [bulkAction, selectedCount])
-
-  const bulkStatusOptions = useMemo(
-    () => [
-      { value: 'none', label: 'Marcar como...' },
-      { value: 'inbox', label: STATUS_LABELS.inbox },
-      { value: 'aguardando', label: STATUS_LABELS.aguardando },
-      { value: 'proximas', label: STATUS_LABELS.proximas },
-      { value: 'executando', label: STATUS_LABELS.executando },
-      { value: 'finalizada', label: STATUS_LABELS.finalizada },
-      { value: 'someday', label: STATUS_LABELS.someday }
-    ],
-    []
-  )
-
-  const bulkProjectOptions = useMemo(
-    () => [
-      { value: 'none', label: 'Mover para projeto...' },
-      { value: 'no-project', label: 'Sem projeto' },
-      ...availableProjects.map((project) => ({ value: String(project.id), label: project.name }))
-    ],
-    [availableProjects]
-  )
 
   return (
     <div className="h-full overflow-y-auto">
@@ -558,267 +435,159 @@ export function TaskListPage(): React.JSX.Element {
         </Flex>
 
         <TaskMenuChangedContext.Provider value={handleMenuChanged}>
-          <div style={{ paddingTop: 12 }}>
-            {!loading && tasks.length > 0 && (
-              <div
-                className={cn(
-                  'mb-4 bg-white border border-slate-200 rounded-sm p-4',
-                  selectedCount > 0 && 'sticky top-0 z-20 border-slate-300'
-                )}
-              >
-                <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3">
-                  <div className="flex flex-wrap items-center gap-2 text-sm">
-                    <span className="font-semibold text-slate-800">
-                      {selectedCount} selecionada(s)
+          <TaskMenuDataContext.Provider value={menuData}>
+            <div
+              ref={contentRef}
+              tabIndex={-1}
+              aria-label="Tarefas"
+              style={{ paddingTop: 12, outline: 'none' }}
+            >
+              {!loading && statusFilter === 'inbox' && tasks.length > 0 && (
+                <Alert
+                  showIcon
+                  type="info"
+                  style={{ marginBottom: 12 }}
+                  title={
+                    <span>
+                      <strong>
+                        {plural(tasks.length, 'item para processar.', 'itens para processar.')}
+                      </strong>{' '}
+                      Para cada um: é acionável? Leva menos de 2 minutos? É de um projeto?
                     </span>
-                    <button
-                      onClick={() => toggleSelectAllVisible(true)}
-                      disabled={tasks.length === selectedCount}
-                      className="text-slate-600 hover:text-slate-900 disabled:text-slate-300"
-                    >
-                      Selecionar todas visíveis ({tasks.length})
-                    </button>
-                    <button
-                      onClick={() => setSelectedTaskIds([])}
-                      disabled={selectedCount === 0}
-                      className="text-slate-600 hover:text-slate-900 disabled:text-slate-300"
-                    >
-                      Limpar seleção
-                    </button>
-                  </div>
+                  }
+                />
+              )}
 
-                  <div className="flex flex-wrap items-center gap-2">
-                    <div className="min-w-[180px]">
-                      <SearchableSelect
-                        value={bulkStatusValue}
-                        onChange={(value) => setBulkStatusValue(value as TaskStatus | 'none')}
-                        options={bulkStatusOptions}
-                        placeholder="Marcar como..."
-                        searchPlaceholder="Buscar status..."
-                      />
-                    </div>
-                    <button
+              {contextGroupingRepeats && (
+                <Typography.Text
+                  type="secondary"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    fontSize: 12,
+                    marginBottom: 8
+                  }}
+                >
+                  <Copy size={12} strokeWidth={1.75} aria-hidden />
+                  Tarefas com mais de um contexto aparecem em cada grupo; a soma dos grupos passa do
+                  total.
+                </Typography.Text>
+              )}
+
+              {loading ? (
+                <Flex justify="center" style={{ paddingBlock: 48 }}>
+                  <Spin description="Carregando tarefas" />
+                </Flex>
+              ) : tasks.length === 0 ? (
+                <Empty
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description={
+                    filtering
+                      ? 'Nenhuma tarefa com esses filtros.'
+                      : statusFilter === 'inbox'
+                        ? 'Inbox zerado. Tudo processado.'
+                        : 'Nenhuma tarefa aqui.'
+                  }
+                >
+                  {filtering && (
+                    <Button
                       onClick={() => {
-                        if (bulkStatusValue === 'none') {
-                          toast.error('Selecione um status para marcar')
-                          return
-                        }
-                        openConfirm({ type: 'status', status: bulkStatusValue })
+                        setFilterValue(EMPTY_TASK_FILTERS)
+                        setSearchInput('')
                       }}
-                      disabled={selectedCount === 0 || bulkLoading}
-                      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-50"
                     >
-                      <CheckCheck size={15} />
-                      Marcar
-                    </button>
+                      Limpar filtros
+                    </Button>
+                  )}
+                </Empty>
+              ) : kanbanActive ? (
+                <RegionBoundary region="kanban de tarefas">
+                  <TaskKanban
+                    columns={taskGroups}
+                    groupBy={activeGroupBy}
+                    onTaskClick={handleTaskClick}
+                    selectedTaskIds={selectedTaskIdSet}
+                    onToggleTaskSelection={toggleTaskSelection}
+                    onScheduleForToday={handleScheduleForToday}
+                    showStatus={statusFilter === 'all'}
+                    contexts={availableContexts}
+                    onReorderColumns={handleReorderGroups}
+                  />
+                </RegionBoundary>
+              ) : groupingEnabled && viewMode === 'cards' ? (
+                <RegionBoundary region="cards de tarefas">
+                  <TaskCardGroups
+                    groups={taskGroups}
+                    groupBy={activeGroupBy}
+                    onTaskClick={handleTaskClick}
+                    selectedTaskIds={selectedTaskIdSet}
+                    onToggleTaskSelection={toggleTaskSelection}
+                    onScheduleForToday={handleScheduleForToday}
+                    showStatus={statusFilter === 'all'}
+                    contexts={availableContexts}
+                    onToggleGroupSelection={toggleGroupSelection}
+                    onReorderGroups={handleReorderGroups}
+                    collapsedGroups={collapsedGroups}
+                    onToggleGroup={toggleCollapsedGroup}
+                  />
+                </RegionBoundary>
+              ) : viewMode === 'cards' ? (
+                <RegionBoundary region="cards de tarefas">
+                  <TaskCardGrid
+                    tasks={renderedTasks}
+                    onTaskClick={handleTaskClick}
+                    selectedTaskIds={selectedTaskIdSet}
+                    onToggleTaskSelection={toggleTaskSelection}
+                    onScheduleForToday={handleScheduleForToday}
+                    showStatus={statusFilter === 'all'}
+                    contexts={availableContexts}
+                  />
+                </RegionBoundary>
+              ) : (
+                <RegionBoundary region="tabela de tarefas">
+                  <TaskTable
+                    tasks={renderedTasks}
+                    groups={groupingEnabled ? taskGroups : null}
+                    groupBy={groupingEnabled ? activeGroupBy : null}
+                    status={statusFilter}
+                    contexts={availableContexts}
+                    onTaskClick={handleTaskClick}
+                    selectedTaskIds={selectedTaskIdSet}
+                    onToggleTaskSelection={toggleTaskSelection}
+                    onToggleSelectAll={toggleSelectAllVisible}
+                    onToggleGroupSelection={toggleGroupSelection}
+                    onScheduleForToday={handleScheduleForToday}
+                    onSubtasksChange={setLoadedSubtasks}
+                    collapsedGroups={collapsedGroups}
+                    onToggleGroup={toggleCollapsedGroup}
+                  />
+                </RegionBoundary>
+              )}
 
-                    <div className="min-w-[200px]">
-                      <SearchableSelect
-                        value={bulkProjectValue}
-                        onChange={setBulkProjectValue}
-                        options={bulkProjectOptions}
-                        placeholder="Mover para projeto..."
-                        searchPlaceholder="Buscar projeto..."
-                      />
-                    </div>
-                    <button
-                      onClick={() => {
-                        if (bulkProjectValue === 'none') {
-                          toast.error('Selecione um projeto para mover')
-                          return
-                        }
-                        openConfirm({
-                          type: 'project',
-                          projectId:
-                            bulkProjectValue === 'no-project' ? null : Number(bulkProjectValue)
-                        })
-                      }}
-                      disabled={selectedCount === 0 || bulkLoading}
-                      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-                    >
-                      <FolderInput size={15} />
-                      Mover
-                    </button>
-
-                    <button
-                      onClick={() => openConfirm({ type: 'archive' })}
-                      disabled={selectedCount === 0 || bulkLoading}
-                      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-                    >
-                      <Archive size={15} />
-                      Arquivar
-                    </button>
-
-                    <button
-                      onClick={() => openConfirm({ type: 'delete' })}
-                      disabled={selectedCount === 0 || bulkLoading}
-                      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-red-50 border border-red-200 text-red-700 hover:bg-red-100 disabled:opacity-50"
-                    >
-                      <Trash2 size={15} />
-                      Excluir
-                    </button>
-                  </div>
+              {hasMore && !showGroups && (
+                <div ref={sentinelRef} className="py-6 text-center text-xs text-slate-400">
+                  Carregando mais {remaining} {remaining === 1 ? 'tarefa' : 'tarefas'}...
                 </div>
-              </div>
-            )}
-
-            {contextGroupingRepeats && (
-              <Typography.Text
-                type="secondary"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  fontSize: 12,
-                  marginBottom: 8
-                }}
-              >
-                <Copy size={12} strokeWidth={1.75} aria-hidden />
-                Tarefas com mais de um contexto aparecem em cada grupo; a soma dos grupos passa do
-                total.
-              </Typography.Text>
-            )}
-
-            {loading ? (
-              <Flex justify="center" style={{ paddingBlock: 48 }}>
-                <Spin description="Carregando tarefas" />
-              </Flex>
-            ) : tasks.length === 0 ? (
-              <Empty
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-                description={
-                  filtering
-                    ? 'Nenhuma tarefa com esses filtros.'
-                    : statusFilter === 'inbox'
-                      ? 'Inbox zerado. Tudo processado.'
-                      : 'Nenhuma tarefa aqui.'
+              )}
+              <BulkActionBar
+                selectedIds={selectedTaskIds}
+                taskById={taskById}
+                projects={availableProjects}
+                visibleCount={tasks.length}
+                selectedVisibleCount={tasks.filter((task) => selectedTaskIdSet.has(task.id)).length}
+                onSelectAll={() =>
+                  setSelectedTaskIds((current) => [...new Set([...current, ...filteredTaskIds])])
                 }
-              >
-                {filtering && (
-                  <Button
-                    onClick={() => {
-                      setFilterValue(EMPTY_TASK_FILTERS)
-                      setSearchInput('')
-                    }}
-                  >
-                    Limpar filtros
-                  </Button>
-                )}
-              </Empty>
-            ) : kanbanActive ? (
-              <RegionBoundary region="kanban de tarefas">
-                <TaskKanban
-                  columns={taskGroups}
-                  groupBy={activeGroupBy}
-                  onTaskClick={handleTaskClick}
-                  selectedTaskIds={selectedTaskIdSet}
-                  onToggleTaskSelection={toggleTaskSelection}
-                  onScheduleForToday={handleScheduleForToday}
-                  showStatus={statusFilter === 'all'}
-                  contexts={availableContexts}
-                  onReorderColumns={handleReorderGroups}
-                />
-              </RegionBoundary>
-            ) : groupingEnabled && viewMode === 'cards' ? (
-              <RegionBoundary region="cards de tarefas">
-                <TaskCardGroups
-                  groups={taskGroups}
-                  groupBy={activeGroupBy}
-                  onTaskClick={handleTaskClick}
-                  selectedTaskIds={selectedTaskIdSet}
-                  onToggleTaskSelection={toggleTaskSelection}
-                  onScheduleForToday={handleScheduleForToday}
-                  showStatus={statusFilter === 'all'}
-                  contexts={availableContexts}
-                  onToggleGroupSelection={toggleGroupSelection}
-                  onReorderGroups={handleReorderGroups}
-                  collapsedGroups={collapsedGroups}
-                  onToggleGroup={toggleCollapsedGroup}
-                />
-              </RegionBoundary>
-            ) : viewMode === 'cards' ? (
-              <RegionBoundary region="cards de tarefas">
-                <TaskCardGrid
-                  tasks={renderedTasks}
-                  onTaskClick={handleTaskClick}
-                  selectedTaskIds={selectedTaskIdSet}
-                  onToggleTaskSelection={toggleTaskSelection}
-                  onScheduleForToday={handleScheduleForToday}
-                  showStatus={statusFilter === 'all'}
-                  contexts={availableContexts}
-                />
-              </RegionBoundary>
-            ) : (
-              <RegionBoundary region="tabela de tarefas">
-                <TaskTable
-                  tasks={renderedTasks}
-                  groups={groupingEnabled ? taskGroups : null}
-                  groupBy={groupingEnabled ? activeGroupBy : null}
-                  status={statusFilter}
-                  contexts={availableContexts}
-                  onTaskClick={handleTaskClick}
-                  selectedTaskIds={selectedTaskIdSet}
-                  onToggleTaskSelection={toggleTaskSelection}
-                  onToggleSelectAll={toggleSelectAllVisible}
-                  onToggleGroupSelection={toggleGroupSelection}
-                  onScheduleForToday={handleScheduleForToday}
-                  onSubtaskIdsChange={setLoadedSubtaskIds}
-                  collapsedGroups={collapsedGroups}
-                  onToggleGroup={toggleCollapsedGroup}
-                />
-              </RegionBoundary>
-            )}
-
-            {hasMore && !showGroups && (
-              <div ref={sentinelRef} className="py-6 text-center text-xs text-slate-400">
-                Carregando mais {remaining} {remaining === 1 ? 'tarefa' : 'tarefas'}...
-              </div>
-            )}
-          </div>
+                onClear={() => setSelectedTaskIds([])}
+              />
+            </div>
+          </TaskMenuDataContext.Provider>
         </TaskMenuChangedContext.Provider>
       </PageContainer>
 
       {/* Create Task Dialog */}
       <TaskDialog open={dialogOpen} onOpenChange={setDialogOpen} onSubmit={handleCreateTask} />
-
-      <AlertDialog
-        open={confirmOpen}
-        onOpenChange={(open) => {
-          setConfirmOpen(open)
-          if (!open && !bulkLoading) {
-            setBulkAction(null)
-          }
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{confirmDialogContent.title}</AlertDialogTitle>
-            <AlertDialogDescription>{confirmDialogContent.description}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={bulkLoading}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(event) => {
-                event.preventDefault()
-                void handleBulkActionConfirm()
-              }}
-              disabled={bulkLoading}
-              className={
-                bulkAction?.type === 'delete' ? 'bg-destructive hover:bg-destructive/90' : ''
-              }
-            >
-              {bulkLoading ? (
-                <span className="inline-flex items-center gap-2">
-                  <Loader2 size={14} className="animate-spin" />
-                  Aplicando...
-                </span>
-              ) : (
-                confirmDialogContent.actionLabel
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }
