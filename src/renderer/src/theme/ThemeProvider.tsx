@@ -9,7 +9,7 @@ import {
   type ThemePreference
 } from '@shared/themePreference'
 import { shouldBootstrapTimerStore } from '@renderer/stores/timerWindow'
-import { buildTheme } from './buildTheme'
+import { buildTheme, componentSizeFor, THEME_CSS_VAR_KEY } from './buildTheme'
 import {
   DENSITY_KEY,
   THEME_PREFERENCE_KEY,
@@ -65,6 +65,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }): Reac
     setDensityState(value)
   }, [])
 
+  useEffect(() => {
+    document.documentElement.classList.add(THEME_CSS_VAR_KEY)
+  }, [])
+
   const config = useMemo(() => buildTheme(mode, density), [mode, density])
   const settings = useMemo(
     () => ({ preference, density, mode, setPreference, setDensity }),
@@ -73,7 +77,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }): Reac
 
   return (
     <ThemeSettingsContext.Provider value={settings}>
-      <ConfigProvider theme={config} locale={ptBR}>
+      <ConfigProvider theme={config} locale={ptBR} componentSize={componentSizeFor(density)}>
         <AntApp component={false}>{children}</AntApp>
       </ConfigProvider>
     </ThemeSettingsContext.Provider>

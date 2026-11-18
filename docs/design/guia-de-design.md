@@ -217,8 +217,8 @@ tipografia juntos. Ela existe só no protótipo: nenhuma fase a constrói no app
   `.ct-page` e `.ct-page-narrow`.
 - **Espaço:** múltiplos de 4. 16px entre cards, 8px entre controles de uma barra.
 - **Densidade:** padrão "confortável" (`controlHeight` 32, linhas de tabela com 10px). "Compacta"
-  liga o `compactAlgorithm`, passa `componentSize="small"` ao `ConfigProvider` e usa linhas de 6px.
-  Alvo de clique nunca menor que 24px (WCAG 2.5.8).
+  liga o `compactAlgorithm`, passa `componentSize="small"` ao `ConfigProvider` e usa linhas de 6px;
+  `controlHeightSM` fica em 24px. Alvo de clique nunca menor que 24px (WCAG 2.5.8).
 - **Abas:** espaço mínimo de 24px entre o fim de um rótulo e o início do próximo (16px na densidade
   compacta), em todos os tamanhos. No tema: `Tabs.horizontalItemGutter` 24 (16 compacto) e padding
   lateral de 4px em `horizontalItemPadding`, `horizontalItemPaddingSM` e `horizontalItemPaddingLG`;

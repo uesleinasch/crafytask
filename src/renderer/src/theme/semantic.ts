@@ -123,6 +123,16 @@ export const HORIZON_COLORS: ByMode<readonly ChipColors[]> = {
   ]
 }
 
+export interface CalBlockColors {
+  calBlock: string
+  calBlockBorder: string
+}
+
+export const CAL_BLOCK_COLORS: ByMode<CalBlockColors> = {
+  light: { calBlock: '#EFEDFF', calBlockBorder: '#C9C1FF' },
+  dark: { calBlock: '#252047', calBlockBorder: '#3E3770' }
+}
+
 export const USER_COLORS = [
   '#E5484D',
   '#A84803',
