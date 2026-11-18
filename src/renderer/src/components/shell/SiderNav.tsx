@@ -101,10 +101,15 @@ function routeItem(item: NavRoute, counts: NavCounts): NonNullable<MenuProps['it
 
 interface SiderNavProps {
   collapsed: boolean
-  onToggleCollapsed: () => void
+  onToggleCollapsed?: () => void
+  onNavigate?: () => void
 }
 
-export function SiderNav({ collapsed, onToggleCollapsed }: SiderNavProps): React.JSX.Element {
+export function SiderNav({
+  collapsed,
+  onToggleCollapsed,
+  onNavigate
+}: SiderNavProps): React.JSX.Element {
   const location = useLocation()
   const navigate = useNavigate()
   const { token } = theme.useToken()
@@ -122,10 +127,11 @@ export function SiderNav({ collapsed, onToggleCollapsed }: SiderNavProps): React
   )
 
   const handleClick: MenuProps['onClick'] = ({ key }) => {
-    if (key === TERMINALS_KEY) return toggleTerminals()
-    if (key === COLLAPSE_KEY) return onToggleCollapsed()
+    if (key === COLLAPSE_KEY) return onToggleCollapsed?.()
+    if (key === TERMINALS_KEY) toggleTerminals()
     const route = routes.get(key)
     if (route) navigate(route)
+    onNavigate?.()
   }
 
   const mainItems: MenuProps['items'] = NAV_GROUPS.map((group) => ({
@@ -156,11 +162,15 @@ export function SiderNav({ collapsed, onToggleCollapsed }: SiderNavProps): React
       )
     },
     ...NAV_FOOTER.map((item) => routeItem(item, counts)),
-    {
-      key: COLLAPSE_KEY,
-      icon: icon(collapsed ? PanelLeftOpen : PanelLeftClose),
-      label: collapsed ? 'Expandir menu' : 'Recolher menu'
-    }
+    ...(onToggleCollapsed
+      ? [
+          {
+            key: COLLAPSE_KEY,
+            icon: icon(collapsed ? PanelLeftOpen : PanelLeftClose),
+            label: collapsed ? 'Expandir menu' : 'Recolher menu'
+          }
+        ]
+      : [])
   ]
 
   const selectedKeys = selected ? [selected] : []
