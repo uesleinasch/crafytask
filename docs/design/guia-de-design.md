@@ -443,6 +443,59 @@ Mesmo esqueleto das outras telas, com navegação própria porque são muitas se
   atalho da captura e backup automático. Tudo isso hoje é fixo no código (E8) e precisa de backend;
   no protótipo leva a etiqueta "novo".
 
+### Revisão semanal
+
+A revisão é o hábito que mantém o sistema confiável (Heylighen e Vidal 2008). A tela deixa de ser
+um checklist de marcar e vira um **fluxo guiado**, em que cada passo traz a lista que ele revisa e
+as ações para resolver ali mesmo (E5).
+
+- **Três fases, dez passos** (a estrutura de David Allen):
+  - **Clarear** — Coletar itens soltos · Processar o Inbox · Esvaziar a cabeça (novo, com lista de
+    gatilhos);
+  - **Atualizar** — Revisar próximas ações · Olhar a semana que passou (novo) · Olhar as próximas
+    duas semanas · Revisar aguardando · Revisar projetos;
+  - **Criar** — Revisar someday · Pensar adiante.
+- **Antes de começar:** cartão com dias desde a última revisão, as três fases e **um** botão
+  primário "Começar revisão" (some o botão duplicado do cabeçalho, B3). Ao lado, "Ritmo": as
+  últimas 12 semanas em quadrados (com ou sem revisão) e o texto "9 de 12 semanas". Sem contador
+  de sequência e sem vermelho por semana perdida (Kim et al. 2016). Embaixo, "Como está o sistema"
+  com os mesmos `HealthCard` do dashboard e o histórico em `Table` paginada; a linha abre um
+  `Drawer` com os passos feitos e pulados e as notas.
+- **Durante:** cabeçalho com "Revisão da semana", há quanto tempo começou, progresso `N/10` e
+  "Pausar". À esquerda, trilho com um `Steps` vertical por fase; clicar num passo vai até ele, e o
+  passo pulado mostra "Pulado". No centro, o card do passo: fase e número, título, a pergunta do
+  passo, o conteúdo e o rodapé com "Anterior", "Pular" e **"Concluir passo"** (primário,
+  `Ctrl+Enter`). "Abrir a tela" no cabeçalho do card leva à tela completa e a revisão continua de
+  onde estava. À direita (a partir de `xxl`; abaixo do card antes disso): "Sistema nesta revisão",
+  com cada indicador no começo → agora, e "Notas da revisão", salvas sozinhas.
+- **O que cada passo traz:**
+  - Coletar, Esvaziar a cabeça, Semana que passou e Próximas semanas: um campo de captura (Enter
+    manda para o Inbox) e a lista do que foi capturado nesta revisão;
+  - Processar o Inbox: cada item com Próxima, Aguardando, Someday, Feito (< 2 min) e Excluir;
+    vazio vira "Inbox zero" em tom positivo;
+  - Próximas ações e Aguardando: ordenadas pela mais parada, com chip âmbar "parada há N dias"
+    acima do limiar (14 e 7 dias); Aguardando mostra de quem se espera e tem "Recebi" e "Cobrar"
+    (cria a ação de cobrança no Inbox);
+  - Projetos: próxima ação de cada projeto ativo; sem ela, um `Select` define uma das tarefas
+    abertas como próxima; menu para mover para someday ou concluir;
+  - Someday: tarefas e projetos someday com "Ativar";
+  - Pensar adiante: texto livre, uma ideia por linha, "Mandar para o Inbox" e atalho para
+    Horizontes.
+- **Fechar a revisão:** resumo (Inbox no começo → agora, coletados, processados, projetos com
+  próxima ação nova, cobranças, tarefas tiradas das listas), duração e os passos sem marcar.
+  Dá para concluir com passos pulados: a confirmação diz que eles ficam registrados como pulados
+  ("uma revisão parcial vale mais que nenhuma"). O histórico guarda passos feitos e pulados.
+- **Retomar:** a revisão em andamento fica no banco. Pausada ou ao sair da tela, a entrada mostra um
+  `Alert` "Revisão em andamento · N de 10 · próximo: …" com "Retomar" (primário) e "Descartar"
+  (confirma, e avisa que o que mudou nas tarefas continua mudado).
+- **Lembrete:** o ponto âmbar no item da navegação aparece só depois de 7 dias sem revisão.
+- **Responsivo:** trilho a partir de `lg`; abaixo disso, um `Select` agrupado por fase com ✓ e –
+  no lugar do trilho. As ações das linhas mostram texto a partir de `lg` e só ícone com tooltip
+  abaixo.
+- **Backend novo:** `checklist_state` guarda `done` ou `skipped` por passo (as chaves novas `mind` e
+  `past` entram no JSON, sem migração), contadores da sessão, data da última mudança de status para
+  "parada há N dias", e a revisão concluída com passos pulados.
+
 ### Dashboard
 
 O dashboard responde duas perguntas, nessa ordem: **o sistema está em dia?** e **para onde foi o
@@ -453,9 +506,11 @@ tempo?** Toda métrica abre o que ela conta (E4). Base: NN/g (comprimento e posi
   de filtros, e os filtros valem para tudo abaixo dela; nenhum card tem filtro próprio.
 - **Saúde do sistema** (Agora): seis cartões clicáveis em grade — Inbox para processar (com o item
   mais antigo e a taxa processada na semana), Projetos sem próxima ação (novo), Projetos parados
-  (> 7 dias), Aguardando sem resposta (> 14 dias), Prazos vencidos (novo) e Revisão semanal (dias
+  (> 7 dias), Aguardando sem resposta (> 7 dias), Prazos vencidos (novo) e Revisão semanal (dias
   desde a última). Ícone num quadrado tingido: verde com check quando está em dia, âmbar quando
-  pede atenção, vermelho **só** para prazo vencido. Cada cartão leva à lista já filtrada.
+  pede atenção, vermelho **só** para prazo vencido, cinza para o que só informa (Someday). Cada
+  cartão leva à lista já filtrada. Os indicadores e limiares são os mesmos da revisão semanal e
+  vêm de uma consulta só (`review:healthIndicators`), para as duas telas nunca discordarem.
 - **Tarefas abertas por status** (Agora): barras horizontais ordenadas pelo fluxo, chip do status
   ao lado, contagem e %. Substitui o funil, que punha Aguardando como etapa depois de Executando.
 - **Filtros** (No período): `Segmented` 7 dias / 30 dias / 90 dias / 12 meses (padrão 30),

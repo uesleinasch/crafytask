@@ -170,6 +170,18 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
 .ct-health:hover { border-color: var(--ct-border-strong); background: var(--ct-bg); }
 .ct-health-icon { width: 36px; height: 36px; flex: none; border-radius: 8px; display: grid; place-items: center; font-size: 17px; }
 .ct-health-val { font-size: 20px; font-weight: 600; white-space: nowrap; }
+.ct-rvrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 10px 0; border-bottom: 1px solid var(--ct-border); }
+.ct-rvrow:last-child { border-bottom: 0; }
+.ct-rvempty { display: flex; align-items: center; gap: 10px; padding: 16px 0; color: var(--ct-text-2); }
+.ct-rvphases { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 12px; }
+.ct-rvphase { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--ct-border); border-radius: 12px; background: var(--ct-bg); }
+.ct-rvweeks { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 4px; max-width: 420px; }
+.ct-rvweek { aspect-ratio: 1; border-radius: 6px; display: grid; place-items: center; font-size: 11px; min-width: 16px; }
+.ct-rvrail { width: 260px; flex: none; position: sticky; top: 0; }
+.ct-rvrail .ant-steps-item-title { line-height: 1.35 !important; }
+.ct-rvtimeline { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 12px; }
+.ct-rvday { padding: 10px 12px; border: 1px solid var(--ct-border); border-radius: 12px; min-width: 0; }
+.ct-rvsummary { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
 </style>
 <div id="root"><div class="ct-boot">Carregando protótipo…</div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
@@ -444,8 +456,8 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
   ];
   const ROUTE_DOCS = { calendario: '04-calendario', revisao: '07-revisao-semanal', horizontes: '06-horizontes', rotulos: '09-contextos-e-tags', cadernos: '17-cadernos', dashboard: '08-dashboard', arquivo: '10-arquivadas', ajustes: '11-configuracoes' };
   const ROUTE_OF = Object.fromEntries(NAV.flatMap(g => g.children).concat(NAV_FOOT).map(i => [i.key, i]));
-  const TITLES = { tarefas: 'Tarefas', tarefa: 'Tarefa', hoje: 'Hoje', projetos: 'Projetos', projeto: 'Projeto', ajustes: 'Configurações', horizontes: 'Horizontes', rotulos: 'Contextos e tags', identidade: 'Identidade visual', dashboard: 'Dashboard' };
-  const BUILT = ['tarefas', 'tarefa', 'hoje', 'projetos', 'projeto', 'ajustes', 'horizontes', 'rotulos', 'dashboard', 'identidade'];
+  const TITLES = { tarefas: 'Tarefas', tarefa: 'Tarefa', hoje: 'Hoje', projetos: 'Projetos', projeto: 'Projeto', ajustes: 'Configurações', horizontes: 'Horizontes', rotulos: 'Contextos e tags', identidade: 'Identidade visual', dashboard: 'Dashboard', revisao: 'Revisão semanal' };
+  const BUILT = ['tarefas', 'tarefa', 'hoje', 'projetos', 'projeto', 'ajustes', 'horizontes', 'rotulos', 'dashboard', 'revisao', 'identidade'];
 
   function toMenu(items, collapsed) {
     return items.map(it => it.type === 'group'
@@ -552,6 +564,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       : route === 'ajustes' ? html`<${SettingsPage} mode=${mode} isMobile=${isMobile} screens=${screens} themePref=${themePref} setThemePref=${setThemePref} compact=${compact} setCompact=${setCompact} />`
       : route === 'horizontes' ? html`<${HorizonsPage} mode=${mode} go=${go} isMobile=${isMobile} screens=${screens} openProject=${openProject} />`
       : route === 'rotulos' ? html`<${LabelsPage} mode=${mode} go=${go} isMobile=${isMobile} screens=${screens} />`
+      : route === 'revisao' ? html`<${WeeklyReviewPage} mode=${mode} go=${go} isMobile=${isMobile} screens=${screens} openProject=${openProject} />`
       : route === 'dashboard' ? html`<${DashboardPage} mode=${mode} go=${go} isMobile=${isMobile} screens=${screens} openProject=${openProject} />`
       : route === 'identidade' ? html`<${IdentityPage} mode=${mode} />`
       : html`<${Placeholder} route=${route} go=${go} />`;
@@ -2555,7 +2568,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
 
   function HealthCard({ item, mode }) {
     const tone = item.tone || (item.value ? 'warning' : 'ok');
-    const tones = { ok: { icon: 'CheckCircleOutlined', c: STATUS.executando[mode] }, warning: { icon: item.icon, c: STATUS.aguardando[mode] }, error: { icon: item.icon, c: CATEGORY.urgente[mode] } };
+    const tones = { ok: { icon: 'CheckCircleOutlined', c: STATUS.executando[mode] }, warning: { icon: item.icon, c: STATUS.aguardando[mode] }, error: { icon: item.icon, c: CATEGORY.urgente[mode] }, neutral: { icon: item.icon, c: STATUS.inbox[mode] } };
     const t = tones[tone];
     return html`<button type="button" className="ct-health" onClick=${item.onClick} aria-label=${`${item.title}: ${item.valueText || item.value}. ${item.cta}`}>
       <span className="ct-health-icon" style=${{ color: t.c[0], background: t.c[1] }}>${createElement(I[t.icon])}</span>
@@ -2588,9 +2601,9 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       { key: 'inbox', icon: 'InboxOutlined', title: 'Inbox para processar', value: counts.inbox || 0, detail: 'O item mais antigo chegou há 4 dias · 82% processado nesta semana', okText: 'Inbox zero', cta: 'Abre a aba Inbox', onClick: () => toTasks('Abre Tarefas na aba Inbox') },
       { key: 'nonext', icon: 'ForwardOutlined', title: 'Projetos sem próxima ação', value: noNext, detail: 'Ativos, com tarefas abertas e nenhuma em Próximas', okText: 'Todo projeto ativo tem um próximo passo', cta: 'Abre Projetos filtrado', onClick: () => { message.info('Abre Projetos com "Mostrar só esses" ligado'); go('projetos'); } },
       { key: 'stalled', icon: 'PauseCircleOutlined', title: 'Projetos parados', value: 1, detail: 'Sem sessão nem tarefa concluída há mais de 7 dias', okText: 'Todos tiveram atividade na semana', cta: 'Abre Projetos', onClick: () => { message.info('Abre Projetos ordenado por atividade, mostrando os parados'); go('projetos'); } },
-      { key: 'waiting', icon: 'HourglassOutlined', title: 'Aguardando sem resposta', value: 2, detail: 'Há mais de 14 dias em Aguardando: hora de cobrar', okText: 'Nada esperando há mais de 14 dias', cta: 'Abre a aba Aguardando', onClick: () => toTasks('Abre Tarefas na aba Aguardando, só as paradas há mais de 14 dias') },
+      { key: 'waiting', icon: 'HourglassOutlined', title: 'Aguardando sem resposta', value: 2, detail: 'Há mais de 7 dias em Aguardando: hora de cobrar', okText: 'Nada esperando há mais de 7 dias', cta: 'Abre a aba Aguardando', onClick: () => toTasks('Abre Tarefas na aba Aguardando, só as paradas há mais de 7 dias') },
       { key: 'overdue', icon: 'CalendarOutlined', title: 'Prazos vencidos', value: overdue, tone: overdue ? 'error' : 'ok', detail: 'Tarefas abertas com prazo antes de hoje', okText: 'Nenhum prazo vencido', cta: 'Abre a lista filtrada', onClick: () => toTasks('Abre Tarefas com o filtro "Prazo vencido"') },
-      { key: 'review', icon: 'SyncOutlined', title: 'Revisão semanal', value: 0, valueText: 'há 6 dias', detail: '', okText: 'Próxima até domingo, 23/11', cta: 'Abre a revisão semanal', onClick: () => go('revisao') }
+      { key: 'review', icon: 'AuditOutlined', title: 'Revisão semanal', value: 8, valueText: 'há 8 dias', detail: 'Passou de uma semana: as listas começam a ficar velhas', okText: 'Próxima até domingo, 23/11', cta: 'Abre a revisão semanal', onClick: () => go('revisao') }
     ];
     const statusRows = ['inbox', 'proximas', 'executando', 'aguardando', 'someday'].map(k => ({ key: k, name: STATUS[k].label, secs: counts[k] || 0 }));
     const openCount = statusRows.reduce((a, r) => a + r.secs, 0);
@@ -2728,6 +2741,402 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           </div>
         <//>
       <//>
+    </div>`;
+  }
+
+  const STALE_DAYS = { 731: 3, 702: 1, 713: 16, 698: 9, 708: 16, 712: 4 };
+  const REVIEW_PHASES = [
+    { key: 'clear', label: 'Clarear', sub: 'Tirar tudo da cabeça e zerar o Inbox', steps: ['collect', 'inbox', 'mind'] },
+    { key: 'current', label: 'Atualizar', sub: 'Pôr as listas em dia', steps: ['next', 'past', 'upcoming', 'waiting', 'projects'] },
+    { key: 'creative', label: 'Criar', sub: 'Olhar adiante', steps: ['someday', 'creative'] }
+  ];
+  const REVIEW_STEPS = {
+    collect: { label: 'Coletar itens soltos', icon: 'DownloadOutlined', q: 'Papéis, anotações, e-mails marcados, fotos e mensagens que ficaram fora do sistema: tudo para o Inbox, sem decidir nada ainda.', open: ['tarefas', 'Abre Tarefas na aba Inbox'] },
+    inbox: { label: 'Processar o Inbox', icon: 'InboxOutlined', q: 'Cada item vira próxima ação, aguardando ou someday, ou sai. O que leva menos de 2 minutos, faça agora. Meta: Inbox zero.', open: ['tarefas', 'Abre Tarefas na aba Inbox'] },
+    mind: { label: 'Esvaziar a cabeça', icon: 'CloudOutlined', isNew: true, q: 'O que ainda está ocupando sua cabeça? Passe pelos gatilhos e anote tudo o que aparecer.' },
+    next: { label: 'Revisar próximas ações', icon: 'ForwardOutlined', q: 'Ainda fazem sentido? Conclua o que já foi feito e tire o que perdeu o sentido.', open: ['tarefas', 'Abre Tarefas na aba Próximas'] },
+    past: { label: 'Olhar a semana que passou', icon: 'HistoryOutlined', isNew: true, q: 'Reuniões, sessões e entregas dos últimos 7 dias. Alguma gerou ação, recado ou pendência?', open: ['calendario', 'Abre o Calendário na semana passada'] },
+    upcoming: { label: 'Olhar as próximas duas semanas', icon: 'CalendarOutlined', q: 'Prazos e compromissos que vêm aí. Algum pede preparação? Anote a ação agora.', open: ['calendario', 'Abre o Calendário nas próximas duas semanas'] },
+    waiting: { label: 'Revisar aguardando', icon: 'HourglassOutlined', q: 'Alguém respondeu? O que está parado há mais de 7 dias precisa de cobrança.', open: ['tarefas', 'Abre Tarefas na aba Aguardando'] },
+    projects: { label: 'Revisar projetos', icon: 'FolderOutlined', q: 'Todo projeto ativo tem uma próxima ação? Algum terminou ou deve ir para someday?', open: ['projetos', 'Abre Projetos'] },
+    someday: { label: 'Revisar someday', icon: 'BulbOutlined', q: 'Algo está pronto para virar ação? Algo já não interessa e pode sair?', open: ['tarefas', 'Abre Tarefas na aba Someday'] },
+    creative: { label: 'Pensar adiante', icon: 'RocketOutlined', q: 'Ideias, projetos novos, mudanças nas suas áreas e metas. Anote sem filtro; cada linha vai para o Inbox.', open: ['horizontes', 'Abre Horizontes'] }
+  };
+  const REVIEW_ORDER = REVIEW_PHASES.flatMap(p => p.steps);
+  const MIND_TRIGGERS = ['Promessas a outras pessoas', 'Projetos começados e parados', 'Mensagens a responder', 'Contas e finanças', 'Saúde e consultas', 'Casa e manutenção', 'Time e liderados', 'Estudos e leituras', 'Eventos e viagens', 'Família e amigos'];
+  const PAST_WEEK = [
+    { day: '2026-11-17', items: [{ name: 'Criação de projeto para refatoração visual', secs: 9130 }, { name: 'Reunião diária', secs: 1800 }] },
+    { day: '2026-11-14', items: [{ name: 'Publicar release v3.16.0', secs: 2700, done: true }, { name: 'Reunião diária', secs: 1500 }] },
+    { day: '2026-11-13', items: [{ name: 'Refinamento com o PO', secs: 3600, event: true }, { name: 'Traduzir capítulo 3 do playbook', secs: 5400 }] },
+    { day: '2026-11-11', items: [{ name: 'Revisar PR de sync de worklog do Jira', secs: 600 }, { name: '1:1 com o gestor', secs: 1800, event: true }] }
+  ];
+  const REVIEW_HISTORY = [
+    { id: 41, date: '2026-11-09', start: '17:40', mins: 48, steps: 10, skipped: [], inboxZero: true, notes: 'Release v3.16.0 pronta. Próximo foco: refatoração visual.' },
+    { id: 40, date: '2026-11-01', start: '10:05', mins: 61, steps: 9, skipped: ['mind'], inboxZero: true, notes: 'Squad com sprint pesada; tirei o Curso de Rust de ativo.' },
+    { id: 39, date: '2026-10-25', start: '18:20', mins: 35, steps: 8, skipped: ['past', 'creative'], inboxZero: false, notes: '' },
+    { id: 38, date: '2026-10-11', start: '09:30', mins: 55, steps: 10, skipped: [], inboxZero: true, notes: 'Site pessoal v2 concluído.' },
+    { id: 37, date: '2026-10-04', start: '16:00', mins: 44, steps: 10, skipped: [], inboxZero: true, notes: '' },
+    { id: 36, date: '2026-09-27', start: '17:15', mins: 50, steps: 9, skipped: ['upcoming'], inboxZero: true, notes: 'Planejei a viagem de outubro.' },
+    { id: 35, date: '2026-09-13', start: '10:45', mins: 39, steps: 10, skipped: [], inboxZero: false, notes: '' },
+    { id: 34, date: '2026-09-06', start: '18:00', mins: 57, steps: 10, skipped: [], inboxZero: true, notes: 'Comecei o Day Zero Playbook em inglês.' },
+    { id: 33, date: '2026-08-30', start: '09:10', mins: 42, steps: 10, skipped: [], inboxZero: true, notes: '' }
+  ];
+  let REVIEW_DRAFT = null;
+
+  function CaptureBox({ placeholder, onAdd, items, autoFocus }) {
+    const [v, setV] = useState('');
+    const add = () => { const t = v.trim(); if (!t) return; onAdd(t); setV(''); };
+    return html`<${Flex} vertical gap=${8}>
+      <${Input} value=${v} onChange=${e => setV(e.target.value)} onPressEnter=${add} placeholder=${placeholder} autoFocus=${autoFocus} aria-label=${placeholder}
+        prefix=${html`<${I.PlusOutlined} style=${{ color: 'var(--ct-text-3)' }} />`} suffix=${html`<span className="ct-kbd">Enter</span>`} />
+      ${items && items.length ? html`<${Flex} vertical gap=${4}>
+        <span className="ct-eyebrow">No Inbox nesta revisão · ${items.length}</span>
+        ${items.map((t, i) => html`<${Flex} key=${i} align="center" gap=${8} style=${{ fontSize: 13 }}><${I.InboxOutlined} style=${{ color: STATUS.inbox.light[0] }} /><span className="ct-ellipsis">${t}</span><//>`)}
+      <//>` : null}
+    <//>`;
+  }
+
+  function RvRow({ t, go, meta, children }) {
+    return html`<div className="ct-rvrow">
+      <div style=${{ flex: '1 1 260px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <a onClick=${() => go('tarefa')} className="ct-ellipsis" style=${{ color: 'var(--ct-text)', fontWeight: 500 }}>${t.name}</a>
+        <${Flex} gap=${10} wrap="wrap" align="center" style=${{ fontSize: 12 }}><${ProjectLabel} id=${t.project} />${meta}<//>
+      </div>
+      <${Flex} gap=${4} wrap="wrap" justify="flex-end">${children}<//>
+    </div>`;
+  }
+  function Act({ icon, label, onClick, danger, wide }) {
+    return html`<${Tooltip} title=${wide ? null : label}><${Button} size="small" danger=${danger} icon=${createElement(I[icon])} onClick=${onClick} aria-label=${label}>${wide ? label : null}<//><//>`;
+  }
+  function StaleChip({ days, limit, mode }) {
+    if (days == null) return null;
+    if (days <= limit) return html`<${Text} type="secondary">há ${days} dia${days === 1 ? '' : 's'}<//>`;
+    return html`<${Chip} def=${{ icon: 'ClockCircleOutlined', light: STATUS.aguardando.light, dark: STATUS.aguardando.dark }} mode=${mode}>parada há ${days} dias<//>`;
+  }
+
+  function reviewHealth(tasks, projects) {
+    const c = s => tasks.filter(t => t.status === s).length;
+    const noNext = projects.filter(p => { const st = projectStats(p, tasks); return p.status === 'active' && st.open > 0 && !st.next; }).length;
+    return {
+      inbox: c('inbox'),
+      noNext,
+      waiting: tasks.filter(t => t.status === 'aguardando' && (STALE_DAYS[t.id] || 0) > 7).length,
+      next: tasks.filter(t => t.status === 'proximas' && (STALE_DAYS[t.id] || 0) > 14).length,
+      overdue: tasks.filter(t => t.due && t.due < TODAY && t.status !== 'finalizada').length,
+      someday: c('someday')
+    };
+  }
+
+  function WeeklyReviewPage({ mode, go, isMobile, screens, openProject }) {
+    const { message, modal } = AntApp.useApp();
+    const [tasks, setTasks] = useState(() => TASKS.map(t => ({ ...t })));
+    const [projects, setProjects] = useState(() => PROJECTS.map(p => ({ ...p })));
+    const [history, setHistory] = useState(REVIEW_HISTORY);
+    const [rv, setRvState] = useState(REVIEW_DRAFT);
+    const [shown, setShown] = useState(null);
+    const setRv = f => setRvState(prev => { const next = typeof f === 'function' ? f(prev) : f; REVIEW_DRAFT = next; return next; });
+    const wide = !!screens.lg;
+    const health = reviewHealth(tasks, projects);
+    const lastReview = history[0];
+    const sinceLast = lastReview ? daysBetween(lastReview.date, TODAY) : null;
+
+    const start = () => setRv({ startedAt: Date.now() - 60000, current: 'collect', state: {}, base: health, collected: [], notes: '', counters: { processed: 0, nextSet: 0, chased: 0, cleaned: 0 }, paused: false });
+    const bump = k => setRv(r => ({ ...r, counters: { ...r.counters, [k]: r.counters[k] + 1 } }));
+    const capture = name => { setTasks(ts => [{ id: Date.now(), name, status: 'inbox', category: 'normal', project: null, contexts: [], due: null, secs: 0, energy: null }].concat(ts)); setRv(r => ({ ...r, collected: r.collected.concat([name]) })); };
+    const move = (t, status, msg) => { setTasks(ts => ts.map(x => x.id === t.id ? { ...x, status } : x)); message.success(msg || `${t.name} → ${STATUS[status].label}`); };
+    const remove = t => { setTasks(ts => ts.filter(x => x.id !== t.id)); bump('cleaned'); message.success('Tarefa excluída'); };
+    const markStep = (key, val) => setRv(r => { const state = { ...r.state, [key]: val }; const nextKey = REVIEW_ORDER.find(k => !state[k]) || 'finish'; return { ...r, state, current: nextKey }; });
+
+    useEffect(() => {
+      const h = e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && rv && !rv.paused && rv.current !== 'finish') { e.preventDefault(); markStep(rv.current, 'done'); } };
+      window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
+    });
+
+    if (!rv || rv.paused) {
+      const weeks = Array.from({ length: 12 }, (_, i) => { const s = dayjs(TODAY).startOf('week').subtract(11 - i, 'week'); const r = history.find(h => !dayjs(h.date).isBefore(s) && dayjs(h.date).isBefore(s.add(7, 'day'))); return { s, r }; });
+      const doneWeeks = weeks.filter(w => w.r).length;
+      const hItems = [
+        { key: 'inbox', icon: 'InboxOutlined', title: 'Inbox', value: health.inbox, detail: 'Itens esperando decisão', okText: 'Inbox zero', cta: 'Abre a aba Inbox', onClick: () => { message.info('Abre Tarefas na aba Inbox'); go('tarefas'); } },
+        { key: 'nonext', icon: 'ForwardOutlined', title: 'Projetos sem próxima ação', value: health.noNext, detail: 'Ativos, com tarefas abertas e nenhuma em Próximas', okText: 'Todo projeto ativo tem um próximo passo', cta: 'Abre Projetos', onClick: () => go('projetos') },
+        { key: 'waiting', icon: 'HourglassOutlined', title: 'Aguardando sem resposta', value: health.waiting, detail: 'Há mais de 7 dias em Aguardando', okText: 'Nada esperando há mais de 7 dias', cta: 'Abre a aba Aguardando', onClick: () => { message.info('Abre Tarefas na aba Aguardando'); go('tarefas'); } },
+        { key: 'next', icon: 'ClockCircleOutlined', title: 'Próximas paradas', value: health.next, detail: 'Há mais de 14 dias sem mudar', okText: 'Nenhuma próxima ação parada', cta: 'Abre a aba Próximas', onClick: () => { message.info('Abre Tarefas na aba Próximas, ordenada pela mais parada'); go('tarefas'); } },
+        { key: 'overdue', icon: 'CalendarOutlined', title: 'Prazos vencidos', value: health.overdue, tone: health.overdue ? 'error' : 'ok', detail: 'Tarefas abertas com prazo antes de hoje', okText: 'Nenhum prazo vencido', cta: 'Abre a lista filtrada', onClick: () => go('tarefas') },
+        { key: 'someday', icon: 'BulbOutlined', title: 'Someday', value: health.someday, tone: 'neutral', detail: 'Ideias guardadas para depois', cta: 'Abre a aba Someday', onClick: () => go('tarefas') }
+      ];
+      const histCols = [
+        { title: 'Data', key: 'date', render: (_, r) => html`<span>${dayjs(r.date).format('ddd, DD/MM/YYYY')} <${Text} type="secondary" className="ct-mono">${r.start}<//></span>` },
+        { title: 'Duração', key: 'mins', align: 'right', width: 96, render: (_, r) => html`<span className="ct-mono">${r.mins} min</span>` },
+        { title: 'Passos', key: 'steps', width: 120, render: (_, r) => html`<${Tooltip} title=${r.skipped.length ? 'Pulados: ' + r.skipped.map(k => REVIEW_STEPS[k].label).join(', ') : 'Todos os passos feitos'}><span className="ct-mono">${r.steps}/10</span>${r.skipped.length ? html`<${Text} type="secondary" style=${{ fontSize: 12 }}> · ${r.skipped.length} pulado${r.skipped.length > 1 ? 's' : ''}<//>` : null}<//>` },
+        screens.md ? { title: 'Inbox', key: 'ib', width: 110, render: (_, r) => r.inboxZero ? html`<${Chip} def=${{ icon: 'CheckCircleOutlined', light: STATUS.executando.light, dark: STATUS.executando.dark }} mode=${mode}>Inbox zero<//>` : html`<${Text} type="secondary">—<//>` } : null,
+        screens.lg ? { title: 'Notas', key: 'notes', ellipsis: true, render: (_, r) => r.notes ? r.notes : html`<${Text} type="secondary">—<//>` } : null
+      ].filter(Boolean);
+
+      return html`<div className=${isMobile ? 'ct-page-narrow' : 'ct-page'}>
+        <${Row} gutter=${[16, 16]}>
+          <${Col} xs=${24} xl=${15}>
+            <${Card} size="small" style=${{ height: '100%' }}>
+              <${Flex} vertical gap=${16}>
+                ${rv && rv.paused ? html`<${Alert} type="info" showIcon icon=${html`<${I.PauseCircleOutlined} />`}
+                    message=${html`<span><b>Revisão em andamento</b> · ${Object.keys(rv.state).length} de 10 passos · próximo: ${rv.current === 'finish' ? 'fechar a revisão' : REVIEW_STEPS[rv.current].label.toLowerCase()}</span>`}
+                    action=${html`<${Space}><${Button} size="small" type="primary" onClick=${() => setRv(r => ({ ...r, paused: false }))}>Retomar<//>
+                      <${Button} size="small" type="text" onClick=${() => modal.confirm({ title: 'Descartar a revisão em andamento?', content: 'Os passos marcados se perdem. O que você mudou nas tarefas continua mudado.', okText: 'Descartar', okButtonProps: { danger: true }, cancelText: 'Cancelar', onOk: () => setRv(null) })}>Descartar<//><//>`} />` : null}
+                <${Flex} vertical gap=${4}>
+                  <span className="ct-eyebrow">Revisão semanal</span>
+                  <span style=${{ fontSize: 24, fontWeight: 600, lineHeight: 1.25 }}>${sinceLast == null ? 'Nenhuma revisão ainda' : sinceLast > 7 ? `A última foi há ${sinceLast} dias` : `Em dia: a última foi há ${sinceLast} dia${sinceLast === 1 ? '' : 's'}`}</span>
+                  <${Text} type="secondary">${sinceLast > 7 ? 'Passou de uma semana: as listas começam a ficar velhas e a confiança no sistema cai. ' : ''}Leva uns 45 minutos e dá para pausar no meio.<//>
+                <//>
+                <div className="ct-rvphases">
+                  ${REVIEW_PHASES.map((p, i) => html`<div key=${p.key} className="ct-rvphase">
+                    <span className="ct-hzchip ct-mono" style=${{ background: 'var(--ct-primary-soft)', color: 'var(--ct-primary)' }}>${i + 1}</span>
+                    <div style=${{ minWidth: 0 }}><div style=${{ fontWeight: 600 }}>${p.label}</div><${Text} type="secondary" style=${{ fontSize: 12 }}>${p.sub} · ${p.steps.length} passos<//></div>
+                  </div>`)}
+                </div>
+                ${rv && rv.paused ? null : html`<div><${Button} type="primary" size="large" icon=${html`<${I.PlayCircleOutlined} />`} onClick=${start}>Começar revisão<//></div>`}
+              <//>
+            <//>
+          <//>
+          <${Col} xs=${24} xl=${9}>
+            <${Card} size="small" style=${{ height: '100%' }} title=${html`<span style=${{ display: 'inline-flex', gap: 8, alignItems: 'center' }}><${I.LineChartOutlined} style=${{ color: 'var(--ct-text-3)' }} />Ritmo<//>`} extra=${html`<${Text} type="secondary" style=${{ fontSize: 12 }}>12 semanas<//>`}>
+              <${Flex} vertical gap=${12}>
+                <div className="ct-rvweeks" role="list" aria-label="Revisões nas últimas 12 semanas">
+                  ${weeks.map((w, i) => html`<${Tooltip} key=${i} title=${w.r ? `Semana de ${w.s.format('DD/MM')} · revisão em ${dayjs(w.r.date).format('DD/MM')}, ${w.r.mins} min` : `Semana de ${w.s.format('DD/MM')} · sem revisão`}>
+                    <span role="listitem" tabIndex=${0} className="ct-rvweek" aria-label=${w.r ? 'Semana com revisão' : 'Semana sem revisão'} style=${{ background: w.r ? CHART[mode].seq[4] : CHART[mode].seq[0], color: mode === 'dark' ? '#111018' : '#FFFFFF' }}>${w.r ? html`<${I.CheckOutlined} />` : null}</span>
+                  <//>`)}
+                </div>
+                <${Text}><b>${doneWeeks} de 12</b> semanas com revisão.<//>
+                <${Text} type="secondary" style=${{ fontSize: 12 }}>Média de ${Math.round(history.slice(0, 8).reduce((a, h) => a + h.mins, 0) / Math.min(8, history.length))} min por revisão. Semana sem revisão acontece: o que importa é voltar.<//>
+              <//>
+            <//>
+          <//>
+        <//>
+
+        <div style=${{ marginTop: 24 }}>
+          <${Section} icon="DashboardOutlined" title="Como está o sistema" extra="agora">
+            <div className="ct-health-grid">${hItems.map(h => html`<${HealthCard} key=${h.key} item=${h} mode=${mode} />`)}</div>
+          <//>
+        </div>
+        <div style=${{ marginTop: 24 }}>
+          <${Section} icon="HistoryOutlined" title="Histórico" extra=${history.length + ' revisões'}>
+            <${Table} rowKey="id" size="small" columns=${histCols} dataSource=${history} pagination=${{ pageSize: 6, hideOnSinglePage: true, size: 'small' }}
+              onRow=${r => ({ onClick: () => setShown(r), style: { cursor: 'pointer' } })} scroll=${{ x: 'max-content' }} />
+          <//>
+        </div>
+        <${Drawer} open=${!!shown} onClose=${() => setShown(null)} width=${isMobile ? '100%' : 420} title=${shown ? 'Revisão de ' + dayjs(shown.date).format('DD/MM/YYYY') : ''}>
+          ${shown ? html`<${Flex} vertical gap=${16}>
+            <${Descriptions} size="small" column=${1} items=${[{ key: 'h', label: 'Início', children: shown.start }, { key: 'd', label: 'Duração', children: shown.mins + ' min' }, { key: 'i', label: 'Inbox', children: shown.inboxZero ? 'Zerado' : 'Ficou com itens' }]} />
+            ${REVIEW_PHASES.map(p => html`<div key=${p.key}><span className="ct-eyebrow">${p.label}</span>
+              ${p.steps.map(k => { const sk = shown.skipped.includes(k); return html`<${Flex} key=${k} align="center" gap=${8} style=${{ padding: '4px 0' }}>
+                ${sk ? html`<${I.MinusCircleOutlined} style=${{ color: 'var(--ct-text-3)' }} />` : html`<${I.CheckCircleFilled} style=${{ color: 'var(--ct-primary)' }} />`}
+                <span style=${{ color: sk ? 'var(--ct-text-3)' : 'var(--ct-text)' }}>${REVIEW_STEPS[k].label}${sk ? ' · pulado' : ''}</span><//>`; })}</div>`)}
+            <div><span className="ct-eyebrow">Notas</span><${Paragraph} style=${{ marginTop: 4 }}>${shown.notes || html`<${Text} type="secondary">Sem notas.<//>`}<//></div>
+          <//>` : null}
+        <//>
+      </div>`;
+    }
+
+    const doneCount = Object.keys(rv.state).length;
+    const elapsed = Math.max(1, Math.round((Date.now() - rv.startedAt) / 60000));
+    const cur = rv.current;
+    const step = REVIEW_STEPS[cur];
+    const phaseOf = k => REVIEW_PHASES.find(p => p.steps.includes(k));
+    const idx = REVIEW_ORDER.indexOf(cur);
+    const goStep = k => setRv(r => ({ ...r, current: k }));
+    const pause = () => { setRv(r => ({ ...r, paused: true })); message.info('Revisão pausada. Ela continua de onde parou.'); };
+
+    const inbox = tasks.filter(t => t.status === 'inbox');
+    const nexts = tasks.filter(t => t.status === 'proximas').sort((a, b) => (STALE_DAYS[b.id] || 0) - (STALE_DAYS[a.id] || 0));
+    const waits = tasks.filter(t => t.status === 'aguardando').sort((a, b) => (STALE_DAYS[b.id] || 0) - (STALE_DAYS[a.id] || 0));
+    const somedays = tasks.filter(t => t.status === 'someday');
+    const until = dayjs(TODAY).add(14, 'day').format('YYYY-MM-DD');
+    const upcoming = tasks.filter(t => t.due && t.due >= TODAY && t.due <= until && t.status !== 'finalizada').sort((a, b) => a.due.localeCompare(b.due));
+    const upDays = Array.from(new Set(upcoming.map(t => t.due)));
+    const activeProjects = projects.filter(p => p.status === 'active');
+    const somedayProjects = projects.filter(p => p.status === 'someday');
+    const emptyList = (text, icon) => html`<div className="ct-rvempty">${createElement(I[icon || 'CheckCircleOutlined'], { style: { color: STATUS.executando[mode][0], fontSize: 20 } })}<span>${text}</span></div>`;
+
+    const bodies = {
+      collect: html`<${Flex} vertical gap=${16}>
+        <${Flex} gap=${6} wrap="wrap">${['Mesa e bolsos', 'Caixa de e-mail', 'Mensagens', 'Fotos e prints', 'Anotações em papel', 'Downloads', 'Navegador'].map(x => html`<${Tag} key=${x} bordered=${false}>${x}<//>`)}<//>
+        <${CaptureBox} autoFocus placeholder="Anotar no Inbox" onAdd=${capture} items=${rv.collected} />
+      <//>`,
+      inbox: inbox.length ? html`<div>
+          <${Text} type="secondary" style=${{ fontSize: 12, display: 'block', marginBottom: 8 }}>${inbox.length} ${inbox.length === 1 ? 'item' : 'itens'} · comece pelo mais antigo<//>
+          ${inbox.map(t => html`<${RvRow} key=${t.id} t=${t} go=${go} meta=${t.due ? html`<${Text} type="secondary">prazo ${fmtDate(t.due)}<//>` : null}>
+            <${Act} wide=${wide} icon="ForwardOutlined" label="Próxima" onClick=${() => { move(t, 'proximas'); bump('processed'); }} />
+            <${Act} wide=${wide} icon="HourglassOutlined" label="Aguardando" onClick=${() => { move(t, 'aguardando'); bump('processed'); }} />
+            <${Act} wide=${wide} icon="BulbOutlined" label="Someday" onClick=${() => { move(t, 'someday'); bump('processed'); }} />
+            <${Act} wide=${wide} icon="CheckOutlined" label="Feito (< 2 min)" onClick=${() => { move(t, 'finalizada', 'Concluída: ' + t.name); bump('processed'); }} />
+            <${Act} icon="DeleteOutlined" label="Excluir" danger onClick=${() => { setTasks(ts => ts.filter(x => x.id !== t.id)); bump('processed'); message.success('Excluída: ' + t.name); }} />
+          <//>`)}
+        </div>`
+        : html`<${Result} status="success" icon=${html`<${I.CheckCircleFilled} style=${{ color: STATUS.executando[mode][0] }} />`} title="Inbox zero" subTitle="Tudo que chegou já tem lugar. Bom momento para seguir." style=${{ padding: '16px 0' }} />`,
+      mind: html`<${Flex} vertical gap=${16}>
+        <div><span className="ct-eyebrow">Gatilhos</span>
+          <${Flex} gap=${6} wrap="wrap" style=${{ marginTop: 8 }}>${MIND_TRIGGERS.map(x => html`<${Tag} key=${x} bordered=${false}>${x}<//>`)}<//></div>
+        <${CaptureBox} autoFocus placeholder="O que veio à cabeça?" onAdd=${capture} items=${rv.collected} />
+      <//>`,
+      next: nexts.length ? html`<div>${nexts.map(t => html`<${RvRow} key=${t.id} t=${t} go=${go} meta=${html`<${StaleChip} days=${STALE_DAYS[t.id]} limit=${14} mode=${mode} />`}>
+          <${Act} wide=${wide} icon="CheckOutlined" label="Concluir" onClick=${() => move(t, 'finalizada', 'Concluída: ' + t.name)} />
+          <${Act} wide=${wide} icon="BulbOutlined" label="Someday" onClick=${() => { move(t, 'someday'); bump('cleaned'); }} />
+          <${Act} icon="DeleteOutlined" label="Excluir" danger onClick=${() => remove(t)} />
+        <//>`)}</div>` : emptyList('Nenhuma próxima ação aberta.'),
+      past: html`<${Flex} vertical gap=${16}>
+        <div className="ct-rvtimeline">${PAST_WEEK.map(d => html`<div key=${d.day} className="ct-rvday">
+          <span className="ct-eyebrow">${dayjs(d.day).format('ddd, DD/MM')}</span>
+          ${d.items.map((x, i) => html`<${Flex} key=${i} align="center" gap=${8} style=${{ fontSize: 13, padding: '3px 0' }}>
+            ${x.done ? html`<${I.CheckCircleOutlined} style=${{ color: STATUS.finalizada[mode][0] }} />` : x.event ? html`<${I.CalendarOutlined} style=${{ color: 'var(--ct-text-3)' }} />` : html`<${I.FieldTimeOutlined} style=${{ color: 'var(--ct-text-3)' }} />`}
+            <span className="ct-ellipsis" style=${{ flex: 1 }}>${x.name}</span><span className="ct-mono" style=${{ color: 'var(--ct-text-3)', fontSize: 12 }}>${fmtShort(x.secs)}</span><//>`)}
+        </div>`)}</div>
+        <${CaptureBox} placeholder="Gerou alguma ação? Anote aqui" onAdd=${capture} items=${rv.collected} />
+      <//>`,
+      upcoming: html`<${Flex} vertical gap=${16}>
+        ${upDays.length ? html`<div className="ct-rvtimeline">${upDays.map(d => html`<div key=${d} className="ct-rvday">
+          <span className="ct-eyebrow">${dayjs(d).format('ddd, DD/MM')}${d === TODAY ? ' · hoje' : ''}</span>
+          ${upcoming.filter(t => t.due === d).map(t => html`<${Flex} key=${t.id} align="center" gap=${8} style=${{ fontSize: 13, padding: '3px 0' }}>
+            <${I.FlagOutlined} style=${{ color: 'var(--ct-text-3)' }} /><a className="ct-ellipsis" style=${{ flex: 1, color: 'var(--ct-text)' }} onClick=${() => go('tarefa')}>${t.name}</a>
+            <${Chip} def=${STATUS[t.status]} mode=${mode} />${t.dueTime ? html`<span className="ct-mono" style=${{ fontSize: 12, color: 'var(--ct-text-3)' }}>${t.dueTime}</span>` : null}<//>`)}
+        </div>`)}</div>` : emptyList('Nada marcado para as próximas duas semanas.', 'CalendarOutlined')}
+        <${CaptureBox} placeholder="Precisa preparar algo? Anote a ação" onAdd=${capture} items=${rv.collected} />
+      <//>`,
+      waiting: waits.length ? html`<div>${waits.map(t => html`<${RvRow} key=${t.id} t=${t} go=${go}
+          meta=${html`<${Text} type="secondary"><${I.UserOutlined} /> ${t.waiting || 'sem responsável'}<//><${StaleChip} days=${STALE_DAYS[t.id]} limit=${7} mode=${mode} />`}>
+          <${Act} wide=${wide} icon="CheckOutlined" label="Recebi" onClick=${() => move(t, 'proximas', 'Voltou para Próximas: ' + t.name)} />
+          <${Act} wide=${wide} icon="NotificationOutlined" label="Cobrar" onClick=${() => { capture(`Cobrar ${t.waiting || 'resposta'}: ${t.name}`); bump('chased'); message.success('Ação "Cobrar" criada no Inbox'); }} />
+          <${Act} icon="BulbOutlined" label="Someday" onClick=${() => move(t, 'someday')} />
+        <//>`)}</div>` : emptyList('Nada em Aguardando.'),
+      projects: html`<div>${activeProjects.map(p => { const st = projectStats(p, tasks); const open = st.tasks.filter(t => t.status !== 'finalizada');
+          return html`<div key=${p.id} className="ct-rvrow">
+            <div style=${{ flex: '1 1 240px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <${Flex} align="center" gap=${8}><span className="ct-dot" style=${{ background: p.color }}></span><a className="ct-ellipsis" style=${{ color: 'var(--ct-text)', fontWeight: 500 }} onClick=${() => openProject(p.id)}>${p.name}</a><//>
+              <${Flex} gap=${10} wrap="wrap" align="center" style=${{ fontSize: 12 }}>
+                <${Text} type="secondary" className="ct-mono">${st.done}/${st.total}<//>
+                ${st.next ? html`<span style=${{ display: 'inline-flex', gap: 6, alignItems: 'center', minWidth: 0 }}><${I.ForwardOutlined} style=${{ color: STATUS.proximas[mode][0] }} /><span className="ct-ellipsis">${st.next.name}</span></span>`
+                  : html`<${Chip} def=${{ icon: 'WarningOutlined', light: STATUS.aguardando.light, dark: STATUS.aguardando.dark }} mode=${mode}>Sem próxima ação<//>`}
+              <//>
+            </div>
+            <${Flex} gap=${4} wrap="wrap" justify="flex-end">
+              ${st.next ? null : html`<${Select} size="small" placeholder="Definir próxima ação" style=${{ width: 220 }} aria-label=${'Próxima ação de ' + p.name}
+                options=${open.map(t => ({ value: t.id, label: t.name }))} notFoundContent="Nenhuma tarefa aberta"
+                onChange=${id => { setTasks(ts => ts.map(x => x.id === id ? { ...x, status: 'proximas' } : x)); bump('nextSet'); message.success('Próxima ação definida'); }} />`}
+              <${Dropdown} trigger=${['click']} menu=${{ items: [{ key: 'someday', icon: createElement(I.BulbOutlined), label: 'Mover para someday' }, { key: 'done', icon: createElement(I.CheckCircleOutlined), label: 'Marcar como concluído' }],
+                onClick: ({ key }) => { setProjects(ps => ps.map(x => x.id === p.id ? { ...x, status: key } : x)); message.success(p.name + ': ' + PROJECT_STATUS[key].label); } }}>
+                <${Button} size="small" type="text" aria-label="Mais ações" icon=${html`<${I.EllipsisOutlined} />`} /><//>
+            <//>
+          </div>`; })}</div>`,
+      someday: somedays.length || somedayProjects.length ? html`<div>
+          ${somedayProjects.map(p => html`<div key=${'p' + p.id} className="ct-rvrow">
+            <${Flex} align="center" gap=${8} style=${{ flex: 1, minWidth: 0 }}><${I.FolderOutlined} style=${{ color: 'var(--ct-text-3)' }} /><span className="ct-dot" style=${{ background: p.color }}></span><span className="ct-ellipsis" style=${{ fontWeight: 500 }}>${p.name}</span><${Text} type="secondary" style=${{ fontSize: 12 }}>projeto<//><//>
+            <${Act} wide=${wide} icon="PlayCircleOutlined" label="Ativar" onClick=${() => { setProjects(ps => ps.map(x => x.id === p.id ? { ...x, status: 'active' } : x)); message.success(p.name + ' ativado. Defina a próxima ação no passo Projetos.'); }} />
+          </div>`)}
+          ${somedays.map(t => html`<${RvRow} key=${t.id} t=${t} go=${go}>
+            <${Act} wide=${wide} icon="PlayCircleOutlined" label="Ativar" onClick=${() => move(t, 'proximas')} />
+            <${Act} icon="DeleteOutlined" label="Excluir" danger onClick=${() => remove(t)} />
+          <//>`)}
+        </div>` : emptyList('A lista someday está vazia.', 'BulbOutlined'),
+      creative: html`<${Flex} vertical gap=${12}>
+        <${Input.TextArea} autoSize=${{ minRows: 4, maxRows: 10 }} placeholder=${'Uma ideia por linha.\nEx.: Curso de liderança em 2027'} value=${rv.ideas || ''} onChange=${e => setRv(r => ({ ...r, ideas: e.target.value }))} aria-label="Ideias" />
+        <${Flex} gap=${8} wrap="wrap">
+          <${Button} icon=${html`<${I.InboxOutlined} />`} disabled=${!(rv.ideas || '').trim()} onClick=${() => { const lines = (rv.ideas || '').split('\n').map(x => x.trim()).filter(Boolean); lines.forEach(capture); setRv(r => ({ ...r, ideas: '' })); message.success(lines.length + (lines.length === 1 ? ' ideia foi' : ' ideias foram') + ' para o Inbox'); }}>Mandar para o Inbox<//>
+          <${Button} type="link" icon=${html`<${I.RiseOutlined} />`} onClick=${() => go('horizontes')}>Rever áreas e metas<//>
+        <//>
+      <//>`
+    };
+
+    const summary = [
+      ['Inbox', `${rv.base.inbox} → ${health.inbox}`],
+      ['Coletados', rv.collected.length],
+      ['Itens processados', rv.counters.processed],
+      ['Projetos com próxima ação nova', rv.counters.nextSet],
+      ['Cobranças criadas', rv.counters.chased],
+      ['Tarefas tiradas das listas', rv.counters.cleaned]
+    ];
+    const skipped = REVIEW_ORDER.filter(k => rv.state[k] === 'skipped');
+    const pending = REVIEW_ORDER.filter(k => !rv.state[k]);
+    const finish = () => {
+      const save = () => {
+        setHistory(h => [{ id: Date.now(), date: TODAY, start: dayjs(rv.startedAt).format('HH:mm'), mins: elapsed, steps: REVIEW_ORDER.filter(k => rv.state[k] === 'done').length, skipped: REVIEW_ORDER.filter(k => rv.state[k] !== 'done'), inboxZero: health.inbox === 0, notes: rv.notes }].concat(h));
+        setRv(null); message.success('Revisão registrada. Até a próxima semana.');
+      };
+      if (pending.length) modal.confirm({ title: `Concluir com ${pending.length} passo${pending.length > 1 ? 's' : ''} sem marcar?`, content: 'Eles ficam registrados como pulados. Tudo bem: uma revisão parcial vale mais que nenhuma.', okText: 'Concluir assim', cancelText: 'Voltar', onOk: save });
+      else save();
+    };
+    const finishBody = html`<${Flex} vertical gap=${16}>
+      <div className="ct-rvsummary">${summary.map(([l, v]) => html`<div key=${l}><div className="ct-tile-figure" style=${{ fontSize: 22 }}>${v}</div><${Text} type="secondary" style=${{ fontSize: 12 }}>${l}<//></div>`)}</div>
+      ${skipped.length || pending.length ? html`<${Alert} type="info" showIcon message=${`${skipped.length + pending.length} passo${skipped.length + pending.length > 1 ? 's' : ''} sem marcar: ${skipped.concat(pending).map(k => REVIEW_STEPS[k].label.toLowerCase()).join(', ')}.`} />` : null}
+      <${Text} type="secondary">Duração: ${elapsed} min.<//>
+    <//>`;
+
+    const stepItems = phase => phase.steps.map(k => { const s = rv.state[k];
+      return { title: html`<span style=${{ fontSize: 13 }}>${REVIEW_STEPS[k].label}${REVIEW_STEPS[k].isNew ? html` <${NewTag} />` : null}</span>`, status: s === 'done' ? 'finish' : k === cur ? 'process' : 'wait',
+        description: s === 'skipped' ? 'Pulado' : null, icon: s === 'skipped' ? html`<${I.MinusCircleOutlined} style=${{ color: 'var(--ct-text-3)' }} />` : undefined }; });
+    const rail = html`<nav className="ct-rvrail" aria-label="Passos da revisão">
+      ${REVIEW_PHASES.map((p, pi) => html`<div key=${p.key}>
+        <div className="ct-eyebrow" style=${{ margin: pi ? '12px 0 6px' : '0 0 6px' }}>${pi + 1} · ${p.label}</div>
+        <${Steps} direction="vertical" size="small" current=${p.steps.indexOf(cur)} items=${stepItems(p)} onChange=${i => goStep(p.steps[i])} />
+      </div>`)}
+      <${Button} block type=${cur === 'finish' ? 'primary' : 'default'} ghost=${cur === 'finish'} icon=${html`<${I.FlagOutlined} />`} onClick=${() => goStep('finish')} style=${{ marginTop: 8 }}>Fechar a revisão<//>
+    </nav>`;
+    const mobileNav = html`<${Select} value=${cur} onChange=${goStep} style=${{ width: '100%' }} aria-label="Passo"
+      options=${REVIEW_PHASES.map(p => ({ label: p.label, options: p.steps.map(k => ({ value: k, label: (rv.state[k] === 'done' ? '✓ ' : rv.state[k] === 'skipped' ? '– ' : '') + REVIEW_STEPS[k].label })) })).concat([{ label: 'Fim', options: [{ value: 'finish', label: 'Fechar a revisão' }] }])} />`;
+
+    const panel = html`<${Card} size="small" styles=${{ header: { paddingBlock: 12 } }}
+      title=${cur === 'finish' ? html`<${Flex} vertical gap=${2}><span className="ct-eyebrow">Fim</span><span style=${{ fontSize: 17 }}>Fechar a revisão</span><//>`
+        : html`<${Flex} vertical gap=${2}><span className="ct-eyebrow">${phaseOf(cur).label} · passo ${idx + 1} de 10</span>
+          <span style=${{ fontSize: 17, display: 'inline-flex', alignItems: 'center', gap: 8 }}>${createElement(I[step.icon], { style: { color: 'var(--ct-primary)' } })}${step.label}</span><//>`}
+      extra=${cur !== 'finish' && step.open ? html`<${Button} size="small" type="link" icon=${html`<${I.ExportOutlined} />`} onClick=${() => { message.info(step.open[1] + '. A revisão continua aqui.'); go(step.open[0]); }}>${screens.md ? 'Abrir a tela' : null}<//>` : null}>
+      <${Flex} vertical gap=${16}>
+        ${cur === 'finish' ? null : html`<${Text} type="secondary" style=${{ fontSize: 14 }}>${step.q}<//>`}
+        <${Boundary} region=${'passo ' + (step ? step.label : 'fim')} resetKey=${cur}>${cur === 'finish' ? finishBody : bodies[cur]}<//>
+        <${Divider} style=${{ margin: '4px 0' }} />
+        <${Flex} gap=${8} justify="space-between" wrap="wrap" align="center">
+          ${cur === 'finish' || idx === 0 ? html`<span></span>` : html`<${Button} type="text" icon=${html`<${I.ArrowLeftOutlined} />`} onClick=${() => goStep(REVIEW_ORDER[idx - 1])}>Anterior<//>`}
+          ${cur === 'finish'
+            ? html`<${Button} type="primary" icon=${html`<${I.CheckOutlined} />`} onClick=${finish}>Concluir revisão<//>`
+            : html`<${Space}>
+              <${Button} onClick=${() => markStep(cur, 'skipped')}>Pular<//>
+              <${Tooltip} title="Ctrl+Enter"><${Button} type="primary" icon=${html`<${I.CheckOutlined} />`} onClick=${() => markStep(cur, 'done')}>Concluir passo<//><//>
+            <//>`}
+        <//>
+      <//>
+    <//>`;
+
+    const side = html`<${Flex} vertical gap=${16}>
+      <${Card} size="small" title="Sistema nesta revisão">
+        <${Flex} vertical gap=${6}>
+          ${[['Inbox', 'inbox', 'InboxOutlined'], ['Projetos sem próxima ação', 'noNext', 'ForwardOutlined'], ['Aguardando > 7 dias', 'waiting', 'HourglassOutlined'], ['Próximas > 14 dias', 'next', 'ClockCircleOutlined']].map(([l, k, ic]) => { const a = rv.base[k], b = health[k];
+            return html`<${Flex} key=${k} align="center" gap=${8} style=${{ fontSize: 13 }}>
+              ${createElement(I[ic], { style: { color: 'var(--ct-text-3)' } })}<span style=${{ flex: 1 }}>${l}</span>
+              <span className="ct-mono" style=${{ color: 'var(--ct-text-3)' }}>${a}</span><${I.ArrowRightOutlined} style=${{ fontSize: 10, color: 'var(--ct-text-3)' }} />
+              <span className="ct-mono" style=${{ fontWeight: 600, minWidth: 16, textAlign: 'right' }}>${b}</span>
+              ${b === 0 ? html`<${I.CheckCircleFilled} style=${{ color: STATUS.executando[mode][0] }} aria-label="Em dia" />` : html`<span style=${{ width: 14 }}></span>`}
+            <//>`; })}
+        <//>
+      <//>
+      <${Card} size="small" title="Notas da revisão" extra=${html`<${Text} type="secondary" style=${{ fontSize: 12 }}>salvas sozinhas<//>`}>
+        <${Input.TextArea} autoSize=${{ minRows: 3, maxRows: 8 }} placeholder="Observações, decisões, foco da próxima semana" value=${rv.notes} onChange=${e => setRv(r => ({ ...r, notes: e.target.value }))} aria-label="Notas da revisão" />
+      <//>
+    <//>`;
+
+    return html`<div className=${isMobile ? 'ct-page-narrow' : 'ct-page'}>
+      <${Flex} align="center" gap="8px 16px" wrap="wrap" style=${{ marginBottom: 16 }}>
+        <${Flex} vertical style=${{ flex: '1 1 260px', minWidth: 0 }}>
+          <span style=${{ fontSize: 20, fontWeight: 600 }}>Revisão da semana ${dayjs(TODAY).format('DD/MM')}</span>
+          <${Text} type="secondary" style=${{ fontSize: 12 }}>Começou há ${elapsed} min · tudo fica salvo, pode sair e voltar<//>
+        <//>
+        <${Flex} align="center" gap=${8} style=${{ flex: '0 1 280px', minWidth: 180 }}>
+          <${Progress} percent=${Math.round(doneCount / 10 * 100)} showInfo=${false} size="small" style=${{ flex: 1, margin: 0 }} aria-label="Progresso da revisão" />
+          <span className="ct-mono" style=${{ fontSize: 12, color: 'var(--ct-text-2)' }}>${doneCount}/10</span>
+        <//>
+        <${Button} icon=${html`<${I.PauseOutlined} />`} onClick=${pause}>Pausar<//>
+      <//>
+      ${screens.lg
+        ? html`<div style=${{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+            ${rail}
+            <div style=${{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
+              ${screens.xxl ? html`<div style=${{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: 16, alignItems: 'start' }}>${panel}${side}</div>` : html`${panel}${side}`}
+            </div>
+          </div>`
+        : html`<${Flex} vertical gap=${12}>${mobileNav}${panel}${side}<//>`}
     </div>`;
   }
 

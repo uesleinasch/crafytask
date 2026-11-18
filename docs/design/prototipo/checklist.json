@@ -692,6 +692,35 @@
       }
     },
     {
+      "id": "F5.11",
+      "fase": "F5",
+      "titulo": "Revisão semanal como fluxo guiado (Steps, pular, retomar)",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/pages/WeeklyReviewPage.tsx",
+        "padroes": ["<Steps", "skipped", "Retomar", "Pular"]
+      }
+    },
+    {
+      "id": "F5.12",
+      "fase": "F5",
+      "titulo": "Indicadores de saúde compartilhados entre revisão e dashboard",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/pages/{WeeklyReviewPage,DashboardPage}.tsx",
+        "padrao": "HealthCard",
+        "minimo": 2
+      }
+    },
+    {
+      "id": "F5.13",
+      "fase": "F5",
+      "titulo": "Revisão: cada passo resolve ali mesmo, resumo ao fechar e conclusão com pulados conferidos",
+      "check": {
+        "tipo": "manual"
+      }
+    },
+    {
       "id": "F5.4",
       "fase": "F5",
       "titulo": "Projetos, horizontes e revisão conferidos",
