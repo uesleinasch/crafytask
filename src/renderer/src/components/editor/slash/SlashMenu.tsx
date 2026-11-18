@@ -35,19 +35,19 @@ export function SlashMenu(props: PopupComponentProps<SlashItem>): React.JSX.Elem
 
   if (!items.length) {
     return (
-      <div className="rounded-md border border-slate-200 bg-white p-2 text-sm text-slate-500 shadow-md">
-        Nenhum comando
+      <div className="ct-popup">
+        <span className="ct-popup-muted" style={{ padding: '4px 8px', display: 'block' }}>
+          Nenhum comando
+        </span>
       </div>
     )
   }
   return (
-    <div className="w-56 rounded-md border border-slate-200 bg-white p-1 shadow-md">
+    <div className="ct-popup" style={{ width: 224 }}>
       {items.map((it, i) => (
         <button
           key={it.title}
-          className={`block w-full rounded px-2 py-1.5 text-left text-sm ${
-            i === index ? 'bg-slate-100 text-slate-900' : 'text-slate-700'
-          }`}
+          className={i === index ? 'ct-popup-item active' : 'ct-popup-item'}
           onMouseEnter={() => setIndex(i)}
           onClick={() => command(it)}
         >

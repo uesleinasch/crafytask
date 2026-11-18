@@ -200,6 +200,13 @@ filhas, a seção some. Se o Jira falhar, mostra um aviso e só as filhas já im
 
 ## Notas e desenho
 
+O editor de notas, o de desenho e cada terminal ficam dentro de um `RegionBoundary` próprio
+("editor de notas", "editor de desenho", "terminal"): se um quebra, só aquela área mostra "Esta área
+falhou" com Tentar de novo, e o resto da tela continua. As cores do conteúdo do Tiptap e dos popups
+dele (classes `.ct-popup`, `.ct-popup-item` e `.ct-tool` em `main.css`) vêm das variáveis CSS do
+antd; o menu `/` e as menções são pendurados dentro do shell (`[data-popup-root]`) para herdá-las. O
+Excalidraw recebe o tema atual (`theme`).
+
 ### Editor de notas (Tiptap / ProseMirror)
 
 Conteúdo com `class="notes-editor-content p-5 min-h-[200px]"`. Auto-save com **debounce de 400ms**
