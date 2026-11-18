@@ -138,12 +138,28 @@ Grid de três zonas (`minmax(max-content, 1fr) · 200–520px · minmax(max-cont
   `quickCapture` da janela de captura rápida e confirma com `message`. Some abaixo de `sm`.
 - **Direita:** `RunningTimersPill` (a partir de `md`): o tempo do timer iniciado por último e, com
   mais de um, o número; o popover lista todos, com link para a tarefa e botão de pausar. Substitui
-  o antigo `FloatingTimer`. Depois, **Aparência** (por enquanto só a densidade; o tema entra com a
+  o antigo `FloatingTimer`. Depois, **Buscar** (abre a paleta; mostra "Ctrl K" a partir de `xxl`),
+  **Aparência** (por enquanto só a densidade; o tema entra com a
   seção de Configurações) e **Nova tarefa** (só ícone abaixo de `lg`). Fora de `/`, Nova tarefa
   volta para a lista e o pedido fica guardado (`lib/newTaskRequest.ts`) até a `TaskListPage` montar
   e abrir o `TaskDialog`.
 
 As telas não têm mais botão "Voltar"; só os detalhes (tarefa e projeto) mantêm o seu.
+
+### Paleta de comandos (`components/shell/CommandPalette.tsx`)
+
+`Ctrl+K` (ou `Cmd+K`) em qualquer rota da janela principal, menos com o foco no terminal, onde o
+atalho é do shell. Um `Modal` com campo de busca e lista navegável por setas e Enter:
+
+- **Ações:** capturar o texto digitado no Inbox (o substituto da captura do header abaixo de `sm`)
+  e alternar a densidade.
+- **Ir para:** uma entrada por tela da sidebar.
+- **Tarefas:** `listTasks({ search, limit: 8 })`, com botão para iniciar o timer de quem não está
+  rodando.
+- **Páginas:** `searchPages`, até 5, abrindo `/notebooks?page=<id>`.
+
+A busca espera 150 ms sem digitar e descarta respostas atrasadas. A filtragem de comandos ignora
+acento e caixa (`paletteCommands.ts`, testado).
 
 ## Rotas
 

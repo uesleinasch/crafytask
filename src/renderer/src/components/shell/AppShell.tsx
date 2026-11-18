@@ -5,6 +5,7 @@ import { SyncNotification } from '@renderer/components/SyncNotification'
 import { Toaster } from '@renderer/components/ui/sonner'
 import { TerminalPanel } from '@renderer/components/terminal/TerminalPanel'
 import { usePersistedState } from '@renderer/hooks/usePersistedState'
+import { CommandPalette } from './CommandPalette'
 import { RegionBoundary } from './RegionBoundary'
 import { ShellHeader } from './ShellHeader'
 import { SiderNav } from './SiderNav'
@@ -82,6 +83,7 @@ export function AppShell(): React.JSX.Element {
         </Content>
         <TerminalPanel />
       </Layout>
+      <CommandPalette />
       <SyncNotification />
       <Toaster position="bottom-right" />
     </Layout>
