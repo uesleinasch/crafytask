@@ -41,8 +41,10 @@ na aba Desenho) e cresce com o conteúdo.
 
 - **Linha 1:** botão **← Tarefas** (vai para `/`) e, com projeto, `/ Nome do projeto`, que abre o
   projeto.
-- **Identidade:** `StatusSelect` e `TaskIdBadge` (`#id`, clique copia) — ainda os legados, até a
-  F3-b —, o **nome** (`Input` sem borda, 22px/600; grava ao sair do campo ou com Enter; vazio volta
+- **Identidade:** **Status** (`Select` do antd, pequeno e preenchido, cada opção com o ícone e a
+  cor do status; Executando desabilitado quando a tarefa está bloqueada), `#id` em `Tag` mono (clique
+  ou Enter copia), etiqueta do Jira com tipo · chave · status Jira (só task do Jira), "Arquivada"
+  (só arquivada), o **nome** (`Input` sem borda, 22px/600; grava ao sair do campo ou com Enter; vazio volta
   ao nome anterior) e a **descrição** (`TextArea` sem borda, 1 a 4 linhas, grava ao sair).
 - **Bloco do timer:** ponto ao vivo quando roda, cronômetro em Geist Mono tabular de 30px (24px
   abaixo de `md`) — `colorTextTertiary` parado, `colorText` rodando, `colorError` a partir do
@@ -56,6 +58,36 @@ na aba Desenho) e cresce com o conteúdo.
   **Painel** (de `md` para cima) e o menu **⋯**: Copiar `#id`, Zerar tempo… (confirmação), Arquivar
   (fica na tela; o menu passa a oferecer Desarquivar) ou Desarquivar, Excluir tarefa… (confirmação que cita notas, desenho, Notion e
   Google).
+
+### Barra de propriedades — `TaskPropertyBar`
+
+Pílulas de 28px (classe `.ct-prop` em `main.css`, sobre as variáveis do antd; vazia fica tracejada e
+apagada) que abrem um `Popover` de edição (`role="dialog"`, foco no primeiro controle, `aria-expanded`
+na pílula). Cada mudança grava na hora; campos de texto gravam ao sair ou com Enter.
+
+| Pílula | Aparece | Edição |
+| --- | --- | --- |
+| Aguardando (`Hourglass`) | primeira, com status Aguardando ou texto salvo | campo de até 120 caracteres; grava `waiting_for` ao sair ou com Enter (vazio limpa). Com texto: "Aguardando: Revisor externo" na cor de Aguardando; vazia: "Aguardando quem?" |
+| Categoria | sempre | os quatro `CategoryChip` (Urgente, Prioridade, Normal, Time leak); Normal aparece como texto |
+| Projeto | sempre | `Select` com busca (ativos, someday e o atual, mesmo concluído ou arquivado, para não perder o vínculo) + "Abrir projeto →" |
+| Contextos (`MapPin` quando vazia) | sempre | `CheckableTag` por contexto; a pílula mostra dois e "+N" |
+| Prazo (`Flag`) | sempre | data + hora (`DatePicker`/`TimePicker`), "Remover prazo"; vermelha se vencido, âmbar se hoje |
+| Energia | sempre | três botões com `EnergyMeter`; clicar no ativo limpa |
+| Programado (`CalendarClock`) | com valor, ou por "+ Propriedade" | data + início/fim (`TimePicker.RangePicker`; o fim só libera com início, e fim antes do início avisa e não grava), "Remover agendamento" |
+| Recorrência (`Repeat`) | idem | `Select` (Não repete, diária, semanal, mensal; regra fora disso aparece como Personalizada) |
+| Tags (`Tags`) | idem | `Select` em modo tags; nome novo vira tag (`tag:getOrCreate`) |
+| Link externo (`Link`) | idem | URL `http(s)` gravada ao sair ou com Enter (inválida avisa e volta), botão abre no navegador por `appOpenExternal`; em task do Jira, avisa que é o link da issue |
+
+Fim ≤ início do agendamento é descartado pelo main (`normalizeTaskTimes`). Tasks importadas do Jira
+trazem o link da issue, e nelas as **Notas** espelham a descrição da issue: a importação as
+substitui quando a descrição muda no Jira, e salvar as notas envia a descrição de volta (~2s
+depois). O editor aberto não recarrega sozinho se uma importação trouxer descrição nova.
+
+### Aviso de bloqueio
+
+Com dependência aberta, um `Alert` de aviso (`Lock`) diz "Bloqueada por dependências: nome, nome"
+(os nomes vêm de `getDependencies`, filtrados pelos ids de `blocked_by`) e oferece **Ver
+dependências**, que abre a aba Relações (no inspetor lateral, no `Drawer` ou nas abas do estreito).
 
 O cronômetro gigante da antiga coluna central, a faixa de acento colorida pela categoria e os botões
 Arquivar/Deletar no fim do painel saíram. Ao atingir o limite, o app ainda dispara a notificação do
@@ -110,20 +142,8 @@ um número em mono à direita.
 
 ### Detalhes — `TaskDetailsPanel`
 
-Até a F3-b, o painel ainda carrega os campos que vão virar pílulas da barra de propriedades, com os
-controles legados:
-
-- **Organização:** Categoria (`CategorySelect`), Aguardando (`WaitingForField`, com status Aguardando
-  ou texto salvo; grava `waiting_for` ao sair do campo ou com Enter, vazio limpa), Projeto
-  (`SearchableSelect` + "Abrir projeto →"), Contextos (pílulas alternáveis, coloridas pela cor do
-  contexto quando ativas) e Tags (`TagInput`).
-- **Agenda:** Programado para e Prazo, Recorrência, Energia (clicar no ativo desmarca) e Link externo.
-- **Jira** (só task do Jira): `JiraTaskControls` e a issue pai.
-- **Google Calendar** e **Ambiente** (diretório de trabalho e comando).
-
-A lista de projetos do select inclui os `active`, os `someday` **e** o projeto atual, mesmo que
-concluído ou arquivado — assim uma tarefa vinculada a projeto arquivado não perde o vínculo ao ser
-editada.
+Até a F3-c, com os controles legados: **Jira** (só task do Jira: `JiraTaskControls` e a issue pai),
+**Google Calendar** e **Ambiente** (diretório de trabalho e comando).
 
 **`JiraTaskControls`** (`components/jira/`) — usado só no detalhe (a lista mostra a chave e o submenu Jira desde a F2-i), só quando a
 task tem `jira_key`. Quatro peças, num wrapper que para a propagação do clique (senão abriria a task):
@@ -143,25 +163,8 @@ task tem `jira_key`. Quatro peças, num wrapper que para a propagação do cliqu
   Equipe) é um `SearchableSelect` "Adicionar opção…" com as escolhidas em chips removíveis. Cada campo grava ao sair do
   campo/escolher; erro do Jira volta como toast e o campo retorna ao valor anterior.
 
-A lista de projetos do select inclui os `active`, os `someday` **e** o projeto atual, mesmo que
-concluído ou arquivado — assim uma tarefa vinculada a projeto arquivado não perde o vínculo ao ser
-editada.
+Detalhes do ambiente e do Google:
 
-Detalhes da agenda e do ambiente:
-
-- **Programado para** e **Prazo** — dois `input[type=date]` de 32px lado a lado, `bg-slate-50`.
-  Com a data preenchida, aparecem campos de hora (`TimeInput`, `input[type=time]` com `×` para
-  limpar): **Início** e, depois dele, **Fim** sob "Programado para"; **Hora** sob "Prazo". Fim ≤
-  início é descartado pelo main (`normalizeTaskTimes`) e o campo volta vazio.
-- **Recorrência** — `RecurrenceSelect`.
-- **Energia** — três botões de largura igual (`flex-1 h-8`) com o `EnergyMeter` + rótulo. O ativo
-  ganha fundo e borda neutros. Clicar no ativo desmarca.
-- **Link externo** — `ExternalLinkField`: campo de URL `http(s)` salvo ao sair do campo ou com Enter
-  (valor inválido é descartado com aviso). Quando há link válido, um botão abre no navegador via
-  `appOpenExternal`, que revalida o esquema no main. Tasks importadas do Jira trazem o link da issue. Nelas, as **Notas** espelham a descrição da
-  issue: a importação as substitui quando a descrição muda no Jira, e salvar as notas envia a
-  descrição de volta (~2s depois). O editor aberto não recarrega sozinho se uma importação trouxer
-  descrição nova.
 - **Diretório de trabalho** — `WorkingDirField`: mostra o fim do caminho (`…/pasta/repo`, completo
   no `title`) e um botão **Escolher/Alterar** que abre o seletor de pasta do sistema
   (`terminal:pickDirectory`, grava na hora). Com diretório definido aparece **Comando ao abrir o

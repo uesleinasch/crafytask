@@ -300,7 +300,7 @@ Aberto pelo botão **Nova tarefa** do header. `max-h-[90vh] overflow-y-auto`. Ca
 | Descrição | `Textarea` 3 linhas, sem redimensionar | não |
 | Categoria \| Tempo Limite | duas colunas: `CategorySelect` \| `Input` mono `00:00:00` | não |
 | Programar para \| Prazo | duas colunas de `input[type=date]` | não |
-| Recorrência | `RecurrenceSelect` (Não repete / Diariamente / Semanalmente / Mensalmente) | não |
+| Recorrência | `RecurrenceSelect` (Não repete / Diária / Semanal / Mensal) | não |
 | Projeto | `SearchableSelect` — só projetos `active` ou `someday` | não |
 | Contextos | pílulas alternáveis, coloridas quando selecionadas | não |
 | Nível de Energia | três botões de largura igual com emoji; clicar no ativo desmarca | não |
