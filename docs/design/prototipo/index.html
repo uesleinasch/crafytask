@@ -178,7 +178,6 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
 .ct-rvweeks { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 4px; max-width: 420px; }
 .ct-rvweek { aspect-ratio: 1; border-radius: 6px; display: grid; place-items: center; font-size: 11px; min-width: 16px; }
 .ct-rvrail { width: 260px; flex: none; position: sticky; top: 0; }
-.ct-rvrail .ant-steps-item-title { line-height: 1.35 !important; }
 .ct-rvtimeline { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 12px; }
 .ct-rvday { padding: 10px 12px; border: 1px solid var(--ct-border); border-radius: 12px; min-width: 0; }
 .ct-rvsummary { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
@@ -240,7 +239,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
 .ct-calagenda-item:hover { background: var(--ct-bg); }
 .ct-calsw { display: inline-block; width: 14px; height: 12px; border-radius: 3px; flex: none; }
 .ct-calside { width: 272px; flex: none; display: flex; flex-direction: column; gap: 10px; position: sticky; top: 0; }
-.ct-drawer-body .ct-calside, .ant-drawer-body .ct-calside { width: 100%; position: static; }
+.ct-calside.in-drawer { width: 100%; position: static; }
 .ct-calplan { display: flex; align-items: center; gap: 8px; padding: 8px; border: 1px solid var(--ct-border); border-radius: 8px; background: var(--ct-surface); cursor: grab; }
 .ct-calplan:hover { border-color: var(--ct-border-strong); }
 .ct-calplan-grip { color: var(--ct-text-3); }
@@ -450,7 +449,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         Table: { headerBg: c.surface, headerColor: c.text3, headerSplitColor: 'transparent', rowHoverBg: mode === 'dark' ? '#201E2B' : '#F7F6FC', rowSelectedBg: c.primarySoft, rowSelectedHoverBg: c.primarySoft, cellPaddingBlock: compact ? 6 : 10, borderColor: c.border },
         Card: { headerFontSize: 15, headerFontSizeSM: 14, headerHeight: 56, headerHeightSM: 48, headerPadding: 20, headerPaddingSM: 16, bodyPadding: 20, bodyPaddingSM: 16 },
         Segmented: { itemSelectedBg: c.surface, trackBg: mode === 'dark' ? '#15141D' : '#ECEBF3' },
-        Statistic: { contentFontSize: 22 }
+        Statistic: { contentFontSize: 26 }
       }
     };
   }
@@ -519,8 +518,8 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
   ];
   const ROUTE_DOCS = { calendario: '04-calendario', revisao: '07-revisao-semanal', horizontes: '06-horizontes', rotulos: '09-contextos-e-tags', cadernos: '17-cadernos', dashboard: '08-dashboard', arquivo: '10-arquivadas', ajustes: '11-configuracoes' };
   const ROUTE_OF = Object.fromEntries(NAV.flatMap(g => g.children).concat(NAV_FOOT).map(i => [i.key, i]));
-  const TITLES = { tarefas: 'Tarefas', tarefa: 'Tarefa', hoje: 'Hoje', projetos: 'Projetos', projeto: 'Projeto', ajustes: 'Configurações', horizontes: 'Horizontes', rotulos: 'Contextos e tags', identidade: 'Identidade visual', dashboard: 'Dashboard', revisao: 'Revisão semanal', calendario: 'Calendário' };
-  const BUILT = ['tarefas', 'tarefa', 'hoje', 'projetos', 'projeto', 'ajustes', 'horizontes', 'rotulos', 'dashboard', 'revisao', 'calendario', 'identidade'];
+  const TITLES = { tarefas: 'Tarefas', tarefa: 'Tarefa', hoje: 'Hoje', projetos: 'Projetos', projeto: 'Projeto', ajustes: 'Configurações', horizontes: 'Horizontes', rotulos: 'Contextos e tags', identidade: 'Identidade visual', dashboard: 'Dashboard', revisao: 'Revisão semanal', calendario: 'Calendário', arquivo: 'Arquivo' };
+  const BUILT = ['tarefas', 'tarefa', 'hoje', 'projetos', 'projeto', 'ajustes', 'horizontes', 'rotulos', 'dashboard', 'revisao', 'calendario', 'arquivo', 'identidade'];
 
   function toMenu(items, collapsed) {
     return items.map(it => it.type === 'group'
@@ -627,6 +626,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       : route === 'ajustes' ? html`<${SettingsPage} mode=${mode} isMobile=${isMobile} screens=${screens} themePref=${themePref} setThemePref=${setThemePref} compact=${compact} setCompact=${setCompact} />`
       : route === 'horizontes' ? html`<${HorizonsPage} mode=${mode} go=${go} isMobile=${isMobile} screens=${screens} openProject=${openProject} />`
       : route === 'rotulos' ? html`<${LabelsPage} mode=${mode} go=${go} isMobile=${isMobile} screens=${screens} />`
+      : route === 'arquivo' ? html`<${ArchivePage} mode=${mode} go=${go} isMobile=${isMobile} screens=${screens} />`
       : route === 'calendario' ? html`<${CalendarPage} key=${screens.lg ? 'w' : screens.md ? 'm' : 's'} mode=${mode} go=${go} isMobile=${isMobile} screens=${screens} compact=${compact} />`
       : route === 'revisao' ? html`<${WeeklyReviewPage} mode=${mode} go=${go} isMobile=${isMobile} screens=${screens} openProject=${openProject} />`
       : route === 'dashboard' ? html`<${DashboardPage} mode=${mode} go=${go} isMobile=${isMobile} screens=${screens} openProject=${openProject} />`
@@ -1442,7 +1442,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
             <${Flex} vertical gap=${10}>
               ${week.map(([d, h]) => html`<${Flex} key=${d} align="center" gap=${10}>
                 <${Text} style=${{ width: 32 }} strong=${d === 'Ter'}>${d}<//>
-                <${Progress} percent=${Math.min(100, h / 8 * 100)} showInfo=${false} status=${h > 8 ? 'exception' : 'normal'} style=${{ flex: 1, margin: 0 }} />
+                <${Progress} percent=${Math.min(100, h / 8 * 100)} showInfo=${false} strokeColor=${h > 8 ? STATUS.aguardando[mode][0] : undefined} style=${{ flex: 1, margin: 0 }} />
                 <span className="ct-mono" style=${{ width: 40, textAlign: 'right' }}>${h ? h + 'h' : '—'}</span>
               <//>`)}
             <//>
@@ -1775,9 +1775,9 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           <//>
           <${Divider} />
           <${Flex} gap=${8} wrap="wrap">
-            <div className="ct-leak-1" style=${{ padding: '8px 12px', borderRadius: 8 }}>Time leak 30 min+</div>
-            <div className="ct-leak-2" style=${{ padding: '8px 12px', borderRadius: 8 }}>1h+</div>
-            <div className="ct-leak-3" style=${{ padding: '8px 12px', borderRadius: 8 }}>2h+</div>
+            <div className="ct-leak-1" style=${{ padding: '8px 12px', borderRadius: 8 }}>Time leak (passou do limite)</div>
+            <div className="ct-leak-2" style=${{ padding: '8px 12px', borderRadius: 8 }}>30 min ou mais</div>
+            <div className="ct-leak-3" style=${{ padding: '8px 12px', borderRadius: 8 }}>60 min ou mais</div>
           <//>
         <//>
         <${Card} title="Tipografia" size="small">
@@ -3490,7 +3490,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const needle = panelQ.trim().toLowerCase();
     const toPlan = TASKS.filter(t => (t.status === 'proximas' || t.status === 'executando') && !scheduledIds.has(t.id) && (!needle || t.name.toLowerCase().includes(needle)));
     const planned = TASKS.filter(t => (t.status === 'proximas' || t.status === 'executando') && scheduledIds.has(t.id));
-    const sidePanel = html`<div className="ct-calside">
+    const sidePanel = inDrawer => html`<div className=${'ct-calside' + (inDrawer ? ' in-drawer' : '')}>
       <${Flex} align="center" justify="space-between"><span className="ct-eyebrow">A agendar · ${toPlan.length}</span>
         ${screens.xl ? html`<${Tooltip} title="Esconder painel"><${Button} size="small" type="text" icon=${html`<${I.MenuFoldOutlined} />`} aria-label="Esconder painel" onClick=${() => setPanel(false)} /><//>` : null}<//>
       <${Text} type="secondary" style=${{ fontSize: 12 }}>Próximas ações sem bloco ${view === 'month' ? 'neste mês' : 'nestes dias'}. Arraste para a grade para reservar tempo.<//>
@@ -3550,14 +3550,149 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     return html`<div className=${isMobile ? 'ct-page-narrow' : 'ct-page'} style=${{ maxWidth: 'none' }}>
       ${toolbar}
       <div style=${{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-        ${screens.lg && panel ? sidePanel : null}
+        ${screens.lg && panel ? sidePanel(false) : null}
         <div style=${{ flex: 1, minWidth: 0, position: 'relative' }}>
           <${Boundary} region="grade do calendário" resetKey=${view}>${body}<//>
           ${empty ? html`<div className="ct-calempty"><${I.CalendarOutlined} /> Nada nestes dias. Clique na grade ou arraste uma tarefa de "A agendar" para reservar tempo.</div>` : null}
         </div>
       </div>
-      ${!screens.lg ? html`<${Drawer} open=${panel} onClose=${() => setPanel(false)} placement="left" width=${Math.min(340, typeof window !== 'undefined' ? window.innerWidth - 40 : 320)} title="A agendar">${sidePanel}<//>` : null}
+      ${!screens.lg ? html`<${Drawer} open=${panel} onClose=${() => setPanel(false)} placement="left" width=${Math.min(340, typeof window !== 'undefined' ? window.innerWidth - 40 : 320)} title="A agendar">${sidePanel(true)}<//>` : null}
       ${draftModal}
+    </div>`;
+  }
+
+  const ARCHIVED_SEED = [
+    { id: 652, name: 'Migrar posts antigos do WordPress', status: 'finalizada', category: 'normal', project: 2, archivedAt: '2026-03-12', secs: 18400, contexts: ['@dev'] },
+    { id: 668, name: 'Revisar contrato do domínio', status: 'finalizada', category: 'prioridade', project: 3, archivedAt: '2026-09-28', secs: 900, contexts: ['@leitura'] },
+    { id: 671, name: 'Novo layout do portfólio', status: 'finalizada', category: 'normal', project: 3, archivedAt: '2026-09-28', secs: 26100, contexts: ['@dev'] },
+    { id: 674, name: 'Pesquisar hospedagem estática', status: 'someday', category: 'normal', project: 3, archivedAt: '2026-09-28', secs: 0, contexts: [] },
+    { id: 680, name: 'Workshop de OKRs com o squad', status: 'finalizada', category: 'normal', project: 4, archivedAt: '2026-10-20', secs: 7200, contexts: ['@reunião'] },
+    { id: 683, name: 'Planilha de capacidade (versão antiga)', status: 'proximas', category: 'time_leak', project: 4, archivedAt: '2026-10-31', secs: 3900, contexts: ['@dev'] },
+    { id: 688, name: 'Avaliar Tauri no lugar do Electron', status: 'someday', category: 'normal', project: 13, archivedAt: '2026-11-02', secs: 1800, contexts: ['@leitura'] },
+    { id: 690, name: 'Corrigir ícone da bandeja no GNOME 46', status: 'finalizada', category: 'urgente', project: 13, archivedAt: '2026-11-08', secs: 4500, contexts: ['@dev'] },
+    { id: 693, name: 'Ligar para o plano de saúde', status: 'aguardando', category: 'normal', project: 9, archivedAt: '2026-11-10', secs: 600, contexts: ['@telefone'] },
+    { id: 695, name: 'Escrever post sobre a release v3.15', status: 'inbox', category: 'normal', project: null, archivedAt: '2026-11-14', secs: 0, contexts: ['@escrita'] },
+    { id: 697, name: 'Esboço do capítulo 2 em inglês', status: 'finalizada', category: 'normal', project: 7, archivedAt: '2026-11-15', secs: 10800, contexts: ['@escrita'] },
+    { id: 642, name: 'Configurar backup antigo (rsync)', status: 'finalizada', category: 'normal', project: null, archivedAt: '2025-08-02', secs: 2400, contexts: ['@dev'] }
+  ];
+
+  function ArchivePage({ mode, go, isMobile, screens }) {
+    const plural = (n, a, b) => n + ' ' + (n === 1 ? a : b);
+    const { message, modal } = AntApp.useApp();
+    const [rows, setRows] = useState(ARCHIVED_SEED);
+    const [q, setQ] = useState('');
+    const [proj, setProj] = useState('all');
+    const [st, setSt] = useState('all');
+    const [age, setAge] = useState('all');
+    const [sort, setSort] = useState('recent');
+    const [group, setGroup] = useState('month');
+    const [sel, setSel] = useState([]);
+    const [purge, setPurge] = useState(null);
+
+    const needle = q.trim().toLowerCase();
+    const cut = { '30': dayjs(TODAY).subtract(30, 'day'), '90': dayjs(TODAY).subtract(90, 'day'), '365': dayjs(TODAY).subtract(1, 'year') }[age];
+    const sorters = { recent: (a, b) => b.archivedAt.localeCompare(a.archivedAt), name: (a, b) => a.name.localeCompare(b.name), time: (a, b) => b.secs - a.secs };
+    const list = rows
+      .filter(t => !needle || (t.name + ' #' + t.id).toLowerCase().includes(needle))
+      .filter(t => proj === 'all' || (proj === 'none' ? !t.project : t.project === proj))
+      .filter(t => st === 'all' || t.status === st)
+      .filter(t => !cut || !dayjs(t.archivedAt).isBefore(cut))
+      .sort(sorters[sort]);
+    const filtered = needle || proj !== 'all' || st !== 'all' || age !== 'all';
+    const groups = group === 'none' ? null
+      : group === 'month' ? Array.from(new Set(list.map(t => t.archivedAt.slice(0, 7)))).map(k => ({ key: k, name: dayjs(k + '-01').format('MMMM [de] YYYY'), items: list.filter(t => t.archivedAt.startsWith(k)) }))
+      : Array.from(new Set(list.map(t => t.project || 0))).map(k => ({ key: 'p' + k, name: k ? P[k].name : 'Sem projeto', color: k ? P[k].color : null, items: list.filter(t => (t.project || 0) === k) }));
+
+    const restore = ids => { const back = rows.filter(t => ids.includes(t.id)); setRows(rs => rs.filter(t => !ids.includes(t.id))); setSel(s => s.filter(x => !ids.includes(x)));
+      message.success({ key: 'rest', duration: 5, content: html`<span>${plural(ids.length, 'tarefa voltou', 'tarefas voltaram')} para as listas · <a onClick=${() => { setRows(rs => rs.concat(back)); message.destroy('rest'); }}>Desfazer</a></span>` }); };
+    const destroy = ids => { const ts = rows.filter(t => ids.includes(t.id)); const secs = ts.reduce((a, t) => a + t.secs, 0);
+      modal.confirm({ title: ids.length === 1 ? `Excluir "${ts[0].name}" de vez?` : `Excluir ${ids.length} tarefas de vez?`,
+        content: `Apaga ${ids.length === 1 ? 'a tarefa' : 'as tarefas'}, ${secs ? fmtHM(secs) + ' de sessões, ' : ''}notas e desenhos. No Notion e no Google também, se estiverem ligados. Não dá para desfazer.`,
+        okText: 'Excluir de vez', okButtonProps: { danger: true }, cancelText: 'Cancelar',
+        onOk: () => { setRows(rs => rs.filter(t => !ids.includes(t.id))); setSel(s => s.filter(x => !ids.includes(x))); message.success(plural(ids.length, 'tarefa excluída', 'tarefas excluídas')); } }); };
+    const menuFor = t => ({ items: [
+      { key: 'open', icon: createElement(I.ExportOutlined), label: 'Abrir (só leitura)' },
+      { key: 'restore', icon: createElement(I.RollbackOutlined), label: 'Desarquivar' },
+      { type: 'divider' },
+      { key: 'delete', icon: createElement(I.DeleteOutlined), label: 'Excluir de vez…', danger: true }
+    ], onClick: ({ key, domEvent }) => { if (domEvent) domEvent.stopPropagation();
+      if (key === 'open') { message.info('Abre a tarefa só leitura, com a faixa "Arquivada · Desarquivar"'); go('tarefa'); }
+      if (key === 'restore') restore([t.id]);
+      if (key === 'delete') destroy([t.id]); } });
+
+    const nameCell = t => html`<${Flex} vertical gap=${2} style=${{ minWidth: 0 }}>
+      <a onClick=${() => { message.info('Abre a tarefa só leitura, com a faixa "Arquivada · Desarquivar"'); go('tarefa'); }} className="ct-ellipsis" style=${{ color: 'var(--ct-text)', fontWeight: 500 }}>${t.name}</a>
+      ${!screens.lg ? html`<${Flex} gap=${8} wrap="wrap" style=${{ fontSize: 12 }}><${ProjectLabel} id=${t.project} /><${Text} type="secondary">arquivada ${fmtDate(t.archivedAt)}<//><//>` : null}
+    <//>`;
+    const cols = [
+      { title: 'ID', key: 'id', width: 72, render: (_, t) => html`<span className="ct-mono" style=${{ color: 'var(--ct-text-3)', fontSize: 12 }}>#${t.id}</span>` },
+      { title: 'Tarefa', key: 'name', render: (_, t) => nameCell(t) },
+      { title: html`<${Tooltip} title="Status que a tarefa tinha ao ser arquivada"><span>Status</span><//>`, key: 'status', width: 140, render: (_, t) => html`<${Chip} def=${STATUS[t.status]} mode=${mode} />` },
+      screens.lg && group !== 'project' ? { title: 'Projeto', key: 'project', width: 170, render: (_, t) => html`<${ProjectLabel} id=${t.project} />` } : null,
+      screens.lg ? { title: 'Arquivada em', key: 'at', width: 120, render: (_, t) => html`<${Tooltip} title=${dayjs(t.archivedAt).format('dddd, D [de] MMMM [de] YYYY')}><span className="ct-mono">${dayjs(t.archivedAt).format('DD/MM/YY')}</span><//>` } : null,
+      screens.md ? { title: 'Tempo', key: 'secs', width: 88, align: 'right', render: (_, t) => html`<span className="ct-mono">${fmtShort(t.secs)}</span>` } : null,
+      { title: '', key: 'act', width: screens.md ? 148 : 48, render: (_, t) => html`<${Flex} gap=${4} justify="flex-end">
+        ${screens.md ? html`<${Button} size="small" icon=${html`<${I.RollbackOutlined} />`} onClick=${() => restore([t.id])}>Desarquivar<//>` : null}
+        <${Dropdown} menu=${menuFor(t)} trigger=${['click']} placement="bottomRight"><${Button} size="small" type="text" aria-label="Mais ações" icon=${html`<${I.EllipsisOutlined} />`} /><//>
+      <//>` }
+    ].filter(Boolean);
+    const groupHeader = g => html`<${Flex} align="center" gap=${8}>
+      ${group === 'month' ? html`<${I.CalendarOutlined} style=${{ color: 'var(--ct-text-3)' }} />` : g.color ? html`<span className="ct-dot" style=${{ background: g.color }}></span>` : html`<${I.FolderOutlined} style=${{ color: 'var(--ct-text-3)' }} />`}
+      <${Text} strong style=${{ textTransform: group === 'month' ? 'capitalize' : 'none' }}>${g.name}<//><${Text} type="secondary" className="ct-mono">${g.items.length}<//><//>`;
+    const columns = cols.map((c, i) => ({ ...c, render: (v, r, idx) => r.isGroup ? (i === 0 ? groupHeader(r.group) : null) : c.render(v, r, idx), onCell: r => r.isGroup ? { colSpan: i === 0 ? cols.length : 0 } : {} }));
+    const data = groups ? groups.flatMap(g => [{ id: 'g:' + g.key, isGroup: true, group: g }].concat(g.items)) : list;
+
+    const total = rows.length;
+    const oldCount = rows.filter(t => dayjs(t.archivedAt).isBefore(dayjs(TODAY).subtract(1, 'year'))).length;
+    const purgeCount = purge ? rows.filter(t => dayjs(t.archivedAt).isBefore(dayjs(TODAY).subtract(purge, 'month'))).length : 0;
+
+    const toolbar = html`<${Flex} gap=${8} wrap="wrap" align="center" style=${{ marginBottom: 12 }}>
+      <${Input} allowClear placeholder="Buscar por nome ou #id" prefix=${html`<${I.SearchOutlined} />`} value=${q} onChange=${e => setQ(e.target.value)} style=${{ flex: '1 1 220px', maxWidth: 320 }} aria-label="Buscar no arquivo" />
+      <${Select} value=${proj} onChange=${setProj} style=${{ width: 180 }} aria-label="Projeto" options=${[{ value: 'all', label: 'Todos os projetos' }, { value: 'none', label: 'Sem projeto' }].concat(PROJECTS.map(p => ({ value: p.id, label: html`<span style=${{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><span className="ct-dot" style=${{ background: p.color }}></span>${p.name}</span>` })))} />
+      ${screens.md ? html`<${Select} value=${st} onChange=${setSt} style=${{ width: 160 }} aria-label="Status ao arquivar" options=${[{ value: 'all', label: 'Qualquer status' }].concat(Object.entries(STATUS).map(([k, v]) => ({ value: k, label: v.label })))} />` : null}
+      <${Select} value=${age} onChange=${setAge} style=${{ width: 170 }} aria-label="Arquivada em" options=${[{ value: 'all', label: 'Qualquer data' }, { value: '30', label: 'Últimos 30 dias' }, { value: '90', label: 'Últimos 90 dias' }, { value: '365', label: 'Último ano' }]} />
+      <div style=${{ flex: 1 }}></div>
+      ${screens.md ? html`<${Select} value=${sort} onChange=${setSort} style=${{ width: 190 }} aria-label="Ordenar" options=${[{ value: 'recent', label: 'Arquivadas por último' }, { value: 'name', label: 'Ordenar por nome' }, { value: 'time', label: 'Mais tempo registrado' }]} />` : null}
+      <${Select} value=${group} onChange=${setGroup} style=${{ width: 170 }} aria-label="Agrupar" options=${[{ value: 'month', label: 'Agrupar por mês' }, { value: 'project', label: 'Agrupar por projeto' }, { value: 'none', label: 'Sem agrupamento' }]} />
+      <${Dropdown} trigger=${['click']} menu=${{ items: [{ key: 'purge', icon: createElement(I.ClearOutlined), label: 'Limpar o arquivo…', danger: true }], onClick: () => setPurge(12) }}>
+        <${Button} aria-label="Mais ações do arquivo" icon=${html`<${I.EllipsisOutlined} />`} /><//>
+    <//>`;
+
+    const body = !total
+      ? html`<${Empty} image=${Empty.PRESENTED_IMAGE_SIMPLE} description=${html`<span>Nada no arquivo.<br /><${Text} type="secondary">Arquive pelo menu ⋯ de uma tarefa para tirá-la das listas sem apagar nada.<//></span>`} />`
+      : !list.length
+        ? html`<${Empty} image=${Empty.PRESENTED_IMAGE_SIMPLE} description="Nenhuma tarefa arquivada com esses filtros."><${Button} onClick=${() => { setQ(''); setProj('all'); setSt('all'); setAge('all'); }}>Limpar filtros<//><//>`
+        : html`<${Table} rowKey="id" size=${screens.xxl ? 'middle' : 'small'} columns=${columns} dataSource=${data} scroll=${{ x: 'max-content' }}
+            pagination=${groups ? false : { pageSize: 20, hideOnSinglePage: true, size: 'small' }}
+            rowSelection=${{ selectedRowKeys: sel, onChange: setSel, getCheckboxProps: r => ({ disabled: !!r.isGroup, style: r.isGroup ? { display: 'none' } : null }) }}
+            components=${{ body: { row: MenuRow } }} onRow=${r => r.isGroup ? {} : { record: r, menu: menuFor(r) }} rowClassName=${r => r.isGroup ? 'ct-grouprow' : ''} />`;
+
+    return html`<div className=${isMobile ? 'ct-page-narrow' : 'ct-page'}>
+      <${Flex} align="flex-start" gap="8px 16px" wrap="wrap" style=${{ marginBottom: 12 }}>
+        <${Flex} vertical gap=${2} style=${{ flex: '1 1 320px', minWidth: 0 }}>
+          <${Text} type="secondary">Arquivar tira a tarefa de todas as listas sem apagar nada: tempo, notas e sessões continuam. Projetos arquivados ficam em <a onClick=${() => go('projetos')}>Projetos → Arquivados</a>.<//>
+        <//>
+        <${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12 }}>${plural(total, 'tarefa', 'tarefas')} · ${fmtHM(rows.reduce((a, t) => a + t.secs, 0))} registradas<//>
+      <//>
+      ${oldCount ? html`<${Alert} type="info" showIcon style=${{ marginBottom: 12 }} message=${`${plural(oldCount, 'tarefa está', 'tarefas estão')} no arquivo há mais de um ano.`}
+        action=${html`<${Button} size="small" onClick=${() => setPurge(12)}>Revisar e limpar<//>`} />` : null}
+      ${toolbar}
+      ${body}
+      ${sel.length ? html`<div className="ct-bulkbar"><div className="ct-bulkbar-inner">
+        <${Text} strong>${plural(sel.length, 'selecionada', 'selecionadas')}<//>
+        <${Button} size="small" type="link" onClick=${() => setSel([])}>Limpar<//>
+        <div style=${{ flex: 1 }}></div>
+        <${Button} size="small" icon=${html`<${I.RollbackOutlined} />`} onClick=${() => restore(sel)}>Desarquivar<//>
+        <${Button} size="small" danger icon=${html`<${I.DeleteOutlined} />`} onClick=${() => destroy(sel)}>Excluir de vez<//>
+      </div></div>` : null}
+      <${Modal} open=${!!purge} title="Limpar o arquivo" okText=${purgeCount ? `Excluir ${plural(purgeCount, 'tarefa', 'tarefas')}` : 'Nada para excluir'} okButtonProps=${{ danger: true, disabled: !purgeCount }} cancelText="Cancelar" onCancel=${() => setPurge(null)}
+        onOk=${() => { const ids = rows.filter(t => dayjs(t.archivedAt).isBefore(dayjs(TODAY).subtract(purge, 'month'))).map(t => t.id); setRows(rs => rs.filter(t => !ids.includes(t.id))); setPurge(null); message.success(plural(ids.length, 'tarefa excluída', 'tarefas excluídas') + ' de vez'); }}>
+        ${purge ? html`<${Flex} vertical gap=${12}>
+          <${Field} label="Arquivadas há"><${Select} value=${purge} onChange=${setPurge} style=${{ width: '100%' }} options=${[[3, 'mais de 3 meses'], [6, 'mais de 6 meses'], [12, 'mais de 1 ano'], [24, 'mais de 2 anos']].map(([v, l]) => ({ value: v, label: l }))} /><//>
+          <${Text}>${purgeCount ? html`<span><b>${plural(purgeCount, 'tarefa', 'tarefas')}</b> ${purgeCount === 1 ? 'vai ser apagada' : 'vão ser apagadas'} de vez, com sessões, notas e desenhos.</span>` : 'Nenhuma tarefa arquivada há tanto tempo.'}<//>
+          <${Text} type="secondary" style=${{ fontSize: 12 }}>Faça um backup antes se quiser guardar o histórico de tempo (Configurações → Backup).<//>
+        <//>` : null}
+      <//>
     </div>`;
   }
 
