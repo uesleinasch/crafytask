@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
-import { StatusBadge } from './StatusBadge'
-import { CategoryBadge } from './CategoryBadge'
+import { StatusChip } from '@renderer/components/chips/StatusChip'
+import { CategoryChip } from '@renderer/components/chips/CategoryChip'
 import { DueDateBadge } from './DueDateBadge'
 import { ScheduledTimeBadge } from './ScheduledTimeBadge'
 import { TaskIdBadge } from './TaskIdBadge'
@@ -143,9 +143,9 @@ export function TaskCard({
               <span className="truncate max-w-[150px]">{task.project_name}</span>
             </span>
           )}
-          <StatusBadge status={task.status} />
+          <StatusChip status={task.status} />
           {task.category && task.category !== 'normal' && (
-            <CategoryBadge category={task.category} />
+            <CategoryChip category={task.category} />
           )}
           <JiraTaskControls task={task} />
         </div>

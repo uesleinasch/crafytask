@@ -11,6 +11,9 @@ Cada item traz **o que é**, **onde acontece** e, quando relevante, **por que im
 
 ### A1. Três paletas para status de tarefa, quatro para categoria
 
+**Em parte resolvida na F2-b:** status, categoria e energia passam por `components/chips/`, com as
+cores de `theme/semantic.ts`. Falta o dashboard (F7) e o calendário (F4), que ainda têm cópias locais.
+
 Ver a tabela completa em [14-design-tokens.md](14-design-tokens.md#5-paletas-semanticas).
 
 O caso mais visível: **time leak é amarelo** no badge, no `CategorySelect` e no bloco do calendário,
@@ -25,6 +28,9 @@ declaram cópias locais até serem migradas. `ContextsPage` duplica literalmente
 `DEFAULT_COLORS` como `CONTEXT_COLORS`.
 
 ### A3. Duas gramáticas de badge
+
+**Resolvida na F2-b:** status de tarefa e de projeto usam o mesmo chip (`StatusChip` e
+`ProjectStatusChip`): fundo claro, texto escuro, ícone e rótulo.
 
 Status de **tarefa** é pílula clara com borda e texto escuro. Status de **projeto** é pílula sólida
 com texto branco. Ambos aparecem em listas do mesmo app.

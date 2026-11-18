@@ -181,8 +181,8 @@ em `text-xs font-semibold uppercase tracking-wider`.
 | --- | --- | --- |
 | ☐ | `w-12` | Checkbox "selecionar todas visíveis", com estado indeterminado quando a seleção é parcial |
 | **Tarefa** | flexível (`max-w-0`) | Ver detalhamento abaixo |
-| **Status** | `w-28` | `StatusBadge` |
-| **Categoria** | `w-28` | `CategoryBadge` (sempre, inclusive "Normal") |
+| **Status** | `w-28` | `StatusChip` |
+| **Categoria** | `w-28` | `CategoryChip` (sempre, inclusive "Normal") |
 | **Projeto** | `w-32` | Bolinha da cor + nome truncado em 100px, ou "—" |
 | **Tags** | `w-32` | Até 2 pílulas coloridas + "+N", ou "—" |
 | **Tempo** | `w-32`, direita | `formatTime` em `font-mono tabular-nums` + `Activity` pulsando se rodando |
@@ -203,7 +203,7 @@ A célula **Tarefa** empilha, da esquerda para a direita:
 - descrição em `text-xs text-slate-400 truncate max-w-md`, na segunda linha.
 
 **Linhas de subtarefa** (ao expandir) aparecem como linhas irmãs com `bg-slate-50/70`, recuo
-`pl-16`, um traço vertical, ícone de checkbox/círculo, nome (riscado se finalizada), `StatusBadge` e
+`pl-16`, um traço vertical, ícone de checkbox/círculo, nome (riscado se finalizada), `StatusChip` e
 tempo. Clicar navega para a subtarefa. As subtarefas são carregadas sob demanda
 (`window.api.listSubtasks`) e memorizadas por sessão.
 
@@ -220,7 +220,7 @@ task tem `jira_key`. Quatro peças, num wrapper que para a propagação do cliqu
   subtarefa cinza. A classe vem de `classifyIssueType` (`jiraPlan.ts`): nível da hierarquia do
   Jira primeiro (>0 épico, <0 subtarefa), nome do tipo depois. Some antes da primeira importação.
 - chip azul **Jira · {status}**: um `Select` que, ao abrir, busca as transições da issue
-  (`jira:listTransitions`) e aplica a escolhida (`jira:transition`). É independente do `StatusBadge`
+  (`jira:listTransitions`) e aplica a escolhida (`jira:transition`). É independente do `StatusChip`
   local — mudar um não muda o outro.
 - botão `SlidersHorizontal` (só no card e na tabela; o detalhe usa o botão azul "Campos do Jira",
   ver `02-detalhe-da-tarefa.md`) que abre o `JiraFieldsSheet`: painel lateral direito com os campos
@@ -239,7 +239,7 @@ Grade responsiva `grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4`. Cada card
    hover.
 2. **Topo:** cadeado laranja (se bloqueada) + título em `font-semibold text-[15px] line-clamp-2`;
    checkbox à direita, oculto até o hover ou até estar marcado.
-3. **Identidade:** `TaskIdBadge` (`#id`, clique copia), bolinha + nome do projeto (truncado em 150px), `StatusBadge`, e `CategoryBadge`
+3. **Identidade:** `TaskIdBadge` (`#id`, clique copia), bolinha + nome do projeto (truncado em 150px), `StatusChip`, e `CategoryChip`
    **só quando a categoria não é "normal"** — diferente da tabela, que sempre mostra. Em task do
    Jira, também `JiraTaskControls`.
 4. **Descrição** em `line-clamp-2`, se houver.

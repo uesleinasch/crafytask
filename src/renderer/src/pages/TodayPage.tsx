@@ -20,7 +20,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { ScrollArea } from '@renderer/components/ui/scroll-area'
 import { formatTimeRange } from '@shared/taskTime'
 import { DueDateBadge } from '@renderer/components/DueDateBadge'
-import { StatusBadge } from '@renderer/components/StatusBadge'
+import { StatusChip } from '@renderer/components/chips/StatusChip'
 import { formatTime } from '@renderer/lib/utils'
 import type { Task } from '../../../shared/types'
 import {
@@ -112,7 +112,7 @@ function SortableTaskRow({ task, onTaskClick }: SortableTaskRowProps): React.JSX
           >
             {task.name}
           </span>
-          <StatusBadge status={task.status} />
+          <StatusChip status={task.status} />
           {task.due_date && <DueDateBadge dueDate={task.due_date} dueTime={task.due_time} />}
         </div>
         {task.project_name && (

@@ -20,7 +20,7 @@ Consomem os tokens CSS (`--primary`, `--border`, `--radius`…) definidos em `as
 | `alert-dialog` | confirmações destrutivas |
 | `context-menu` | menu do botão direito nas tarefas da lista (`TaskContextMenu`) |
 | `card` | **importado por nenhuma tela** — todas escrevem `bg-white border border-slate-200 rounded-sm` na mão |
-| `badge` | **importado por nenhuma tela** — os badges do app são `StatusBadge` / `CategoryBadge`, escritos à parte |
+| `badge` | **importado por nenhuma tela** — status, categoria e energia usam os chips de `components/chips/` |
 | `progress` | só em `SubtaskList` e em H1 dos horizontes. As outras seis barras de progresso do app são `<div>` com `width` inline |
 | `scroll-area` | área rolável das sub-páginas |
 | `tabs` | **importado por nenhuma tela** — todas as abas são botões manuais |
@@ -63,8 +63,9 @@ O select mais usado do app — filtros, seleção de projeto, tarefa, tag. Não 
 
 | Componente | Saída |
 | --- | --- |
-| `StatusBadge` | pílula `rounded-full border px-2.5 py-0.5 text-xs font-semibold`; `animate-pulse` no status "executando" |
-| `CategoryBadge` | pílula com ícone; dois tamanhos (`sm` de 10px, `md` de 12px) |
+| `StatusChip` | `components/chips/`: ícone lucide + rótulo, cores de `theme/semantic.ts` nos dois temas, 22px de altura, raio 6 (substituiu o `StatusBadge`) |
+| `CategoryChip` | idem para categoria; "Normal" sem cor, só borda e texto secundário (substituiu o `CategoryBadge`) |
+| `EnergyMeter` | três barras na cor primária (cheias = nível), com tooltip "Energia alta/média/baixa"; substituiu o emoji ⚡🔋😴 |
 | `DueDateBadge` | pílula com `Calendar` cujo rótulo e cor derivam da distância até o prazo — ver tabela abaixo |
 | `StatusSelect` | `Select` de 180px com os 6 status |
 | `CategorySelect` | `Select` de 140px com ícone e cor por categoria no próprio gatilho |

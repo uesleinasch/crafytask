@@ -63,7 +63,7 @@ horário seguem a ordem manual (`day_order`).
 | Alça de arraste | `GripVertical` cinza-claro, `cursor-grab` / `active:cursor-grabbing`. Só ela inicia o arraste. Em task com horário, no lugar dela aparece a faixa `09:00–10:00` em azul |
 | Indicador de estado | `CheckSquare` roxo se finalizada · `Activity` esmeralda pulsante se rodando · `Lock` laranja se bloqueada · círculo vazio caso contrário |
 | Nome | `font-medium`, riscado e cinza quando finalizada |
-| `StatusBadge` | sempre |
+| `StatusChip` | sempre |
 | `DueDateBadge` | se houver prazo |
 | Projeto | segunda linha: bolinha da cor + nome, em `text-xs text-slate-400` |
 | Tempo | `font-mono`, esmeralda se rodando; abaixo, `/ limite` quando existe |

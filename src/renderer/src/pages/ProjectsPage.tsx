@@ -18,7 +18,7 @@ import { ProjectListRow } from '@renderer/components/projects/ProjectListRow'
 import { ColorPicker } from '@renderer/components/ColorPicker'
 import { DEFAULT_COLORS } from '@renderer/lib/colors'
 import type { Project, ProjectStatus, CreateProjectInput } from '@shared/types'
-import { PROJECT_STATUS_LABELS, PROJECT_STATUS_COLORS } from '@shared/types'
+import { ProjectStatusChip } from '@renderer/components/chips/ProjectStatusChip'
 import {
   FolderKanban,
   Plus,
@@ -205,14 +205,7 @@ export function ProjectsPage(): React.JSX.Element {
                   >
                     {/* Status Badge */}
                     <div className="flex items-center justify-between mb-3">
-                      <span
-                        className={cn(
-                          'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white',
-                          PROJECT_STATUS_COLORS[project.status]
-                        )}
-                      >
-                        {PROJECT_STATUS_LABELS[project.status]}
-                      </span>
+                      <ProjectStatusChip status={project.status} />
                       {project.due_date && (
                         <span className="text-xs text-slate-400 flex items-center">
                           <Clock size={12} className="mr-1" />
