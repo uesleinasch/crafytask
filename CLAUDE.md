@@ -305,6 +305,13 @@ Closing the main window **hides** it — the app lives on in a tray icon (`src/m
 CrafyTask / Captura rápida / Sair); only "Sair" actually quits. Autostart is toggled from Settings
 (`app:getAutostart` / `app:setAutostart`) and launches the app straight into the tray.
 
+Falhas: `RegionBoundary` (`components/shell/`, sobre `react-error-boundary` + `Result` do antd)
+isola regiões — raiz em `main.tsx`, rota atual em `App.tsx` com reset por `pathname + search`. Erro
+assíncrono (IPC) chega ao boundary por `useErrorBoundary().showBoundary`. `createRoot` manda todo
+erro ao main (`app:logRendererError`). `rendererGuard.ts` recarrega a janela cujo renderer morreu
+(até 3 vezes por minuto, regra em `rendererRecovery.ts`), oferece recarregar quando ela trava e
+avisa o renderer (`app:rendererRecovered`).
+
 All three windows load the **same renderer bundle**, so anything that runs at module scope runs
 three times. `stores/timerWindow.ts` (`shouldBootstrapTimerStore`) is the guard: the auxiliary
 routes must not boot their own copy of the timer store, or each window fights over the float. Keep
