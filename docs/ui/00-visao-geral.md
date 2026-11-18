@@ -253,7 +253,9 @@ Voltar às vezes é `<Button variant="ghost">` e às vezes um `<button>` cru; o 
 ```
 
 O `h-full` (não `h-screen`) é deliberado: o `Content` do shell já descontou a altura do header. O
-`pb-24` reservava espaço para o antigo `FloatingTimer`, que saiu na F1-d.
+`pb-24` reservava espaço para o antigo `FloatingTimer`, que saiu na F1-d. Telas migradas trocam o
+`p-6` pelo `PageContainer` (ver o início deste documento); a lista de tarefas já usa, com o
+cabeçalho fixo (`padBlock="top"`) e o conteúdo rolável (`padBlock="bottom"`).
 
 ### 3. Abas em pílula
 

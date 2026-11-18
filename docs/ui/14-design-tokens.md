@@ -224,7 +224,7 @@ Transições comuns: `transition-colors`, `transition-all duration-200`,
 | Constante | Valor | Onde |
 | --- | --- | --- |
 | Altura do TitleBar | `h-14` (56px) | shell |
-| Padding de sub-página | `px-6 py-4` (cabeçalho) / `p-6 pb-24` (conteúdo) | todas |
+| Padding de sub-página | `px-6 py-4` (cabeçalho) / `p-6 pb-24` (conteúdo) | telas ainda não migradas; a lista de tarefas usa o `PageContainer` |
 | Cabeçalho do calendário | `px-4 py-3` | exceção |
 | Painel esquerdo da tarefa | `480px` fixo | `/task/:id` |
 | Painel de notas | `550px` padrão, mín. 360px, reserva 700px | `/task/:id` |
