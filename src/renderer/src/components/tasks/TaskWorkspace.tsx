@@ -100,6 +100,7 @@ export function TaskWorkspace({
         <Button
           type="text"
           aria-label="Modo foco"
+          data-focus-opener
           icon={<Expand {...ICON} />}
           onClick={() => onFocusChange(true)}
         />
@@ -170,7 +171,7 @@ export function TaskWorkspace({
   )
 
   const notesStyle = focus
-    ? { maxWidth: '68ch', marginInline: 'auto', paddingBlock: '24px 64px', fontSize: 17 }
+    ? { maxWidth: '68ch', marginInline: 'auto', paddingBlock: '40px 64px', fontSize: 17 }
     : undefined
 
   return (
@@ -194,7 +195,12 @@ export function TaskWorkspace({
           flexDirection: 'column',
           minHeight: fill || focus ? 0 : tab === 'drawing' ? 480 : 360,
           flex: fill || focus ? 1 : undefined,
-          paddingInline: focus && tab === 'notes' ? 16 : 0
+          ...(focus && tab === 'notes'
+            ? {
+                paddingLeft: 'max(16px, env(safe-area-inset-left, 0px))',
+                paddingRight: 'max(16px, env(safe-area-inset-right, 0px))'
+              }
+            : null)
         }}
       >
         <NotesBody

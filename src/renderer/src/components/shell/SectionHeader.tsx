@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Flex, theme } from 'antd'
+import { Flex, Typography, theme } from 'antd'
 import type { LucideIcon } from 'lucide-react'
 
 interface SectionHeaderProps {
@@ -14,6 +14,8 @@ export function SectionHeader({ title, icon: Icon, extra }: SectionHeaderProps):
     <Flex align="center" gap={8}>
       {Icon && <Icon size={13} strokeWidth={1.75} aria-hidden color={token.colorTextTertiary} />}
       <span
+        role="heading"
+        aria-level={3}
         style={{
           fontSize: 11,
           fontWeight: 600,
@@ -50,5 +52,31 @@ export function Section({
       <SectionHeader {...header} />
       {children}
     </section>
+  )
+}
+
+export function Field({
+  label,
+  children,
+  align = 'center'
+}: {
+  label: string
+  children: ReactNode
+  align?: 'center' | 'start'
+}): React.JSX.Element {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '92px minmax(0, 1fr)',
+        gap: 8,
+        alignItems: align
+      }}
+    >
+      <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+        {label}
+      </Typography.Text>
+      <div style={{ minWidth: 0 }}>{children}</div>
+    </div>
   )
 }

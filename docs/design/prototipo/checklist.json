@@ -740,6 +740,16 @@
       }
     },
     {
+      "id": "F3.15",
+      "fase": "F3",
+      "titulo": "Campos do Jira num Drawer do antd",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/components/jira/JiraFieldsSheet.tsx",
+        "padroes": ["<Drawer", "Campos do Jira"]
+      }
+    },
+    {
       "id": "F3.5",
       "fase": "F3",
       "titulo": "Detalhe conferido nas três larguras",

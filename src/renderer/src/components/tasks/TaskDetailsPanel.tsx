@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Flex, Typography } from 'antd'
 import { CalendarDays, FolderKanban, Plug, SquareTerminal } from 'lucide-react'
@@ -15,37 +15,13 @@ import { WaitingForField } from '@renderer/components/tasks/WaitingFor'
 import { WorkingDirField } from '@renderer/components/terminal/WorkingDirField'
 import { JiraTaskControls } from '@renderer/components/jira/JiraTaskControls'
 import { EnergyMeter } from '@renderer/components/chips/EnergyMeter'
-import { Section } from '@renderer/components/shell/SectionHeader'
+import { Field, Section } from '@renderer/components/shell/SectionHeader'
 import { cn } from '@renderer/lib/utils'
 
 interface TaskDetailsPanelProps {
   task: Task
   updateTask: (data: UpdateTaskInput) => Promise<void>
   refreshTask: () => Promise<void>
-}
-
-function Field({
-  label,
-  children,
-  align = 'center'
-}: {
-  label: string
-  children: ReactNode
-  align?: 'center' | 'start'
-}): React.JSX.Element {
-  return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '92px minmax(0, 1fr)',
-        gap: 8,
-        alignItems: align
-      }}
-    >
-      <Typography.Text type="secondary">{label}</Typography.Text>
-      <div style={{ minWidth: 0 }}>{children}</div>
-    </div>
-  )
 }
 
 const DATE_INPUT =

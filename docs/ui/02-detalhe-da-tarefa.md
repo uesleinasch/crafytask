@@ -33,7 +33,7 @@ design (§7, "Detalhe da task"); esta página descreve o que o código faz hoje.
 ```
 
 A página tem `h-full` e rola na vertical (`PageContainer` com as margens do shell). De `md` para
-cima, a linha da área de trabalho ocupa o resto da altura (mínimo 480px): o editor e o inspetor
+cima, a linha da área de trabalho ocupa o resto da altura (mínimo 520px): o editor e o inspetor
 rolam dentro dos seus cartões. Abaixo de `md`, a área de trabalho tem altura mínima de 360px (480px
 na aba Desenho) e cresce com o conteúdo.
 
@@ -54,7 +54,7 @@ na aba Desenho) e cresce com o conteúdo.
   na sessão desta task; fica primário quando o painel mostra esta task; ver
   [16-terminal.md](16-terminal.md)), **Campos do Jira** (só task do Jira, abre o `JiraFieldsSheet`),
   **Painel** (de `md` para cima) e o menu **⋯**: Copiar `#id`, Zerar tempo… (confirmação), Arquivar
-  (volta para a lista) ou Desarquivar, Excluir tarefa… (confirmação que cita notas, desenho, Notion e
+  (fica na tela; o menu passa a oferecer Desarquivar) ou Desarquivar, Excluir tarefa… (confirmação que cita notas, desenho, Notion e
   Google).
 
 O cronômetro gigante da antiga coluna central, a faixa de acento colorida pela categoria e os botões
@@ -81,7 +81,8 @@ sair (`Shrink`). As notas ficam numa coluna de leitura de 68 caracteres em 17px;
 largura toda. **Esc** sai, menos com um popup de sugestão aberto (`[data-suggestion-popup]`), para
 não fechar o modo quando o usuário só queria fechar o menu de barra ou de menção.
 
-O editor não é remontado ao entrar ou sair do foco: a camada é o próprio cartão da área de trabalho
+Ao abrir, o foco do teclado vai para a camada e o Tab fica preso nela; ao sair, volta para o botão
+Modo foco. O editor não é remontado ao entrar ou sair do foco: a camada é o próprio cartão da área de trabalho
 trocando de estilo, com o editor na mesma posição da árvore. O foco substituiu os modos
 **maximizado** e **zen** de antes, e a largura arrastável do painel de notas saiu junto.
 
@@ -96,9 +97,10 @@ um número em mono à direita.
 
 - Barra do limite, só com limite: `colorSuccess` até 80%, `colorWarning` até 100%, `colorError`
   depois; porcentagem em mono.
-- **Total** (o cronômetro ao vivo) e **Sessões** (quantidade), em `Statistic` com valor mono.
-- **Sessões:** a em andamento no topo, com ponto ao vivo e "– agora"; as encerradas com início e
-  `+HH:MM:SS`. Só leitura (editar e excluir chegam na F3-f).
+- **Total** (o cronômetro ao vivo, em formato curto: `2h32`, `45 min`) e **Sessões** (quantidade),
+  em `Statistic` com valor mono. O rótulo do limite usa o mesmo formato curto.
+- **Sessões:** a em andamento no topo, com ponto ao vivo e "– agora"; as encerradas com dia,
+  início e fim e `+HH:MM:SS`. Só leitura (editar e excluir chegam na F3-f).
 - **Ajustes de tempo:** Adicionar, Total e Limite, cada um com campo mono `HH:MM:SS` e botão (Enter
   também confirma; valor fora do formato avisa e não grava). **Remover limite** grava 0.
 
@@ -130,8 +132,8 @@ task tem `jira_key`. Quatro peças, num wrapper que para a propagação do cliqu
 - chip azul **Jira · {status}**: um `Select` que, ao abrir, busca as transições da issue
   (`jira:listTransitions`) e aplica a escolhida (`jira:transition`). É independente do `StatusChip`
   local — mudar um não muda o outro.
-- botão `SlidersHorizontal` (só no card e na tabela; o detalhe usa o botão azul "Campos do Jira",
-  ver `02-detalhe-da-tarefa.md`) que abre o `JiraFieldsSheet`: painel lateral direito com os campos
+- botão `SlidersHorizontal` (desligado aqui: o detalhe usa o botão Campos do Jira do cabeçalho, e a lista abre
+  pelo submenu Jira) que abre o `JiraFieldsSheet`: painel lateral direito com os campos
   editáveis da issue (vindos do `editmeta`), um editor por tipo (texto, número, data, seleção,
   múltipla escolha, rótulos, pessoa com "Atribuir a mim", sprint). Múltipla escolha (ex.: Cliente,
   Equipe) é um `SearchableSelect` "Adicionar opção…" com as escolhidas em chips removíveis. Cada campo grava ao sair do

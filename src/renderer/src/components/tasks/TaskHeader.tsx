@@ -237,7 +237,8 @@ export function TaskHeader({
                 fontFamily: token.fontFamilyCode,
                 fontVariantNumeric: 'tabular-nums',
                 fontSize: compact ? 24 : 30,
-                fontWeight: 600,
+                fontWeight: 500,
+                letterSpacing: '-.02em',
                 lineHeight: 1,
                 color: timeColor
               }}

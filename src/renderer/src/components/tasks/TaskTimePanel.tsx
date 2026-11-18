@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import {
   App,
   Button,
@@ -16,8 +16,13 @@ import {
 import { History, PencilLine } from 'lucide-react'
 import type { Task, TimeEntry } from '@shared/types'
 import { LiveDot } from '@renderer/components/chips/LiveDot'
-import { Section } from '@renderer/components/shell/SectionHeader'
+import { Field, Section } from '@renderer/components/shell/SectionHeader'
 import { formatDateTime, formatTime, parseTimeInput } from '@renderer/lib/utils'
+import { formatShortDuration } from './taskTableFormat'
+
+function clockTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+}
 
 interface TaskTimePanelProps {
   task: Task
@@ -31,22 +36,6 @@ interface TaskTimePanelProps {
 function parseDuration(value: string): number | null {
   if (!/^\d{1,3}(:\d{1,2}){0,2}$/.test(value.trim())) return null
   return parseTimeInput(value.trim())
-}
-
-function Field({ label, children }: { label: string; children: ReactNode }): React.JSX.Element {
-  return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '92px minmax(0, 1fr)',
-        gap: 8,
-        alignItems: 'center'
-      }}
-    >
-      <Typography.Text type="secondary">{label}</Typography.Text>
-      <div style={{ minWidth: 0 }}>{children}</div>
-    </div>
-  )
 }
 
 export function TaskTimePanel({
@@ -115,7 +104,7 @@ export function TaskTimePanel({
         <div>
           <Flex justify="space-between">
             <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-              Limite {formatTime(limit)}
+              Limite {formatShortDuration(limit)}
             </Typography.Text>
             <span style={{ ...mono, fontSize: 12, color: limitColor }}>{pct}%</span>
           </Flex>
@@ -125,7 +114,7 @@ export function TaskTimePanel({
 
       <Row gutter={12}>
         <Col span={12}>
-          <Statistic title="Total" value={formatTime(displaySeconds)} valueStyle={mono} />
+          <Statistic title="Total" value={formatShortDuration(displaySeconds)} valueStyle={mono} />
         </Col>
         <Col span={12}>
           <Statistic title="Sessões" value={timeEntries.length} valueStyle={mono} />
@@ -142,8 +131,8 @@ export function TaskTimePanel({
               <Flex align="center" gap={8} style={{ width: '100%' }}>
                 {entry.end_time === null && <LiveDot label="Sessão em andamento" />}
                 <span style={mono}>
-                  {formatDateTime(entry.start_time)}
-                  {entry.end_time === null ? ' – agora' : ''}
+                  {formatDateTime(entry.start_time)} –{' '}
+                  {entry.end_time === null ? 'agora' : clockTime(entry.end_time)}
                 </span>
                 <span style={{ flex: 1 }} />
                 <span style={mono}>

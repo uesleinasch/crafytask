@@ -1,7 +1,8 @@
 import { Suspense, lazy, type CSSProperties, type ReactNode, type Ref } from 'react'
 import type { JSONContent } from '@tiptap/core'
 import type { NotesOwner } from '@shared/types'
-import { Focus, Loader2, Maximize2 } from 'lucide-react'
+import { Flex, Spin } from 'antd'
+import { Focus, Maximize2 } from 'lucide-react'
 import { cn } from '@renderer/lib/utils'
 import { TaskNotesEditor, type TaskNotesEditorHandle } from './TaskNotesEditor'
 import type { TaskDrawingEditorHandle } from './TaskDrawingEditor'
@@ -178,9 +179,9 @@ export function NotesBody({
     <div className="flex-1 min-h-0">
       <Suspense
         fallback={
-          <div className="h-full flex items-center justify-center text-slate-400">
-            <Loader2 size={18} className="animate-spin" />
-          </div>
+          <Flex align="center" justify="center" style={{ height: '100%' }}>
+            <Spin />
+          </Flex>
         }
       >
         <TaskDrawingEditor

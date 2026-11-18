@@ -167,9 +167,9 @@ export function SingleTaskPage(): React.JSX.Element {
     () =>
       run(async () => {
         await archiveTask()
-        navigate('/')
+        await refreshTask()
       }, 'Tarefa arquivada'),
-    [run, archiveTask, navigate]
+    [run, archiveTask, refreshTask]
   )
 
   const handleUnarchive = useCallback(
@@ -414,7 +414,7 @@ export function SingleTaskPage(): React.JSX.Element {
         style={{ minHeight: '100%', display: 'flex', flexDirection: 'column', gap: 16 }}
       >
         {header}
-        <Flex gap={16} style={{ flex: 1, minHeight: 480 }}>
+        <Flex gap={16} style={{ flex: 1, minHeight: 520 }}>
           <div style={{ flex: '1 1 0', minWidth: 0 }}>{workspace}</div>
           {placement === 'side' && inspectorOpen && (
             <Card
