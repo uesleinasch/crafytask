@@ -186,6 +186,9 @@ const api = {
   // Time Entries
   getTimeEntries: (taskId: number): Promise<TimeEntry[]> =>
     ipcRenderer.invoke('task:getTimeEntries', taskId),
+  updateTimeEntry: (id: number, startIso: string, endIso: string): Promise<void> =>
+    ipcRenderer.invoke('timeEntry:update', id, startIso, endIso),
+  deleteTimeEntry: (id: number): Promise<void> => ipcRenderer.invoke('timeEntry:delete', id),
   getActiveTimeEntry: (taskId: number): Promise<TimeEntry | undefined> =>
     ipcRenderer.invoke('task:getActiveTimeEntry', taskId),
 

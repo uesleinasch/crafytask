@@ -186,6 +186,8 @@ interface API {
   setTotalTime: (id: number, seconds: number) => Promise<void>
   updateStatus: (id: number, status: TaskStatus) => Promise<void>
   getTimeEntries: (taskId: number) => Promise<TimeEntry[]>
+  updateTimeEntry: (id: number, startIso: string, endIso: string) => Promise<void>
+  deleteTimeEntry: (id: number) => Promise<void>
   getActiveTimeEntry: (taskId: number) => Promise<TimeEntry | undefined>
   showNotification: (title: string, body: string) => void
 

@@ -6,22 +6,33 @@ import {
   Flex,
   Input,
   List,
+  Popconfirm,
   Progress,
   Row,
   Space,
   Statistic,
+  Tooltip,
   Typography,
   theme
 } from 'antd'
-import { History, PencilLine } from 'lucide-react'
+import { History, Pencil, PencilLine, Trash2 } from 'lucide-react'
 import type { Task, TimeEntry } from '@shared/types'
 import { LiveDot } from '@renderer/components/chips/LiveDot'
 import { Field, Section } from '@renderer/components/shell/SectionHeader'
-import { formatDateTime, formatTime, parseTimeInput } from '@renderer/lib/utils'
+import { formatDate, formatDateTime, formatTime, parseTimeInput } from '@renderer/lib/utils'
 import { formatShortDuration } from './taskTableFormat'
+import { sessionClock, sessionRange } from './sessionEdit'
+import { errorMessage } from '@renderer/components/settings/settingsStatus'
+
+const ICON = { size: 14, strokeWidth: 1.75, 'aria-hidden': true } as const
 
 function clockTime(iso: string): string {
   return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+}
+
+function endLabel(startIso: string, endIso: string): string {
+  const sameDay = new Date(startIso).toDateString() === new Date(endIso).toDateString()
+  return sameDay ? clockTime(endIso) : formatDateTime(endIso)
 }
 
 interface TaskTimePanelProps {
@@ -31,6 +42,8 @@ interface TaskTimePanelProps {
   onAddTime: (seconds: number) => Promise<void>
   onSetTotal: (seconds: number) => Promise<void>
   onSetLimit: (seconds: number) => Promise<void>
+  onUpdateEntry: (id: number, startIso: string, endIso: string) => Promise<void>
+  onDeleteEntry: (id: number) => Promise<void>
 }
 
 function parseDuration(value: string): number | null {
@@ -44,7 +57,9 @@ export function TaskTimePanel({
   timeEntries,
   onAddTime,
   onSetTotal,
-  onSetLimit
+  onSetLimit,
+  onUpdateEntry,
+  onDeleteEntry
 }: TaskTimePanelProps): React.JSX.Element {
   const { token } = theme.useToken()
   const { message } = App.useApp()
@@ -52,6 +67,8 @@ export function TaskTimePanel({
   const [addValue, setAddValue] = useState('')
   const [totalValue, setTotalValue] = useState('')
   const [limitValue, setLimitValue] = useState(limit ? formatTime(limit) : '')
+  const [editing, setEditing] = useState<number | null>(null)
+  const [draft, setDraft] = useState({ start: '', end: '' })
 
   useEffect(() => setLimitValue(limit ? formatTime(limit) : ''), [limit])
 
@@ -65,6 +82,34 @@ export function TaskTimePanel({
   const sessions = [...timeEntries].sort((a, b) =>
     a.end_time === null ? -1 : b.end_time === null ? 1 : b.start_time.localeCompare(a.start_time)
   )
+
+  const cancelOnEscape = (event: React.KeyboardEvent): void => {
+    if (event.key === 'Escape') setEditing(null)
+  }
+
+  const saveSession = async (entry: TimeEntry): Promise<void> => {
+    const range = sessionRange(entry.start_time, draft.start, draft.end)
+    if (!range.ok) {
+      message.error(range.error)
+      return
+    }
+    try {
+      await onUpdateEntry(entry.id, range.startIso, range.endIso)
+      setEditing(null)
+      message.success('Sessão atualizada')
+    } catch (error) {
+      message.error(errorMessage(error))
+    }
+  }
+
+  const deleteSession = async (id: number): Promise<void> => {
+    try {
+      await onDeleteEntry(id)
+      message.success('Sessão excluída')
+    } catch (error) {
+      message.error(errorMessage(error))
+    }
+  }
 
   const add = async (): Promise<void> => {
     const seconds = parseDuration(addValue)
@@ -126,26 +171,98 @@ export function TaskTimePanel({
           size="small"
           dataSource={sessions}
           locale={{ emptyText: 'Nenhuma sessão registrada' }}
-          renderItem={(entry) => (
-            <List.Item key={entry.id}>
-              <Flex align="center" gap={8} style={{ width: '100%' }}>
-                {entry.end_time === null && <LiveDot label="Sessão em andamento" />}
-                <span style={mono}>
-                  {formatDateTime(entry.start_time)} –{' '}
-                  {entry.end_time === null ? 'agora' : clockTime(entry.end_time)}
-                </span>
-                <span style={{ flex: 1 }} />
-                <span style={mono}>
-                  +
-                  {formatTime(
-                    entry.end_time === null
-                      ? Math.max(0, displaySeconds - closedTotal)
-                      : (entry.duration_seconds ?? 0)
-                  )}
-                </span>
-              </Flex>
-            </List.Item>
-          )}
+          renderItem={(entry) =>
+            entry.end_time === null ? (
+              <List.Item key={entry.id}>
+                <Flex align="center" gap={8} style={{ width: '100%' }}>
+                  <LiveDot label="Sessão em andamento" />
+                  <span style={mono}>{formatDateTime(entry.start_time)} – agora</span>
+                  <span style={{ flex: 1 }} />
+                  <span style={mono}>+{formatTime(Math.max(0, displaySeconds - closedTotal))}</span>
+                </Flex>
+              </List.Item>
+            ) : editing === entry.id ? (
+              <List.Item key={entry.id}>
+                <Flex align="center" gap={6} wrap="wrap" style={{ width: '100%' }}>
+                  <span style={mono}>{formatDate(entry.start_time)}</span>
+                  <Input
+                    size="small"
+                    autoFocus
+                    aria-label="Início"
+                    value={draft.start}
+                    onChange={(event) => setDraft({ ...draft, start: event.target.value })}
+                    onPressEnter={() => void saveSession(entry)}
+                    onKeyDown={cancelOnEscape}
+                    style={{ ...mono, width: 68 }}
+                  />
+                  <span>–</span>
+                  <Input
+                    size="small"
+                    aria-label="Fim"
+                    value={draft.end}
+                    onChange={(event) => setDraft({ ...draft, end: event.target.value })}
+                    onPressEnter={() => void saveSession(entry)}
+                    onKeyDown={cancelOnEscape}
+                    style={{ ...mono, width: 68 }}
+                  />
+                  <span style={{ flex: 1 }} />
+                  <Button size="small" type="primary" onClick={() => void saveSession(entry)}>
+                    Salvar
+                  </Button>
+                  <Button size="small" onClick={() => setEditing(null)}>
+                    Cancelar
+                  </Button>
+                </Flex>
+              </List.Item>
+            ) : (
+              <List.Item
+                key={entry.id}
+                actions={[
+                  <Tooltip key="edit" title="Editar início e fim">
+                    <Button
+                      size="small"
+                      type="text"
+                      aria-label="Editar sessão"
+                      icon={<Pencil {...ICON} />}
+                      onClick={() => {
+                        setEditing(entry.id)
+                        setDraft({
+                          start: sessionClock(entry.start_time),
+                          end: sessionClock(entry.end_time as string)
+                        })
+                      }}
+                    />
+                  </Tooltip>,
+                  <Popconfirm
+                    key="delete"
+                    title="Excluir esta sessão?"
+                    description="O tempo dela sai do total. Se ela já foi enviada ao Jira e o worklog está ligado, o worklog também é apagado."
+                    okText="Excluir"
+                    okButtonProps={{ danger: true }}
+                    cancelText="Cancelar"
+                    onConfirm={() => deleteSession(entry.id)}
+                  >
+                    <Button
+                      size="small"
+                      type="text"
+                      danger
+                      aria-label="Excluir sessão"
+                      icon={<Trash2 {...ICON} />}
+                    />
+                  </Popconfirm>
+                ]}
+              >
+                <Flex align="center" gap={8} style={{ width: '100%' }}>
+                  <span style={mono}>
+                    {formatDateTime(entry.start_time)} –{' '}
+                    {endLabel(entry.start_time, entry.end_time as string)}
+                  </span>
+                  <span style={{ flex: 1 }} />
+                  <span style={mono}>+{formatTime(entry.duration_seconds ?? 0)}</span>
+                </Flex>
+              </List.Item>
+            )
+          }
         />
       </Section>
 
@@ -191,9 +308,14 @@ export function TaskTimePanel({
             </Space.Compact>
           </Field>
           {limit > 0 && (
-            <Typography.Link style={{ alignSelf: 'flex-end' }} onClick={() => void onSetLimit(0)}>
+            <Button
+              type="link"
+              size="small"
+              style={{ alignSelf: 'flex-end', padding: 0, height: 'auto' }}
+              onClick={() => void onSetLimit(0)}
+            >
               Remover limite
-            </Typography.Link>
+            </Button>
           )}
         </Flex>
       </Section>

@@ -5,8 +5,8 @@ uma **sessão** registrada.
 
 ## Iniciar e parar
 
-- **No detalhe da tarefa** — o cronômetro grande no centro da tela, com **Iniciar** / **Pausar** e
-  **Resetar**.
+- **No detalhe da tarefa** — o bloco do timer no cabeçalho, com **Iniciar** / **Pausar** e
+  **Finalizar**; **Zerar tempo** fica no menu `⋯`.
 - **Na lista** — pelo **botão direito → Iniciar timer** (ou **Parar timer**) em qualquer linha ou
   card.
 - **Pelo terminal da tarefa** — com a opção ligada, o primeiro comando no
@@ -33,7 +33,13 @@ Ainda no detalhe da tarefa:
 | **Ajustar total** | substitui o total pelo valor informado |
 | **Limite de tempo** | define ou limpa o limite |
 
-**Resetar** apaga todo o tempo registrado da tarefa (pede confirmação). Se o
+Na lista de **Sessões** (aba Tempo do inspetor), cada sessão encerrada pode ter o início e o fim
+editados (lápis; horas `HH:MM` no dia do início — fim menor que o início cai no dia seguinte) ou
+ser excluída (lixeira, com confirmação). O total da tarefa muda pela diferença. A sessão em andamento
+só muda depois de pausar o timer. Tempo adicionado à mão vira uma sessão com início igual ao fim;
+para editá-la, informe os dois horários.
+
+**Zerar tempo** (menu `⋯` do detalhe) apaga todo o tempo registrado da tarefa (pede confirmação). Se o
 [worklog do Jira](../integracoes/jira.md#worklog) estiver ligado, os registros que o app criou no
 Jira também são apagados.
 
@@ -54,6 +60,6 @@ vermelho e o sistema avisa a cada 5 minutos.
 
 - **Dashboard** — tempo por tarefa e por projeto, métricas do GTD e **Exportar PDF** com o
   relatório semanal.
-- **Histórico de sessões** — no detalhe da tarefa.
+- **Sessões** — na aba Tempo do detalhe da tarefa, com edição e exclusão.
 - **MCP** — a ferramenta `time_report` devolve tempo geral, semanal, por tarefa ou os registros de
   uma tarefa.
