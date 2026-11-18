@@ -243,7 +243,7 @@ mesma proteção.
 
 ### F3. Persistência de preferência com duas convenções de nome
 
-Cinco chaves usam `:` (`ticktask:taskListViewMode`) e duas usam `.` (`ticktask.notesWidth`).
+As chaves novas usam `:` (`ticktask:taskListViewMode`); uma ainda usa `.` (`ticktask.notesZenWidth`, dos cadernos). A `ticktask.notesWidth` deixou de ser usada na F3-a.
 
 ### F4. Agrupar por contexto duplica tarefas
 
@@ -274,8 +274,7 @@ Para não perder na refatoração:
 - **Botão "Hoje" em toda listagem** — agendar sem navegar, com alternância imediata.
 - **Expansão de subtarefas inline**, em card e em tabela, com carregamento sob demanda.
 - **Escala visual do Time Leak** — a única semântica que colore o fundo inteiro, e funciona.
-- **Painel de notas redimensionável com três modos** (normal, maximizado, zen) e `Esc` para sair.
-- **Modo foco com timer embutido** (`NotesFocusBar`) — escrever sem perder o cronômetro de vista.
+- **Modo foco com timer embutido** (`FocusOverlay`, que juntou o maximizado e o zen) — escrever sem perder o cronômetro de vista, e `Esc` para sair.
 - **Confirmação de exclusão de tag** — cita quantas tarefas serão afetadas e o que *não* acontece.
 - **Preview ao vivo no diálogo de contexto.**
 - **Aviso "Sem próxima ação definida"** nos cartões de projeto — o único alerta GTD inline.
