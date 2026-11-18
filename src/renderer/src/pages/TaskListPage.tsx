@@ -28,6 +28,7 @@ import { onNewTaskRequest } from '@renderer/lib/newTaskRequest'
 import { cn } from '@renderer/lib/utils'
 import { StatusTabLabel } from '@renderer/components/tasks/StatusTabLabel'
 import { PageContainer } from '@renderer/components/shell/PageContainer'
+import { RegionBoundary } from '@renderer/components/shell/RegionBoundary'
 import { TaskFilters } from '@renderer/components/tasks/TaskFilters'
 import {
   EMPTY_TASK_FILTERS,
@@ -44,6 +45,7 @@ import {
   type ListView
 } from '@renderer/lib/taskListView'
 import { TASK_STATUSES, type TaskStatusCounts } from '@shared/taskStatusCounts'
+import { localDateString } from '@shared/dueState'
 import {
   STATUS_LABELS,
   type TaskStatus,
@@ -130,6 +132,7 @@ export function TaskListPage(): React.JSX.Element {
       : listGroup
   const viewMode: 'cards' | 'table' = view === 'cards' ? 'cards' : 'table'
   const [selectedTaskIds, setSelectedTaskIds] = useState<number[]>([])
+  const [loadedSubtaskIds, setLoadedSubtaskIds] = useState<number[]>([])
   const [bulkStatusValue, setBulkStatusValue] = useState<TaskStatus | 'none'>('none')
   const [bulkProjectValue, setBulkProjectValue] = useState<string>('none')
   const [bulkAction, setBulkAction] = useState<BulkAction | null>(null)
@@ -231,15 +234,15 @@ export function TaskListPage(): React.JSX.Element {
 
   useEffect(() => {
     setSelectedTaskIds((current) => {
-      const allowedIds = new Set(filteredTaskIds)
+      const allowedIds = new Set([...filteredTaskIds, ...loadedSubtaskIds])
       const next = current.filter((id) => allowedIds.has(id))
       return next.length === current.length ? current : next
     })
-  }, [filteredTaskIds])
+  }, [filteredTaskIds, loadedSubtaskIds])
 
   const handleScheduleForToday = useCallback(
     async (taskId: number): Promise<void> => {
-      const today = new Date().toISOString().split('T')[0]
+      const today = localDateString(new Date())
       const task = tasks.find((t) => t.id === taskId)
       const isAlreadyToday = task?.scheduled_date === today
       try {
@@ -665,20 +668,23 @@ export function TaskListPage(): React.JSX.Element {
                 onScheduleForToday={handleScheduleForToday}
               />
             ) : (
-              <TaskTable
-                key={groupingEnabled ? activeGroupBy : 'none'}
-                tasks={renderedTasks}
-                groups={groupingEnabled ? taskGroups : null}
-                groupBy={groupingEnabled ? activeGroupBy : null}
-                status={statusFilter}
-                contexts={availableContexts}
-                onTaskClick={handleTaskClick}
-                selectedTaskIds={selectedTaskIdSet}
-                onToggleTaskSelection={toggleTaskSelection}
-                onToggleSelectAll={toggleSelectAllVisible}
-                onToggleGroupSelection={toggleGroupSelection}
-                onScheduleForToday={handleScheduleForToday}
-              />
+              <RegionBoundary region="tabela de tarefas">
+                <TaskTable
+                  key={groupingEnabled ? activeGroupBy : 'none'}
+                  tasks={renderedTasks}
+                  groups={groupingEnabled ? taskGroups : null}
+                  groupBy={groupingEnabled ? activeGroupBy : null}
+                  status={statusFilter}
+                  contexts={availableContexts}
+                  onTaskClick={handleTaskClick}
+                  selectedTaskIds={selectedTaskIdSet}
+                  onToggleTaskSelection={toggleTaskSelection}
+                  onToggleSelectAll={toggleSelectAllVisible}
+                  onToggleGroupSelection={toggleGroupSelection}
+                  onScheduleForToday={handleScheduleForToday}
+                  onSubtaskIdsChange={setLoadedSubtaskIds}
+                />
+              </RegionBoundary>
             )}
 
             {hasMore && !showGroups && (

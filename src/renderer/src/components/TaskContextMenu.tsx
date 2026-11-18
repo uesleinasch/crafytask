@@ -1,11 +1,12 @@
 import { useContext, useState } from 'react'
 import { Dropdown, type MenuProps } from 'antd'
-import { Archive, CalendarDays, CheckCheck, ExternalLink, Play, Square, Trash2 } from 'lucide-react'
+import { Archive, CalendarDays, CheckCheck, ExternalLink, Pause, Play, Trash2 } from 'lucide-react'
 import { TaskMenuChangedContext } from '@renderer/components/taskMenuContext'
 import { DeleteConfirmDialog } from '@renderer/components/DeleteConfirmDialog'
 import { toast } from '@renderer/components/ui/sonner'
 import { useTimerStore } from '@renderer/stores/timerStore'
 import { STATUS_LABELS, type Task, type TaskStatus } from '@shared/types'
+import { localDateString } from '@shared/dueState'
 
 const STATUSES = Object.keys(STATUS_LABELS) as TaskStatus[]
 const ICON = { size: 14, strokeWidth: 1.75, 'aria-hidden': true } as const
@@ -29,7 +30,7 @@ export function TaskContextMenu({
   const startTimer = useTimerStore((s) => s.startTimer)
   const stopTimer = useTimerStore((s) => s.stopTimer)
   const [deleteOpen, setDeleteOpen] = useState(false)
-  const isScheduledToday = task.scheduled_date === new Date().toISOString().split('T')[0]
+  const isScheduledToday = task.scheduled_date === localDateString(new Date())
 
   const run = async (action: () => Promise<unknown>, success: string): Promise<void> => {
     try {
@@ -45,7 +46,7 @@ export function TaskContextMenu({
   const items: MenuProps['items'] = [
     { key: 'open', icon: <ExternalLink {...ICON} />, label: 'Abrir' },
     task.is_running
-      ? { key: 'stop', icon: <Square {...ICON} />, label: 'Parar timer' }
+      ? { key: 'stop', icon: <Pause {...ICON} />, label: 'Pausar timer' }
       : {
           key: 'start',
           icon: <Play {...ICON} />,
@@ -79,7 +80,7 @@ export function TaskContextMenu({
   const onClick: MenuProps['onClick'] = ({ key, domEvent }) => {
     domEvent.stopPropagation()
     if (key === 'open') onOpen()
-    if (key === 'stop') void run(() => stopTimer(task.id), 'Timer parado')
+    if (key === 'stop') void run(() => stopTimer(task.id), 'Timer pausado')
     if (key === 'start') void run(() => startTimer(task.id), 'Timer iniciado')
     if (key === 'today') onScheduleForToday?.(task.id)
     if (key.startsWith('status:')) {
