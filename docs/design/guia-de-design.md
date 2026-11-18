@@ -388,7 +388,8 @@ mais um badge (pesquisa: poucos elementos por linha; Hick e carga cognitiva).
   progresso, contador ou texto secundário embaixo do nome; o que for extra vira ícone com tooltip na
   mesma linha.
 - **Célula Tarefa:** caret de subtarefas (quando houver), cadeado de bloqueio, ponto de executando,
-  o nome e, à direita dele, ícone de ampulheta com "Aguardando: …" no tooltip. O caret já diz que
+  o nome (link focável) e, à direita dele, relógio com o horário agendado e ampulheta com
+  "Aguardando: …" no tooltip (a ampulheta depende do campo da F2-h). O caret já diz que
   há subtarefas; a quantidade fica no rótulo acessível e no tooltip, e o progresso aparece nos
   cards, no detalhe da task (aba Relações) e ao expandir.
 - **Contextos:** o primeiro como tag e `+N` ao lado. Passar o mouse abre um popover com todos, já

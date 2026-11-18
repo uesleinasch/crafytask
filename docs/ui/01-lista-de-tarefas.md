@@ -156,7 +156,10 @@ copiar `#id` e a ação sobre a seleção entram na F2-f.
 
 ### Modo tabela (`components/tasks/TaskTable.tsx`) — padrão
 
-`Table` do antd (`tableLayout="fixed"`, sem paginação, `size` `small` e `middle` a partir de `xxl`).
+`Table` do antd (`tableLayout="fixed"`, sem paginação, `size` `small` e `middle` a partir de `xxl`,
+com o respiro de linha da densidade em `buildTheme`: 10/6px, 12/8px no `middle`). Largura mínima =
+soma das colunas + 240px para Tarefa; abaixo disso a tabela rola na horizontal. Fica dentro de um
+`RegionBoundary` próprio.
 Toda linha tem uma linha de texto só: nada de descrição, barra ou contador embaixo do nome.
 
 | Coluna | Largura | Quando aparece | Conteúdo |
@@ -176,24 +179,31 @@ Toda linha tem uma linha de texto só: nada de descrição, barra ou contador em
 A célula **Tarefa**, da esquerda para a direita: botão de expandir subtarefas (`ChevronRight`/
 `ChevronDown`; a quantidade fica no rótulo acessível e no tooltip, e o espaço é mantido quando não
 há subtarefas), `Lock` se bloqueada, ponto pulsante (`LiveDot`) se rodando, o nome (500, reticências,
-riscado se finalizada), `Clock` com tooltip quando há horário agendado, `Copy` com "Também em …" ao
-agrupar por contexto e `JiraTaskControls` em task do Jira (ver abaixo).
+riscado se finalizada; é um link `#/task/<id>`, então recebe foco pelo Tab), `Clock` com o horário
+agendado no tooltip e no rótulo acessível, `Copy` com "Também em …" ao agrupar por contexto e
+`JiraTaskControls` em task do Jira (ver abaixo; a forma do Jira na tabela é a F2-i).
 
-Clicar na linha abre a task; botões, links, checkboxes e o popover de contextos não abrem.
+Clicar na linha abre a task. Botões, links, checkboxes, a célula de contextos e qualquer clique que
+venha de um popup em portal (popover, menu, diálogo) não abrem: o `onClick` da linha confere se o
+alvo está dentro do `<tr>`.
 
 **`ContextsCell`** (`components/tasks/`): o primeiro contexto como `Tag` e `+N` ao lado. Passar o mouse
-abre um `Popover` com todos os contextos em `Tag.CheckableTag`; marcar ou desmarcar grava na hora
-(`setTaskContexts`) e recarrega a lista.
+ou o clique (e Enter/Espaço com foco na célula) abre um `Popover` com todos os contextos em
+`Tag.CheckableTag`; marcar ou desmarcar grava na hora (`setTaskContexts`), com estado otimista local
+para dois cliques seguidos não se sobrescreverem, e recarrega a lista.
 
 **Subtarefas** são linhas filhas da tabela (`children` + `expandedRowKeys`, `indentSize` 28), carregadas
 sob demanda (`window.api.listSubtasks`) e recarregadas quando a lista muda. Cada uma tem checkbox de
 concluir (desabilitado se a tarefa pai está bloqueada), `StatusChip` quando a coluna Status está
-oculta, timer e `⋯`. A seleção não propaga do pai para as filhas (`checkStrictly`) e as filhas não
-são selecionáveis.
+oculta, timer e `⋯`. Vêm de `getSubtasks`, que usa a mesma projeção e o mesmo `enrichTasks` da
+listagem (cadeado, contextos e contadores corretos). As filhas são selecionáveis, mas a seleção não
+propaga do pai para elas (`checkStrictly`); a página conta os ids das subtarefas carregadas ao
+podar a seleção.
 
 **Agrupamento na tabela:** com "Agrupar por" ligado, cada grupo vira uma linha de cabeçalho que ocupa
-a largura toda (`colSpan`), com fundo `colorBgLayout`: botão de recolher, ponto da cor (projeto) ou
-emoji num quadrado com a cor a 14% (contexto), nome, quantidade, **Selecionar grupo** / **Desmarcar
+a largura toda (`colSpan`), com fundo `colorBgLayout` e borda superior (`.ct-table-grouprow` em
+`main.css`, sobre as variáveis CSS do antd): botão de recolher, ponto da cor (projeto) ou
+emoji (contexto), nome, quantidade, **Selecionar grupo** / **Desmarcar
 grupo** e o tempo somado do grupo à direita. Recolher é por sessão e volta ao trocar o agrupamento.
 A ordem dos grupos segue a ordem salva (ver "Modo agrupado"), mas o arrastar só existe nos cards e
 no Kanban.
