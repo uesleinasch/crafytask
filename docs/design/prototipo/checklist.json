@@ -112,6 +112,58 @@
       }
     },
     {
+      "id": "F0.12",
+      "fase": "F0",
+      "titulo": "Ponto ao vivo no token success (sem o verde solto #2FBF7F)",
+      "check": {
+        "tipo": "ausente",
+        "arquivos": "src/renderer/src/**/*.{ts,tsx,css}",
+        "padrao": "#2FBF7F|47,\\s*191,\\s*127",
+        "flags": "i"
+      }
+    },
+    {
+      "id": "F0.13",
+      "fase": "F0",
+      "titulo": "Sombra única boxShadowSecondary nos dois temas",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/theme/**/*.{ts,tsx}",
+        "padroes": ["boxShadowSecondary", "rgba\\(17,16,24,\\.10\\)", "rgba\\(0,0,0,\\.45\\)"]
+      }
+    },
+    {
+      "id": "F0.14",
+      "fase": "F0",
+      "titulo": "Cores do bloco do calendário como token (calBlock)",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/theme/**/*.{ts,tsx}",
+        "padroes": ["calBlock", "#252047", "#3E3770"],
+        "flags": "i"
+      }
+    },
+    {
+      "id": "F0.15",
+      "fase": "F0",
+      "titulo": "Densidade compacta também passa componentSize small",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/theme/**/*.{ts,tsx}",
+        "padrao": "componentSize"
+      }
+    },
+    {
+      "id": "F0.16",
+      "fase": "F0",
+      "titulo": "Anel de foco global: :focus-visible com contorno de 2px",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/assets/*.css",
+        "padrao": ":focus-visible\\s*\\{[^}]*outline:\\s*2px"
+      }
+    },
+    {
       "id": "F0.9",
       "fase": "F0",
       "titulo": "Paleta e tipografia conferidas no app, claro e escuro",
@@ -273,6 +325,52 @@
       }
     },
     {
+      "id": "F1.16",
+      "fase": "F1",
+      "titulo": "Indicadores da sidebar: Inbox, hoje, projetos ativos, revisão atrasada e terminais",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/components/shell/*.{ts,tsx}",
+        "padroes": [
+          "countTasks\\(\\{ status: 'inbox' \\}\\)",
+          "getTasksForDate",
+          "listProjects\\('active'\\)",
+          "isWeeklyReviewOverdue",
+          "sessions\\.length"
+        ]
+      }
+    },
+    {
+      "id": "F1.17",
+      "fase": "F1",
+      "titulo": "PageContainer com largura máxima de 1480px",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/components/shell/PageContainer.tsx",
+        "padroes": ["maxWidth|max-width", "1480"]
+      }
+    },
+    {
+      "id": "F1.18",
+      "fase": "F1",
+      "titulo": "Pílula de timers compacta abaixo de md (sem sumir do header)",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/components/shell/*.tsx",
+        "padrao": "<RunningTimersPill[^>]*compact"
+      }
+    },
+    {
+      "id": "F1.19",
+      "fase": "F1",
+      "titulo": "Paleta de comandos busca projetos",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/components/shell/{CommandPalette.tsx,paletteCommands.ts}",
+        "padrao": "listProjects|/project/"
+      }
+    },
+    {
       "id": "F1.12",
       "fase": "F1",
       "titulo": "Shell conferido de 400px a 1920px e falha simulada isolada",
@@ -431,6 +529,16 @@
       }
     },
     {
+      "id": "F2.16",
+      "fase": "F2",
+      "titulo": "Time leak em três níveis por tempo acumulado (30, 60 e 120 min)",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/theme/**/*.{ts,tsx}",
+        "padroes": ["TIME_LEAK_THRESHOLDS", "timeLeakLevel"]
+      }
+    },
+    {
       "id": "F2.10",
       "fase": "F2",
       "titulo": "Lista conferida: tabela, cards, grupos e Kanban, claro e escuro",
@@ -562,6 +670,16 @@
       }
     },
     {
+      "id": "F3.12",
+      "fase": "F3",
+      "titulo": "SectionHeader: rótulo, linha e número em mono",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/components/**/SectionHeader.tsx",
+        "padrao": "export function SectionHeader"
+      }
+    },
+    {
       "id": "F3.5",
       "fase": "F3",
       "titulo": "Detalhe conferido nas três larguras",
@@ -628,6 +746,36 @@
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/{pages/CalendarPage.tsx,components/calendar/*.tsx}",
         "padroes": ["A agendar", "Repetir no dia seguinte"]
+      }
+    },
+    {
+      "id": "F4.9",
+      "fase": "F4",
+      "titulo": "Carga do dia pela soma dos blocos de tempo (plannedMin)",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/{pages/TodayPage.tsx,components/today/**/*.tsx}",
+        "padrao": "plannedMin"
+      }
+    },
+    {
+      "id": "F4.10",
+      "fase": "F4",
+      "titulo": "Calendário: A agendar em Drawer, visão em Select no estreito e teclado no bloco",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/{pages/CalendarPage.tsx,components/calendar/**/*.tsx}",
+        "padroes": ["'Enter'", "'Delete'", "<Drawer", "<Select"]
+      }
+    },
+    {
+      "id": "F4.11",
+      "fase": "F4",
+      "titulo": "Blocos de time leak do calendário na escala de três níveis",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/{pages/CalendarPage.tsx,components/calendar/**/*.tsx}",
+        "padrao": "timeLeakLevel"
       }
     },
     {
@@ -787,6 +935,46 @@
       }
     },
     {
+      "id": "F5.16",
+      "fase": "F5",
+      "titulo": "HealthCard com os quatro tons (em dia, atenção, erro, neutro)",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/components/health/*.tsx",
+        "padroes": ["executando", "aguardando", "urgente", "inbox"]
+      }
+    },
+    {
+      "id": "F5.17",
+      "fase": "F5",
+      "titulo": "Revisão: Abrir a tela, Ctrl+Enter conclui e passo Semana que passou",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/{pages/WeeklyReviewPage.tsx,components/review/**/*.tsx}",
+        "padroes": ["Abrir a tela", "ctrlKey", "'past'"]
+      }
+    },
+    {
+      "id": "F5.18",
+      "fase": "F5",
+      "titulo": "Revisão: chaves dos 8 passos antigos migradas para as 10 novas",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/main/**/*.ts",
+        "padrao": "migrateReviewSteps"
+      }
+    },
+    {
+      "id": "F5.19",
+      "fase": "F5",
+      "titulo": "Paleta fixa de dez cores (USER_COLORS) no seletor de cor do projeto",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/{pages/Project*.tsx,components/projects/**/*.tsx}",
+        "padrao": "USER_COLORS"
+      }
+    },
+    {
       "id": "F5.13",
       "fase": "F5",
       "titulo": "Revisão: cada passo resolve ali mesmo, resumo ao fechar e conclusão com pulados conferidos",
@@ -882,6 +1070,35 @@
       }
     },
     {
+      "id": "F6.10",
+      "fase": "F6",
+      "titulo": "Tarefa arquivada abre só leitura com a faixa Arquivada · Desarquivar",
+      "check": {
+        "tipo": "arquivo",
+        "caminho": "src/renderer/src/components/tasks/ArchivedTaskBanner.tsx"
+      }
+    },
+    {
+      "id": "F6.11",
+      "fase": "F6",
+      "titulo": "Arquivo pagina de 20 em 20 sem agrupamento",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/{pages/ArchivePage.tsx,components/tasks/**/*.tsx}",
+        "padrao": "pageSize[:=]\\s*\\{?\\s*20\\b"
+      }
+    },
+    {
+      "id": "F6.12",
+      "fase": "F6",
+      "titulo": "Paleta fixa de dez cores (USER_COLORS) nos seletores de contexto e tag",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/{pages/LabelsPage.tsx,components/labels/**/*.tsx}",
+        "padrao": "USER_COLORS"
+      }
+    },
+    {
       "id": "F6.7",
       "fase": "F6",
       "titulo": "Contextos, tags e arquivo conferidos",
@@ -937,6 +1154,57 @@
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/pages/DashboardPage.tsx",
         "padroes": ["Segmented", "RangePicker", "RegionBoundary"]
+      }
+    },
+    {
+      "id": "F7.15",
+      "fase": "F7",
+      "titulo": "Dashboard: Exportar PDF do período, opacidade ao recarregar e média por tarefa",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/components/dashboard/**/*.tsx",
+        "padroes": ["Exportar PDF", "0?\\.55", "média"]
+      }
+    },
+    {
+      "id": "F7.16",
+      "fase": "F7",
+      "titulo": "Terminal escuro nos dois temas com a paleta TERMINAL",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/theme/semantic.ts",
+        "padroes": ["export const TERMINAL", "#15141D"],
+        "flags": "i"
+      }
+    },
+    {
+      "id": "F7.17",
+      "fase": "F7",
+      "titulo": "Configurações: seção salva, conteúdo até 780px e componente Kbd",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/{pages/SettingsPage.tsx,components/settings/*.tsx,components/**/Kbd.tsx}",
+        "padroes": ["usePersistedState", "780", "export function Kbd"]
+      }
+    },
+    {
+      "id": "F7.18",
+      "fase": "F7",
+      "titulo": "Tema no menu de aparência do header e na paleta de comandos",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/components/shell/*.{ts,tsx}",
+        "padroes": ["Seguir o sistema", "Claro", "Escuro"]
+      }
+    },
+    {
+      "id": "F7.19",
+      "fase": "F7",
+      "titulo": "Preferências extras: atalho da captura, backup automático, início da semana e intervalo das notas",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/{main,shared}/**/*{pref,Pref}*.ts",
+        "padroes": ["captureShortcut", "autoBackup", "weekStart", "notesSyncInterval"]
       }
     },
     {

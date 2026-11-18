@@ -17,6 +17,8 @@
   --ct-primary: #5B47EB;
   --ct-primary-soft: #EFEDFF;
   --ct-sider: #FBFAFE;
+  --ct-success: #0B7A50;
+  --ct-shadow-float: 0 8px 24px rgba(17,16,24,.10);
   --ct-font: "Geist", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   --ct-mono: "Geist Mono", "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
   --ct-brand-font: "Denk One", "Geist", system-ui, sans-serif;
@@ -26,6 +28,7 @@
     --ct-bg: #111018; --ct-surface: #1A1923; --ct-elevated: #22202E; --ct-border: #2E2B3C;
     --ct-border-strong: #706C85; --ct-text: #ECEAF6; --ct-text-2: #A9A6BE; --ct-text-3: #8C89A1;
     --ct-brand: #8F82FF; --ct-primary: #8F82FF; --ct-primary-soft: #221E3D; --ct-sider: #15141D;
+    --ct-success: #4CD69A; --ct-shadow-float: 0 8px 24px rgba(0,0,0,.45);
     color-scheme: dark;
   }
 }
@@ -33,6 +36,7 @@
   --ct-bg: #111018; --ct-surface: #1A1923; --ct-elevated: #22202E; --ct-border: #2E2B3C;
   --ct-border-strong: #706C85; --ct-text: #ECEAF6; --ct-text-2: #A9A6BE; --ct-text-3: #8C89A1;
   --ct-brand: #8F82FF; --ct-primary: #8F82FF; --ct-primary-soft: #221E3D; --ct-sider: #15141D;
+    --ct-success: #4CD69A; --ct-shadow-float: 0 8px 24px rgba(0,0,0,.45);
   color-scheme: dark;
 }
 html, body { height: 100%; }
@@ -56,8 +60,8 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
 .ct-statusbar { height: 28px; display: flex; align-items: center; gap: 16px; padding: 0 12px; font-size: 12px; color: var(--ct-text-2); border-top: 1px solid var(--ct-border); background: var(--ct-surface); overflow: hidden; white-space: nowrap; }
 .ct-statusbar .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 6px; }
 .ct-timer-pill { display: inline-flex; align-items: center; gap: 8px; padding: 0 6px 0 10px; height: 32px; border-radius: 999px; border: 1px solid var(--ct-border); background: var(--ct-surface); white-space: nowrap; }
-.ct-live { width: 8px; height: 8px; border-radius: 50%; background: #2FBF7F; box-shadow: 0 0 0 0 rgba(47,191,127,.6); animation: ct-pulse 1.8s ease-out infinite; }
-@keyframes ct-pulse { 0% { box-shadow: 0 0 0 0 rgba(47,191,127,.55); } 70% { box-shadow: 0 0 0 7px rgba(47,191,127,0); } 100% { box-shadow: 0 0 0 0 rgba(47,191,127,0); } }
+.ct-live { width: 8px; height: 8px; border-radius: 50%; background: var(--ct-success); box-shadow: 0 0 0 0 color-mix(in srgb, var(--ct-success) 60%, transparent); animation: ct-pulse 1.8s ease-out infinite; }
+@keyframes ct-pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ct-success) 55%, transparent); } 70% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--ct-success) 0%, transparent); } 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ct-success) 0%, transparent); } }
 @media (prefers-reduced-motion: reduce) { .ct-live { animation: none; } }
 .ct-chip { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border-radius: 6px; font-size: 12px; font-weight: 500; white-space: nowrap; }
 .ct-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
@@ -78,7 +82,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
 .ct-note h3 { font-size: 17px; margin: 0 0 8px; }
 .ct-note code { font-family: var(--ct-mono); font-size: 13px; background: var(--ct-primary-soft); padding: 1px 5px; border-radius: 4px; }
 .ct-bulkbar { position: sticky; bottom: 12px; z-index: 5; margin-top: 12px; }
-.ct-bulkbar-inner { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 12px; background: var(--ct-elevated); border: 1px solid var(--ct-border-strong); box-shadow: 0 8px 24px rgba(17,16,24,.12); }
+.ct-bulkbar-inner { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 12px; background: var(--ct-elevated); border: 1px solid var(--ct-border-strong); box-shadow: var(--ct-shadow-float); }
 :focus-visible { outline: 2px solid var(--ct-primary); outline-offset: 2px; }
 .ct-taskhead { background: var(--ct-surface); border: 1px solid var(--ct-border); border-radius: 12px; padding: 12px 16px 14px; }
 .ct-taskhead-main { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px 24px; margin-top: 8px; }
@@ -209,7 +213,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
 .ct-calblock.leak { background: var(--ct-leak-1); border-color: var(--ct-border-strong); }
 .ct-calblock.done { opacity: .6; }
 .ct-calblock.done .ct-calblock-title span:last-child { text-decoration: line-through; }
-.ct-calblock.dragging { cursor: grabbing; box-shadow: 0 8px 24px rgba(17,16,24,.18); border-color: var(--ct-primary); opacity: .92; }
+.ct-calblock.dragging { cursor: grabbing; box-shadow: var(--ct-shadow-float); border-color: var(--ct-primary); opacity: .92; }
 .ct-calblock-title { display: flex; align-items: center; gap: 4px; font-weight: 500; min-width: 0; }
 .ct-calblock-title .anticon { font-size: 11px; flex: none; }
 .ct-calblock-time { font-size: 11px; color: var(--ct-text-2); margin-top: 1px; }
@@ -381,7 +385,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     { id: 731, name: 'Corrigir rolagem do terminal ao redimensionar', status: 'proximas', category: 'prioridade', project: 13, contexts: ['@dev'], due: '2026-11-18', secs: 1860, energy: 'medio', today: true },
     { id: 698, name: 'Revisar PR de sync de worklog do Jira', status: 'aguardando', category: 'normal', project: 13, contexts: ['@dev', '@github'], due: null, secs: 600, energy: 'baixo', waiting: 'Revisor externo' },
     { id: 702, name: 'Planejar sprint 48 com o time', status: 'proximas', category: 'urgente', project: 4, contexts: ['@reunião', '@dev', '@telefone'], due: '2026-11-17', dueTime: '14:00', secs: 0, energy: 'alto', today: true },
-    { id: 705, name: 'Reunião diária', status: 'executando', category: 'time_leak', project: 4, contexts: ['@reunião'], due: null, secs: 4380, energy: 'baixo', running: true, leak: 3 },
+    { id: 705, name: 'Reunião diária', status: 'executando', category: 'time_leak', project: 4, contexts: ['@reunião'], due: null, secs: 4380, energy: 'baixo', running: true, leak: 2 },
     { id: 706, name: 'Responder e-mails do fornecedor', status: 'inbox', category: 'normal', project: null, contexts: [], due: null, secs: 0, energy: 'baixo' },
     { id: 707, name: 'Ideia: modo apresentação para a revisão semanal', status: 'inbox', category: 'normal', project: 13, contexts: [], due: null, secs: 0, energy: 'medio' },
     { id: 708, name: 'Traduzir capítulo 3 do playbook', status: 'aguardando', waiting: 'Revisão do coautor', category: 'normal', project: 7, contexts: ['@escrita'], due: '2026-11-24', secs: 5400, energy: 'alto', blocked: true },
@@ -653,7 +657,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
                   suffix=${html`<${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12 }}>Enter<//>`}
                   onPressEnter=${() => { if (capture.trim()) { message.success('Capturado no Inbox'); setCapture(''); } }} />` : null}
               <div className="ct-header-right">
-                ${screens.md ? html`<${RunningPill} go=${go} />` : null}
+                <${RunningPill} go=${go} compact=${!screens.md} />
                 <${Tooltip} title="Buscar e comandos (Ctrl+K)"><${Button} aria-label="Buscar" icon=${html`<${I.SearchOutlined} />`} onClick=${() => setPalette(true)}>${screens.xxl ? html`<span>Buscar <${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12, marginInlineStart: 6 }}>Ctrl K<//></span>` : null}<//><//>
                 <${Dropdown} menu=${prefsMenu} trigger=${['click']}><${Button} aria-label="Aparência" icon=${createElement(themeIcon)} /><//>
                 <${Button} type="primary" icon=${html`<${I.PlusOutlined} />`}>${screens.lg ? 'Nova tarefa' : null}<//>
@@ -670,7 +674,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           <//>
         <//>
         <div className="ct-statusbar" role="status">
-          <span><span className="dot" style=${{ background: '#2FBF7F' }}></span>Notion sincronizado há 2 min</span>
+          <span><span className="dot" style=${{ background: 'var(--ct-success)' }}></span>Notion sincronizado há 2 min</span>
           ${screens.md ? html`<span><span className="dot" style=${{ background: 'var(--ct-border-strong)' }}></span>Google Calendar não conectado</span>` : null}
           ${screens.md ? html`<span><${I.ApiOutlined} /> MCP em 127.0.0.1:7432</span>` : null}
           <span style=${{ marginInlineStart: 'auto' }}>Protótipo · dados de exemplo · <a onClick=${() => go('identidade')}>identidade visual</a></span>
@@ -690,7 +694,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     <//>`;
   }
 
-  function RunningPill({ go }) {
+  function RunningPill({ go, compact }) {
     const [secs, setSecs] = useState(9130);
     useEffect(() => { const t = setInterval(() => setSecs(s => s + 1), 1000); return () => clearInterval(t); }, []);
     return html`<${Popover} trigger="click" placement="bottomRight" title="Timers em execução" content=${html`<div style=${{ width: 280 }}>
@@ -705,7 +709,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       <button className="ct-timer-pill" style=${{ cursor: 'pointer', color: 'var(--ct-text)', font: 'inherit' }}>
         <span className="ct-live"></span>
         <span className="ct-mono">${fmt(secs)}</span>
-        <${Badge} count=${2} size="small" color="var(--ct-primary)" />
+        ${compact ? null : html`<${Badge} count=${2} size="small" color="var(--ct-primary)" />`}
       </button>
     <//>`;
   }
@@ -1200,7 +1204,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           <${Flex} align="center" gap=${8} wrap="wrap">
             ${statusSelect}
             <${Tooltip} title="Copiar número"><${Tag} bordered=${false} className="ct-mono" style=${{ cursor: 'pointer', margin: 0 }} onClick=${() => moreMenu.onClick({ key: 'copy' })}>#${t.id}<//><//>
-            ${t.jira ? html`<${Tag} bordered=${false} color="blue" style=${{ margin: 0 }}>${t.jira.type} · ${t.jira.key} · ${jiraStatus}<//>` : null}
+            ${t.jira ? html`<${Tag} bordered=${false} style=${{ margin: 0 }}>${t.jira.type} · ${t.jira.key} · ${jiraStatus}<//>` : null}
             ${archived ? html`<${Tag} bordered=${false} style=${{ margin: 0 }}>Arquivada<//>` : null}
           <//>
           <${Input} variant="borderless" defaultValue=${t.name} aria-label="Nome da tarefa" className="ct-taskname-input" />
@@ -1523,7 +1527,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const progress = (p, w) => { const st = stats[p.id]; const pct = st.total ? Math.round(st.done / st.total * 100) : 0;
       return html`<${Flex} align="center" gap=${8}><${Progress} percent=${pct} size=${[w, 4]} showInfo=${false} /><span className="ct-mono" style=${{ fontSize: 12, color: 'var(--ct-text-2)' }}>${st.done}/${st.total}</span><//>`; };
     const nextCell = p => { const st = stats[p.id];
-      if (noNext(p)) return html`<${Chip} def=${{ icon: 'WarningOutlined', light: CATEGORY.time_leak.light, dark: CATEGORY.time_leak.dark }} mode=${mode}>Sem próxima ação<//>`;
+      if (noNext(p)) return html`<${Chip} def=${{ icon: 'WarningOutlined', light: STATUS.aguardando.light, dark: STATUS.aguardando.dark }} mode=${mode}>Sem próxima ação<//>`;
       if (!st.next) return html`<${Text} type="secondary">—<//>`;
       return html`<span style=${{ display: 'inline-flex', gap: 6, alignItems: 'center', minWidth: 0 }}><${I.ForwardOutlined} style=${{ color: STATUS.proximas[mode][0] }} /><span style=${{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>${st.next.name}</span></span>`; };
     const dueCell = p => { if (!p.due) return html`<${Text} type="secondary">—<//>`; const d = daysBetween(TODAY, p.due);
@@ -1775,9 +1779,9 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           <//>
           <${Divider} />
           <${Flex} gap=${8} wrap="wrap">
-            <div className="ct-leak-1" style=${{ padding: '8px 12px', borderRadius: 8 }}>Time leak (passou do limite)</div>
-            <div className="ct-leak-2" style=${{ padding: '8px 12px', borderRadius: 8 }}>30 min ou mais</div>
-            <div className="ct-leak-3" style=${{ padding: '8px 12px', borderRadius: 8 }}>60 min ou mais</div>
+            <div className="ct-leak-1" style=${{ padding: '8px 12px', borderRadius: 8 }}>30 min ou mais</div>
+            <div className="ct-leak-2" style=${{ padding: '8px 12px', borderRadius: 8 }}>1 h ou mais</div>
+            <div className="ct-leak-3" style=${{ padding: '8px 12px', borderRadius: 8 }}>2 h ou mais</div>
           <//>
         <//>
         <${Card} title="Tipografia" size="small">
@@ -1808,7 +1812,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
   }
 
   function NewTag() {
-    return html`<${Tooltip} title="Recurso novo: precisa de backend"><${Tag} bordered=${false} color="purple" style=${{ margin: 0, fontSize: 11, lineHeight: '18px' }}>novo<//><//>`;
+    return html`<${Tooltip} title="Recurso novo: precisa de backend"><${Tag} bordered=${false} style=${{ margin: 0, fontSize: 11, lineHeight: '18px', color: 'var(--ct-primary)', background: 'var(--ct-primary-soft)' }}>novo<//><//>`;
   }
   function SettingRow({ title, desc, isNew, children, vertical }) {
     return html`<div className=${'ct-setrow' + (vertical ? ' vertical' : '')}>
@@ -1877,7 +1881,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       <div style=${{ minWidth: 0 }}>
         <${Flex} align="center" gap=${8} wrap="wrap">
           <${Title} level=${4} style=${{ margin: 0 }}>${current.label}<//>
-          ${current.state ? html`<${Tag} bordered=${false} color=${current.state === 'ok' ? 'success' : 'default'} style=${{ margin: 0 }}><${Badge} status=${stateBadge(current.state)} /> ${current.stateText}<//>` : null}
+          ${current.state ? html`<${Tag} bordered=${false} style=${{ margin: 0 }}><${Badge} status=${stateBadge(current.state)} /> ${current.stateText}<//>` : null}
           ${current.isNew ? html`<${NewTag} />` : null}
         <//>
         <${Text} type="secondary">${{
@@ -1944,7 +1948,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           <//>
         <//>
         <${SettingsCard} title="Time leak">
-          <${SettingRow} title="Níveis de alerta" desc="Tempo acumulado que pinta a linha de âmbar, laranja e vermelho (hoje 30 min, 1h, 2h)." isNew=${true} vertical=${true}>
+          <${SettingRow} title="Níveis de alerta" desc="Tempo acumulado que pinta a linha de âmbar, laranja e vermelho. Padrão: 30 min, 1 h e 2 h." isNew=${true} vertical=${true}>
             <${Space} wrap>
               ${[['Âmbar', 30], ['Laranja', 60], ['Vermelho', 120]].map(([l, v]) => html`<${InputNumber} key=${l} defaultValue=${v} min=${5} addonBefore=${l} addonAfter="min" style=${{ width: 190 }} />`)}
             <//>
@@ -2202,7 +2206,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
             <${Text} strong style=${{ fontWeight: 500 }}>${p.name}<//>
             ${areaFilter ? null : areaTag(p.area)}
             <span style=${{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--ct-text-2)' }}>
-              ${st.next ? html`<span><${I.ForwardOutlined} style=${{ color: STATUS.proximas[mode][0] }} /> ${st.next.name}</span>` : st.open ? html`<span style=${{ color: CATEGORY.time_leak[mode][0] }}><${I.WarningOutlined} /> Sem próxima ação</span>` : null}
+              ${st.next ? html`<span><${I.ForwardOutlined} style=${{ color: STATUS.proximas[mode][0] }} /> ${st.next.name}</span>` : st.open ? html`<span style=${{ color: STATUS.aguardando[mode][0] }}><${I.WarningOutlined} /> Sem próxima ação</span>` : null}
             </span>
             <${Flex} align="center" gap=${6}><${Progress} percent=${st.total ? Math.round(st.done / st.total * 100) : 0} size=${[56, 4]} showInfo=${false} /><span className="ct-mono" style=${{ fontSize: 12, color: 'var(--ct-text-2)' }}>${st.done}/${st.total}</span><//>
           <//>
@@ -3380,13 +3384,13 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const blockEl = (raw, d) => { const b = preview(raw); const t = T(b.task);
       const top = (toMin(b.start) - h0 * 60) * pxMin, height = Math.max(18, (toMin(b.end) - toMin(b.start)) * pxMin - 2);
       const w = 100 / b._cols, left = b._col * w;
-      const leak = t.category === 'time_leak', done = t.status === 'finalizada', running = t.running && b.date === TODAY && toMin(b.start) <= toMin(CAL_NOW) && toMin(b.end) >= toMin(CAL_NOW);
+      const leak = t.category === 'time_leak', leakLvl = leak ? (t.secs >= 7200 ? 3 : t.secs >= 3600 ? 2 : t.secs >= 1800 ? 1 : 0) : 0, done = t.status === 'finalizada', running = t.running && b.date === TODAY && toMin(b.start) <= toMin(CAL_NOW) && toMin(b.end) >= toMin(CAL_NOW);
       const catIcon = t.category === 'urgente' ? 'FireOutlined' : t.category === 'prioridade' ? 'FlagOutlined' : leak ? 'FieldTimeOutlined' : null;
       const short = height < 34;
       return html`<${Dropdown} key=${b.id} menu=${blockMenu(raw)} trigger=${['contextMenu']}>
         <div style=${{ position: 'absolute', top, height, left: `calc(${left}% + 2px)`, width: `calc(${w}% - 4px)`, transform: b._dx ? `translateX(${b._dx}px)` : null, zIndex: drag && drag.id === b.id ? 5 : openId === b.id ? 4 : 2 }}>
           <${Popover} open=${openId === b.id} onOpenChange=${o => !o && setOpenId(null)} trigger="click" placement=${screens.md ? 'right' : 'bottom'} content=${blockPop(raw)} destroyTooltipOnHide>
-            <div role="button" tabIndex=${0} className=${'ct-calblock' + (b.kind === 'event' ? ' event' : '') + (leak ? ' leak' : '') + (done ? ' done' : '') + (drag && drag.id === b.id ? ' dragging' : '')}
+            <div role="button" tabIndex=${0} className=${'ct-calblock' + (b.kind === 'event' ? ' event' : '') + (leakLvl ? ' leak ct-leak-' + leakLvl : '') + (done ? ' done' : '') + (drag && drag.id === b.id ? ' dragging' : '')}
               aria-label=${`${t.name}, ${b.start} a ${b.end}${b.kind === 'event' ? ', tarefa com horário' : ', bloco de tempo'}`}
               onPointerDown=${e => onPointerDown(e, raw, 'move')} onKeyDown=${e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpenId(b.id); } if (e.key === 'Delete') removeItem(raw); }}>
               <div className="ct-calblock-title">
