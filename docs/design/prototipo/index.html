@@ -1474,28 +1474,44 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
   }
 
   function TodayPage({ mode, go }) {
-    const items = TASKS.filter(t => t.today);
-    const planned = 6.5;
+    const [sample, setSample] = useState('normal');
+    const base = TASKS.filter(t => t.today).map((t, i) => i === 0 ? { ...t, start: '09:00', end: '10:30' } : t);
+    const items = sample === 'vazio' ? [] : base;
+    const planned = sample === 'acima' ? 9.5 : sample === 'vazio' ? 0 : 6.5;
+    const journey = 8;
+    const over = planned > journey;
+    const warn = PALETTE[mode].warning;
+    const fmtH = h => String(h).replace('.', ',') + 'h';
     const week = [['Seg', 7.5], ['Ter', planned], ['Qua', 4], ['Qui', 8.5], ['Sex', 3], ['Sáb', 0], ['Dom', 0]];
     return html`<div className="ct-page">
+      <${Flex} align="center" gap=${8} style=${{ marginBottom: 12 }}>
+        <span style=${{ flex: 1 }}></span>
+        <${Text} type="secondary" style=${{ fontSize: 12 }}>Exemplo:<//>
+        <${Segmented} size="small" value=${sample} onChange=${setSample} options=${[{ value: 'normal', label: 'Dia normal' }, { value: 'acima', label: 'Passa da jornada' }, { value: 'vazio', label: 'Vazio' }]} />
+      <//>
       <${Row} gutter=${[16, 16]}>
         <${Col} xs=${24} lg=${16}>
-          <${Card} title="Plano de terça, 17 de novembro" extra=${html`<${Text} type="secondary" className="ct-mono">${planned}h de 8h<//>`}>
-            <${Progress} percent=${Math.round(planned / 8 * 100)} showInfo=${false} style=${{ marginBottom: 12 }} />
-            <${List} dataSource=${items} renderItem=${t => html`<${List.Item} actions=${[html`<span key="t" className="ct-mono">${t.dueTime || fmtShort(t.secs)}</span>`]}>
-              <${List.Item.Meta} avatar=${html`<span style=${{ cursor: 'grab', color: 'var(--ct-text-3)' }} aria-label="Arrastar">⋮⋮</span>`}
+          <${Card} title="Plano de terça, 17 de novembro" extra=${html`<${Text} type="secondary" className="ct-mono" style=${over ? { color: warn } : null}>${fmtH(planned)} de ${journey}h${over ? ' · passa da jornada' : ''}<//>`}>
+            <${Progress} percent=${Math.min(100, Math.round(planned / journey * 100))} showInfo=${false} size="small" strokeColor=${over ? warn : undefined} style=${{ marginBottom: 12 }} aria-label=${'Carga planejada: ' + fmtH(planned) + ' de ' + journey + 'h'} />
+            ${items.length ? html`<${List} dataSource=${items} renderItem=${t => html`<${List.Item} actions=${[html`<span key="t" className="ct-mono">${t.dueTime || fmtShort(t.secs)}</span>`]}>
+              <${List.Item.Meta} avatar=${t.start
+                ? html`<${Tooltip} title="Horário fixo: fica no topo, fora da ordem manual"><span className="ct-mono" style=${{ fontSize: 12, color: 'var(--ct-text-2)' }}>${t.start}–${t.end}</span><//>`
+                : html`<span style=${{ cursor: 'grab', color: 'var(--ct-text-3)' }} aria-label="Arrastar">⋮⋮</span>`}
                 title=${html`<a onClick=${() => go('tarefa')} style=${{ color: 'var(--ct-text)' }}>${t.name}</a>`}
                 description=${html`<${Space} size=${6} wrap><${Chip} def=${STATUS[t.status]} mode=${mode} /><${ProjectLabel} id=${t.project} /><//>`} />
-            <//>`} />
+            <//>`} />`
+            : html`<${Empty} image=${Empty.PRESENTED_IMAGE_SIMPLE} description=${html`<span>Nada planejado para hoje.<br /><${Text} type="secondary">Na lista de tarefas, use <b>Hoje</b> (botão da linha ou do menu ⋯) para trazer tarefas para cá.<//></span>`}>
+                <${Button} icon=${html`<${I.CheckSquareOutlined} />`} onClick=${() => go('tarefas')}>Ir para Tarefas<//>
+              <//>`}
           <//>
         <//>
         <${Col} xs=${24} lg=${8}>
-          <${Card} title="Semana">
+          <${Card} title="Semana" extra=${html`<${Text} type="secondary" style=${{ fontSize: 12 }}>blocos de tempo<//>`}>
             <${Flex} vertical gap=${10}>
               ${week.map(([d, h]) => html`<${Flex} key=${d} align="center" gap=${10}>
                 <${Text} style=${{ width: 32 }} strong=${d === 'Ter'}>${d}<//>
-                <${Progress} percent=${Math.min(100, h / 8 * 100)} showInfo=${false} strokeColor=${h > 8 ? STATUS.aguardando[mode][0] : undefined} style=${{ flex: 1, margin: 0 }} />
-                <span className="ct-mono" style=${{ width: 40, textAlign: 'right' }}>${h ? h + 'h' : '—'}</span>
+                <${Progress} percent=${Math.min(100, h / journey * 100)} showInfo=${false} size="small" strokeColor=${h > journey ? warn : undefined} style=${{ flex: 1, margin: 0 }} />
+                <span className="ct-mono" style=${{ width: 44, textAlign: 'right', color: h > journey ? warn : undefined }}>${h ? fmtH(h) : '—'}</span>
               <//>`)}
             <//>
           <//>

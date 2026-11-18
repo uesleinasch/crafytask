@@ -579,12 +579,15 @@ fazer hoje e em que ordem.
 
 - **Card "Plano de {dia da semana}, {data}"**: lista ordenável por arrasto (alça ⋮⋮), cada linha com
   nome (abre a tarefa), chip de status, projeto e, à direita, a hora do prazo ou o tempo em mono.
+  Tarefa com horário (`scheduled_time`) fica no topo, pela hora, com a faixa `09:00–10:30` em mono no
+  lugar da alça (não arrasta). Reordenar grava a ordem inteira numa chamada só.
   No cabeçalho do card, a carga planejada contra a jornada ("6,5h de 8h", `Progress` fino). A carga
   é a soma dos blocos de tempo do dia, a mesma conta do calendário (`plannedMin`). Passou da
   jornada: âmbar e "passa da jornada", nunca vermelho (aviso, não alarme).
 - **Card "Semana"** ao lado (abaixo de `lg`, embaixo): um `Progress` por dia com as horas
   planejadas; hoje em negrito; dia acima da jornada em âmbar.
-- **Vazio:** "Nada planejado para hoje" com o atalho para marcar tarefas como Hoje na lista (D5).
+- **Vazio:** "Nada planejado para hoje." e a dica "Na lista de tarefas, use **Hoje** (botão da linha
+  ou do menu ⋯) para trazer tarefas para cá.", com o botão **Ir para Tarefas** (D5).
 - A jornada vem das preferências (F7-f); até lá, 8h.
 
 ### Calendário
