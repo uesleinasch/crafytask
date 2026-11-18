@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   App,
@@ -70,6 +70,8 @@ interface PropPillProps {
   children: ReactNode
 }
 
+const ReadOnlyContext = createContext(false)
+
 function PropPill({
   label,
   icon: Icon,
@@ -80,6 +82,22 @@ function PropPill({
 }: PropPillProps): React.JSX.Element {
   const { token } = theme.useToken()
   const [open, setOpen] = useState(false)
+  const readOnly = useContext(ReadOnlyContext)
+  const pill = (
+    <button
+      type="button"
+      className={muted ? 'ct-prop muted' : 'ct-prop'}
+      aria-haspopup={readOnly ? undefined : 'dialog'}
+      aria-expanded={readOnly ? undefined : open}
+      disabled={readOnly}
+      style={tone && !readOnly ? { color: tone } : undefined}
+    >
+      <span className="sr-only">{label}: </span>
+      {Icon && <Icon {...ICON} color={(!readOnly && tone) || token.colorTextTertiary} />}
+      {children}
+    </button>
+  )
+  if (readOnly) return pill
   return (
     <Popover
       trigger="click"
@@ -94,17 +112,7 @@ function PropPill({
         </div>
       }
     >
-      <button
-        type="button"
-        className={muted ? 'ct-prop muted' : 'ct-prop'}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        style={tone ? { color: tone } : undefined}
-      >
-        <span className="sr-only">{label}: </span>
-        {Icon && <Icon {...ICON} color={tone ?? token.colorTextTertiary} />}
-        {children}
-      </button>
+      {pill}
     </Popover>
   )
 }
@@ -208,7 +216,15 @@ interface TaskPropertyBarProps {
   update: (data: UpdateTaskInput) => Promise<void>
 }
 
-export function TaskPropertyBar({ task, update }: TaskPropertyBarProps): React.JSX.Element {
+export function TaskPropertyBar(props: TaskPropertyBarProps): React.JSX.Element {
+  return (
+    <ReadOnlyContext.Provider value={!!props.task.is_archived}>
+      <PropertyBar {...props} />
+    </ReadOnlyContext.Provider>
+  )
+}
+
+function PropertyBar({ task, update }: TaskPropertyBarProps): React.JSX.Element {
   const navigate = useNavigate()
   const { token } = theme.useToken()
   const { mode } = useThemeSettings()
@@ -610,7 +626,7 @@ export function TaskPropertyBar({ task, update }: TaskPropertyBarProps): React.J
         </PropPill>
       )}
 
-      {hidden.length > 0 && (
+      {!task.is_archived && hidden.length > 0 && (
         <Dropdown
           trigger={['click']}
           menu={{

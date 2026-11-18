@@ -34,6 +34,7 @@ interface TaskWorkspaceProps {
   drawingRef: Ref<TaskDrawingEditorHandle>
   onDrawingChange: () => void
   onDrawingSaved: (drawing: string) => void
+  readOnly?: boolean
 }
 
 export function TaskWorkspace({
@@ -57,7 +58,8 @@ export function TaskWorkspace({
   initialDrawing,
   drawingRef,
   onDrawingChange,
-  onDrawingSaved
+  onDrawingSaved,
+  readOnly = false
 }: TaskWorkspaceProps): React.JSX.Element {
   const { token } = theme.useToken()
   const exit = (): void => onFocusChange(false)
@@ -133,7 +135,7 @@ export function TaskWorkspace({
       <Tooltip title={isRunning ? 'Pausar' : 'Iniciar'}>
         <Button
           type="text"
-          disabled={startBlocked}
+          disabled={(readOnly && !isRunning) || startBlocked}
           aria-label={isRunning ? 'Pausar' : 'Iniciar'}
           icon={isRunning ? <Pause {...ICON} /> : <Play {...ICON} />}
           onClick={onToggleTimer}
@@ -215,6 +217,7 @@ export function TaskWorkspace({
           onDrawingChange={onDrawingChange}
           onDrawingSaved={onDrawingSaved}
           notesStyle={notesStyle}
+          readOnly={readOnly}
         />
       </div>
     </FocusOverlay>

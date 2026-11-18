@@ -19,6 +19,7 @@ interface TaskDrawingEditorProps {
   initialDrawing: string | null
   onChange?: () => void
   onSaved?: (drawing: string) => void
+  readOnly?: boolean
 }
 
 const DEBOUNCE_MS = 800
@@ -46,7 +47,7 @@ function parseDrawing(raw: string | null): StoredDrawing | null {
 }
 
 export const TaskDrawingEditor = forwardRef<TaskDrawingEditorHandle, TaskDrawingEditorProps>(
-  function TaskDrawingEditor({ owner, initialDrawing, onChange, onSaved }, ref) {
+  function TaskDrawingEditor({ owner, initialDrawing, onChange, onSaved, readOnly = false }, ref) {
     const { kind, id } = owner
     const { mode } = useThemeSettings()
     const apiRef = useRef<ExcalidrawImperativeAPI | null>(null)
@@ -98,6 +99,7 @@ export const TaskDrawingEditor = forwardRef<TaskDrawingEditorHandle, TaskDrawing
 
     const handleChange = useCallback(
       (elements: readonly OrderedExcalidrawElement[], appState: AppState, files: BinaryFiles) => {
+        if (readOnly) return
         onChangeRef.current?.()
         pendingSceneRef.current = { elements, appState, files }
         if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -106,7 +108,7 @@ export const TaskDrawingEditor = forwardRef<TaskDrawingEditorHandle, TaskDrawing
           persist().catch((e) => console.error('Falha ao salvar o desenho:', e))
         }, DEBOUNCE_MS)
       },
-      [persist]
+      [persist, readOnly]
     )
 
     useImperativeHandle(
@@ -142,6 +144,7 @@ export const TaskDrawingEditor = forwardRef<TaskDrawingEditorHandle, TaskDrawing
               : null
           }
           onChange={handleChange}
+          viewModeEnabled={readOnly}
           langCode="pt-BR"
           theme={mode}
         />

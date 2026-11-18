@@ -149,7 +149,7 @@ type NotesBodyProps = Pick<
   | 'drawingRef'
   | 'onDrawingChange'
   | 'onDrawingSaved'
-> & { notesStyle?: CSSProperties }
+> & { notesStyle?: CSSProperties; readOnly?: boolean }
 
 export function NotesBody({
   owner,
@@ -162,7 +162,8 @@ export function NotesBody({
   drawingRef,
   onDrawingChange,
   onDrawingSaved,
-  notesStyle
+  notesStyle,
+  readOnly = false
 }: NotesBodyProps): React.JSX.Element {
   return tab === 'notes' ? (
     <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
@@ -174,6 +175,7 @@ export function NotesBody({
             initialContent={initialContent}
             onChange={onChange}
             onSaved={onSaved}
+            readOnly={readOnly}
           />
         </RegionBoundary>
       </div>
@@ -194,6 +196,7 @@ export function NotesBody({
             initialDrawing={initialDrawing}
             onChange={onDrawingChange}
             onSaved={onDrawingSaved}
+            readOnly={readOnly}
           />
         </RegionBoundary>
       </Suspense>

@@ -4,6 +4,7 @@ import {
   Alert,
   App,
   Button,
+  ConfigProvider,
   Dropdown,
   Flex,
   Input,
@@ -171,10 +172,12 @@ export function TaskHeader({
     }
   }
 
+  const readOnly = !!task.is_archived
+
   const menu: MenuProps = {
     items: [
       { key: 'copy', icon: <Copy {...ICON} />, label: `Copiar #${task.id}` },
-      { key: 'reset', icon: <RotateCcw {...ICON} />, label: 'Zerar tempo…' },
+      { key: 'reset', icon: <RotateCcw {...ICON} />, label: 'Zerar tempo…', disabled: readOnly },
       task.is_archived
         ? { key: 'unarchive', icon: <ArchiveRestore {...ICON} />, label: 'Desarquivar' }
         : { key: 'archive', icon: <Archive {...ICON} />, label: 'Arquivar' },
@@ -252,6 +255,7 @@ export function TaskHeader({
             <Select
               size="small"
               variant="filled"
+              disabled={readOnly}
               aria-label="Status"
               value={task.status}
               onChange={(status: TaskStatus) => void onStatusChange(status)}
@@ -314,6 +318,7 @@ export function TaskHeader({
           </Flex>
           <Input
             variant="borderless"
+            readOnly={readOnly}
             value={name}
             onChange={(event) => setName(event.target.value)}
             onBlur={saveName}
@@ -324,6 +329,7 @@ export function TaskHeader({
           />
           <Input.TextArea
             variant="borderless"
+            readOnly={readOnly}
             autoSize={{ minRows: 1, maxRows: 4 }}
             value={description}
             onChange={(event) => setDescription(event.target.value)}
@@ -363,7 +369,7 @@ export function TaskHeader({
             <Tooltip title={startBlocked ? blockedLabel(task.blocked_by) : ''}>
               <Button
                 type="primary"
-                disabled={startBlocked}
+                disabled={(readOnly && !isRunning) || startBlocked}
                 aria-label={isRunning ? 'Pausar' : 'Iniciar'}
                 icon={isRunning ? <Pause {...ICON} /> : <Play {...ICON} />}
                 onClick={() => void (isRunning ? onPause() : onStart())}
@@ -374,7 +380,7 @@ export function TaskHeader({
             <Tooltip title="Finalizar tarefa">
               <Button
                 aria-label="Finalizar"
-                disabled={task.status === 'finalizada'}
+                disabled={readOnly || task.status === 'finalizada'}
                 icon={<Check {...ICON} />}
                 onClick={() => void onFinish()}
               />
@@ -382,15 +388,18 @@ export function TaskHeader({
           </div>
 
           <Flex align="center" gap={4}>
-            <TerminalTaskButton
-              taskId={task.id}
-              workingDir={effectiveWorkingDir(task).dir}
-              onWorkingDirChange={onWorkingDirChange}
-            />
+            <ConfigProvider componentDisabled={readOnly}>
+              <TerminalTaskButton
+                taskId={task.id}
+                workingDir={effectiveWorkingDir(task).dir}
+                onWorkingDirChange={onWorkingDirChange}
+              />
+            </ConfigProvider>
             {task.jira_key && (
               <Tooltip title="Campos do Jira">
                 <Button
                   type="text"
+                  disabled={readOnly}
                   aria-label="Campos do Jira"
                   icon={<SlidersHorizontal {...ICON} />}
                   onClick={onOpenJiraFields}
