@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { Grid, Select, Tabs } from 'antd'
+import { Flex, Grid, Input as AntInput, Segmented, Select, Tabs } from 'antd'
 import { useNavigate } from 'react-router-dom'
 import { ScrollArea } from '@renderer/components/ui/scroll-area'
-import { Input } from '@renderer/components/ui/input'
 import { SearchableSelect } from '@renderer/components/ui/searchable-select'
 import {
   AlertDialog,
@@ -29,11 +28,25 @@ import { TaskMenuChangedContext } from '@renderer/components/taskMenuContext'
 import { onNewTaskRequest } from '@renderer/lib/newTaskRequest'
 import { cn } from '@renderer/lib/utils'
 import { StatusTabLabel } from '@renderer/components/tasks/StatusTabLabel'
+import { TaskFilters } from '@renderer/components/tasks/TaskFilters'
+import {
+  EMPTY_TASK_FILTERS,
+  type TaskFiltersValue
+} from '@renderer/components/tasks/taskFilterState'
+import { useDebouncedValue } from '@renderer/hooks/useDebouncedValue'
+import {
+  LIST_GROUP_KEY,
+  LIST_VIEW_KEY,
+  effectiveListView,
+  kanbanGroup,
+  legacyListPrefs,
+  type ListGroup,
+  type ListView
+} from '@renderer/lib/taskListView'
 import { TASK_STATUSES, type TaskStatusCounts } from '@shared/taskStatusCounts'
 import {
   STATUS_LABELS,
   type TaskStatus,
-  type TaskCategory,
   type CreateTaskInput,
   type Tag,
   type Context,
@@ -43,25 +56,17 @@ import {
 import {
   ListTodo,
   LayoutGrid,
-  List,
   Search,
-  Filter,
-  X,
   Trash2,
   Archive,
   FolderInput,
   CheckCheck,
   Loader2,
-  Lock,
-  CalendarDays,
-  Layers,
-  Columns3
+  Columns3,
+  Table2
 } from 'lucide-react'
 
 type FilterStatus = TaskStatus | 'all'
-type FilterCategory = TaskCategory | 'all'
-type SortMode = 'updated' | 'due_date'
-type ViewMode = 'cards' | 'table'
 type BulkAction =
   | { type: 'delete' }
   | { type: 'archive' }
@@ -69,13 +74,14 @@ type BulkAction =
   | { type: 'project'; projectId: number | null }
 
 const STATUS_TABS: FilterStatus[] = ['all', ...TASK_STATUSES]
+const SEARCH_DEBOUNCE_MS = 250
 
-const CATEGORY_COLOR_MAP: Record<TaskCategory | 'all', string> = {
-  all: '#64748b',
-  urgente: '#ef4444',
-  prioridade: '#f97316',
-  normal: '#3b82f6',
-  time_leak: '#eab308'
+function readStorage(key: string): string | null {
+  try {
+    return window.localStorage.getItem(key)
+  } catch {
+    return null
+  }
 }
 
 const GROUP_BY_OPTIONS: { value: GroupBy; label: string }[] = [
@@ -92,42 +98,37 @@ export function TaskListPage(): React.JSX.Element {
     'ticktask:taskListStatusFilter',
     'inbox'
   )
-  const [categoryFilter, setCategoryFilter] = useState<FilterCategory>('all')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [tagFilter, setTagFilter] = useState<number | null>(null)
-  const [contextFilter, setContextFilter] = useState<number | null>(null)
-  const [projectFilter, setProjectFilter] = useState<number | null>(null)
+  const [filterValue, setFilterValue] = useState<TaskFiltersValue>(EMPTY_TASK_FILTERS)
+  const {
+    category: categoryFilter,
+    contextId: contextFilter,
+    projectId: projectFilter,
+    tagId: tagFilter,
+    blockedOnly: blockedFilter,
+    sort: sortMode
+  } = filterValue
+  const [searchInput, setSearchInput] = useState('')
+  const searchQuery = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS)
   const [availableTags, setAvailableTags] = useState<Tag[]>([])
   const [availableContexts, setAvailableContexts] = useState<Context[]>([])
   const [availableProjects, setAvailableProjects] = useState<Project[]>([])
-  const [viewMode, setViewMode] = usePersistedState<ViewMode>('ticktask:taskListViewMode', 'table')
-  const [groupingEnabled, setGroupingEnabled] = usePersistedState<boolean>(
-    'ticktask:taskListGrouping',
-    false
-  )
-  const [groupBy, setGroupBy] = usePersistedState<GroupBy>(
-    'ticktask:taskListGroupBy',
-    'project'
-  )
+  const legacyPrefs = useMemo(() => legacyListPrefs(readStorage), [])
+  const [listView, setListView] = usePersistedState<ListView>(LIST_VIEW_KEY, legacyPrefs.view)
+  const [listGroup, setListGroup] = usePersistedState<ListGroup>(LIST_GROUP_KEY, legacyPrefs.group)
   const [groupOrder, setGroupOrder] = usePersistedState<Partial<Record<GroupBy, string[]>>>(
     'ticktask:taskListGroupOrder',
     {}
   )
-  const [kanbanEnabled, setKanbanEnabled] = usePersistedState<boolean>(
-    'ticktask:executandoKanban',
-    false
-  )
-  const [kanbanGroupBy, setKanbanGroupBy] = usePersistedState<GroupBy>(
-    'ticktask:executandoKanbanGroupBy',
-    groupBy
-  )
-  const kanbanActive = statusFilter === 'executando' && kanbanEnabled
+  const view = effectiveListView(listView, statusFilter)
+  const kanbanActive = view === 'kanban'
+  const groupingEnabled = !kanbanActive && listGroup !== 'none'
   const showGroups = kanbanActive || groupingEnabled
-  const activeGroupBy = kanbanActive ? kanbanGroupBy : groupBy
-  const setActiveGroupBy = kanbanActive ? setKanbanGroupBy : setGroupBy
-  const [showFilters, setShowFilters] = useState(false)
-  const [blockedFilter, setBlockedFilter] = useState(false)
-  const [sortMode, setSortMode] = useState<SortMode>('updated')
+  const activeGroupBy: GroupBy = kanbanActive
+    ? kanbanGroup(listGroup)
+    : listGroup === 'none'
+      ? 'project'
+      : listGroup
+  const viewMode: 'cards' | 'table' = view === 'cards' ? 'cards' : 'table'
   const [selectedTaskIds, setSelectedTaskIds] = useState<number[]>([])
   const [bulkStatusValue, setBulkStatusValue] = useState<TaskStatus | 'none'>('none')
   const [bulkProjectValue, setBulkProjectValue] = useState<string>('none')
@@ -198,54 +199,6 @@ export function TaskListPage(): React.JSX.Element {
     return unsubscribe
   }, [refreshTasks])
 
-  // Opções de filtros
-  const categoryOptions = useMemo(
-    () => [
-      { value: 'all', label: 'Todas', color: CATEGORY_COLOR_MAP['all'] },
-      { value: 'urgente', label: 'Urgente', color: CATEGORY_COLOR_MAP['urgente'] },
-      { value: 'prioridade', label: 'Prioridade', color: CATEGORY_COLOR_MAP['prioridade'] },
-      { value: 'normal', label: 'Normal', color: CATEGORY_COLOR_MAP['normal'] },
-      { value: 'time_leak', label: 'Time Leak', color: CATEGORY_COLOR_MAP['time_leak'] }
-    ],
-    []
-  )
-
-  const tagOptions = useMemo(
-    () => [
-      { value: 'all', label: 'Todas' },
-      ...availableTags.map((tag) => ({
-        value: String(tag.id),
-        label: tag.name,
-        color: tag.color
-      }))
-    ],
-    [availableTags]
-  )
-
-  const contextOptions = useMemo(
-    () => [
-      { value: 'all', label: 'Todos' },
-      ...availableContexts.map((ctx) => ({
-        value: String(ctx.id),
-        label: `${ctx.icon} ${ctx.name}`,
-        color: ctx.color
-      }))
-    ],
-    [availableContexts]
-  )
-
-  const projectOptions = useMemo(
-    () => [
-      { value: 'all', label: 'Todos' },
-      { value: 'none', label: 'Sem projeto' },
-      ...availableProjects.map((proj) => ({
-        value: String(proj.id),
-        label: proj.name
-      }))
-    ],
-    [availableProjects]
-  )
-
   const filteredTaskIds = useMemo(() => tasks.map((task) => task.id), [tasks])
 
   const defaultTaskGroups = useMemo<TaskGroup[]>(
@@ -283,25 +236,6 @@ export function TaskListPage(): React.JSX.Element {
       return next.length === current.length ? current : next
     })
   }, [filteredTaskIds])
-
-  const hasActiveFilters =
-    categoryFilter !== 'all' ||
-    searchQuery.trim() !== '' ||
-    tagFilter !== null ||
-    contextFilter !== null ||
-    projectFilter !== null ||
-    blockedFilter ||
-    sortMode !== 'updated'
-
-  const clearFilters = (): void => {
-    setCategoryFilter('all')
-    setSearchQuery('')
-    setTagFilter(null)
-    setContextFilter(null)
-    setProjectFilter(null)
-    setBlockedFilter(false)
-    setSortMode('updated')
-  }
 
   const handleScheduleForToday = useCallback(
     async (taskId: number): Promise<void> => {
@@ -493,322 +427,97 @@ export function TaskListPage(): React.JSX.Element {
 
   return (
     <div className="flex flex-col h-full overflow-hidden bg-slate-50">
-      {/* Header: Tabs + View Toggle */}
-      <div className="px-6 pt-6 pb-2">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            {screens.md === false ? (
-              <Select
-                value={statusFilter}
-                onChange={setStatusFilter}
-                style={{ width: '100%' }}
-                aria-label="Status"
-                options={STATUS_TABS.map((status) => ({
-                  value: status,
-                  label: <StatusTabLabel status={status} count={statusCounts?.[status]} />
-                }))}
-              />
-            ) : (
-              <Tabs
-                activeKey={statusFilter}
-                onChange={(key) => setStatusFilter(key as FilterStatus)}
-                tabBarStyle={{ marginBottom: 0 }}
-                items={STATUS_TABS.map((status) => ({
-                  key: status,
-                  label: <StatusTabLabel status={status} count={statusCounts?.[status]} />
-                }))}
-              />
-            )}
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`
-                flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all
-                ${
-                  showFilters || hasActiveFilters
-                    ? 'bg-slate-900 text-white'
-                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-                }
-              `}
-            >
-              <Filter size={16} />
-              Filtros
-              {hasActiveFilters && (
-                <span className="bg-white text-slate-900 text-xs px-1.5 py-0.5 rounded-full font-bold">
-                  {(categoryFilter !== 'all' ? 1 : 0) +
-                    (searchQuery.trim() ? 1 : 0) +
-                    (tagFilter !== null ? 1 : 0) +
-                    (contextFilter !== null ? 1 : 0) +
-                    (projectFilter !== null ? 1 : 0) +
-                    (blockedFilter ? 1 : 0) +
-                    (sortMode !== 'updated' ? 1 : 0)}
-                </span>
-              )}
-            </button>
-
-            <div className="flex items-center bg-white border border-slate-200 rounded-lg p-1">
-              <button
-                onClick={() => setViewMode('cards')}
-                className={`
-                  p-2 rounded-md transition-all
-                  ${
-                    viewMode === 'cards'
-                      ? 'bg-slate-900 text-white'
-                      : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
-                  }
-                `}
-                title="Visualização em Cards"
-              >
-                <LayoutGrid size={18} />
-              </button>
-              <button
-                onClick={() => setViewMode('table')}
-                className={`
-                  p-2 rounded-md transition-all
-                  ${
-                    viewMode === 'table'
-                      ? 'bg-slate-900 text-white'
-                      : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
-                  }
-                `}
-                title="Visualização em Tabela"
-              >
-                <List size={18} />
-              </button>
-            </div>
-
-            {/* Agrupar / Kanban */}
-            <div className="flex items-center bg-white border border-slate-200 rounded-lg p-1">
-              <button
-                onClick={() => {
-                  if (kanbanActive) {
-                    setKanbanEnabled(false)
-                    setGroupingEnabled(true)
-                  } else {
-                    setGroupingEnabled(!groupingEnabled)
-                  }
-                }}
-                className={`
-                  flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium transition-all
-                  ${
-                    groupingEnabled && !kanbanActive
-                      ? 'bg-slate-900 text-white'
-                      : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-                  }
-                `}
-                title="Agrupar tarefas"
-              >
-                <Layers size={16} /> Agrupar
-              </button>
-              {statusFilter === 'executando' && (
-                <button
-                  onClick={() => setKanbanEnabled(!kanbanEnabled)}
-                  className={`
-                    flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium transition-all
-                    ${
-                      kanbanEnabled
-                        ? 'bg-slate-900 text-white'
-                        : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+      <div className="px-6 pt-4 pb-2">
+        {screens.md === false ? (
+          <Select
+            value={statusFilter}
+            onChange={setStatusFilter}
+            style={{ width: '100%', marginBottom: 12 }}
+            aria-label="Status"
+            options={STATUS_TABS.map((status) => ({
+              value: status,
+              label: <StatusTabLabel status={status} count={statusCounts?.[status]} />
+            }))}
+          />
+        ) : (
+          <Tabs
+            activeKey={statusFilter}
+            onChange={(key) => setStatusFilter(key as FilterStatus)}
+            items={STATUS_TABS.map((status) => ({
+              key: status,
+              label: <StatusTabLabel status={status} count={statusCounts?.[status]} />
+            }))}
+          />
+        )}
+        <Flex gap={8} wrap="wrap" align="center">
+          <AntInput
+            allowClear
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            placeholder="Buscar em nome e descrição"
+            aria-label="Buscar tarefas"
+            prefix={<Search size={16} strokeWidth={1.75} aria-hidden />}
+            style={{ flex: '1 1 220px', maxWidth: 360 }}
+          />
+          <TaskFilters
+            value={filterValue}
+            onChange={(patch) => setFilterValue((current) => ({ ...current, ...patch }))}
+            contexts={availableContexts}
+            projects={availableProjects}
+            tags={availableTags}
+            shown={tasks.length}
+            total={totalTasks}
+          />
+          <div style={{ flex: 1 }} />
+          <Segmented<ListView>
+            value={view}
+            onChange={setListView}
+            aria-label="Visão"
+            options={[
+              {
+                value: 'table',
+                icon: <Table2 size={16} strokeWidth={1.75} />,
+                label: screens.lg ? 'Tabela' : undefined,
+                title: 'Tabela'
+              },
+              {
+                value: 'cards',
+                icon: <LayoutGrid size={16} strokeWidth={1.75} />,
+                label: screens.lg ? 'Cards' : undefined,
+                title: 'Cards'
+              },
+              ...(statusFilter === 'executando'
+                ? [
+                    {
+                      value: 'kanban' as const,
+                      icon: <Columns3 size={16} strokeWidth={1.75} />,
+                      label: screens.lg ? 'Kanban' : undefined,
+                      title: 'Kanban'
                     }
-                  `}
-                  title="Modo Kanban"
-                >
-                  <Columns3 size={16} /> Kanban
-                </button>
-              )}
-              {showGroups && (
-                <div className="flex items-center gap-1 pl-1 ml-1 border-l border-slate-200">
-                  {GROUP_BY_OPTIONS.filter(
-                    (option) =>
-                      !JIRA_GROUP_MODES.includes(option.value) ||
-                      hasJiraTasks ||
-                      activeGroupBy === option.value
-                  ).map((option) => (
-                    <button
-                      key={option.value}
-                      onClick={() => setActiveGroupBy(option.value)}
-                      className={`px-2 py-1 rounded-md text-xs font-medium transition-all ${
-                        activeGroupBy === option.value
-                          ? 'bg-slate-200 text-slate-900'
-                          : 'text-slate-500 hover:bg-slate-100'
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+                  ]
+                : [])
+            ]}
+          />
+          <Select<ListGroup>
+            value={kanbanActive ? activeGroupBy : listGroup}
+            onChange={setListGroup}
+            style={{ width: 200 }}
+            aria-label={kanbanActive ? 'Colunas do Kanban' : 'Agrupar'}
+            options={[
+              ...(kanbanActive ? [] : [{ value: 'none' as const, label: 'Sem agrupamento' }]),
+              ...GROUP_BY_OPTIONS.filter(
+                (option) =>
+                  !JIRA_GROUP_MODES.includes(option.value) ||
+                  hasJiraTasks ||
+                  activeGroupBy === option.value
+              ).map((option) => ({
+                value: option.value,
+                label: `${kanbanActive ? 'Colunas por' : 'Agrupar por'} ${option.label.toLowerCase()}`
+              }))
+            ]}
+          />
+        </Flex>
       </div>
-
-      {/* Filter Area - Collapsible */}
-      {showFilters && (
-        <div className="px-6 pb-4 animate-in slide-in-from-top-2 fade-in duration-200">
-          <div className="bg-white border border-slate-200 rounded-sm p-4">
-            <div className="flex flex-wrap items-end gap-4">
-              {/* Search */}
-              <div className="flex-1 min-w-[200px]">
-                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
-                  Buscar
-                </label>
-                <div className="relative">
-                  <Search
-                    size={16}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                  />
-                  <Input
-                    type="text"
-                    placeholder="Buscar por nome ou descrição..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 bg-slate-50 border-slate-200 focus:bg-white"
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery('')}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                    >
-                      <X size={14} />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Category Filter */}
-              <div className="min-w-[160px]">
-                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
-                  Categoria
-                </label>
-                <SearchableSelect
-                  value={categoryFilter}
-                  onChange={(value) => setCategoryFilter(value as FilterCategory)}
-                  options={categoryOptions}
-                  placeholder="Selecione..."
-                  searchPlaceholder="Buscar categoria..."
-                />
-              </div>
-
-              {/* Context Filter */}
-              {availableContexts.length > 0 && (
-                <div className="min-w-[160px]">
-                  <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
-                    Contexto
-                  </label>
-                  <SearchableSelect
-                    value={contextFilter !== null ? String(contextFilter) : 'all'}
-                    onChange={(value) => setContextFilter(value === 'all' ? null : Number(value))}
-                    options={contextOptions}
-                    placeholder="Selecione..."
-                    searchPlaceholder="Buscar contexto..."
-                  />
-                </div>
-              )}
-
-              {/* Project Filter */}
-              {availableProjects.length > 0 && (
-                <div className="min-w-[160px]">
-                  <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
-                    Projeto
-                  </label>
-                  <SearchableSelect
-                    value={
-                      projectFilter !== null
-                        ? projectFilter === -1
-                          ? 'none'
-                          : String(projectFilter)
-                        : 'all'
-                    }
-                    onChange={(value) => {
-                      if (value === 'all') setProjectFilter(null)
-                      else if (value === 'none') setProjectFilter(-1)
-                      else setProjectFilter(Number(value))
-                    }}
-                    options={projectOptions}
-                    placeholder="Selecione..."
-                    searchPlaceholder="Buscar projeto..."
-                  />
-                </div>
-              )}
-
-              {/* Tag Filter */}
-              {availableTags.length > 0 && (
-                <div className="min-w-[160px]">
-                  <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
-                    Fonte / Tag
-                  </label>
-                  <SearchableSelect
-                    value={tagFilter !== null ? String(tagFilter) : 'all'}
-                    onChange={(value) => setTagFilter(value === 'all' ? null : Number(value))}
-                    options={tagOptions}
-                    placeholder="Selecione..."
-                    searchPlaceholder="Buscar tag..."
-                  />
-                </div>
-              )}
-
-              {/* Blocked Filter */}
-              <div className="min-w-fit">
-                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
-                  Situação
-                </label>
-                <button
-                  onClick={() => setBlockedFilter(!blockedFilter)}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-all ${
-                    blockedFilter
-                      ? 'bg-orange-100 text-orange-700 border-orange-200'
-                      : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
-                  }`}
-                >
-                  <Lock size={14} />
-                  Bloqueadas
-                </button>
-              </div>
-
-              {/* Sort Mode */}
-              <div className="min-w-fit">
-                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
-                  Ordenar por
-                </label>
-                <button
-                  onClick={() => setSortMode(sortMode === 'updated' ? 'due_date' : 'updated')}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-all ${
-                    sortMode === 'due_date'
-                      ? 'bg-blue-100 text-blue-700 border-blue-200'
-                      : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
-                  }`}
-                >
-                  <CalendarDays size={14} />
-                  {sortMode === 'due_date' ? 'Prazo ↑' : 'Prazo'}
-                </button>
-              </div>
-
-              {/* Clear Filters */}
-              {hasActiveFilters && (
-                <button
-                  onClick={clearFilters}
-                  className="flex items-center gap-1 px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                >
-                  <X size={14} />
-                  Limpar filtros
-                </button>
-              )}
-            </div>
-
-            {hasActiveFilters && (
-              <div className="mt-3 pt-3 border-t border-slate-100 flex items-center gap-2 text-xs text-slate-500">
-                <span>
-                  Mostrando {tasks.length} de {totalTasks} tarefas
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Content */}
       <TaskMenuChangedContext.Provider value={handleMenuChanged}>
