@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   buildTaskCountQuery,
   buildTaskListQuery,
+  buildTaskStatusCountQuery,
   buildTaskListWhere,
   escapeLike
 } from './taskQuery'
@@ -192,6 +193,18 @@ describe('buildTaskCountQuery', () => {
     expect(count.sql).not.toContain('ORDER BY')
     expect(count.sql).not.toContain('LIMIT')
     expect(count.params).toEqual([0, 'inbox'])
+  })
+})
+
+describe('buildTaskStatusCountQuery', () => {
+  it('agrupa por status com os outros filtros da lista, ignorando o status escolhido', () => {
+    const filters = { status: 'inbox' as const, projectId: 7, search: 'api', limit: 10 }
+    const count = buildTaskStatusCountQuery(filters)
+
+    expect(count.sql).toContain('GROUP BY t.status')
+    expect(count.sql).not.toContain('t.status = ?')
+    expect(count.sql).not.toContain('LIMIT')
+    expect(count.params).toEqual([0, 7, '%api%', '%api%'])
   })
 })
 

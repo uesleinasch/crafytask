@@ -33,8 +33,9 @@ import type {
   NotesOwner
 } from '@shared/types'
 import { DEFAULT_CONTEXTS } from '@shared/types'
+import { toStatusCounts, type TaskStatusCounts } from '@shared/taskStatusCounts'
 import { UNTITLED_PAGE } from '@shared/notebookTree'
-import { buildTaskCountQuery, buildTaskListQuery } from './taskQuery'
+import { buildTaskCountQuery, buildTaskListQuery, buildTaskStatusCountQuery } from './taskQuery'
 import type { LocalJiraChild } from './jiraPlan'
 import {
   listTagsWithUsage as listTagsWithUsageQuery,
@@ -982,6 +983,12 @@ export function countTasks(filters: TaskListFilters = {}): number {
   const { sql, params } = buildTaskCountQuery(filters)
   const row = db.prepare(sql).get(...params) as { total: number }
   return row.total
+}
+
+export function countTasksByStatus(filters: TaskListFilters = {}): TaskStatusCounts {
+  const { sql, params } = buildTaskStatusCountQuery(filters)
+  const rows = db.prepare(sql).all(...params) as { status: TaskStatus; total: number }[]
+  return toStatusCounts(rows)
 }
 
 export function listRunningTasks(): Task[] {
