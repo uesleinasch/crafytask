@@ -68,7 +68,6 @@ O select mais usado do app — filtros, seleção de projeto, tarefa, tag. Não 
 | `CategoryChip` | idem para categoria; "Normal" sem cor, só borda e texto secundário (substituiu o `CategoryBadge`) |
 | `EnergyMeter` | três barras na cor primária (cheias = nível), com tooltip "Energia alta/média/baixa"; substituiu o emoji ⚡🔋😴 |
 | `DueDateBadge` | pílula com `Calendar` cujo rótulo e cor derivam da distância até o prazo — ver tabela abaixo |
-| `StatusSelect` | `Select` de 180px com os 6 status |
 | `CategorySelect` | `Select` de 140px com ícone e cor por categoria no próprio gatilho |
 | `RecurrenceSelect` | `Select` com 4 opções; serializa a regra em JSON |
 | `ColorPicker` | 12 círculos de 32px a partir de `DEFAULT_COLORS`; selecionado com `ring-2 ring-offset-2 scale-110` |
