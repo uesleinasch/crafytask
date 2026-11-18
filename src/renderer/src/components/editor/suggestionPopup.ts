@@ -39,7 +39,8 @@ export function createSuggestionRenderer<T>(Component: ComponentType<PopupCompon
         el.dataset.suggestionPopup = 'true'
         el.style.position = 'fixed'
         el.style.zIndex = '9999'
-        document.body.appendChild(el)
+        const host = props.editor.view.dom.closest('[data-popup-root]') ?? document.body
+        host.appendChild(el)
         root = createRoot(el)
         render(props)
       },

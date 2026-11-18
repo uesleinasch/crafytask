@@ -4,6 +4,7 @@ import type { NotesOwner } from '@shared/types'
 import { Flex, Spin } from 'antd'
 import { Focus, Maximize2 } from 'lucide-react'
 import { cn } from '@renderer/lib/utils'
+import { RegionBoundary } from '@renderer/components/shell/RegionBoundary'
 import { TaskNotesEditor, type TaskNotesEditorHandle } from './TaskNotesEditor'
 import type { TaskDrawingEditorHandle } from './TaskDrawingEditor'
 import type { NotesViewMode } from './notesLayout'
@@ -166,13 +167,15 @@ export function NotesBody({
   return tab === 'notes' ? (
     <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
       <div style={notesStyle}>
-        <TaskNotesEditor
-          ref={editorRef}
-          owner={owner}
-          initialContent={initialContent}
-          onChange={onChange}
-          onSaved={onSaved}
-        />
+        <RegionBoundary region="editor de notas" resetKeys={[owner.kind, owner.id]}>
+          <TaskNotesEditor
+            ref={editorRef}
+            owner={owner}
+            initialContent={initialContent}
+            onChange={onChange}
+            onSaved={onSaved}
+          />
+        </RegionBoundary>
       </div>
     </div>
   ) : (
@@ -184,13 +187,15 @@ export function NotesBody({
           </Flex>
         }
       >
-        <TaskDrawingEditor
-          ref={drawingRef}
-          owner={owner}
-          initialDrawing={initialDrawing}
-          onChange={onDrawingChange}
-          onSaved={onDrawingSaved}
-        />
+        <RegionBoundary region="editor de desenho" resetKeys={[owner.kind, owner.id]}>
+          <TaskDrawingEditor
+            ref={drawingRef}
+            owner={owner}
+            initialDrawing={initialDrawing}
+            onChange={onDrawingChange}
+            onSaved={onDrawingSaved}
+          />
+        </RegionBoundary>
       </Suspense>
     </div>
   )

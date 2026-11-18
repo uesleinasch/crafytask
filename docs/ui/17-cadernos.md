@@ -63,6 +63,10 @@ pelo main, que revalida tudo em `movePage`.
 - **Maximizar** esconde cabeçalho, cadernos, abas e lista; **Zen** também, e centraliza o texto.
   Esc ou o botão redondo no canto voltam ao normal. Sem a barra de foco do detalhe da tarefa (não há timer de página).
 
+Os editores de notas e de desenho da página ficam cada um num `RegionBoundary`. O `PageEditor`
+guarda o último JSON salvo (`savedNotes`/`savedDrawing`), para que remontar o editor (trocar de aba
+ou "Tentar de novo") não volte ao conteúdo de quando a página abriu.
+
 ## Preferências persistidas (`localStorage`)
 
 | Chave                                                | Conteúdo                                            |

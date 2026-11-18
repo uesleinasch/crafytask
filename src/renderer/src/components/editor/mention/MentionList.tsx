@@ -42,24 +42,24 @@ export function MentionList(props: PopupComponentProps<MentionEntry>): React.JSX
 
   if (!items.length) {
     return (
-      <div className="rounded-md border border-slate-200 bg-white p-2 text-sm text-slate-500 shadow-md">
-        Nada encontrado
+      <div className="ct-popup">
+        <span className="ct-popup-muted" style={{ padding: '4px 8px', display: 'block' }}>
+          Nada encontrado
+        </span>
       </div>
     )
   }
   return (
-    <div className="w-64 rounded-md border border-slate-200 bg-white p-1 shadow-md">
+    <div className="ct-popup" style={{ width: 256 }}>
       {items.map((it, i) => (
         <button
           key={`${it.type}-${it.id}`}
-          className={`flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-sm ${
-            i === index ? 'bg-slate-100' : ''
-          }`}
+          className={i === index ? 'ct-popup-item active' : 'ct-popup-item'}
           onMouseEnter={() => setIndex(i)}
           onClick={() => command(it)}
         >
-          <span className="truncate text-slate-800">{it.label}</span>
-          <span className="ml-2 shrink-0 text-xs text-slate-400">{TYPE_LABEL[it.type]}</span>
+          <span className="truncate">{it.label}</span>
+          <span className="ct-popup-muted shrink-0">{TYPE_LABEL[it.type]}</span>
         </button>
       ))}
     </div>

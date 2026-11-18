@@ -5,6 +5,7 @@ import type { OrderedExcalidrawElement } from '@excalidraw/excalidraw/element/ty
 import type { NotesOwner } from '@shared/types'
 import { ensureExcalidrawAssetPath } from './drawingAssetPath'
 import { saveOwnerDrawing } from './notesOwner'
+import { useThemeSettings } from '@renderer/theme/themeSettings'
 import '@excalidraw/excalidraw/index.css'
 
 ensureExcalidrawAssetPath()
@@ -47,6 +48,7 @@ function parseDrawing(raw: string | null): StoredDrawing | null {
 export const TaskDrawingEditor = forwardRef<TaskDrawingEditorHandle, TaskDrawingEditorProps>(
   function TaskDrawingEditor({ owner, initialDrawing, onChange, onSaved }, ref) {
     const { kind, id } = owner
+    const { mode } = useThemeSettings()
     const apiRef = useRef<ExcalidrawImperativeAPI | null>(null)
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
     const pendingSceneRef = useRef<Scene | null>(null)
@@ -129,7 +131,7 @@ export const TaskDrawingEditor = forwardRef<TaskDrawingEditorHandle, TaskDrawing
     }, [persistScene])
 
     return (
-      <div className="h-full w-full">
+      <div style={{ height: '100%', width: '100%' }}>
         <Excalidraw
           excalidrawAPI={(api) => {
             apiRef.current = api
@@ -141,6 +143,7 @@ export const TaskDrawingEditor = forwardRef<TaskDrawingEditorHandle, TaskDrawing
           }
           onChange={handleChange}
           langCode="pt-BR"
+          theme={mode}
         />
       </div>
     )

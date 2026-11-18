@@ -170,6 +170,78 @@
   border-top: 1px solid var(--ant-color-border-secondary);
 }
 
+.ct-popup {
+  padding: 4px;
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: var(--ant-border-radius-lg);
+  background: var(--ant-color-bg-elevated);
+  color: var(--ant-color-text);
+  box-shadow: var(--ant-box-shadow-secondary);
+}
+
+.ct-popup-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: var(--ant-border-radius-sm);
+  background: transparent;
+  color: var(--ant-color-text);
+  font: inherit;
+  font-size: var(--ant-font-size);
+  text-align: left;
+  cursor: pointer;
+}
+
+.ct-popup-item:hover,
+.ct-popup-item.active {
+  background: var(--ant-control-item-bg-hover);
+}
+
+.ct-popup-item.danger {
+  color: var(--ant-color-error);
+}
+
+.ct-popup-item.danger:hover {
+  background: var(--ant-color-error-bg);
+}
+
+.ct-popup-muted {
+  color: var(--ant-color-text-tertiary);
+  font-size: var(--ant-font-size-sm);
+}
+
+.ct-popup-divider {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--ant-color-border-secondary);
+}
+
+.ct-tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border: 0;
+  border-radius: var(--ant-border-radius-sm);
+  background: transparent;
+  color: var(--ant-color-text-secondary);
+  cursor: pointer;
+}
+
+.ct-tool:hover {
+  background: var(--ant-control-item-bg-hover);
+  color: var(--ant-color-text);
+}
+
+.ct-tool.active {
+  background: var(--ant-control-item-bg-active);
+  color: var(--ant-color-primary);
+}
+
 .ct-prop {
   display: inline-flex;
   align-items: center;
@@ -243,7 +315,7 @@ body.float-window #root {
   margin: 0.25em 0;
 }
 .notes-editor-content a {
-  color: #2563eb;
+  color: var(--ant-color-link);
   text-decoration: underline;
 }
 .notes-editor-content ul {
@@ -255,19 +327,20 @@ body.float-window #root {
   padding-left: 1.5em;
 }
 .notes-editor-content blockquote {
-  border-left: 3px solid #cbd5e1;
+  border-left: 3px solid var(--ant-color-border);
   padding-left: 0.75em;
-  color: #475569;
+  color: var(--ant-color-text-secondary);
 }
 .notes-editor-content pre {
-  background: #0f172a;
-  color: #e2e8f0;
+  background: var(--ant-color-fill-quaternary);
+  color: var(--ant-color-text);
+  border: 1px solid var(--ant-color-border-secondary);
   padding: 0.75em;
   border-radius: 0.375rem;
   overflow-x: auto;
 }
 .notes-editor-content code {
-  background: #f1f5f9;
+  background: var(--ant-color-fill-tertiary);
   padding: 0.1em 0.3em;
   border-radius: 0.25rem;
 }
@@ -276,11 +349,12 @@ body.float-window #root {
   padding: 0;
 }
 .notes-editor-content mark {
-  background: #fef08a;
+  background: var(--ant-color-warning-bg-hover);
+  color: inherit;
 }
 .notes-editor-content hr {
   border: none;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--ant-color-border-secondary);
   margin: 0.75em 0;
 }
 .notes-editor-content ul[data-type='taskList'] {
@@ -296,14 +370,14 @@ body.float-window #root {
 .notes-editor-content p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;
-  color: #94a3b8;
+  color: var(--ant-color-text-quaternary);
   pointer-events: none;
   height: 0;
 }
 /* chip de menção @ */
 .notes-editor-content .mention {
-  background: #e0e7ff;
-  color: #4338ca;
+  background: var(--ant-color-primary-bg);
+  color: var(--ant-color-primary-text);
   border-radius: 0.25rem;
   padding: 0 0.25em;
   cursor: pointer;
@@ -318,25 +392,26 @@ body.float-window #root {
 }
 .notes-editor-content th,
 .notes-editor-content td {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--ant-color-border-secondary);
   padding: 0.4em 0.6em;
   vertical-align: top;
   text-align: left;
   min-width: 3em;
+  position: relative;
 }
 .notes-editor-content th {
-  background: #f8fafc;
+  background: var(--ant-color-fill-quaternary);
   font-weight: 600;
 }
 .notes-editor-content .selectedCell::after {
-  background: rgba(99, 102, 241, 0.12);
+  background: color-mix(in srgb, var(--ant-color-primary) 12%, transparent);
   content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
 }
 .notes-editor-content .column-resize-handle {
-  background: #6366f1;
+  background: var(--ant-color-primary);
   bottom: -2px;
   position: absolute;
   right: -2px;

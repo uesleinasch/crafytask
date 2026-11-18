@@ -107,12 +107,12 @@ export const TaskNotesEditor = forwardRef<TaskNotesEditorHandle, TaskNotesEditor
     }, [kind, id])
 
     return (
-      <div className="text-slate-800">
+      <div>
         <BubbleToolbar editor={editor} />
         <TableContextMenu editor={editor} />
         {editor && (
           <DragHandle editor={editor}>
-            <div className="flex cursor-grab items-center text-slate-400 hover:text-slate-600">
+            <div className="ct-tool" style={{ cursor: 'grab', padding: 2 }}>
               <GripVertical size={16} />
             </div>
           </DragHandle>

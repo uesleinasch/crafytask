@@ -19,6 +19,7 @@ import { groupOf } from '@renderer/stores/terminalPanes'
 import { TAB_ICON_COMPONENTS } from './tabIcons'
 import { TerminalSessionMenu } from './TerminalSessionMenu'
 import { TerminalView } from './TerminalView'
+import { RegionBoundary } from '@renderer/components/shell/RegionBoundary'
 import { TERMINAL_MAXIMIZE_SHORTCUT_LABEL, terminalShortcut } from './terminalKeys'
 
 const MIN_HEIGHT = 120
@@ -366,11 +367,13 @@ export function TerminalPanel(): React.JSX.Element | null {
                   </div>
                 )}
                 <div className="flex-1 min-h-0">
-                  <TerminalView
-                    session={session}
-                    visible={open && index !== -1}
-                    focused={focused}
-                  />
+                  <RegionBoundary region="terminal" resetKeys={[session.id]} surface>
+                    <TerminalView
+                      session={session}
+                      visible={open && index !== -1}
+                      focused={focused}
+                    />
+                  </RegionBoundary>
                 </div>
               </div>
             )

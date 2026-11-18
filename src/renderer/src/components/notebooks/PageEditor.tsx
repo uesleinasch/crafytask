@@ -146,7 +146,9 @@ export const PageEditor = forwardRef<PageEditorHandle, PageEditorProps>(function
     }
   }
 
-  const initialContent = useMemo(() => parseNotes(page?.notes), [page])
+  const [savedNotes, setSavedNotes] = useState<string | null>(null)
+  const [savedDrawing, setSavedDrawing] = useState<string | null>(null)
+  const initialContent = useMemo(() => parseNotes(savedNotes ?? page?.notes), [savedNotes, page])
   const owner = useMemo(() => ({ kind: 'page' as const, id: pageId }), [pageId])
   const touch = useCallback(() => setEditedAt(new Date()), [])
 
@@ -167,7 +169,10 @@ export const PageEditor = forwardRef<PageEditorHandle, PageEditorProps>(function
   }
 
   return (
-    <div className="flex-1 min-w-0 min-h-0 flex flex-col bg-white">
+    <div
+      className="flex-1 min-w-0 min-h-0 flex flex-col"
+      style={{ background: 'var(--ant-color-bg-container)' }}
+    >
       {viewMode === 'normal' && (
         <div className="shrink-0 px-6 pt-5 pb-3">
           <input
@@ -178,9 +183,10 @@ export const PageEditor = forwardRef<PageEditorHandle, PageEditorProps>(function
               if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
             }}
             placeholder={UNTITLED_PAGE}
-            className="w-full text-2xl font-bold text-slate-900 placeholder:text-slate-300 bg-transparent focus:outline-none"
+            className="w-full text-2xl font-bold bg-transparent focus:outline-none"
+            style={{ color: 'var(--ant-color-text)' }}
           />
-          <p className="mt-1 text-xs text-slate-400 font-mono">
+          <p className="mt-1 text-xs font-mono" style={{ color: 'var(--ant-color-text-tertiary)' }}>
             criada {formatStamp(fromSqlite(page.created_at))}
             {editedAt && ` · editada ${formatStamp(editedAt)}`}
           </p>
@@ -196,7 +202,10 @@ export const PageEditor = forwardRef<PageEditorHandle, PageEditorProps>(function
           initialContent={initialContent}
           editorRef={notesRef}
           onChange={() => undefined}
-          onSaved={touch}
+          onSaved={(notes) => {
+            setSavedNotes(notes)
+            touch()
+          }}
           viewMode={viewMode}
           onMaximize={onMaximize}
           onZen={onZen}
@@ -223,10 +232,13 @@ export const PageEditor = forwardRef<PageEditorHandle, PageEditorProps>(function
           zenWidth={zenWidth}
           tab={tab}
           onTabChange={setTab}
-          initialDrawing={page.drawing}
+          initialDrawing={savedDrawing ?? page.drawing}
           drawingRef={drawingRef}
           onDrawingChange={() => undefined}
-          onDrawingSaved={touch}
+          onDrawingSaved={(drawing) => {
+            setSavedDrawing(drawing)
+            touch()
+          }}
         />
       </div>
     </div>
