@@ -132,12 +132,22 @@ mudam: IDs que saíram do resultado deixam de estar selecionados.
 
 A ordem de decisão do que renderizar é:
 
-1. Carregando → "Carregando…"
-2. Zero tarefas → estado vazio (ícone `ListTodo` num círculo cinza + frase que muda conforme a aba)
+1. Carregando → `Spin` centralizado com "Carregando tarefas"
+2. Zero tarefas → `Empty` simples: com busca ou filtro ativo, "Nenhuma tarefa com esses filtros." e o
+   botão "Limpar filtros"; sem filtro, "Inbox zerado. Tudo processado." na aba Inbox e "Nenhuma
+   tarefa aqui." nas outras
 3. Aba Executando **e** Kanban ligado → `TaskKanban`
-4. Agrupamento ligado em cards → `TaskGroups`
-5. Modo cards → `TaskList`
+4. Agrupamento ligado em cards → `TaskCardGroups`
+5. Modo cards → `TaskCardGrid`
 6. Caso contrário → `TaskTable` (com ou sem agrupamento)
+
+Abaixo de `md` a visão Tabela vira Cards (`effectiveListView(view, status, narrow)` em
+`lib/taskListView.ts`, testada) e some do `Segmented`; a preferência guardada só muda se a pessoa escolher outra visão no
+estreito. Os grupos recolhidos ficam na página (valem para tabela e cards) e voltam a abrir ao
+trocar o agrupamento. Tabela, cards e Kanban têm cada um seu `RegionBoundary`. Com
+agrupamento por contexto e alguma tarefa em mais de um contexto, um aviso em texto secundário (ícone
+`Copy`) fica acima do conteúdo: "Tarefas com mais de um contexto aparecem em cada grupo; a soma dos
+grupos passa do total."
 
 A página inteira rola num só contêiner (`h-full overflow-y-auto`, dentro do `PageContainer`):
 abas, barra de ferramentas e conteúdo sobem juntos, como no protótipo. Só a barra de ações em massa
@@ -230,57 +240,49 @@ task tem `jira_key`. Quatro peças, num wrapper que para a propagação do cliqu
   Equipe) é um `SearchableSelect` "Adicionar opção…" com as escolhidas em chips removíveis. Cada campo grava ao sair do
   campo/escolher; erro do Jira volta como toast e o campo retorna ao valor anterior.
 
-### Modo cards (`TaskList` → `TaskCard`)
+### Modo cards (`components/tasks/TaskCardViews.tsx` → `TaskCard`)
 
-Grade responsiva `grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4`. Cada card
-(`rounded-sm border border-slate-200 p-4`, altura total da célula) tem, de cima para baixo:
+Grade `repeat(auto-fill, minmax(min(100%, 260px), 1fr))` com 16px de espaço. Cada `TaskCard` é um
+`Card size="small" hoverable` do antd, com a mesma escala de time leak da tabela no fundo e a borda
+na cor primária quando selecionado:
 
-1. **Barra de acento lateral** — 4px na borda esquerda, sobreposta (não altera a borda). Esmeralda
-   `#10b981` se rodando; a cor do nível de time leak se aplicável; senão `#cbd5e1` visível só no
-   hover.
-2. **Topo:** cadeado laranja (se bloqueada) + título em `font-semibold text-[15px] line-clamp-2`;
-   checkbox à direita, oculto até o hover ou até estar marcado.
-3. **Identidade:** `TaskIdBadge` (`#id`, clique copia), bolinha + nome do projeto (truncado em 150px), `StatusChip`, e `CategoryChip`
-   **só quando a categoria não é "normal"** — diferente da tabela, que sempre mostra. Em task do
-   Jira, também `JiraTaskControls`.
-4. **Descrição** em `line-clamp-2`, se houver.
-5. **Chips:** `DueDateBadge`, limite de tempo (`Clock`), botão de subtarefas
-   (`{feitas}/{total}` com chevron) que expande a lista inline.
-6. **Subtarefas expandidas:** lista recuada com borda esquerda, ícone de estado e nome riscado
-   quando finalizada.
-7. **Tags e contextos:** pílulas coloridas (tags) e pílulas com contorno + emoji (contextos).
-8. **Rodapé** (`mt-auto`, borda superior, `min-h-[2.75rem]`): cronômetro em `text-lg font-mono`
-   (esmeralda se rodando, vermelho pulsante acima de 1h em time leak, "—" se zerado) e botão
-   **Hoje**, revelado no hover.
+1. **Topo, à esquerda:** checkbox de seleção, `#id` em mono e cadeado se bloqueada; abaixo, ponto
+   pulsante se rodando e o nome (link `#/task/<id>`, riscado se finalizada); abaixo, se houver
+   subtarefas, um botão com `Progress` fino e `feitas/total` que abre a lista delas.
+2. **Topo, à direita:** `TaskActions` com Hoje e `⋯` (o mesmo menu da tabela).
+3. **Subtarefas abertas:** lista recuada com borda à esquerda, círculo ou `CircleCheck` e nome
+   riscado quando finalizada.
+4. **Linha de metadados:** `StatusChip` (só na aba "Todas"), `CategoryChip` (só fora de normal),
+   projeto (some ao agrupar por projeto), `ContextsCell` (some ao agrupar por contexto), prazo em
+   mono, `JiraTaskControls` e, à direita, o tempo (`formatShortDuration`).
 
-Hover do card: `hover:border-slate-300 hover:-translate-y-0.5`.
+Descrição, tags e limite de tempo saíram do card (ficam no detalhe). Clicar no card abre a task;
+botões, links, checkboxes e cliques vindos de popups não abrem.
 
-### Modo agrupado (`TaskGroups`)
+### Modo agrupado em cards (`TaskCardGroups`)
 
-Só na visão de cards (na tabela, os grupos são linhas de cabeçalho; ver "Modo tabela"). Cada grupo
-é um cartão com cabeçalho clicável que recolhe/expande:
+Cada grupo tem uma barra de cabeçalho (`GroupHeader`, o mesmo da tabela) com alça de arrastar,
+recolher, ponto da cor (projeto) ou emoji (contexto), nome, quantidade, **Selecionar grupo** e tempo
+somado, e a grade de cards embaixo.
 
-```
-[⠿] [▾] [● cor | 🏠 emoji] Nome do grupo   (N)
-```
+Grupo sem cor nem emoji ("Sem projeto", grupos do Jira) não leva marcador.
 
 Ordenação dos grupos: alfabética `pt-BR`, com "Sem projeto" / "Sem contexto" por último — até o
-usuário arrastar um grupo pela alça `⠿` (`GripVertical`). A ordem personalizada fica em
+usuário arrastar um grupo pela alça (`GroupDragButton`, `GripVertical`). A ordem personalizada fica em
 `localStorage` (`ticktask:taskListGroupOrder`), separada para projeto e contexto, e vale também para
-as colunas do Kanban. Grupos que ainda não têm posição salva entram depois dos ordenados, na ordem
-alfabética; grupos fora da tela (filtrados) mantêm a posição. A lógica é pura, em
-`lib/groupOrder.ts` (testada), e o arrastar vem de `components/SortableGroups.tsx` (`@dnd-kit`).
-
-**Agrupar por contexto duplica tarefas:** uma tarefa com três contextos aparece nos três grupos. O
-contador de cada grupo é local, então a soma dos contadores pode exceder o total real.
+as colunas do Kanban e para os cabeçalhos da tabela. Grupos que ainda não têm posição salva entram
+depois dos ordenados, na ordem alfabética; grupos fora da tela (filtrados) mantêm a posição. A lógica
+é pura, em `lib/groupOrder.ts` (testada), e o arrastar vem de `components/SortableGroups.tsx`
+(`@dnd-kit`).
 
 ### Modo Kanban (`TaskKanban`)
 
-Só na aba Executando. Colunas horizontais de `300px` (`overflow-x-auto`) com cabeçalho tingido pela
-cor do grupo (`{cor}18` de fundo, `{cor}40` de borda), emoji ou bolinha, nome e contador. O corpo
-empilha `TaskCard` completos com `gap-3`.
+Só na aba Executando. Colunas em grade horizontal (`minmax(260px, 1fr)`, rolagem horizontal), cada
+uma com fundo `colorBgLayout`, borda e raio de 12px; cabeçalho com alça, ponto ou emoji, nome e
+contador em mono; os cards empilhados com 8px. Só existem colunas com tarefas (as colunas vêm do
+agrupamento).
 
-As **colunas** podem ser reordenadas pela alça `⠿` do cabeçalho (mesma ordem do modo agrupado).
+As **colunas** podem ser reordenadas pela alça (mesma ordem do modo agrupado).
 **Os cards não se arrastam entre colunas** — as colunas são projeto/contexto, não status, e servem
 apenas como leitura agrupada.
 

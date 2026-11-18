@@ -9,8 +9,13 @@ export const LIST_GROUP_KEY = 'ticktask:taskListGroup'
 
 const GROUPS: readonly GroupBy[] = ['project', 'context', 'jira_space', 'jira_parent']
 
-export function effectiveListView(view: ListView, status: TaskStatus | 'all'): ListView {
-  return view === 'kanban' && status !== 'executando' ? 'table' : view
+export function effectiveListView(
+  view: ListView,
+  status: TaskStatus | 'all',
+  narrow = false
+): ListView {
+  const byStatus = view === 'kanban' && status !== 'executando' ? 'table' : view
+  return narrow && byStatus === 'table' ? 'cards' : byStatus
 }
 
 export function kanbanGroup(group: ListGroup): GroupBy {
