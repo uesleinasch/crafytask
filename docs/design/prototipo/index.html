@@ -112,6 +112,22 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
 .ct-theme-prev.dark { background: #111018; } .ct-theme-prev.dark span:nth-child(1) { background: #15141D; } .ct-theme-prev.dark span:nth-child(2) { background: #1A1923; } .ct-theme-prev.dark span:nth-child(3) { background: #221E3D; }
 .ct-theme-prev.system { background: linear-gradient(135deg, #F6F5FA 50%, #111018 50%); } .ct-theme-prev.system span { background: rgba(127,120,170,.35); }
 .ct-codeblock { font-family: var(--ct-mono); font-size: 12px; background: var(--ct-bg); border: 1px solid var(--ct-border); border-radius: 8px; padding: 10px 12px; margin: 0 !important; word-break: break-all; }
+.ct-hzchip { display: inline-grid; place-items: center; min-width: 30px; height: 22px; padding: 0 6px; border-radius: 6px; font-size: 12px; font-weight: 600; flex: none; }
+.ct-hzsection { scroll-margin-top: 12px; }
+.ct-hzrow { cursor: pointer; border-radius: 8px; padding-inline: 8px !important; }
+.ct-hzrow:hover { background: var(--ct-bg); }
+.ct-hzarea { display: flex; align-items: center; gap: 12px; padding: 10px; border: 1px solid var(--ct-border); border-radius: 12px; cursor: pointer; background: var(--ct-surface); min-width: 0; }
+.ct-hzarea:hover { border-color: var(--ct-border-strong); }
+.ct-hzarea.on { border-color: var(--ct-primary); box-shadow: 0 0 0 1px var(--ct-primary); }
+.ct-hzgoal { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--ct-border); }
+.ct-hzgoal:last-child { border-bottom: 0; }
+.ct-hzrail { position: sticky; top: 0; display: flex; flex-direction: column; gap: 2px; width: 184px; flex: none; }
+.ct-hzrail button { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border: 0; border-radius: 8px; background: transparent; color: var(--ct-text-2); font: inherit; cursor: pointer; text-align: left; }
+.ct-hzrail button:hover { background: var(--ct-bg); color: var(--ct-text); }
+.ct-emoji-box { width: 40px; height: 40px; flex: none; display: grid; place-items: center; border-radius: 8px; background: var(--ct-bg); font-size: 20px; }
+.ct-emoji-opt { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid var(--ct-border); border-radius: 8px; background: var(--ct-surface); font-size: 18px; cursor: pointer; }
+.ct-emoji-opt.on { border-color: var(--ct-primary); background: var(--ct-primary-soft); }
+.ct-preview { padding: 12px; border: 1px dashed var(--ct-border-strong); border-radius: 8px; background: var(--ct-bg); }
 .ct-zen { position: fixed; inset: 0; z-index: 1000; display: flex; flex-direction: column; background: var(--ct-surface); color: var(--ct-text); }
 .ct-zen-bar { height: 48px; flex: none; display: flex; align-items: center; gap: 10px; padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px)); border-bottom: 1px solid var(--ct-border); min-width: 0; }
 .ct-zen-title { flex: 1; min-width: 0; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -321,7 +337,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         Menu: { itemBg: 'transparent', subMenuItemBg: 'transparent', itemSelectedBg: c.primarySoft, itemSelectedColor: c.primary, itemHoverBg: mode === 'dark' ? '#25232F' : '#F0EFF6', itemBorderRadius: 8, itemMarginInline: 8, groupTitleColor: c.text3, groupTitleFontSize: 11, iconSize: 16, collapsedIconSize: 18 },
         Tabs: { itemColor: c.text2, itemSelectedColor: c.text, inkBarColor: c.primary, horizontalItemGutter: compact ? 16 : 24, horizontalItemPadding: '10px 4px', horizontalItemPaddingSM: '8px 4px', horizontalItemPaddingLG: '12px 4px', titleFontSize: 14 },
         Table: { headerBg: c.surface, headerColor: c.text3, headerSplitColor: 'transparent', rowHoverBg: mode === 'dark' ? '#201E2B' : '#F7F6FC', rowSelectedBg: c.primarySoft, rowSelectedHoverBg: c.primarySoft, cellPaddingBlock: compact ? 6 : 10, borderColor: c.border },
-        Card: { headerFontSize: 14 },
+        Card: { headerFontSize: 15, headerFontSizeSM: 14, headerHeight: 56, headerHeightSM: 48, headerPadding: 20, headerPaddingSM: 16, bodyPadding: 20, bodyPaddingSM: 16 },
         Segmented: { itemSelectedBg: c.surface, trackBg: mode === 'dark' ? '#15141D' : '#ECEBF3' },
         Statistic: { contentFontSize: 22 }
       }
@@ -392,8 +408,8 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
   ];
   const ROUTE_DOCS = { calendario: '04-calendario', revisao: '07-revisao-semanal', horizontes: '06-horizontes', rotulos: '09-contextos-e-tags', cadernos: '17-cadernos', dashboard: '08-dashboard', arquivo: '10-arquivadas', ajustes: '11-configuracoes' };
   const ROUTE_OF = Object.fromEntries(NAV.flatMap(g => g.children).concat(NAV_FOOT).map(i => [i.key, i]));
-  const TITLES = { tarefas: 'Tarefas', tarefa: 'Tarefa', hoje: 'Hoje', projetos: 'Projetos', projeto: 'Projeto', ajustes: 'Configurações', identidade: 'Identidade visual' };
-  const BUILT = ['tarefas', 'tarefa', 'hoje', 'projetos', 'projeto', 'ajustes', 'identidade'];
+  const TITLES = { tarefas: 'Tarefas', tarefa: 'Tarefa', hoje: 'Hoje', projetos: 'Projetos', projeto: 'Projeto', ajustes: 'Configurações', horizontes: 'Horizontes', rotulos: 'Contextos e tags', identidade: 'Identidade visual' };
+  const BUILT = ['tarefas', 'tarefa', 'hoje', 'projetos', 'projeto', 'ajustes', 'horizontes', 'rotulos', 'identidade'];
 
   function toMenu(items, collapsed) {
     return items.map(it => it.type === 'group'
@@ -498,6 +514,8 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       : route === 'projetos' ? html`<${ProjectsPage} mode=${mode} isMobile=${isMobile} screens=${screens} openProject=${openProject} />`
       : route === 'projeto' ? html`<${ProjectDetailPage} key=${projectId} mode=${mode} go=${go} isMobile=${isMobile} screens=${screens} projectId=${projectId} openTerminal=${() => setTerm(true)} />`
       : route === 'ajustes' ? html`<${SettingsPage} mode=${mode} isMobile=${isMobile} screens=${screens} themePref=${themePref} setThemePref=${setThemePref} compact=${compact} setCompact=${setCompact} />`
+      : route === 'horizontes' ? html`<${HorizonsPage} mode=${mode} go=${go} isMobile=${isMobile} screens=${screens} openProject=${openProject} />`
+      : route === 'rotulos' ? html`<${LabelsPage} mode=${mode} go=${go} isMobile=${isMobile} screens=${screens} />`
       : route === 'identidade' ? html`<${IdentityPage} mode=${mode} />`
       : html`<${Placeholder} route=${route} go=${go} />`;
 
@@ -1982,6 +2000,349 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       ${content}
     </div>`;
     return html`<div className="ct-page"><${Flex} gap=${24} align="start">${nav}${content}<//></div>`;
+  }
+
+  const AREA_DEFS = [
+    { name: 'Produtos pessoais', emoji: '🌱', description: 'Apps e conteúdos que mantenho.' },
+    { name: 'Carreira', emoji: '💼', description: 'Liderança técnica e o squad.' },
+    { name: 'Saúde', emoji: '🏋️', description: 'Treino, sono e exames.' },
+    { name: 'Aprendizado', emoji: '📚', description: 'Estudo contínuo.' }
+  ];
+  const GOALS = [
+    { id: 1, horizon: 3, name: 'Lançar o CrafyTask 4.0 com a nova interface', area: 'Produtos pessoais', description: 'Ant Design, tema escuro e app responsivo até março.' },
+    { id: 2, horizon: 3, name: 'Correr 10 km abaixo de 55 min', area: 'Saúde', description: '' },
+    { id: 3, horizon: 4, name: 'Ser referência em gestão de projetos open source', area: 'Carreira', description: 'Day Zero Playbook adotado por outros times.\nPalestrar duas vezes por ano.' },
+    { id: 4, horizon: 5, name: 'Construir ferramentas que devolvem tempo às pessoas', area: null, description: 'Simplicidade antes de recurso.' }
+  ];
+  const HZ = [
+    { h: 0, label: 'Próximas ações', sub: 'O que está planejado para hoje', icon: 'ScheduleOutlined' },
+    { h: 1, label: 'Projetos', sub: 'Resultados em andamento', icon: 'FolderOutlined' },
+    { h: 2, label: 'Áreas de foco', sub: 'Responsabilidades e papéis', icon: 'ApartmentOutlined' },
+    { h: 3, label: 'Metas', sub: '1 a 2 anos', icon: 'AimOutlined', emoji: '🎯' },
+    { h: 4, label: 'Visão', sub: '3 a 5 anos', icon: 'EyeOutlined', emoji: '🔭' },
+    { h: 5, label: 'Propósito', sub: 'Princípios e razão de ser', icon: 'StarOutlined', emoji: '✨' }
+  ];
+  const HZ_RAMP = {
+    light: [['#F1EFFF', '#4B3BC9'], ['#E4E0FF', '#4433B8'], ['#D5CFFF', '#3B2BA6'], ['#C3BAFF', '#2E218C'], ['#AFA3FA', '#24196F'], ['#9D8FF5', '#170F4D']],
+    dark: [['#1E1B33', '#B9B0FF'], ['#262143', '#C3BBFF'], ['#2F2854', '#CEC7FF'], ['#3A3168', '#D9D3FF'], ['#463B80', '#E6E2FF'], ['#5B4CA8', '#FFFFFF']]
+  };
+  const AREA_EMOJIS = ['🎯', '💼', '🏋️', '🧠', '🏠', '❤️', '🌱', '💰', '🎨', '📚', '🤝', '⚡'];
+
+  function HzChip({ h, mode }) {
+    const [bg, fg] = HZ_RAMP[mode][h];
+    return html`<span className="ct-hzchip ct-mono" style=${{ background: bg, color: fg }}>H${h}</span>`;
+  }
+
+  function HorizonsPage({ mode, go, isMobile, screens, openProject }) {
+    const { message, modal } = AntApp.useApp();
+    const [areas, setAreas] = useState(AREA_DEFS);
+    const [goals, setGoals] = useState(GOALS);
+    const [areaFilter, setAreaFilter] = useState(null);
+    const [areaModal, setAreaModal] = useState(null);
+    const [goalModal, setGoalModal] = useState(null);
+    const projectsActive = PROJECTS.filter(p => p.status === 'active');
+    const inArea = a => !areaFilter || a === areaFilter;
+    const todayTasks = TASKS.filter(t => t.today && t.status !== 'finalizada' && inArea(t.project ? P[t.project].area : null));
+    const projs = projectsActive.filter(p => inArea(p.area));
+    const shownAreas = areas.filter(a => inArea(a.name));
+    const goalsOf = h => goals.filter(g => g.horizon === h && (!areaFilter || g.area === areaFilter || g.area === null));
+    const areaDef = name => areas.find(a => a.name === name);
+    const scrollTo = h => { try { document.getElementById('hz-' + h).scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {} };
+
+    const areaTag = name => name
+      ? html`<${Tag} bordered=${false} style=${{ margin: 0, cursor: 'pointer' }} onClick=${e => { e.stopPropagation(); setAreaFilter(name); }}>${(areaDef(name) || {}).emoji || ''} ${name}<//>`
+      : html`<${Tag} bordered=${false} style=${{ margin: 0 }}>todas as áreas<//>`;
+
+    const levelCard = (lv, count, children, onAdd) => html`<section id=${'hz-' + lv.h} className="ct-hzsection">
+      <${Card} size="small" styles=${{ header: { paddingBlock: 12 } }}
+        title=${html`<${Flex} align="center" gap=${14}>
+          <${HzChip} h=${lv.h} mode=${mode} />
+          <div style=${{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <${Flex} align="center" gap=${8}><${Text} strong>${lv.label}<//><${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12 }}>${count}<//><//>
+            <${Text} type="secondary" style=${{ fontSize: 12, fontWeight: 400 }}>${lv.sub}<//>
+          </div>
+        <//>`}
+        extra=${onAdd ? html`<${Button} size="small" icon=${html`<${I.PlusOutlined} />`} onClick=${onAdd}>Adicionar<//>` : null}>
+        ${children}
+      <//>
+    </section>`;
+
+    const empty = (text, action) => html`<${Empty} image=${Empty.PRESENTED_IMAGE_SIMPLE} description=${text} style=${{ margin: '8px 0' }}>${action}<//>`;
+
+    const h0 = levelCard(HZ[0], todayTasks.length, todayTasks.length
+      ? html`<${List} size="small" split=${false} dataSource=${todayTasks} renderItem=${t => html`<${List.Item} className="ct-hzrow" onClick=${() => go('tarefa')}
+          actions=${[html`<${Tooltip} key="t" title=${t.blocked ? 'Bloqueada' : t.running ? 'Pausar' : 'Iniciar timer'}><${Button} size="small" type="text" disabled=${t.blocked} aria-label="Timer" icon=${html`<${t.running ? I.PauseOutlined : I.CaretRightOutlined} />`} onClick=${e => { e.stopPropagation(); message.success('Timer iniciado'); }} /><//>`]}>
+          <${Flex} align="center" gap=${8} style=${{ minWidth: 0, width: '100%' }}>
+            ${t.running ? html`<span className="ct-live"></span>` : null}
+            <span className="ct-taskname" style=${{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>${t.name}</span>
+            <${ProjectLabel} id=${t.project} />
+            ${t.due ? html`<${Text} className="ct-mono" type=${dueTone(t.due) === 'error' ? 'danger' : dueTone(t.due) === 'warning' ? 'warning' : 'secondary'} style=${{ fontSize: 12 }}>${fmtDate(t.due)}<//>` : null}
+          <//>
+        <//>`} />`
+      : empty('Nada planejado para hoje' + (areaFilter ? ' nesta área.' : '.'), html`<${Button} onClick=${() => go('hoje')}>Abrir o plano do dia<//>`));
+
+    const h1 = levelCard(HZ[1], projs.length, projs.length
+      ? html`<${List} size="small" split=${false} dataSource=${projs} renderItem=${p => { const st = projectStats(p, TASKS); return html`<${List.Item} className="ct-hzrow" onClick=${() => openProject(p.id)}>
+          <${Flex} align="center" gap=${10} wrap="wrap" style=${{ width: '100%', minWidth: 0 }}>
+            <span className="ct-dot" style=${{ background: p.color }}></span>
+            <${Text} strong style=${{ fontWeight: 500 }}>${p.name}<//>
+            ${areaFilter ? null : areaTag(p.area)}
+            <span style=${{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--ct-text-2)' }}>
+              ${st.next ? html`<span><${I.ForwardOutlined} style=${{ color: STATUS.proximas[mode][0] }} /> ${st.next.name}</span>` : st.open ? html`<span style=${{ color: CATEGORY.time_leak[mode][0] }}><${I.WarningOutlined} /> Sem próxima ação</span>` : null}
+            </span>
+            <${Flex} align="center" gap=${6}><${Progress} percent=${st.total ? Math.round(st.done / st.total * 100) : 0} size=${[56, 4]} showInfo=${false} /><span className="ct-mono" style=${{ fontSize: 12, color: 'var(--ct-text-2)' }}>${st.done}/${st.total}</span><//>
+          <//>
+        <//>`; }} />`
+      : empty('Nenhum projeto ativo' + (areaFilter ? ' nesta área.' : '.'), html`<${Button} onClick=${() => go('projetos')}>Abrir projetos<//>`));
+
+    const areaMenu = a => ({
+      items: [
+        { key: 'filter', icon: createElement(I.FilterOutlined), label: 'Ver só esta área nos horizontes' },
+        { key: 'projects', icon: createElement(I.FolderOutlined), label: 'Ver projetos da área' },
+        { key: 'edit', icon: createElement(I.EditOutlined), label: 'Editar' },
+        { type: 'divider' },
+        { key: 'delete', icon: createElement(I.DeleteOutlined), label: 'Excluir…', danger: true }
+      ],
+      onClick: ({ key, domEvent }) => {
+        if (domEvent) domEvent.stopPropagation();
+        if (key === 'filter') setAreaFilter(a.name);
+        if (key === 'projects') go('projetos');
+        if (key === 'edit') setAreaModal({ ...a, original: a.name });
+        if (key === 'delete') {
+          const np = PROJECTS.filter(p => p.area === a.name).length, ng = goals.filter(g => g.area === a.name).length;
+          modal.confirm({ title: 'Excluir a área ' + a.name + '?', content: np || ng ? `${np} projeto(s) e ${ng} meta(s) ficam sem área. Nada mais é apagado.` : 'Nenhum projeto ou meta usa esta área.',
+            okText: 'Excluir', okButtonProps: { danger: true }, cancelText: 'Cancelar', onOk: () => { setAreas(as => as.filter(x => x.name !== a.name)); if (areaFilter === a.name) setAreaFilter(null); message.success('Área excluída'); } });
+        }
+      }
+    });
+    const h2 = levelCard(HZ[2], shownAreas.length, shownAreas.length
+      ? html`<div className="ct-grid-auto" style=${{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 240px), 1fr))', padding: '4px 0' }}>${shownAreas.map(a => {
+          const np = projectsActive.filter(p => p.area === a.name).length, ng = goals.filter(g => g.area === a.name).length;
+          return html`<${Dropdown} key=${a.name} menu=${areaMenu(a)} trigger=${['contextMenu']}><div className=${'ct-hzarea' + (areaFilter === a.name ? ' on' : '')} role="button" tabIndex=${0} onClick=${() => setAreaFilter(areaFilter === a.name ? null : a.name)}>
+            <span className="ct-emoji-box">${a.emoji}</span>
+            <div style=${{ minWidth: 0, flex: 1 }}>
+              <${Text} strong style=${{ display: 'block' }}>${a.name}<//>
+              ${a.description ? html`<${Text} type="secondary" style=${{ fontSize: 12 }} ellipsis>${a.description}<//>` : null}
+              <${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12, display: 'block' }}>${np} projeto${np === 1 ? '' : 's'} · ${ng} meta${ng === 1 ? '' : 's'}<//>
+            </div>
+            <${Dropdown} menu=${areaMenu(a)} trigger=${['click']}><${Button} size="small" type="text" aria-label="Mais ações" icon=${html`<${I.EllipsisOutlined} />`} onClick=${e => e.stopPropagation()} /><//>
+          </div><//>`; })}</div>`
+      : empty('Nenhuma área de foco.', null), () => setAreaModal({ name: '', emoji: '🎯', description: '' }));
+
+    const goalMenu = g => ({
+      items: [
+        { key: 'edit', icon: createElement(I.EditOutlined), label: 'Editar' },
+        { key: 'move', icon: createElement(I.SwapOutlined), label: 'Mover para', children: HZ.slice(3).map(lv => ({ key: 'move:' + lv.h, label: (g.horizon === lv.h ? '✓ ' : '') + 'H' + lv.h + ' — ' + lv.label })) },
+        { type: 'divider' },
+        { key: 'delete', icon: createElement(I.DeleteOutlined), label: 'Excluir…', danger: true }
+      ],
+      onClick: ({ key }) => {
+        const [k, v] = key.split(':');
+        if (k === 'edit') setGoalModal({ ...g });
+        if (k === 'move') { setGoals(gs => gs.map(x => x.id === g.id ? { ...x, horizon: Number(v) } : x)); message.success('Movida para H' + v); }
+        if (k === 'delete') modal.confirm({ title: 'Excluir "' + g.name + '"?', content: 'Só esta meta é apagada; áreas e projetos não mudam.', okText: 'Excluir', okButtonProps: { danger: true }, cancelText: 'Cancelar', onOk: () => { setGoals(gs => gs.filter(x => x.id !== g.id)); message.success('Meta excluída'); } });
+      }
+    });
+    const goalLevel = lv => { const list = goalsOf(lv.h); return levelCard(lv, list.length, list.length
+      ? html`<${List} size="small" split=${false} dataSource=${list} renderItem=${g => html`<${Dropdown} menu=${goalMenu(g)} trigger=${['contextMenu']}><div className="ct-hzgoal">
+          <span style=${{ fontSize: 18 }}>${lv.emoji}</span>
+          <div style=${{ flex: 1, minWidth: 0 }}>
+            <${Flex} align="center" gap=${8} wrap="wrap"><${Text} strong style=${{ fontWeight: 500 }}>${g.name}<//>${areaTag(g.area)}<//>
+            ${g.description ? html`<${Text} type="secondary" style=${{ whiteSpace: 'pre-wrap', fontSize: 13, display: 'block', marginTop: 2 }}>${g.description}<//>` : null}
+          </div>
+          <${Dropdown} menu=${goalMenu(g)} trigger=${['click']}><${Button} size="small" type="text" aria-label="Mais ações" icon=${html`<${I.EllipsisOutlined} />`} /><//>
+        </div><//>`} />`
+      : empty('Nada em ' + lv.label.toLowerCase() + (areaFilter ? ' nesta área.' : '.'), null), () => setGoalModal({ name: '', horizon: lv.h, area: areaFilter, description: '' })); };
+
+    const rail = html`<nav className="ct-hzrail" aria-label="Níveis">
+      ${HZ.map(lv => html`<button key=${lv.h} type="button" onClick=${() => scrollTo(lv.h)}><${HzChip} h=${lv.h} mode=${mode} /><span>${lv.label}</span></button>`)}
+    </nav>`;
+
+    const saveArea = () => {
+      const a = areaModal; if (!a.name.trim()) { message.error('Dê um nome à área.'); return; }
+      setAreas(as => a.original ? as.map(x => x.name === a.original ? { name: a.name.trim(), emoji: a.emoji, description: a.description } : x) : as.concat({ name: a.name.trim(), emoji: a.emoji, description: a.description }));
+      setAreaModal(null); message.success(a.original ? 'Área atualizada' : 'Área criada');
+    };
+    const saveGoal = () => {
+      const g = goalModal; if (!g.name.trim()) { message.error('Dê um nome à meta.'); return; }
+      setGoals(gs => g.id ? gs.map(x => x.id === g.id ? g : x) : gs.concat({ ...g, id: Date.now() }));
+      setGoalModal(null); message.success(g.id ? 'Atualizada' : 'Criada em H' + g.horizon);
+    };
+
+    return html`<div className=${isMobile ? 'ct-page-narrow' : 'ct-page'}>
+      <${Flex} gap=${8} wrap="wrap" align="center" style=${{ marginBottom: 16 }}>
+        <${Select} allowClear placeholder="Todas as áreas" value=${areaFilter} onChange=${v => setAreaFilter(v || null)} style=${{ width: 240 }} aria-label="Filtrar por área"
+          options=${areas.map(a => ({ value: a.name, label: a.emoji + ' ' + a.name }))} />
+        ${areaFilter ? html`<${Text} type="secondary" style=${{ fontSize: 13 }}>Mostrando ações, projetos e metas de ${areaFilter}. Metas sem área aparecem em todas.<//>` : html`<${Text} type="secondary" style=${{ fontSize: 13 }}>Escolha uma área para ver do propósito à ação de hoje.<//>`}
+        <div style=${{ flex: 1 }}></div>
+        <${Button} icon=${html`<${I.PlusOutlined} />`} onClick=${() => setAreaModal({ name: '', emoji: '🎯', description: '' })}>Nova área<//>
+        <${Button} type="primary" icon=${html`<${I.PlusOutlined} />`} onClick=${() => setGoalModal({ name: '', horizon: 3, area: areaFilter, description: '' })}>Nova meta<//>
+      <//>
+      <${Flex} gap=${24} align="start">
+        ${screens.lg ? rail : null}
+        <${Flex} vertical gap=${16} style=${{ flex: 1, minWidth: 0 }}>
+          ${h0}${h1}${h2}${goalLevel(HZ[3])}${goalLevel(HZ[4])}${goalLevel(HZ[5])}
+        <//>
+      <//>
+      <${Modal} open=${!!areaModal} title=${areaModal && areaModal.original ? 'Editar área de foco' : 'Nova área de foco'} onCancel=${() => setAreaModal(null)} onOk=${saveArea} okText="Salvar" cancelText="Cancelar" destroyOnClose>
+        ${areaModal ? html`<${Flex} vertical gap=${12}>
+          <div><${Text} type="secondary" style=${{ fontSize: 12 }}>Ícone<//><${Flex} gap=${6} wrap="wrap" style=${{ marginTop: 6 }}>${AREA_EMOJIS.map(e => html`<button key=${e} type="button" className=${'ct-emoji-opt' + (areaModal.emoji === e ? ' on' : '')} aria-pressed=${areaModal.emoji === e} onClick=${() => setAreaModal({ ...areaModal, emoji: e })}>${e}</button>`)}<//></div>
+          <${Input} autoFocus placeholder="Ex.: Carreira, Saúde, Família" value=${areaModal.name} onChange=${e => setAreaModal({ ...areaModal, name: e.target.value })} aria-label="Nome" />
+          <${Input.TextArea} placeholder="Descrição" autoSize=${{ minRows: 2 }} value=${areaModal.description} onChange=${e => setAreaModal({ ...areaModal, description: e.target.value })} aria-label="Descrição" />
+        <//>` : null}
+      <//>
+      <${Modal} open=${!!goalModal} title=${goalModal && goalModal.id ? 'Editar' : 'Nova meta, visão ou propósito'} onCancel=${() => setGoalModal(null)} onOk=${saveGoal} okText="Salvar" cancelText="Cancelar" destroyOnClose>
+        ${goalModal ? html`<${Flex} vertical gap=${12}>
+          <${Segmented} block value=${goalModal.horizon} onChange=${v => setGoalModal({ ...goalModal, horizon: v })} options=${HZ.slice(3).map(lv => ({ value: lv.h, label: lv.emoji + ' H' + lv.h + ' ' + lv.label }))} />
+          <${Input} autoFocus placeholder="Ex.: Tornar-me líder técnico sênior" value=${goalModal.name} onChange=${e => setGoalModal({ ...goalModal, name: e.target.value })} aria-label="Nome" />
+          <${Select} allowClear placeholder="Sem área (vale para todas)" value=${goalModal.area} onChange=${v => setGoalModal({ ...goalModal, area: v || null })} options=${areas.map(a => ({ value: a.name, label: a.emoji + ' ' + a.name }))} aria-label="Área de foco" />
+          <${Input.TextArea} placeholder="Descrição (quebras de linha são mantidas)" autoSize=${{ minRows: 3 }} value=${goalModal.description} onChange=${e => setGoalModal({ ...goalModal, description: e.target.value })} aria-label="Descrição" />
+        <//>` : null}
+      <//>
+    </div>`;
+  }
+
+  const LABEL_COLORS = ['#E5484D', '#A84803', '#A15C00', '#0B7A50', '#0F6E7A', '#2A62D6', '#5B47EB', '#7647B0', '#B8327A', '#5D6B82'];
+  const CONTEXT_EMOJIS = ['💻', '📱', '👥', '📧', '📖', '🛒', '🏠', '🏢', '🚗', '🏋️', '☎️', '📝', '🎯', '💬', '🔧', '📋', '✍️', '🔀'];
+  const INITIAL_TAGS = [
+    { name: 'jira', color: '#0F6E7A', uses: 31, open: 12 }, { name: 'refactor', color: '#2A62D6', uses: 14, open: 9 },
+    { name: 'bug', color: '#C02331', uses: 8, open: 3 }, { name: 'design', color: '#7647B0', uses: 6, open: 6 },
+    { name: 'Bug', color: '#A84803', uses: 2, open: 1 }, { name: 'cliente', color: '#0B7A50', uses: 0, open: 0 }
+  ];
+  const CONTEXT_COLOR = { '@dev': '#2A62D6', '@reunião': '#A84803', '@telefone': '#0B7A50', '@escrita': '#7647B0', '@leitura': '#0F6E7A', '@github': '#5D6B82' };
+
+  function LabelsPage({ mode, go, isMobile, screens }) {
+    const { message, modal } = AntApp.useApp();
+    const [tab, setTab] = useState('contextos');
+    const [contexts, setContexts] = useState(() => CONTEXTS.map(c => {
+      const ts = TASKS.filter(t => t.contexts.includes(c.name));
+      return { ...c, color: CONTEXT_COLOR[c.name] || '#5D6B82', uses: ts.length, open: ts.filter(t => t.status !== 'finalizada').length };
+    }).concat([{ name: '@compras', emoji: '🛒', color: '#B8327A', uses: 0, open: 0 }]));
+    const [tags, setTags] = useState(INITIAL_TAGS);
+    const [q, setQ] = useState('');
+    const [sort, setSort] = useState('uses');
+    const [onlyUnused, setOnlyUnused] = useState(false);
+    const [view, setView] = useState('cards');
+    const [editing, setEditing] = useState(null);
+    const [merging, setMerging] = useState(null);
+    const [mergeTo, setMergeTo] = useState(null);
+    const isCtx = tab === 'contextos';
+    const list = isCtx ? contexts : tags;
+    const setList = isCtx ? setContexts : setTags;
+    const noun = isCtx ? 'contexto' : 'tag';
+    const display = l => isCtx ? l.name : '#' + l.name;
+    const effectiveView = isMobile ? 'cards' : view;
+    useEffect(() => { setQ(''); setOnlyUnused(false); }, [tab]);
+
+    const rows = list
+      .filter(l => !q.trim() || l.name.toLowerCase().includes(q.trim().toLowerCase()))
+      .filter(l => !onlyUnused || l.uses === 0)
+      .sort(sort === 'name' ? (a, b) => a.name.localeCompare(b.name) : sort === 'unused' ? (a, b) => a.uses - b.uses : (a, b) => b.uses - a.uses);
+    const usage = l => l.uses === 0 ? 'não usado' + (isCtx ? '' : 'a') : `em ${l.uses} tarefa${l.uses === 1 ? '' : 's'} · ${l.open} aberta${l.open === 1 ? '' : 's'}`;
+    const openTasks = l => { go('tarefas'); message.info('Tarefas filtradas por ' + display(l)); };
+    const mark = (l, size) => isCtx
+      ? html`<span className="ct-emoji-box" style=${{ background: l.color + '24', width: size, height: size }}>${l.emoji}</span>`
+      : html`<span className="ct-emoji-box" style=${{ width: size, height: size }}><span className="ct-dot" style=${{ background: l.color, width: 12, height: 12 }}></span></span>`;
+
+    const menuFor = l => ({
+      items: [
+        { key: 'open', icon: createElement(I.UnorderedListOutlined), label: 'Ver tarefas', disabled: l.uses === 0 },
+        { key: 'edit', icon: createElement(I.EditOutlined), label: 'Editar' },
+        { key: 'merge', icon: createElement(I.MergeCellsOutlined), label: 'Mesclar em…', disabled: list.length < 2 },
+        { type: 'divider' },
+        { key: 'delete', icon: createElement(I.DeleteOutlined), label: 'Excluir…', danger: true }
+      ],
+      onClick: ({ key, domEvent }) => {
+        if (domEvent) domEvent.stopPropagation();
+        if (key === 'open') openTasks(l);
+        if (key === 'edit') setEditing({ ...l, original: l.name });
+        if (key === 'merge') { setMerging(l); setMergeTo(null); }
+        if (key === 'delete') modal.confirm({
+          title: 'Excluir ' + display(l) + '?',
+          content: l.uses ? `${isCtx ? 'O contexto' : 'A tag'} sai de ${l.uses} tarefa${l.uses === 1 ? '' : 's'}. As tarefas em si não são afetadas.` : `${isCtx ? 'Este contexto não está' : 'Esta tag não está'} em nenhuma tarefa.`,
+          okText: 'Excluir', okButtonProps: { danger: true }, cancelText: 'Cancelar',
+          onOk: () => { setList(ls => ls.filter(x => x.name !== l.name)); message.success(display(l) + ' excluíd' + (isCtx ? 'o' : 'a')); }
+        });
+      }
+    });
+
+    const card = l => html`<${Dropdown} key=${l.name} menu=${menuFor(l)} trigger=${['contextMenu']}>
+      <div><${Card} size="small" hoverable onClick=${() => l.uses ? openTasks(l) : setEditing({ ...l, original: l.name })}>
+        <${Flex} align="center" gap=${12}>
+          ${mark(l, 40)}
+          <div style=${{ flex: 1, minWidth: 0 }}>
+            <${Text} strong ellipsis style=${{ display: 'block' }}>${display(l)}<//>
+            <${Text} type="secondary" style=${{ fontSize: 12 }}>${usage(l)}<//>
+          </div>
+          <${Dropdown} menu=${menuFor(l)} trigger=${['click']}><${Button} size="small" type="text" aria-label="Mais ações" icon=${html`<${I.EllipsisOutlined} />`} onClick=${e => e.stopPropagation()} /><//>
+        <//>
+      <//></div>
+    <//>`;
+
+    const table = html`<${Table} rowKey="name" size="small" pagination=${false} dataSource=${rows} scroll=${{ x: 'max-content' }}
+      components=${{ body: { row: MenuRow } }} onRow=${l => ({ record: l, menu: menuFor(l) })}
+      columns=${[
+        { title: isCtx ? 'Contexto' : 'Tag', key: 'name', render: (_, l) => html`<${Flex} align="center" gap=${10}>${mark(l, 28)}<a onClick=${() => l.uses ? openTasks(l) : null} style=${{ color: 'var(--ct-text)', fontWeight: 500 }}>${display(l)}</a><//>` },
+        { title: 'Tarefas', key: 'uses', width: 90, align: 'right', render: (_, l) => html`<span className="ct-mono">${l.uses}</span>` },
+        { title: 'Abertas', key: 'open', width: 90, align: 'right', render: (_, l) => html`<span className="ct-mono">${l.open}</span>` },
+        { title: '', key: 'act', width: 48, render: (_, l) => html`<${Dropdown} menu=${menuFor(l)} trigger=${['click']} placement="bottomRight"><${Button} size="small" type="text" aria-label="Mais ações" icon=${html`<${I.EllipsisOutlined} />`} /><//>` }
+      ]} />`;
+
+    const saveEdit = () => {
+      const e = editing; const name = e.name.trim().replace(/^#/, '');
+      if (!name) { message.error('Dê um nome.'); return; }
+      if (list.some(x => x.name.toLowerCase() === name.toLowerCase() && x.name !== e.original)) { message.error('Já existe ' + (isCtx ? 'um contexto' : 'uma tag') + ' com esse nome. Use Mesclar.'); return; }
+      setList(ls => e.original ? ls.map(x => x.name === e.original ? { ...x, name, emoji: e.emoji, color: e.color } : x) : ls.concat({ name, emoji: e.emoji, color: e.color, uses: 0, open: 0 }));
+      setEditing(null); message.success(e.original ? 'Salvo' : (isCtx ? 'Contexto criado' : 'Tag criada'));
+    };
+    const doMerge = () => {
+      const from = merging, to = list.find(x => x.name === mergeTo);
+      setList(ls => ls.filter(x => x.name !== from.name).map(x => x.name === to.name ? { ...x, uses: x.uses + from.uses, open: x.open + from.open } : x));
+      setMerging(null); message.success(`Mesclado em ${display(to)}: ${from.uses} tarefa${from.uses === 1 ? '' : 's'} atualizada${from.uses === 1 ? '' : 's'}`);
+    };
+
+    const tabLabel = (k, label, icon, n) => ({ key: k, label: html`<span style=${{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>${createElement(I[icon])}${label}<span className="ct-mono" style=${{ fontSize: 12, color: 'var(--ct-text-3)', background: 'var(--ct-bg)', borderRadius: 6, padding: '0 6px', border: '1px solid var(--ct-border)' }}>${n}</span></span>` });
+    const unusedCount = list.filter(l => l.uses === 0).length;
+
+    return html`<div className=${isMobile ? 'ct-page-narrow' : 'ct-page'}>
+      <${Tabs} activeKey=${tab} onChange=${setTab} items=${[tabLabel('contextos', 'Contextos', 'EnvironmentOutlined', contexts.length), tabLabel('tags', 'Tags', 'TagsOutlined', tags.length)]} style=${{ marginBottom: 4 }} />
+      <${Text} type="secondary" style=${{ display: 'block', marginBottom: 12, maxWidth: '72ch' }}>${isCtx
+        ? 'Onde ou com o que uma ação pode ser feita. Filtre a lista por contexto para ver o que dá para fazer agora.'
+        : 'Rótulos livres, criados enquanto você digita. Variações de grafia viram tags diferentes: use Mesclar para juntar.'}<//>
+      <${Flex} gap=${8} wrap="wrap" align="center" style=${{ marginBottom: 12 }}>
+        <${Input} allowClear placeholder=${'Buscar ' + (isCtx ? 'contexto' : 'tag')} prefix=${html`<${I.SearchOutlined} />`} value=${q} onChange=${e => setQ(e.target.value)} style=${{ flex: '1 1 200px', maxWidth: 320 }} aria-label="Buscar" />
+        <${Select} value=${sort} onChange=${setSort} style=${{ width: 170 }} aria-label="Ordenar" options=${[{ value: 'uses', label: 'Mais usados' }, { value: 'name', label: 'Nome' }, { value: 'unused', label: 'Menos usados' }]} />
+        <${Checkbox} checked=${onlyUnused} onChange=${e => setOnlyUnused(e.target.checked)}>Só sem uso <span className="ct-mono" style=${{ color: 'var(--ct-text-3)' }}>${unusedCount}</span><//>
+        <div style=${{ flex: 1 }}></div>
+        ${isMobile ? null : html`<${Segmented} value=${effectiveView} onChange=${setView} options=${[{ value: 'cards', icon: html`<${I.AppstoreOutlined} />`, label: screens.lg ? 'Cards' : null, title: 'Cards' }, { value: 'tabela', icon: html`<${I.TableOutlined} />`, label: screens.lg ? 'Tabela' : null, title: 'Tabela' }]} />`}
+        <${Button} type="primary" icon=${html`<${I.PlusOutlined} />`} onClick=${() => setEditing({ name: '', emoji: isCtx ? '💻' : null, color: LABEL_COLORS[5] })}>${screens.sm ? (isCtx ? 'Novo contexto' : 'Nova tag') : null}<//>
+      <//>
+      ${rows.length === 0
+        ? html`<${Empty} image=${Empty.PRESENTED_IMAGE_SIMPLE} description=${q || onlyUnused ? 'Nada com esses filtros.' : 'Nenhum ' + noun + ' ainda.'} />`
+        : effectiveView === 'tabela' ? table : html`<div className="ct-grid-auto" style=${{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 230px), 1fr))' }}>${rows.map(card)}</div>`}
+
+      <${Modal} open=${!!editing} title=${editing && editing.original ? 'Editar ' + display(editing) : isCtx ? 'Novo contexto' : 'Nova tag'} onCancel=${() => setEditing(null)} onOk=${saveEdit} okText="Salvar" cancelText="Cancelar" destroyOnClose>
+        ${editing ? html`<${Flex} vertical gap=${14}>
+          ${editing.original && editing.uses ? html`<${Text} type="secondary">O novo nome vale para as ${editing.uses} tarefas que já usam ${isCtx ? 'este contexto' : 'esta tag'}.<//>` : null}
+          <${Input} autoFocus placeholder=${isCtx ? '@computador' : 'urgente'} value=${editing.name} onChange=${e => setEditing({ ...editing, name: e.target.value })} aria-label="Nome" />
+          ${isCtx ? html`<div><${Text} type="secondary" style=${{ fontSize: 12 }}>Ícone<//><${Flex} gap=${6} wrap="wrap" style=${{ marginTop: 6 }}>${CONTEXT_EMOJIS.map(em => html`<button key=${em} type="button" className=${'ct-emoji-opt' + (editing.emoji === em ? ' on' : '')} aria-pressed=${editing.emoji === em} onClick=${() => setEditing({ ...editing, emoji: em })}>${em}</button>`)}<//></div>` : null}
+          <div><${Text} type="secondary" style=${{ fontSize: 12 }}>Cor<//><${Flex} gap=${8} wrap="wrap" style=${{ marginTop: 6 }}>${LABEL_COLORS.map(c => html`<button key=${c} type="button" aria-label=${'Cor ' + c} aria-pressed=${editing.color === c} onClick=${() => setEditing({ ...editing, color: c })}
+            style=${{ width: 26, height: 26, borderRadius: '50%', background: c, border: editing.color === c ? '2px solid var(--ct-text)' : '2px solid transparent', boxShadow: '0 0 0 1px var(--ct-border)', cursor: 'pointer' }}></button>`)}<//></div>
+          <div className="ct-preview">
+            <${Text} type="secondary" style=${{ fontSize: 11 }} className="ct-eyebrow">Prévia<//>
+            <${Flex} align="center" gap=${12} style=${{ marginTop: 6 }}>${mark({ ...editing, name: editing.name || (isCtx ? '@contexto' : 'tag') }, 40)}<${Text} strong>${isCtx ? (editing.name || '@contexto') : '#' + (editing.name.replace(/^#/, '') || 'tag')}<//><//>
+          </div>
+        <//>` : null}
+      <//>
+
+      <${Modal} open=${!!merging} title=${merging ? html`<${Space}>Mesclar ${display(merging)}${isCtx ? html`<${NewTag} />` : null}<//>` : ''} onCancel=${() => setMerging(null)} onOk=${doMerge} okText="Mesclar" okButtonProps=${{ disabled: !mergeTo }} cancelText="Cancelar" destroyOnClose>
+        ${merging ? html`<${Flex} vertical gap=${12}>
+          <${Text}>${merging.uses ? html`As <b>${merging.uses} tarefa${merging.uses === 1 ? '' : 's'}</b> com ${display(merging)} passam para o destino, e <b>${display(merging)}</b> deixa de existir.` : html`<b>${display(merging)}</b> não está em nenhuma tarefa e deixa de existir.`}<//>
+          <${Select} showSearch placeholder="Mesclar em…" value=${mergeTo} onChange=${setMergeTo} optionFilterProp="title" aria-label="Destino"
+            options=${list.filter(x => x.name !== merging.name).map(x => ({ value: x.name, title: x.name, label: html`<${Flex} justify="space-between" gap=${8}><span>${isCtx ? x.emoji + ' ' : ''}${display(x)}</span><span className="ct-mono" style=${{ color: 'var(--ct-text-3)' }}>${x.uses}</span><//>` }))} />
+        <//>` : null}
+      <//>
+    </div>`;
   }
 
   function Placeholder({ route, go }) {

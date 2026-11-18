@@ -137,6 +137,11 @@ existem. Token antd: `fontFamily` (Geist) e `fontFamilyCode` (Geist Mono), `font
 - **Raio:** 4 (`borderRadiusXS`, tag), 6 (`borderRadiusSM`, chip e controle pequeno), 8
   (`borderRadius`, controle e card), 12 (`borderRadiusLG`, modal, coluna do Kanban, barra
   flutuante). `999px` só para pílula de timer e ponto. Nada de outros valores.
+- **Cabeçalho de card:** altura mínima de 48px no `size="small"` (56px no normal), 16px de
+  padding lateral (20px no normal), corpo com o mesmo padding. Título com subtítulo (duas linhas)
+  ganha 12px de padding vertical via `styles.header`, nunca encostando nas bordas; entre o
+  marcador (chip, ícone) e o título, 12–14px. Tokens: `Card.headerHeightSM`, `headerPaddingSM`,
+  `bodyPaddingSM` (e as versões normais).
 - **Sombra:** só no que flutua (popover, modal, barra de ações em massa). Card na página tem borda,
   sem sombra.
 - **Espaço:** múltiplos de 4. Página com 24px de margem lateral (12px abaixo de `md`), 16px entre
@@ -355,6 +360,47 @@ notas:
   Tarefas e Resumo.
 - Próxima ação passa a ser **escolhida** (hoje é derivada da tarefa `proximas` mais recente). Isso
   pede uma coluna `projects.next_task_id`, com a regra atual como padrão quando estiver vazia.
+
+### Horizontes
+
+A única tela que liga a ação de hoje ao propósito. O redesenho dá a ela o que falta: navegar de um
+nível para outro.
+
+- **Escala única:** os seis níveis deixam de ter seis cores soltas. Cada um tem um chip `H0`…`H5`
+  numa escala de violeta da marca, mais clara embaixo (ação) e mais escura em cima (propósito):
+  claro `#F1EFFF/#4B3BC9` → `#9D8FF5/#170F4D`, escuro `#1E1B33/#B9B0FF` → `#5B4CA8/#FFFFFF`, todos
+  com contraste AA. Os níveis são `Card` neutros, sem fundo tingido nem `border-2`.
+- **Trilho lateral** (`lg+`): H0 a H5 com o chip; clicar rola até o nível. Não usa âncora de URL
+  (o app roteia pelo hash).
+- **Filtro por área**, no topo: escolhida uma área, todos os níveis mostram só o que é dela (ações
+  de hoje dos projetos da área, projetos, a área, metas). Metas sem área aparecem em todas. Clicar
+  num card de área ou numa etiqueta de área liga o mesmo filtro.
+- **H0** ações de hoje (abre a task; timer na linha) · **H1** projetos ativos (abre o projeto;
+  próxima ação ou "Sem próxima ação"; progresso) · **H2** áreas em cards (emoji, descrição,
+  "N projetos · M metas") · **H3–H5** metas, visão e propósito (emoji do nível, área, descrição com
+  quebras de linha).
+- **Ações:** "+ Adicionar" de cada nível abre o diálogo **já no nível certo** (hoje sempre H3).
+  Menu `⋯`/botão direito: área (filtrar, ver projetos, editar, excluir), meta (editar, mover para
+  outro nível, excluir). Excluir sempre confirma e diz o que acontece com projetos e metas (E6).
+- Diálogo de meta com `Segmented` H3/H4/H5; de área com grade de emojis.
+
+### Contextos e tags
+
+Uma tela (`/contexts`, abas **Contextos** e **Tags** com contador; `/tags` abre na aba Tags) com os
+mesmos recursos nas duas (C4, D1):
+
+- Uma frase do que é cada um (sem faixa azul), busca, ordenar (mais usados, nome, menos usados),
+  "Só sem uso" com contador (limpeza), Cards/Tabela e "Novo contexto"/"Nova tag".
+- **Card:** contexto com emoji em quadrado tingido pela cor; tag com o ponto da cor. Nome (tag com
+  `#`), "em N tarefas · M abertas" ou "não usado". Clicar abre a lista de tarefas filtrada pelo
+  rótulo (E3); sem uso, abre a edição.
+- **Tabela:** rótulo, tarefas, abertas, `⋯`.
+- **Menu** (`⋯` e botão direito): Ver tarefas · Editar · Mesclar em… · Excluir…
+- **Editar/criar** com prévia ao vivo para os dois (hoje só contexto tem), emoji só em contexto,
+  paleta de cores dos tokens. Nome repetido é recusado com a dica de usar Mesclar.
+- **Mesclar** vale para tags e, agora, para contextos (novo): diz quantas tarefas passam e que o
+  rótulo de origem deixa de existir.
+- **Excluir** confirma citando o uso, no modelo da exclusão de tag de hoje (D3).
 
 ### Configurações
 

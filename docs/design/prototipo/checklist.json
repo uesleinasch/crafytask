@@ -104,6 +104,16 @@
       }
     },
     {
+      "id": "F0.11",
+      "fase": "F0",
+      "titulo": "Respiro do cabeçalho de card definido no tema",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/theme/**/*.{ts,tsx}",
+        "padroes": ["headerHeightSM", "headerPaddingSM", "bodyPaddingSM"]
+      }
+    },
+    {
       "id": "F0.9",
       "fase": "F0",
       "titulo": "Paleta e tipografia conferidas no app, claro e escuro",
@@ -658,6 +668,30 @@
       }
     },
     {
+      "id": "F5.9",
+      "fase": "F5",
+      "titulo": "Horizontes: escala única H0–H5, trilho e filtro por área",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/{pages/HorizonsPage.tsx,components/horizons/*.tsx,theme/*.ts}",
+        "padroes": [
+          "H0|hzRamp|HZ_RAMP|horizonRamp",
+          "Filtrar por área|Todas as áreas",
+          "scrollIntoView"
+        ]
+      }
+    },
+    {
+      "id": "F5.10",
+      "fase": "F5",
+      "titulo": "Adicionar meta já no horizonte da seção",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/{pages/HorizonsPage.tsx,components/horizons/*.tsx}",
+        "padrao": "horizon: ?(h|level|lv\\.h)"
+      }
+    },
+    {
       "id": "F5.4",
       "fase": "F5",
       "titulo": "Projetos, horizontes e revisão conferidos",
@@ -692,6 +726,44 @@
         "tipo": "ausente",
         "arquivos": "src/renderer/src/**/*.tsx",
         "padrao": "Fontes? / Tags?"
+      }
+    },
+    {
+      "id": "F6.4",
+      "fase": "F6",
+      "titulo": "Mesmos recursos para contextos e tags (uso, prévia, mesclar)",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/{pages/LabelsPage.tsx,components/labels/*.tsx}",
+        "padroes": ["Mesclar", "Prévia", "abertas", "Só sem uso"]
+      }
+    },
+    {
+      "id": "F6.5",
+      "fase": "F6",
+      "titulo": "Clicar no rótulo abre a lista de tarefas filtrada",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/renderer/src/{pages/LabelsPage.tsx,components/labels/*.tsx}",
+        "padrao": "Ver tarefas"
+      }
+    },
+    {
+      "id": "F6.6",
+      "fase": "F6",
+      "titulo": "Mesclar contextos no backend",
+      "check": {
+        "tipo": "contem",
+        "arquivos": "src/main/**/*.ts",
+        "padrao": "mergeContext|context:merge"
+      }
+    },
+    {
+      "id": "F6.7",
+      "fase": "F6",
+      "titulo": "Contextos, tags e arquivo conferidos",
+      "check": {
+        "tipo": "manual"
       }
     },
     {
