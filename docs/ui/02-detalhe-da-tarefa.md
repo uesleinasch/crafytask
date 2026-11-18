@@ -108,6 +108,7 @@ Grade `[90px_1fr]` — rótulo cinza à esquerda, controle à direita.
 | Rótulo | Controle | Salvamento |
 | --- | --- | --- |
 | Status | `StatusSelect` (180px, `bg-slate-100`) | imediato + toast "Status alterado" |
+| Aguardando | `WaitingForField` (antd `Input`, `components/tasks/WaitingFor.tsx`): aparece com status Aguardando ou com texto salvo; grava `waiting_for` ao sair do campo ou com Enter (vazio limpa) | o texto vira a ampulheta da lista; a pílula do protótipo vem na F3-b |
 | Jira | `JiraTaskControls` com tipo e chave da issue, sem o botão de campos (só em task do Jira; ver "JiraTaskControls" abaixo) | transição direto no Jira |
 | Pai no Jira | chave + resumo da issue pai (épico/história); clique abre a issue pai no navegador. Só quando a issue tem pai | — |
 | Projeto | `SearchableSelect` + link **"Abrir projeto →"** abaixo quando há projeto | imediato + toast |

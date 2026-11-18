@@ -188,7 +188,7 @@ A célula **Tarefa**, da esquerda para a direita: botão de expandir subtarefas 
 `ChevronDown`; a quantidade fica no rótulo acessível e no tooltip, e o espaço é mantido quando não
 há subtarefas), `Lock` se bloqueada (tooltip e rótulo "Bloqueada: depende de #702 e #705", de
 `blocked_by`, até três ids e "e mais N"), ponto pulsante (`LiveDot`) se rodando, o nome (500, reticências,
-riscado se finalizada; é um link `#/task/<id>`, então recebe foco pelo Tab), `Clock` com o horário
+riscado se finalizada; é um link `#/task/<id>`, então recebe foco pelo Tab), `Hourglass` na cor de Aguardando com "Aguardando: {texto}" no tooltip quando há `waiting_for` (`WaitingForIcon`), `Clock` com o horário
 agendado no tooltip e no rótulo acessível, `Copy` com "Também em …" ao agrupar por contexto e
 a chave do Jira em task importada (ver "Jira na lista").
 

@@ -565,8 +565,8 @@
       "titulo": "Aguardando o quê: ampulheta na lista e pílula no detalhe",
       "check": {
         "tipo": "contem-todos",
-        "arquivos": "src/renderer/src/components/tasks/{TaskTable,TaskCard}.tsx",
-        "padroes": ["waiting_for", "Hourglass", "Aguardando: "]
+        "arquivos": "src/renderer/src/components/tasks/{TaskTable,WaitingFor}.tsx",
+        "padroes": ["waiting_for", "WaitingForIcon", "Hourglass", "Aguardando: "]
       }
     },
     {
