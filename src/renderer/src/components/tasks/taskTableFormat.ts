@@ -27,6 +27,9 @@ export function dueTone(date: string | null | undefined, now: Date): DueTone {
 export function blockedLabel(blockerIds: readonly number[] | undefined): string {
   const refs = (blockerIds ?? []).map((id) => `#${id}`)
   if (refs.length === 0) return 'Bloqueada por dependências'
+  if (refs.length > 3) {
+    return `Bloqueada: depende de ${refs.slice(0, 3).join(', ')} e mais ${refs.length - 3}`
+  }
   const list = refs.length === 1 ? refs[0] : `${refs.slice(0, -1).join(', ')} e ${refs.at(-1)}`
   return `Bloqueada: depende de ${list}`
 }

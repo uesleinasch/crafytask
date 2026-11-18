@@ -40,6 +40,7 @@ describe('blockedLabel', () => {
     expect(blockedLabel([702])).toBe('Bloqueada: depende de #702')
     expect(blockedLabel([702, 705])).toBe('Bloqueada: depende de #702 e #705')
     expect(blockedLabel([1, 2, 3])).toBe('Bloqueada: depende de #1, #2 e #3')
+    expect(blockedLabel([1, 2, 3, 4, 5])).toBe('Bloqueada: depende de #1, #2, #3 e mais 2')
   })
 
   it('cai no texto genérico sem ids', () => {

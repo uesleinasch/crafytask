@@ -185,7 +185,8 @@ Toda linha tem uma linha de texto só: nada de descrição, barra ou contador em
 
 A célula **Tarefa**, da esquerda para a direita: botão de expandir subtarefas (`ChevronRight`/
 `ChevronDown`; a quantidade fica no rótulo acessível e no tooltip, e o espaço é mantido quando não
-há subtarefas), `Lock` se bloqueada (tooltip e rótulo "Bloqueada: depende de #702 e #705", de `blocked_by`), ponto pulsante (`LiveDot`) se rodando, o nome (500, reticências,
+há subtarefas), `Lock` se bloqueada (tooltip e rótulo "Bloqueada: depende de #702 e #705", de
+`blocked_by`, até três ids e "e mais N"), ponto pulsante (`LiveDot`) se rodando, o nome (500, reticências,
 riscado se finalizada; é um link `#/task/<id>`, então recebe foco pelo Tab), `Clock` com o horário
 agendado no tooltip e no rótulo acessível, `Copy` com "Também em …" ao agrupar por contexto e
 `JiraTaskControls` em task do Jira (ver abaixo; a forma do Jira na tabela é a F2-i).
