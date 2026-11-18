@@ -34,6 +34,11 @@ fala com o assistente, e o antigo `ticktask` confundia.
   inconsistencies. Start at `docs/ui/README.md`. **Read the relevant screen doc before touching a
   page** — it records behaviour that isn't obvious from the JSX (persisted preferences, why the float
   appears, which colors disagree with which).
+- **`docs/design/`** — the **target** interface of the visual refactor to Ant Design (pt-BR):
+  `guia-de-design.md` (rules), `plano-de-refatoracao.md` (phases F0–F9, one subtask per PR, where the
+  code lives), `prototipo/index.html` (the prototype the user approved) and `prototipo/checklist.json`,
+  audited by `npm run design:audit`. Before touching any screen, load the project skill
+  `design-crafytask` (`.claude/skills/`); it lists the sources of truth and the checks.
 - **`docs/mcp-server.md`** — embedded MCP server: tool list and known limitations.
 - **`ui-ux/`** — original design system and mockups; see the caveat under **Conventions**.
 
@@ -316,8 +321,10 @@ Defined in `electron.vite.config.ts` and the tsconfigs:
 
 - Pages: `*Page.tsx`; hooks: `useX.ts`; stores: `xStore.ts`. shadcn config in `components.json` (new-york style, lucide icons, `@renderer/components/ui`).
 - No global app store beyond the timer — screen data is fetched on demand inside hooks via `window.api`; cross-screen freshness comes from the `tasks:refresh` event, not shared state.
-- Visual language: **`docs/ui/14-design-tokens.md` describes what the code actually uses** and is the
-  practical reference before inventing colors, radii or spacing.
+- Visual language: new UI work follows **`docs/design/guia-de-design.md`** and the prototype (skill
+  `design-crafytask`); no new hex or Tailwind color classes. **`docs/ui/14-design-tokens.md` describes
+  what the legacy code actually uses** — read it to understand a screen before migrating it, not as
+  the target.
   `ui-ux/TickTask - Design System & Guia de Estilo.md` is the original intent and is partly stale
   (it prescribes `rounded-xl` + shadows; the app moved to `rounded-sm` and dropped `shadow-sm`).
   Two gotchas worth knowing: `--radius: 0.75rem` makes `rounded-sm` resolve to **8px**, not
