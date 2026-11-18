@@ -1,7 +1,6 @@
 import { Drawer, Grid, Layout, theme } from 'antd'
 import { useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
-import { FloatingTimer } from '@renderer/components/FloatingTimer'
 import { SyncNotification } from '@renderer/components/SyncNotification'
 import { Toaster } from '@renderer/components/ui/sonner'
 import { TerminalPanel } from '@renderer/components/terminal/TerminalPanel'
@@ -83,7 +82,6 @@ export function AppShell(): React.JSX.Element {
         </Content>
         <TerminalPanel />
       </Layout>
-      {location.pathname === '/' && <FloatingTimer />}
       <SyncNotification />
       <Toaster position="bottom-right" />
     </Layout>
