@@ -434,9 +434,9 @@
       "fase": "F2",
       "titulo": "Visão vira cards abaixo de md",
       "check": {
-        "tipo": "contem",
-        "arquivos": "src/renderer/src/pages/TaskListPage.tsx",
-        "padrao": "useBreakpoint"
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/{pages/TaskListPage.tsx,lib/taskListView.ts}",
+        "padroes": ["effectiveListView\\([^)]*narrow", "narrow && byStatus === 'table' \\? 'cards'"]
       }
     },
     {
@@ -508,7 +508,7 @@
       "titulo": "Agrupamento na tabela com linha de cabeçalho de grupo",
       "check": {
         "tipo": "contem-todos",
-        "arquivos": "src/renderer/src/components/tasks/TaskTable.tsx",
+        "arquivos": "src/renderer/src/components/tasks/{TaskTable,GroupHeader}.tsx",
         "padroes": ["colSpan", "Selecionar grupo"]
       }
     },

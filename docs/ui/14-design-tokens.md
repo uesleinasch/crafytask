@@ -175,8 +175,8 @@ Definição única e consistente (`ENERGY_COLORS` em `shared/types.ts`):
 
 ### Escala Time Leak (fundo do card / da linha)
 
-Os cards ainda usam a escala abaixo. A tabela já usa a nova desde a F2-d (30 min, 1 h e 2 h, com
-`TIME_LEAK_SCALE` de `theme/semantic.ts`; ver `01-lista-de-tarefas.md`).
+A escala abaixo é a antiga. Tabela e cards da lista usam a nova desde a F2-d/F2-e (30 min, 1 h e
+2 h, com `TIME_LEAK_SCALE` de `theme/semantic.ts`; ver `01-lista-de-tarefas.md`).
 
 | Tempo acumulado | Fundo | Acento |
 | --- | --- | --- |
