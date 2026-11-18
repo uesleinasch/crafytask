@@ -331,9 +331,11 @@ Defined in `electron.vite.config.ts` and the tsconfigs:
   Fonts are Geist and Geist Mono from `@fontsource-variable/*` (`--font-sans`/`--font-mono`).
   `main.css` declares `@layer theme, base, antd, components, utilities` and `main.tsx` wraps the app
   in `StyleProvider layer`, so antd styles sit in their own layer above Tailwind's preflight.
-- Status/category colors are declared in several places at once (`shared/types.ts`, `StatusBadge`,
-  `CategoryBadge`, plus local copies in `DashboardPage` and `CalendarPage`) and they **disagree** —
-  check `docs/ui/14-design-tokens.md` before assuming a single source of truth.
+- New colors live in `src/renderer/src/theme/`: `tokens.ts` (palette + antd seed tokens) and
+  `semantic.ts` (status, category, time leak, energy, charts, horizons), with a WCAG contrast test.
+  Legacy screens still declare their own status/category colors (`StatusBadge`, `CategoryBadge`,
+  local copies in `DashboardPage` and `CalendarPage`) and they **disagree** — check
+  `docs/ui/14-design-tokens.md` until each screen is migrated.
 - Carried over from `.github/copilot-instructions.md`: change only what the task requires, keep the
   code simple over clever, and reserve inline comments for genuinely non-obvious constraints.
 
