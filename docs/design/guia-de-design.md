@@ -539,8 +539,9 @@ Mesmo esqueleto das outras telas, com navegação própria porque são muitas se
 ### Arquivo
 
 Arquivar tira a tarefa de todas as listas sem apagar nada. A tela deixa de ser a "Arquivo Morto"
-de cartões sem ação e vira uma **visão da tabela de tarefas** (`TaskTable` com `archived: true`),
-com as mesmas colunas, menu e ações em massa (C3, D2).
+de cartões sem ação e vira uma **tabela de tarefas arquivadas** (`listTasks` com `archived: true`),
+no molde da tabela de tarefas: as mesmas linhas de grupo, menu no `⋯` e no botão direito, seleção e
+barra flutuante (`FloatingActionBar`), com as colunas próprias do arquivo abaixo (C3, D2).
 
 - **Topo:** uma frase do que é arquivar e onde ficam os projetos arquivados (Projetos →
   Arquivados, com link), e o total em mono ("12 tarefas · 21h 17min registradas").

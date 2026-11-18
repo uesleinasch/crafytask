@@ -138,6 +138,8 @@ dashboard (F7) e a janela flutuante (F8).
 
 ### C3. `/archived` é um filtro promovido a tela
 
+**Resolvida na F6-b2:** o Arquivo é uma tabela com busca, filtros, grupos, menu e ações em massa.
+
 `listTasks` já aceita `archived: true`. A tela dedicada reimplementa uma listagem pobre: sem clique
 para abrir a tarefa, sem busca, sem filtro, sem ações em massa, sem projeto/tags/prazo no cartão.
 
@@ -162,6 +164,8 @@ mesclagem, mas não têm ícone nem preview.
 - tela dedicada e botão do TitleBar: **"Tags"**
 
 ### D2. "Arquivadas" vs. "Arquivo Morto"
+
+**Resolvida na F6-b2:** um nome só, **Arquivo**.
 
 O botão que leva à tela diz "Arquivadas"; o título da tela diz "Arquivo Morto".
 

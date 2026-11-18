@@ -1171,7 +1171,7 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/pages/ArchivePage.tsx",
-        "padroes": ["TaskTable", "Desarquivar", "Limpar o arquivo", "archived"]
+        "padroes": ["FloatingActionBar", "Desarquivar", "Limpar o arquivo", "archived"]
       }
     },
     {

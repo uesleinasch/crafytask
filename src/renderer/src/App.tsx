@@ -1,7 +1,7 @@
 import { HashRouter, Route, Routes } from 'react-router-dom'
 import { TaskListPage } from './pages/TaskListPage'
 import { SingleTaskPage } from './pages/SingleTaskPage'
-import { ArchivedTasksPage } from './pages/ArchivedTasksPage'
+import { ArchivePage } from './pages/ArchivePage'
 import { FloatTimerPage } from './pages/FloatTimerPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { SettingsPage } from './pages/SettingsPage'
@@ -39,7 +39,7 @@ function App(): React.JSX.Element {
         <Route element={<AppShell />}>
           <Route path="/" element={<TaskListPage />} />
           <Route path="/task/:id" element={<SingleTaskPage />} />
-          <Route path="/archived" element={<ArchivedTasksPage />} />
+          <Route path="/archived" element={<ArchivePage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/projects" element={<ProjectsPage />} />
