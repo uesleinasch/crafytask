@@ -7,7 +7,11 @@ import { useTimerStore } from '@renderer/stores/timerStore'
 import { LiveDot } from '@renderer/components/chips/LiveDot'
 import { sortByLatestStart } from './runningTimers'
 
-export function RunningTimersPill(): React.JSX.Element | null {
+export function RunningTimersPill({
+  compact = false
+}: {
+  compact?: boolean
+}): React.JSX.Element | null {
   const { token } = theme.useToken()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
@@ -28,7 +32,7 @@ export function RunningTimersPill(): React.JSX.Element | null {
   const [latest] = running
 
   const content = (
-    <Flex vertical style={{ width: 300 }}>
+    <Flex vertical style={{ width: 280, maxWidth: 'calc(100vw - 48px)' }}>
       {running.map((timer) => (
         <Flex key={timer.task.id} align="center" gap={8} style={{ paddingBlock: 6 }}>
           <LiveDot />
@@ -71,7 +75,7 @@ export function RunningTimersPill(): React.JSX.Element | null {
         <Flex align="center" gap={8}>
           <LiveDot />
           <span style={mono}>{formatTime(latest.displaySeconds)}</span>
-          {running.length > 1 && (
+          {!compact && running.length > 1 && (
             <Badge count={running.length} size="small" color={token.colorPrimary} />
           )}
         </Flex>
