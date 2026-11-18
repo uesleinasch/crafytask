@@ -15,8 +15,8 @@ continua sendo só da task.
 
 - **Detalhe da tarefa** — botão laranja **Terminal** ao lado de **Notas** e o campo
   **Diretório de trabalho** na coluna esquerda (ver [02-detalhe-da-tarefa.md](02-detalhe-da-tarefa.md)).
-- **TitleBar** — botão laranja com o número de terminais abertos, em **todas** as rotas, só quando
-  há pelo menos uma sessão. Alterna o painel.
+- **Sidebar** — item **Terminais** no rodapé, em todas as rotas, com o número de sessões abertas.
+  Alterna o painel; fica desabilitado sem sessão.
 - **Atalho** `Ctrl + '` (a tecla à esquerda do 1; no teclado US é `` Ctrl + ` ``). É local do
   renderer, não `globalShortcut`, e funciona mesmo com o foco dentro do terminal.
 - **Configurações → Geral → Terminal** — shell (vazio = `$SHELL`, PowerShell no Windows) e o

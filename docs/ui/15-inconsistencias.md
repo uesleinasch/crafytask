@@ -67,11 +67,15 @@ são `<div>` com `width` inline em vez do primitivo `Progress`.
 
 ### B1. Onze botões numa barra única, só na home
 
+**Resolvida na F1-b:** a sidebar do `AppShell` traz a navegação agrupada em todas as rotas.
+
 O `TitleBar` renderiza a navegação **exclusivamente na rota `/`**. Em qualquer outra tela, ir de
 `/projects` para `/calendar` exige voltar à home primeiro. Em 1024px de largura (a largura padrão da
 janela), os onze botões ocupam praticamente toda a barra.
 
 ### B2. Botão "Voltar" com quatro implementações
+
+**Resolvida na F1-b:** a sidebar do `AppShell` traz a navegação agrupada em todas as rotas; as telas perderam o "Voltar" e só os detalhes (tarefa, projeto) mantêm o seu.
 
 | Tela | Implementação | Destino |
 | --- | --- | --- |
@@ -89,6 +93,8 @@ Todas as Tarefas") · `bg-indigo-600` ("Novo Objetivo" nos horizontes).
 Na revisão semanal, **o mesmo comando aparece duas vezes na mesma tela em duas cores diferentes**.
 
 ### B4. Configurações escondidas atrás de um ícone sem rótulo
+
+**Resolvida na F1-b:** a sidebar do `AppShell` traz a navegação agrupada em todas as rotas, com Configurações rotulada no rodapé.
 
 É o único item do `TitleBar` sem texto, e o único `variant="ghost"` da barra.
 
