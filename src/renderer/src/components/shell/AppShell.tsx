@@ -1,7 +1,6 @@
 import { Drawer, Grid, Layout, theme } from 'antd'
 import { useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
-import { SyncNotification } from '@renderer/components/SyncNotification'
 import { Toaster } from '@renderer/components/ui/sonner'
 import { TerminalPanel } from '@renderer/components/terminal/TerminalPanel'
 import { usePersistedState } from '@renderer/hooks/usePersistedState'
@@ -9,6 +8,7 @@ import { CommandPalette } from './CommandPalette'
 import { RegionBoundary } from './RegionBoundary'
 import { ShellHeader } from './ShellHeader'
 import { SiderNav } from './SiderNav'
+import { StatusBar } from './StatusBar'
 import { screenTitle } from './navigation'
 import { regionResetKey } from './regionError'
 import { useShellEvents } from './useShellEvents'
@@ -82,9 +82,9 @@ export function AppShell(): React.JSX.Element {
           </RegionBoundary>
         </Content>
         <TerminalPanel />
+        <StatusBar />
       </Layout>
       <CommandPalette />
-      <SyncNotification />
       <Toaster position="bottom-right" />
     </Layout>
   )
