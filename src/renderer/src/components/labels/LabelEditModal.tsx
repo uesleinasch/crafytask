@@ -156,8 +156,10 @@ export function LabelEditModal({
                       borderRadius: '50%',
                       cursor: 'pointer',
                       background: color,
-                      border: `2px solid ${on ? token.colorText : 'transparent'}`,
-                      boxShadow: `0 0 0 1px ${token.colorBorder}`
+                      border: 'none',
+                      boxShadow: on
+                        ? `0 0 0 2px ${token.colorBgElevated}, 0 0 0 4px ${token.colorText}`
+                        : undefined
                     }}
                   />
                 )
