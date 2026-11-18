@@ -23,7 +23,10 @@ ids que elas fecham. Itens marcados como manuais só fecham quando o usuário co
   isolamento de falhas e barra de status, mesmo antes de ser migrada.
 - **O modo escuro fica atrás de uma flag até a F7.** As telas antigas não têm tokens escuros. O
   seletor de tema só aparece em Configurações quando todas as telas estiverem migradas; até lá, a
-  flag `ticktask:theme` é ligada à mão por quem desenvolve.
+  flag `ticktask:theme` é ligada à mão por quem desenvolve: no DevTools da janela principal,
+  `localStorage.setItem('ticktask:theme', 'dark')` (ou `'system'`) e recarregar; `'light'` é o
+  padrão. A densidade compacta é `localStorage.setItem('ticktask:density', 'compact')`. A F7-d
+  muda o padrão para `'system'` em `shared/themePreference.ts`.
 - **Tailwind fica só para layout.** Depois da migração, classes de cor do Tailwind são proibidas
   (`F9.1`); espaçamento e flex/grid podem continuar, se não houver equivalente direto no antd.
 - **Uma subtarefa = um PR** em `production`, no fluxo do CLAUDE.md (`feature/…`, squash). Cada PR
