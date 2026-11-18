@@ -1041,6 +1041,22 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     <//>`;
   }
 
+  function NoteActions({ file, setFile, showFile }) {
+    const { message } = AntApp.useApp();
+    const [syncing, setSyncing] = useState(false);
+    const sync = () => { setSyncing(true); setTimeout(() => { setSyncing(false); message.success('Notas sincronizadas com o Notion'); }, 900); };
+    return html`<${Flex} gap=${2} align="center" style=${{ minWidth: 0 }}>
+      <${Tooltip} title=${file ? 'Exporta para ' + file + ' a cada salvamento. Clique para escolher outro arquivo.' : 'Salvar como Markdown num arquivo local'}>
+        <${Button} type="text" aria-label="Salvar em arquivo local" icon=${html`<${I.SaveOutlined} />`} onClick=${() => { setFile('notas-' + Date.now().toString().slice(-3) + '.md'); message.success('Nota salva localmente'); }} style=${{ maxWidth: 200, minWidth: 0 }}>
+          ${file && showFile ? html`<span className="ct-ellipsis ct-mono" style=${{ fontSize: 12, color: 'var(--ct-text-2)' }}>${file}</span>` : null}
+        <//>
+      <//>
+      <${Tooltip} title=${syncing ? 'Sincronizando…' : 'Salvar e sincronizar com o Notion'}>
+        <${Button} type="text" aria-label="Salvar e sincronizar com o Notion" disabled=${syncing} icon=${html`<${I.SyncOutlined} spin=${syncing} />`} onClick=${sync} />
+      <//>
+    <//>`;
+  }
+
   function TaskDetailView({ mode, go, screens, openTerminal, openProject, sample, setSample }) {
     const t = DETAIL[sample];
     const { message, modal } = AntApp.useApp();
@@ -1071,6 +1087,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const [inspTab, setInspTab] = useState('tempo');
     const [narrowTab, setNarrowTab] = useState('n');
     const [noteTab, setNoteTab] = useState('notas');
+    const [exportFile, setExportFile] = useState(null);
     const [focus, setFocus] = useState(false);
     const [jiraFields, setJiraFields] = useState(false);
     const [sessions, setSessions] = useState(t.sessions);
@@ -1392,6 +1409,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       <${Flex} align="center" gap=${4} style=${{ padding: '0 8px 0 12px', borderBottom: '1px solid var(--ct-border)' }}>
         <${Tabs} activeKey=${noteTab} onChange=${setNoteTab} size="small" tabBarStyle=${{ margin: 0 }} style=${{ flex: 1, marginBottom: -1 }}
           items=${[{ key: 'notas', label: html`<${Space} size=${4}><${I.FileTextOutlined} />Notas<//>` }, { key: 'desenho', label: html`<${Space} size=${4}><${I.HighlightOutlined} />Desenho<//>` }]} />
+        ${noteTab === 'notas' ? html`<${NoteActions} file=${exportFile} setFile=${setExportFile} showFile=${screens.lg} />` : null}
         <${Tooltip} title="Modo foco (Esc sai)"><${Button} type="text" aria-label="Modo foco" icon=${html`<${I.ExpandOutlined} />`} onClick=${() => setFocus(true)} /><//>
       <//>
       <div style=${{ padding: '20px 24px', flex: 1 }}>${noteBody}</div>
@@ -1415,6 +1433,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         <span className="ct-mono">${fmt(secs)}</span>
         <${Tooltip} title=${running ? 'Pausar' : 'Iniciar'}><${Button} type="text" disabled=${blocked && !running} aria-label=${running ? 'Pausar' : 'Iniciar'} icon=${html`<${running ? I.PauseOutlined : I.CaretRightOutlined} />`} onClick=${() => setRunning(!running)} /><//>
         <${Segmented} size="small" value=${noteTab} onChange=${setNoteTab} options=${[{ value: 'notas', icon: html`<${I.FileTextOutlined} />`, label: screens.sm ? 'Notas' : null }, { value: 'desenho', icon: html`<${I.HighlightOutlined} />`, label: screens.sm ? 'Desenho' : null }]} />
+        ${noteTab === 'notas' ? html`<${NoteActions} file=${exportFile} setFile=${setExportFile} showFile=${screens.lg} />` : null}
         <${Tooltip} title="Sair do modo foco (Esc)"><${Button} type="text" aria-label="Sair do modo foco" icon=${html`<${I.CompressOutlined} />`} onClick=${() => setFocus(false)} /><//>
       </div>
       <div className="ct-zen-body">

@@ -732,6 +732,16 @@
       }
     },
     {
+      "id": "F3.14",
+      "fase": "F3",
+      "titulo": "Ações da nota (arquivo local e Notion) na área de trabalho e no modo foco",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/components/editor/NotesActions.tsx",
+        "padroes": ["<Tooltip", "Salvar e sincronizar com o Notion", "Salvar em arquivo local"]
+      }
+    },
+    {
       "id": "F3.5",
       "fase": "F3",
       "titulo": "Detalhe conferido nas três larguras",
