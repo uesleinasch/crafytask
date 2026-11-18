@@ -304,7 +304,7 @@ Aberto pelo botão **Nova tarefa** do header. `max-h-[90vh] overflow-y-auto`. Ca
 | Projeto | `SearchableSelect` — só projetos `active` ou `someday` | não |
 | Contextos | pílulas alternáveis, coloridas quando selecionadas | não |
 | Nível de Energia | três botões de largura igual com emoji; clicar no ativo desmarca | não |
-| Fontes / Tags | `TagInput` + dica "Ex: E-mail, Trabalho, Pessoal, Cliente X" | não |
+| Tags | `TagInput` + dica "Ex: E-mail, Trabalho, Pessoal, Cliente X" | não |
 
 O campo de tempo limite aceita `HH:MM:SS`, `MM:SS` ou um número solto (interpretado como minutos).
 Rodapé: "Cancelar" (ghost) e "Criar Tarefa" (primária, desabilitada com nome vazio, vira "Criando…").

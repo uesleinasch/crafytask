@@ -191,14 +191,13 @@ A escala abaixo é a antiga. Tabela e cards da lista usam a nova desde a F2-d/F2
 
 ### Paleta de cores livres (`DEFAULT_COLORS`)
 
-Doze cores, usadas pelo `ColorPicker` (projetos, tags) e duplicadas literalmente como
-`CONTEXT_COLORS` em `ContextsPage`:
+Doze cores, usadas pelo `ColorPicker` (projetos). Contextos e tags já usam as dez `USER_COLORS`
+de `theme/semantic.ts` (F6-a):
 
 `#3b82f6` `#8b5cf6` `#ec4899` `#f43f5e` `#f97316` `#eab308`
 `#22c55e` `#14b8a6` `#0ea5e9` `#6366f1` `#ef4444` `#84cc16`
 
-Padrão para projeto e tag: `#6366f1` (índigo, índice 9). Padrão para contexto: `#3b82f6` (azul,
-índice 0).
+Padrão para projeto: `#6366f1` (índigo, índice 9).
 
 ### Paleta de gráficos (`CHART_COLORS` do dashboard)
 

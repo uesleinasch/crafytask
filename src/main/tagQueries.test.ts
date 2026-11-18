@@ -48,7 +48,12 @@ beforeEach(() => {
   db = adapt(raw)
   raw.exec('PRAGMA foreign_keys = ON')
   raw.exec(`
-    CREATE TABLE tasks (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL);
+    CREATE TABLE tasks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'inbox',
+      is_archived INTEGER NOT NULL DEFAULT 0
+    );
     CREATE TABLE tags (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL UNIQUE,
@@ -135,6 +140,23 @@ describe('listTagsWithUsage', () => {
       expect.objectContaining({ id: casa, name: 'casa', task_count: 1 }),
       expect.objectContaining({ id: expect.any(Number), name: 'orfa', task_count: 0 }),
       expect.objectContaining({ id: urgente, name: 'urgente', task_count: 2 })
+    ])
+  })
+
+  it('conta como abertas só as tarefas não finalizadas e não arquivadas', () => {
+    const tag = seedTag('urgente')
+    const status = ['inbox', 'finalizada', 'proximas']
+    for (const value of status) {
+      const id = seedTask(value)
+      db.prepare('UPDATE tasks SET status = ? WHERE id = ?').run(value, id)
+      link(id, tag)
+    }
+    const archived = seedTask('arquivada')
+    db.prepare('UPDATE tasks SET is_archived = 1 WHERE id = ?').run(archived)
+    link(archived, tag)
+
+    expect(listTagsWithUsage(db)).toEqual([
+      expect.objectContaining({ id: tag, task_count: 4, open_count: 2 })
     ])
   })
 })

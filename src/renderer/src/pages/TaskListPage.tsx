@@ -12,7 +12,7 @@ import {
   Tabs,
   Typography
 } from 'antd'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { toast } from '@renderer/components/ui/sonner'
 import { TaskTable } from '@renderer/components/tasks/TaskTable'
 import { TaskDialog } from '@renderer/components/TaskDialog'
@@ -41,6 +41,7 @@ import { RegionBoundary } from '@renderer/components/shell/RegionBoundary'
 import { TaskFilters } from '@renderer/components/tasks/TaskFilters'
 import {
   EMPTY_TASK_FILTERS,
+  labelFilterFromSearch,
   activeFilterCount,
   type TaskFiltersValue
 } from '@renderer/components/tasks/taskFilterState'
@@ -94,7 +95,16 @@ export function TaskListPage(): React.JSX.Element {
     'ticktask:taskListStatusFilter',
     'inbox'
   )
-  const [filterValue, setFilterValue] = useState<TaskFiltersValue>(EMPTY_TASK_FILTERS)
+  const { search } = useLocation()
+  const [filterValue, setFilterValue] = useState<TaskFiltersValue>(
+    () => labelFilterFromSearch(search) ?? EMPTY_TASK_FILTERS
+  )
+  useEffect(() => {
+    const fromLabel = labelFilterFromSearch(search)
+    if (!fromLabel) return
+    setFilterValue(fromLabel)
+    setStatusFilter('all')
+  }, [search, setStatusFilter])
   const {
     category: categoryFilter,
     contextId: contextFilter,

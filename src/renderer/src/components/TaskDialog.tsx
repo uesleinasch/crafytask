@@ -274,7 +274,7 @@ export function TaskDialog({ open, onOpenChange, onSubmit }: TaskDialogProps): R
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Fontes / Tags</label>
+            <label className="text-sm font-medium text-slate-700">Tags</label>
             <TagInput
               selectedTags={selectedTags}
               onChange={setSelectedTags}
