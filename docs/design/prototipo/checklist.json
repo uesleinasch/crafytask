@@ -565,7 +565,8 @@
       "titulo": "Lista conferida: tabela, cards, grupos e Kanban, claro e escuro",
       "check": {
         "tipo": "manual"
-      }
+      },
+      "validado": "2026-11-18"
     },
     {
       "id": "F3.1",
