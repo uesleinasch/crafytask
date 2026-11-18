@@ -132,16 +132,19 @@ mudam: IDs que saíram do resultado deixam de estar selecionados.
 
 A ordem de decisão do que renderizar é:
 
-1. Carregando → `Spin` centralizado
-2. Zero tarefas → `Empty` simples: "Inbox zerado. Tudo processado." na aba Inbox, "Nenhuma tarefa
-   aqui." nas outras
+1. Carregando → `Spin` centralizado com "Carregando tarefas"
+2. Zero tarefas → `Empty` simples: com busca ou filtro ativo, "Nenhuma tarefa com esses filtros." e o
+   botão "Limpar filtros"; sem filtro, "Inbox zerado. Tudo processado." na aba Inbox e "Nenhuma
+   tarefa aqui." nas outras
 3. Aba Executando **e** Kanban ligado → `TaskKanban`
 4. Agrupamento ligado em cards → `TaskCardGroups`
 5. Modo cards → `TaskCardGrid`
 6. Caso contrário → `TaskTable` (com ou sem agrupamento)
 
 Abaixo de `md` a visão Tabela vira Cards (`effectiveListView(view, status, narrow)` em
-`lib/taskListView.ts`, testada) e some do `Segmented`; a preferência guardada não muda. Com
+`lib/taskListView.ts`, testada) e some do `Segmented`; a preferência guardada só muda se a pessoa escolher outra visão no
+estreito. Os grupos recolhidos ficam na página (valem para tabela e cards) e voltam a abrir ao
+trocar o agrupamento. Tabela, cards e Kanban têm cada um seu `RegionBoundary`. Com
 agrupamento por contexto e alguma tarefa em mais de um contexto, um aviso em texto secundário (ícone
 `Copy`) fica acima do conteúdo: "Tarefas com mais de um contexto aparecem em cada grupo; a soma dos
 grupos passa do total."
@@ -262,6 +265,8 @@ Cada grupo tem uma barra de cabeçalho (`GroupHeader`, o mesmo da tabela) com al
 recolher, ponto da cor (projeto) ou emoji (contexto), nome, quantidade, **Selecionar grupo** e tempo
 somado, e a grade de cards embaixo.
 
+Grupo sem cor nem emoji ("Sem projeto", grupos do Jira) não leva marcador.
+
 Ordenação dos grupos: alfabética `pt-BR`, com "Sem projeto" / "Sem contexto" por último — até o
 usuário arrastar um grupo pela alça (`GroupDragButton`, `GripVertical`). A ordem personalizada fica em
 `localStorage` (`ticktask:taskListGroupOrder`), separada para projeto e contexto, e vale também para
@@ -274,7 +279,8 @@ depois dos ordenados, na ordem alfabética; grupos fora da tela (filtrados) mant
 
 Só na aba Executando. Colunas em grade horizontal (`minmax(260px, 1fr)`, rolagem horizontal), cada
 uma com fundo `colorBgLayout`, borda e raio de 12px; cabeçalho com alça, ponto ou emoji, nome e
-contador em mono; os cards empilhados com 8px. Coluna vazia diz "Nada executando".
+contador em mono; os cards empilhados com 8px. Só existem colunas com tarefas (as colunas vêm do
+agrupamento).
 
 As **colunas** podem ser reordenadas pela alça (mesma ordem do modo agrupado).
 **Os cards não se arrastam entre colunas** — as colunas são projeto/contexto, não status, e servem

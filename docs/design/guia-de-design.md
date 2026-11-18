@@ -403,6 +403,13 @@ mais um badge (pesquisa: poucos elementos por linha; Hick e carga cognitiva).
   Agrupar por contexto repete a tarefa em cada contexto dela, com um ícone discreto "Também em …" e
   um aviso acima da tabela de que a soma dos grupos passa do total.
 - **Ações da linha:** Hoje, timer e `⋯`. O `⋯` abre o mesmo menu do botão direito.
+- **Cards** (visão Cards, grupos em cards e Kanban): `#id` em mono com a checkbox de seleção ao lado
+  (a seleção vale em todas as visões, para as ações em massa), nome, progresso das subtarefas
+  (`feitas/total`, abre a lista), Hoje e `⋯` (sem timer); embaixo, status (só em "Todas"),
+  categoria, projeto, contextos, prazo e o tempo à direita. Descrição, tags e limite ficam no
+  detalhe. Recolher um grupo vale para tabela e cards ao mesmo tempo.
+- **Vazio:** `Empty` simples, "Inbox zerado. Tudo processado." no Inbox, "Nenhuma tarefa aqui." nas
+  outras abas e, com busca ou filtro ativo, "Nenhuma tarefa com esses filtros." com "Limpar filtros".
 - **Menu de contexto** (botão direito na linha ou no card): Abrir · Iniciar/Pausar timer · Planejar
   para hoje · Marcar como ▸ · Categoria ▸ · Mover para projeto ▸ · Contextos ▸ · Copiar `#id` ·
   Arquivar · Excluir… (com confirmação). O item atual de cada submenu aparece marcado. Se a linha
