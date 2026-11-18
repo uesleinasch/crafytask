@@ -1,16 +1,43 @@
-import { Button, Flex, Typography } from 'antd'
-import { Menu, Plus } from 'lucide-react'
+import { Button, Dropdown, Grid, Typography, type MenuProps } from 'antd'
+import { Menu, Palette, Plus, Rows3, Rows4 } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { requestNewTask } from '@renderer/lib/newTaskRequest'
+import { useThemeSettings } from '@renderer/theme/themeSettings'
+import { HeaderCapture } from './HeaderCapture'
+import { RunningTimersPill } from './RunningTimersPill'
 import { screenTitle } from './navigation'
 
 interface ShellHeaderProps {
   onOpenMenu?: () => void
 }
 
+function AppearanceMenu(): React.JSX.Element {
+  const { density, setDensity } = useThemeSettings()
+  const items: MenuProps['items'] = [
+    {
+      key: 'density',
+      icon: density === 'compact' ? <Rows3 size={16} /> : <Rows4 size={16} />,
+      label: density === 'compact' ? 'Densidade confortável' : 'Densidade compacta'
+    }
+  ]
+  return (
+    <Dropdown
+      trigger={['click']}
+      menu={{
+        items,
+        onClick: () => setDensity(density === 'compact' ? 'comfortable' : 'compact')
+      }}
+    >
+      <Button aria-label="Aparência" icon={<Palette size={16} strokeWidth={1.75} />} />
+    </Dropdown>
+  )
+}
+
 export function ShellHeader({ onOpenMenu }: ShellHeaderProps): React.JSX.Element {
   const location = useLocation()
   const navigate = useNavigate()
+  const screens = Grid.useBreakpoint()
+  const showCapture = screens.sm !== false
 
   const handleNewTask = (): void => {
     if (location.pathname !== '/') navigate('/')
@@ -18,8 +45,18 @@ export function ShellHeader({ onOpenMenu }: ShellHeaderProps): React.JSX.Element
   }
 
   return (
-    <Flex align="center" justify="space-between" gap={12} style={{ height: '100%' }}>
-      <Flex align="center" gap={8} style={{ minWidth: 0 }}>
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: showCapture
+          ? 'minmax(max-content, 1fr) minmax(200px, 520px) minmax(max-content, 1fr)'
+          : 'minmax(0, 1fr) auto',
+        alignItems: 'center',
+        gap: 12,
+        height: '100%'
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
         {onOpenMenu && (
           <Button
             type="text"
@@ -31,10 +68,28 @@ export function ShellHeader({ onOpenMenu }: ShellHeaderProps): React.JSX.Element
         <Typography.Title level={1} ellipsis style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>
           {screenTitle(location.pathname)}
         </Typography.Title>
-      </Flex>
-      <Button type="primary" icon={<Plus size={16} strokeWidth={1.75} />} onClick={handleNewTask}>
-        Nova tarefa
-      </Button>
-    </Flex>
+      </div>
+      {showCapture && <HeaderCapture />}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          gap: 8,
+          minWidth: 0
+        }}
+      >
+        {screens.md && <RunningTimersPill />}
+        <AppearanceMenu />
+        <Button
+          type="primary"
+          aria-label="Nova tarefa"
+          icon={<Plus size={16} strokeWidth={1.75} />}
+          onClick={handleNewTask}
+        >
+          {screens.lg ? 'Nova tarefa' : null}
+        </Button>
+      </div>
+    </div>
   )
 }

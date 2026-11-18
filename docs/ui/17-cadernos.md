@@ -5,8 +5,8 @@ Rota `/notebooks` (`pages/NotebooksPage.tsx`). Anotações livres no molde do On
 **Notas** (Tiptap) e **Desenho** (Excalidraw) do detalhe da tarefa. Decisões de modelo em
 [`docs/adr/0001-cadernos.md`](../adr/0001-cadernos.md).
 
-Entrada: item **Cadernos** (`NotebookTabs`) da sidebar, no grupo Conhecimento. Sem
-`FloatingTimer`, que só aparece em `/`.
+Entrada: item **Cadernos** (`NotebookTabs`) da sidebar, no grupo Conhecimento. Os timers
+em execução ficam na pílula do header.
 
 ## Layout
 
