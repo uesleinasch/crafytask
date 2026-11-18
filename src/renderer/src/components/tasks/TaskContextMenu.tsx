@@ -1,14 +1,32 @@
-import { useContext, useState } from 'react'
+import { useContext } from 'react'
 import { Dropdown, type MenuProps } from 'antd'
-import { Archive, CalendarDays, CheckCheck, ExternalLink, Pause, Play, Trash2 } from 'lucide-react'
-import { TaskMenuChangedContext } from '@renderer/components/taskMenuContext'
-import { DeleteConfirmDialog } from '@renderer/components/DeleteConfirmDialog'
-import { toast } from '@renderer/components/ui/sonner'
-import { useTimerStore } from '@renderer/stores/timerStore'
-import { STATUS_LABELS, type Task, type TaskStatus } from '@shared/types'
+import {
+  Archive,
+  CalendarDays,
+  CheckCheck,
+  Copy,
+  ExternalLink,
+  Flag,
+  Folder,
+  MapPin,
+  Pause,
+  Play,
+  Trash2
+} from 'lucide-react'
+import { STATUS_LABELS, type Task, type TaskCategory, type TaskStatus } from '@shared/types'
 import { localDateString } from '@shared/dueState'
+import { TaskMenuChangedContext, TaskMenuDataContext } from '@renderer/components/taskMenuContext'
+import { toast } from '@renderer/components/ui/sonner'
+import { CATEGORY_CHIP_LABELS } from '@renderer/components/chips/categoryMeta'
+import { STATUS_ICONS } from '@renderer/components/chips/statusMeta'
+import { useTimerStore } from '@renderer/stores/timerStore'
+import { STATUS_COLORS } from '@renderer/theme/semantic'
+import { useThemeSettings } from '@renderer/theme/themeSettings'
+import { plural } from './bulkActionText'
+import { useTaskBulkActions } from './useTaskBulkActions'
 
 const STATUSES = Object.keys(STATUS_LABELS) as TaskStatus[]
+const CATEGORIES: TaskCategory[] = ['urgente', 'prioridade', 'normal', 'time_leak']
 const ICON = { size: 14, strokeWidth: 1.75, 'aria-hidden': true } as const
 
 interface TaskContextMenuProps {
@@ -27,10 +45,20 @@ export function TaskContextMenu({
   children
 }: TaskContextMenuProps): React.JSX.Element {
   const onChanged = useContext(TaskMenuChangedContext)
+  const { projects, contexts, selectedIds, taskById } = useContext(TaskMenuDataContext)
+  const { mode } = useThemeSettings()
   const startTimer = useTimerStore((s) => s.startTimer)
   const stopTimer = useTimerStore((s) => s.stopTimer)
-  const [deleteOpen, setDeleteOpen] = useState(false)
-  const isScheduledToday = task.scheduled_date === localDateString(new Date())
+  const bulk = useTaskBulkActions()
+
+  const many = selectedIds.length > 1 && selectedIds.includes(task.id)
+  const ids = many ? selectedIds : [task.id]
+  const targets = ids.map((id) => (id === task.id ? task : taskById(id)))
+  const anyBlocked = targets.some((t) => t?.is_blocked)
+  const scheduledToday = task.scheduled_date === localDateString(new Date())
+  const taskContextIds = (task.contexts ?? []).map((c) => c.id)
+  const tag = (label: string): string => (many ? `${label} (${ids.length})` : label)
+  const check = (on: boolean): string => (!many && on ? '✓ ' : '')
 
   const run = async (action: () => Promise<unknown>, success: string): Promise<void> => {
     try {
@@ -44,69 +72,127 @@ export function TaskContextMenu({
   }
 
   const items: MenuProps['items'] = [
-    { key: 'open', icon: <ExternalLink {...ICON} />, label: 'Abrir' },
-    task.is_running
-      ? { key: 'stop', icon: <Pause {...ICON} />, label: 'Pausar timer' }
-      : {
-          key: 'start',
-          icon: <Play {...ICON} />,
-          label: 'Iniciar timer',
-          disabled: task.is_blocked
-        },
-    ...(onScheduleForToday
+    ...(many
       ? [
           {
-            key: 'today',
-            icon: <CalendarDays {...ICON} />,
-            label: isScheduledToday ? 'Tirar do plano de hoje' : 'Planejar para hoje'
+            key: 'header',
+            type: 'group' as const,
+            label: plural(ids.length, 'tarefa selecionada', 'tarefas selecionadas')
           }
         ]
-      : []),
+      : [
+          { key: 'open', icon: <ExternalLink {...ICON} />, label: 'Abrir' },
+          task.is_running
+            ? { key: 'stop', icon: <Pause {...ICON} />, label: 'Pausar timer' }
+            : {
+                key: 'start',
+                icon: <Play {...ICON} />,
+                label: 'Iniciar timer',
+                disabled: task.is_blocked
+              }
+        ]),
+    {
+      key: 'today',
+      icon: <CalendarDays {...ICON} />,
+      label: tag(!many && scheduledToday ? 'Tirar do plano de hoje' : 'Planejar para hoje')
+    },
     {
       key: 'status',
       icon: <CheckCheck {...ICON} />,
-      label: 'Marcar como',
-      children: STATUSES.map((status) => ({
-        key: `status:${status}`,
-        label: `${task.status === status ? '✓ ' : ''}${STATUS_LABELS[status]}`,
-        disabled: status === 'executando' && task.is_blocked
+      label: tag('Marcar como'),
+      children: STATUSES.map((status) => {
+        const Icon = STATUS_ICONS[status]
+        return {
+          key: `status:${status}`,
+          icon: <Icon {...ICON} style={{ color: STATUS_COLORS[status][mode].fg }} />,
+          label: `${check(task.status === status)}${STATUS_LABELS[status]}`,
+          disabled: status === 'executando' && anyBlocked
+        }
+      })
+    },
+    {
+      key: 'category',
+      icon: <Flag {...ICON} />,
+      label: tag('Categoria'),
+      children: CATEGORIES.map((category) => ({
+        key: `category:${category}`,
+        label: `${check((task.category ?? 'normal') === category)}${CATEGORY_CHIP_LABELS[category]}`
       }))
     },
-    { type: 'divider' },
-    { key: 'archive', icon: <Archive {...ICON} />, label: 'Arquivar' },
-    { key: 'delete', icon: <Trash2 {...ICON} />, label: 'Excluir', danger: true }
+    {
+      key: 'project',
+      icon: <Folder {...ICON} />,
+      label: tag('Mover para projeto'),
+      children: [
+        { key: 'project:none', label: `${check(!task.project_id)}Sem projeto` },
+        ...projects
+          .filter((project) => project.status !== 'archived' || project.id === task.project_id)
+          .map((project) => ({
+            key: `project:${project.id}`,
+            label: `${check(task.project_id === project.id)}${project.name}`
+          }))
+      ]
+    },
+    ...(many
+      ? []
+      : [
+          {
+            key: 'contexts',
+            icon: <MapPin {...ICON} />,
+            label: 'Contextos',
+            disabled: contexts.length === 0,
+            children: contexts.map((context) => ({
+              key: `context:${context.id}`,
+              label: `${check(taskContextIds.includes(context.id))}${context.icon ? `${context.icon} ` : ''}${context.name}`
+            }))
+          }
+        ]),
+    { type: 'divider' as const },
+    ...(many ? [] : [{ key: 'copy', icon: <Copy {...ICON} />, label: `Copiar #${task.id}` }]),
+    { key: 'archive', icon: <Archive {...ICON} />, label: tag('Arquivar') },
+    { key: 'delete', icon: <Trash2 {...ICON} />, label: tag('Excluir…'), danger: true }
   ]
 
   const onClick: MenuProps['onClick'] = ({ key, domEvent }) => {
     domEvent.stopPropagation()
-    if (key === 'open') onOpen()
-    if (key === 'stop') void run(() => stopTimer(task.id), 'Timer pausado')
-    if (key === 'start') void run(() => startTimer(task.id), 'Timer iniciado')
-    if (key === 'today') onScheduleForToday?.(task.id)
-    if (key.startsWith('status:')) {
-      const status = key.slice('status:'.length) as TaskStatus
-      void run(
-        () => window.api.updateStatus(task.id, status),
-        `Marcada como ${STATUS_LABELS[status]}`
-      )
+    const [kind, value] = key.split(':')
+    if (kind === 'open') onOpen()
+    if (kind === 'stop') void run(() => stopTimer(task.id), 'Timer pausado')
+    if (kind === 'start') void run(() => startTimer(task.id), 'Timer iniciado')
+    if (kind === 'today') {
+      if (!many && onScheduleForToday) onScheduleForToday(task.id)
+      else
+        void bulk.toggleToday(
+          targets.map((t, index) => ({ id: ids[index], scheduled_date: t?.scheduled_date }))
+        )
     }
-    if (key === 'archive') void run(() => window.api.archiveTask(task.id), 'Tarefa arquivada')
-    if (key === 'delete') setDeleteOpen(true)
+    if (kind === 'status') void bulk.setStatus(ids, value as TaskStatus)
+    if (kind === 'category') void bulk.setCategory(ids, value as TaskCategory)
+    if (kind === 'project') {
+      const projectId = value === 'none' ? null : Number(value)
+      const name = projects.find((p) => p.id === projectId)?.name
+      void bulk.moveToProject(ids, projectId, name)
+    }
+    if (kind === 'context') {
+      const contextId = Number(value)
+      const next = taskContextIds.includes(contextId)
+        ? taskContextIds.filter((id) => id !== contextId)
+        : [...taskContextIds, contextId]
+      void run(() => window.api.setTaskContexts(task.id, next), 'Contextos atualizados')
+    }
+    if (kind === 'copy') {
+      void navigator.clipboard
+        .writeText(String(task.id))
+        .then(() => toast.success(`#${task.id} copiado`))
+        .catch(() => toast.error('Não foi possível copiar'))
+    }
+    if (kind === 'archive') void bulk.archive(ids)
+    if (kind === 'delete') bulk.confirmDelete(ids)
   }
 
   return (
-    <>
-      <Dropdown menu={{ items, onClick }} trigger={trigger} placement="bottomRight">
-        {children}
-      </Dropdown>
-      <DeleteConfirmDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        onConfirm={() => {
-          setDeleteOpen(false)
-          void run(() => window.api.deleteTask(task.id), 'Tarefa deletada')
-        }}
-      />
-    </>
+    <Dropdown menu={{ items, onClick }} trigger={trigger} placement="bottomRight">
+      {children}
+    </Dropdown>
   )
 }
