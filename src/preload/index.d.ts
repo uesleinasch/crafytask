@@ -62,6 +62,7 @@ import type {
   PageSearchResult
 } from '../shared/types'
 import type { ThemePreference } from '../shared/themePreference'
+import type { RendererErrorReport } from '../shared/rendererError'
 
 interface FloatTimerData {
   taskId: number
@@ -360,6 +361,8 @@ interface API {
   appOpenExternal: (url: string) => Promise<void>
   appSetAutostart: (enabled: boolean) => Promise<boolean>
   appSetThemeSource: (preference: ThemePreference) => Promise<void>
+  appLogRendererError: (report: RendererErrorReport) => Promise<void>
+  onRendererRecovered: (callback: () => void) => () => void
 
   // Backup
   backupGetStatus: () => Promise<BackupStatus>

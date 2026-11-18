@@ -61,6 +61,7 @@ import type {
   PageSearchResult
 } from '../shared/types'
 import type { ThemePreference } from '../shared/themePreference'
+import type { RendererErrorReport } from '../shared/rendererError'
 
 // Custom APIs for renderer
 const api = {
@@ -491,6 +492,13 @@ const api = {
     ipcRenderer.invoke('app:setAutostart', enabled),
   appSetThemeSource: (preference: ThemePreference): Promise<void> =>
     ipcRenderer.invoke('app:setThemeSource', preference),
+  appLogRendererError: (report: RendererErrorReport): Promise<void> =>
+    ipcRenderer.invoke('app:logRendererError', report),
+  onRendererRecovered: (callback: () => void): (() => void) => {
+    const listener = (): void => callback()
+    ipcRenderer.on('app:rendererRecovered', listener)
+    return () => ipcRenderer.removeListener('app:rendererRecovered', listener)
+  },
 
   // ===================== BACKUP =====================
   backupGetStatus: (): Promise<BackupStatus> => ipcRenderer.invoke('backup:getStatus'),

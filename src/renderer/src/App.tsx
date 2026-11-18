@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from 'react'
+import { App as AntApp } from 'antd'
 import { HashRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { TaskListPage } from './pages/TaskListPage'
 import { SingleTaskPage } from './pages/SingleTaskPage'
@@ -21,6 +22,8 @@ import { FloatingTimer } from './components/FloatingTimer'
 import { SyncNotification } from './components/SyncNotification'
 import { Toaster } from './components/ui/sonner'
 import { TerminalPanel } from './components/terminal/TerminalPanel'
+import { RegionBoundary } from './components/shell/RegionBoundary'
+import { regionResetKey } from './components/shell/regionError'
 import { notifySyncStart, notifySyncSuccess, notifySyncError } from './lib/syncEvents'
 import { useTimerStore } from './stores/timerStore'
 import { toast } from './components/ui/sonner'
@@ -64,6 +67,7 @@ function QuickCaptureContent(): React.JSX.Element {
 
 function AppContent(): React.JSX.Element {
   const location = useLocation()
+  const { message } = AntApp.useApp()
   const isTaskPage = location.pathname.startsWith('/task/')
   const isProjectDetailPage = location.pathname.startsWith('/project/')
   const isDashboardPage = location.pathname === '/dashboard'
@@ -127,6 +131,14 @@ function AppContent(): React.JSX.Element {
     []
   )
 
+  useEffect(
+    () =>
+      window.api.onRendererRecovered(() => {
+        message.warning('A janela travou e foi recarregada. Seus dados estão salvos.')
+      }),
+    [message]
+  )
+
   // Listener para timer parado via float window
   useEffect(() => {
     const unsubscribe = window.api.onTimerStopped((taskId) => {
@@ -161,24 +173,29 @@ function AppContent(): React.JSX.Element {
     <div className="flex flex-col h-screen bg-slate-50">
       <TitleBar onNewTask={handleNewTask} />
       <main className="flex-1 overflow-hidden">
-        <Routes>
-          <Route path="/" element={<TaskListPage />} />
-          <Route path="/task/:id" element={<SingleTaskPage />} />
-          <Route path="/archived" element={<ArchivedTasksPage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/projects" element={<ProjectsPage />} />
-          <Route path="/project/:id" element={<ProjectDetailPage />} />
-          <Route path="/contexts" element={<ContextsPage />} />
-          <Route path="/tags" element={<TagsPage />} />
-          <Route path="/review" element={<WeeklyReviewPage />} />
-          <Route path="/today" element={<TodayPage />} />
-          <Route path="/horizons" element={<HorizonsPage />} />
-          <Route path="/calendar" element={<CalendarPage />} />
-          <Route path="/notebooks" element={<NotebooksPage />} />
-          <Route path="/float" element={<FloatTimerPage />} />
-          <Route path="/quick-capture" element={<QuickCapturePage />} />
-        </Routes>
+        <RegionBoundary
+          region="tela atual"
+          resetKeys={[regionResetKey(location.pathname, location.search)]}
+        >
+          <Routes>
+            <Route path="/" element={<TaskListPage />} />
+            <Route path="/task/:id" element={<SingleTaskPage />} />
+            <Route path="/archived" element={<ArchivedTasksPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/projects" element={<ProjectsPage />} />
+            <Route path="/project/:id" element={<ProjectDetailPage />} />
+            <Route path="/contexts" element={<ContextsPage />} />
+            <Route path="/tags" element={<TagsPage />} />
+            <Route path="/review" element={<WeeklyReviewPage />} />
+            <Route path="/today" element={<TodayPage />} />
+            <Route path="/horizons" element={<HorizonsPage />} />
+            <Route path="/calendar" element={<CalendarPage />} />
+            <Route path="/notebooks" element={<NotebooksPage />} />
+            <Route path="/float" element={<FloatTimerPage />} />
+            <Route path="/quick-capture" element={<QuickCapturePage />} />
+          </Routes>
+        </RegionBoundary>
       </main>
       <TerminalPanel />
       {!isSubPage && <FloatingTimer />}
