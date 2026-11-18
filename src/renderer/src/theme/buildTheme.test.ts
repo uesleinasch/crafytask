@@ -32,5 +32,7 @@ describe('buildTheme', () => {
   it('reduz o respiro da linha da tabela na densidade compacta', () => {
     expect(buildTheme('light', 'comfortable').components?.Table?.cellPaddingBlock).toBe(10)
     expect(buildTheme('light', 'compact').components?.Table?.cellPaddingBlock).toBe(6)
+    expect(buildTheme('light', 'comfortable').components?.Table?.cellPaddingBlockSM).toBe(10)
+    expect(buildTheme('light', 'compact').components?.Table?.cellPaddingBlockMD).toBe(8)
   })
 })
