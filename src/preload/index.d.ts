@@ -61,6 +61,7 @@ import type {
   PageLocation,
   PageSearchResult
 } from '../shared/types'
+import type { ThemePreference } from '../shared/themePreference'
 
 interface FloatTimerData {
   taskId: number
@@ -358,6 +359,7 @@ interface API {
   appGetAutostart: () => Promise<boolean>
   appOpenExternal: (url: string) => Promise<void>
   appSetAutostart: (enabled: boolean) => Promise<boolean>
+  appSetThemeSource: (preference: ThemePreference) => Promise<void>
 
   // Backup
   backupGetStatus: () => Promise<BackupStatus>

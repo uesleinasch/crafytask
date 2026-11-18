@@ -10,11 +10,14 @@ import { StyleProvider } from '@ant-design/cssinjs'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
+import { ThemeProvider } from './theme/ThemeProvider'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <StyleProvider layer>
-      <App />
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
     </StyleProvider>
   </StrictMode>
 )

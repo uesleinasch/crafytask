@@ -7,6 +7,7 @@ import {
   screen,
   globalShortcut,
   dialog,
+  nativeTheme,
   protocol
 } from 'electron'
 import { copyFileSync } from 'fs'
@@ -17,6 +18,7 @@ import { HIDDEN_FLAG, shouldStartHidden } from './launchArgs'
 import { createTray, destroyTray } from './tray'
 import { isAutostartEnabled, setAutostartEnabled } from './autostart'
 import { isSafeHttpUrl } from '@shared/externalUrl'
+import { isThemePreference } from '@shared/themePreference'
 import {
   initDatabase,
   closeDatabase,
@@ -1230,6 +1232,10 @@ function setupIpcHandlers(): void {
     return shell.openExternal(url)
   })
   ipcMain.handle('app:setAutostart', (_, enabled: boolean) => setAutostartEnabled(enabled))
+  ipcMain.handle('app:setThemeSource', (_, preference: unknown) => {
+    if (!isThemePreference(preference)) throw new Error('Tema inválido')
+    nativeTheme.themeSource = preference
+  })
 
   ipcMain.handle('backup:getStatus', () => getBackupStatus())
   ipcMain.handle('backup:chooseFolder', () => chooseBackupFolder(mainWindow))
