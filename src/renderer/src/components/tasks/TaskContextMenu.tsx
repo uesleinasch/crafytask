@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react'
+import { useContext, useRef, useState } from 'react'
 import { Dropdown, type MenuProps } from 'antd'
 import {
   Archive,
@@ -61,9 +61,10 @@ export function TaskContextMenu({
   const startTimer = useTimerStore((s) => s.startTimer)
   const stopTimer = useTimerStore((s) => s.stopTimer)
   const bulk = useTaskBulkActions()
-  const [transitions, setTransitions] = useState<JiraTransitionOption[] | 'loading' | 'error'>(
-    'loading'
-  )
+  const [transitions, setTransitions] = useState<
+    JiraTransitionOption[] | 'loading' | { error: string }
+  >('loading')
+  const transitionsRequest = useRef(0)
   const [fieldsOpen, setFieldsOpen] = useState(false)
 
   const many = selectedIds.length > 1 && selectedIds.includes(task.id)
@@ -91,29 +92,54 @@ export function TaskContextMenu({
     }
   }
 
-  const jiraUrl = task.external_url && isSafeHttpUrl(task.external_url) ? task.external_url : null
+  const jiraUrl =
+    task.jira_key &&
+    task.external_url &&
+    isSafeHttpUrl(task.external_url) &&
+    task.external_url.includes(`/browse/${task.jira_key}`)
+      ? task.external_url
+      : null
 
   const loadTransitions = async (): Promise<void> => {
+    const request = ++transitionsRequest.current
     setTransitions('loading')
     try {
-      setTransitions(await window.api.jiraListTransitions(task.id))
+      const options = await window.api.jiraListTransitions(task.id)
+      if (request === transitionsRequest.current) setTransitions(options)
     } catch (error) {
       console.error('[TaskContextMenu] transições do Jira', error)
-      setTransitions('error')
+      if (request === transitionsRequest.current) {
+        setTransitions({ error: error instanceof Error ? error.message : String(error) })
+      }
     }
   }
 
+  const currentJiraStatus = task.jira_status
+    ? [{ key: 'jira-current', label: `✓ ${task.jira_status}`, disabled: true }]
+    : []
   const transitionItems: NonNullable<MenuProps['items']> =
     transitions === 'loading'
-      ? [{ key: 'jira-loading', label: 'Carregando…', disabled: true }]
-      : transitions === 'error'
-        ? [{ key: 'jira-error', label: 'Não foi possível carregar', disabled: true }]
-        : transitions.length === 0
-          ? [{ key: 'jira-none', label: 'Nenhuma transição disponível', disabled: true }]
-          : transitions.map((transition) => ({
-              key: `jirast:${transition.id}`,
-              label: `${check(task.jira_status === transition.name)}${transition.name}`
-            }))
+      ? [...currentJiraStatus, { key: 'jira-loading', label: 'Carregando…', disabled: true }]
+      : !Array.isArray(transitions)
+        ? [
+            ...currentJiraStatus,
+            {
+              key: 'jira-error',
+              label: `Não foi possível carregar: ${transitions.error}`,
+              disabled: true
+            }
+          ]
+        : [
+            ...currentJiraStatus,
+            ...(transitions.length === 0
+              ? [{ key: 'jira-none', label: 'Nenhuma outra transição', disabled: true }]
+              : transitions
+                  .filter((transition) => transition.name !== task.jira_status)
+                  .map((transition) => ({
+                    key: `jirast:${transition.id}`,
+                    label: transition.name
+                  })))
+          ]
 
   const items: MenuProps['items'] = [
     ...(many
@@ -188,7 +214,7 @@ export function TaskContextMenu({
               {
                 key: 'jira:open',
                 icon: <ExternalLink {...ICON} />,
-                label: 'Abrir no Jira',
+                label: jiraUrl ? 'Abrir no Jira' : 'Abrir no Jira (sem link da issue)',
                 disabled: !jiraUrl
               },
               { key: 'jira:status', label: 'Status no Jira', children: transitionItems },
@@ -272,12 +298,15 @@ export function TaskContextMenu({
   return (
     <>
       <Dropdown
-        menu={{ items, onClick }}
+        menu={{
+          items,
+          onClick,
+          onOpenChange: (openKeys) => {
+            if (openKeys.includes('jira:status')) void loadTransitions()
+          }
+        }}
         trigger={trigger}
         placement="bottomRight"
-        onOpenChange={(open) => {
-          if (open && task.jira_key && !many) void loadTransitions()
-        }}
       >
         {children}
       </Dropdown>

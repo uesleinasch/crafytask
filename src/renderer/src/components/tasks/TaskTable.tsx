@@ -334,6 +334,7 @@ export function TaskTable({
             />
           </Tooltip>
         )}
+        <JiraKey {...task} />
         {otherContexts.length > 0 && (
           <Tooltip title={`Também em ${otherContexts.join(', ')}`}>
             <Copy
@@ -345,7 +346,6 @@ export function TaskTable({
             />
           </Tooltip>
         )}
-        <JiraKey {...task} />
       </Flex>
     )
   }

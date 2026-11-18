@@ -108,11 +108,29 @@ Grade `[90px_1fr]` — rótulo cinza à esquerda, controle à direita.
 | Rótulo | Controle | Salvamento |
 | --- | --- | --- |
 | Status | `StatusSelect` (180px, `bg-slate-100`) | imediato + toast "Status alterado" |
-| Jira | `JiraTaskControls` com tipo e chave da issue, sem o botão de campos (só em task do Jira; ver `01-lista-de-tarefas.md`) | transição direto no Jira |
+| Jira | `JiraTaskControls` com tipo e chave da issue, sem o botão de campos (só em task do Jira; ver "JiraTaskControls" abaixo) | transição direto no Jira |
 | Pai no Jira | chave + resumo da issue pai (épico/história); clique abre a issue pai no navegador. Só quando a issue tem pai | — |
 | Projeto | `SearchableSelect` + link **"Abrir projeto →"** abaixo quando há projeto | imediato + toast |
 | Contextos | pílulas alternáveis (emoji + nome), coloridas pela cor do contexto quando ativas | imediato |
 | Tags | `TagInput` | imediato |
+
+**`JiraTaskControls`** (`components/jira/`) — usado só no detalhe (a lista mostra a chave e o submenu Jira desde a F2-i), só quando a
+task tem `jira_key`. Quatro peças, num wrapper que para a propagação do clique (senão abriria a task):
+- chip cinza com `Layers` e o **espaço** da issue (`tasks.jira_space`, gravado pela importação; antes
+  da primeira importação que o preenche, mostra o prefixo da chave, ex.: `CON`).
+- `JiraIssueTypeBadge`: chip colorido com o **tipo** da issue (`tasks.jira_issue_type`), cor e ícone
+  pela classe em `tasks.jira_issue_kind` — épico roxo, história verde, tarefa azul, bug vermelho,
+  subtarefa cinza. A classe vem de `classifyIssueType` (`jiraPlan.ts`): nível da hierarquia do
+  Jira primeiro (>0 épico, <0 subtarefa), nome do tipo depois. Some antes da primeira importação.
+- chip azul **Jira · {status}**: um `Select` que, ao abrir, busca as transições da issue
+  (`jira:listTransitions`) e aplica a escolhida (`jira:transition`). É independente do `StatusChip`
+  local — mudar um não muda o outro.
+- botão `SlidersHorizontal` (só no card e na tabela; o detalhe usa o botão azul "Campos do Jira",
+  ver `02-detalhe-da-tarefa.md`) que abre o `JiraFieldsSheet`: painel lateral direito com os campos
+  editáveis da issue (vindos do `editmeta`), um editor por tipo (texto, número, data, seleção,
+  múltipla escolha, rótulos, pessoa com "Atribuir a mim", sprint). Múltipla escolha (ex.: Cliente,
+  Equipe) é um `SearchableSelect` "Adicionar opção…" com as escolhidas em chips removíveis. Cada campo grava ao sair do
+  campo/escolher; erro do Jira volta como toast e o campo retorna ao valor anterior.
 
 A lista de projetos do select inclui os `active`, os `someday` **e** o projeto atual, mesmo que
 concluído ou arquivado — assim uma tarefa vinculada a projeto arquivado não perde o vínculo ao ser

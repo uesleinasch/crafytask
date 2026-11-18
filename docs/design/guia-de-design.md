@@ -240,7 +240,7 @@ só porque roda de CDN; os nomes lucide de cada lugar estão nas tabelas acima e
 | `HealthCard`          | em dia `CircleCheck` · Inbox `Inbox` · sem próxima ação `CircleArrowRight` · projetos parados `CirclePause` · aguardando `Hourglass` · próximas paradas `Clock` · prazos vencidos `CalendarX` · revisão `ClipboardCheck` · someday `Lightbulb` |
 | Configurações         | Geral `Settings` · Aparência `Palette` · Fluxo de trabalho `Workflow` · Terminal `SquareTerminal` · Backup `DatabaseBackup` · Notion `BookOpen` · Google Calendar `Calendar` · Jira `Plug` · Servidor MCP `Cable` · Sobre `Info`               |
 | Passos da revisão     | `collect` `Download` · `inbox` `Inbox` · `mind` `Brain` · `next` `CircleArrowRight` · `past` `History` · `upcoming` `CalendarDays` · `waiting` `Hourglass` · `projects` `FolderKanban` · `someday` `Lightbulb` · `creative` `Rocket`           |
-| Menu da tarefa e ações em massa | Abrir `FileText` · timer `Play`/`Pause` · hoje `CalendarDays` · marcar como `CircleCheck` · categoria `Flag` · projeto `Folder` · contextos `MapPin` · copiar `Copy` · arquivar `Archive` · excluir `Trash2` |
+| Menu da tarefa e ações em massa | Abrir `FileText` · timer `Play`/`Pause` · hoje `CalendarDays` · marcar como `CircleCheck` · categoria `Flag` · projeto `Folder` · contextos `MapPin` · copiar `Copy` · Jira `Plug` · abrir no Jira `ExternalLink` · campos do Jira `SlidersHorizontal` · arquivar `Archive` · excluir `Trash2` |
 | Legenda do calendário | urgente `Flame` · prioridade `Flag` · time leak `Clock` · no Google `CalendarSync`                                                                                                                                                             |
 
 ## 7. AppShell
@@ -412,7 +412,7 @@ mais um badge (pesquisa: poucos elementos por linha; Hick e carga cognitiva).
 - **Cards** (visão Cards, grupos em cards e Kanban): `#id` em mono com a checkbox de seleção ao lado
   (a seleção vale em todas as visões, para as ações em massa), nome, progresso das subtarefas
   (`feitas/total`, abre a lista), Hoje e `⋯` (sem timer); embaixo, status (só em "Todas"),
-  categoria, projeto, contextos, prazo e o tempo à direita. Descrição, tags e limite ficam no
+  categoria, projeto, contextos, prazo, a chave do Jira (mono discreto) e o tempo à direita. Descrição, tags e limite ficam no
   detalhe. Recolher um grupo vale para tabela e cards ao mesmo tempo.
 - **Vazio:** `Empty` simples, "Inbox zerado. Tudo processado." no Inbox, "Nenhuma tarefa aqui." nas
   outras abas e, com busca ou filtro ativo, "Nenhuma tarefa com esses filtros." com "Limpar filtros".

@@ -224,9 +224,11 @@ cores de `TIME_LEAK_SCALE`). Hover e seleção do antd passam por cima da cor.
 **Jira na lista** — em task com `jira_key`, a célula Tarefa e o card mostram só a chave em Geist
 Mono, texto terciário (`components/tasks/JiraKey.tsx`), com "{tipo} · Jira: {status}" no tooltip e no
 rótulo acessível. O resto foi para o submenu **Jira ▸** do menu da tarefa (só sem seleção maior):
-**Abrir no Jira** (`app:openExternal` com `tasks.external_url`; desabilitado sem link http(s)),
-**Status no Jira ▸** (as transições vêm de `jira:listTransitions` ao abrir o menu e são aplicadas
-com `jira:transition`; a atual leva `✓`) e **Campos do Jira…** (abre o `JiraFieldsSheet`, que lê
+**Abrir no Jira** (`app:openExternal` com `tasks.external_url` quando ele é o link da issue,
+`/browse/{chave}`; sem isso fica desabilitado com "(sem link da issue)"),
+**Status no Jira ▸** (o status atual aparece no topo, com `✓` e desabilitado; as transições vêm de
+`jira:listTransitions` ao abrir esse submenu, a resposta mais recente vence, e o erro do Jira
+aparece no item; aplicar usa `jira:transition`) e **Campos do Jira…** (abre o `JiraFieldsSheet`, que lê
 `issue?expand=editmeta` e grava cada campo com `jira:updateField`). O status do Jira continua
 independente do `StatusChip` local.
 
