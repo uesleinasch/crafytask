@@ -1219,7 +1219,8 @@
       "titulo": "Contextos, tags e arquivo conferidos",
       "check": {
         "tipo": "manual"
-      }
+      },
+      "validado": "2026-11-18"
     },
     {
       "id": "F7.1",
