@@ -11,19 +11,8 @@ import {
   type TableColumnsType,
   type TableProps
 } from 'antd'
-import {
-  CalendarDays,
-  ChevronDown,
-  ChevronRight,
-  Clock,
-  Copy,
-  Ellipsis,
-  Lock,
-  Pause,
-  Play
-} from 'lucide-react'
+import { ChevronDown, ChevronRight, Clock, Copy, Lock } from 'lucide-react'
 import type { Context, Task, TaskStatus } from '@shared/types'
-import { localDateString } from '@shared/dueState'
 import { formatTimeRange } from '@shared/taskTime'
 import { StatusChip } from '@renderer/components/chips/StatusChip'
 import { CategoryChip } from '@renderer/components/chips/CategoryChip'
@@ -32,14 +21,16 @@ import { LiveDot } from '@renderer/components/chips/LiveDot'
 import { TaskContextMenu } from '@renderer/components/TaskContextMenu'
 import { TaskMenuChangedContext } from '@renderer/components/taskMenuContext'
 import { JiraTaskControls } from '@renderer/components/jira/JiraTaskControls'
-import type { TaskGroup } from '@renderer/components/TaskGroups'
 import { toast } from '@renderer/components/ui/sonner'
-import type { GroupBy } from '@renderer/lib/taskGrouping'
+import type { GroupBy, TaskGroup } from '@renderer/lib/taskGrouping'
 import { liveSeconds } from '@renderer/lib/liveSeconds'
 import { useTimerStore } from '@renderer/stores/timerStore'
 import { CATEGORY_COLORS, timeLeakBackground, timeLeakLevel } from '@renderer/theme/semantic'
 import { useThemeSettings } from '@renderer/theme/themeSettings'
 import { ContextsCell } from './ContextsCell'
+import { GroupHeader } from './GroupHeader'
+import { ProjectLabel } from './ProjectLabel'
+import { TaskActions } from './TaskActions'
 import { dueTone, formatDueShort, formatShortDuration } from './taskTableFormat'
 
 interface TaskRow {
@@ -143,8 +134,6 @@ export function TaskTable({
   const screens = Grid.useBreakpoint()
   const onChanged = useContext(TaskMenuChangedContext)
   const timers = useTimerStore((s) => s.timers)
-  const startTimer = useTimerStore((s) => s.startTimer)
-  const stopTimer = useTimerStore((s) => s.stopTimer)
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
   const [subtasks, setSubtasks] = useState<Record<number, Task[]>>({})
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
@@ -247,57 +236,19 @@ export function TaskTable({
     [rowTasks, selectedTaskIds]
   )
 
-  const today = localDateString(new Date())
   const now = new Date()
 
   const groupHeader = (group: TaskGroup): React.ReactNode => {
-    const collapsed = collapsedGroups.has(group.key)
     const ids = group.tasks.map((t) => t.id)
-    const allSelected = ids.length > 0 && ids.every((id) => selectedTaskIds.has(id))
-    const total = group.tasks.reduce((sum, t) => sum + liveSeconds(t, timers), 0)
     return (
-      <Flex align="center" gap={8}>
-        <Button
-          size="small"
-          type="text"
-          aria-expanded={!collapsed}
-          aria-label={`${collapsed ? 'Expandir' : 'Recolher'} ${group.label}`}
-          icon={collapsed ? <ChevronRight {...ICON} /> : <ChevronDown {...ICON} />}
-          onClick={() => toggleGroup(group.key)}
-        />
-        {group.icon ? (
-          <span aria-hidden>{group.icon}</span>
-        ) : (
-          <span
-            aria-hidden
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: 999,
-              flex: 'none',
-              background: group.color || token.colorBorder
-            }}
-          />
-        )}
-        <Typography.Text strong>{group.label}</Typography.Text>
-        <Typography.Text type="secondary" style={mono}>
-          {group.tasks.length}
-        </Typography.Text>
-        <Button
-          size="small"
-          type="link"
-          style={{ fontSize: 12, paddingInline: 0 }}
-          onClick={() => onToggleGroupSelection(ids, !allSelected)}
-        >
-          {allSelected ? 'Desmarcar grupo' : 'Selecionar grupo'}
-        </Button>
-        <span style={{ flex: 1 }} />
-        <Tooltip title="Tempo somado do grupo">
-          <Typography.Text type="secondary" style={mono}>
-            {formatShortDuration(total)}
-          </Typography.Text>
-        </Tooltip>
-      </Flex>
+      <GroupHeader
+        group={group}
+        collapsed={collapsedGroups.has(group.key)}
+        onToggle={() => toggleGroup(group.key)}
+        allSelected={ids.length > 0 && ids.every((id) => selectedTaskIds.has(id))}
+        onToggleSelection={(selected) => onToggleGroupSelection(ids, selected)}
+        totalSeconds={group.tasks.reduce((sum, t) => sum + liveSeconds(t, timers), 0)}
+      />
     )
   }
 
@@ -403,54 +354,14 @@ export function TaskTable({
     )
   }
 
-  const actionsCell = (row: TaskLikeRow): React.ReactNode => {
-    const { task } = row
-    const scheduledToday = task.scheduled_date === today
-    const timerLabel = task.is_blocked
-      ? 'Bloqueada por dependências'
-      : task.is_running
-        ? 'Pausar timer'
-        : 'Iniciar timer'
-    return (
-      <Flex gap={0} justify="flex-end" data-row-click="ignore" onClick={(e) => e.stopPropagation()}>
-        {row.kind === 'task' && onScheduleForToday && (
-          <Tooltip title={scheduledToday ? 'Tirar do plano de hoje' : 'Planejar para hoje'}>
-            <Button
-              size="small"
-              type={scheduledToday ? 'primary' : 'text'}
-              ghost={scheduledToday}
-              aria-label="Hoje"
-              aria-pressed={scheduledToday}
-              icon={<CalendarDays {...ICON} />}
-              onClick={() => onScheduleForToday(task.id)}
-            />
-          </Tooltip>
-        )}
-        <Tooltip title={timerLabel}>
-          <Button
-            size="small"
-            type="text"
-            disabled={task.is_blocked && !task.is_running}
-            aria-label={task.is_running ? 'Pausar timer' : 'Iniciar timer'}
-            icon={task.is_running ? <Pause {...ICON} /> : <Play {...ICON} />}
-            onClick={() =>
-              void (task.is_running
-                ? run(() => stopTimer(task.id), 'Timer parado')
-                : run(() => startTimer(task.id), 'Timer iniciado'))
-            }
-          />
-        </Tooltip>
-        <TaskContextMenu
-          task={task}
-          onOpen={() => onTaskClick(task.id)}
-          onScheduleForToday={onScheduleForToday}
-          trigger={['click']}
-        >
-          <Button size="small" type="text" aria-label="Mais ações" icon={<Ellipsis {...ICON} />} />
-        </TaskContextMenu>
-      </Flex>
-    )
-  }
+  const actionsCell = (row: TaskLikeRow): React.ReactNode => (
+    <TaskActions
+      task={row.task}
+      onOpen={onTaskClick}
+      onScheduleForToday={onScheduleForToday}
+      showToday={row.kind === 'task'}
+    />
+  )
 
   const baseColumns: BaseColumn[] = [
     {
@@ -495,21 +406,7 @@ export function TaskTable({
             width: 160,
             render: (row: TaskLikeRow) =>
               row.kind === 'sub' || !row.task.project_name ? null : (
-                <Flex align="center" gap={6} style={{ minWidth: 0 }}>
-                  <span
-                    aria-hidden
-                    style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: 999,
-                      flex: 'none',
-                      background: row.task.project_color || token.colorBorder
-                    }}
-                  />
-                  <Typography.Text ellipsis style={{ minWidth: 0 }}>
-                    {row.task.project_name}
-                  </Typography.Text>
-                </Flex>
+                <ProjectLabel name={row.task.project_name} color={row.task.project_color} />
               )
           }
         ]
