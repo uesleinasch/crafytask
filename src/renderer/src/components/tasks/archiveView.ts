@@ -48,10 +48,11 @@ export function formatArchivedLong(value: string | null | undefined): string {
 }
 
 export function formatHoursMinutes(seconds: number): string {
-  const minutes = Math.floor(seconds / 60)
-  const hours = Math.floor(minutes / 60)
-  if (hours === 0) return `${minutes}min`
-  return `${hours}h ${pad(minutes % 60)}min`
+  const total = Math.round(seconds / 60)
+  const hours = Math.floor(total / 60)
+  const minutes = total % 60
+  if (hours === 0) return `${minutes} min`
+  return minutes ? `${hours}h ${pad(minutes)}min` : `${hours}h`
 }
 
 export function archivedAfterFor(age: ArchiveAge, today: Date): string | undefined {

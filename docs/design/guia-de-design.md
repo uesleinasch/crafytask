@@ -243,6 +243,7 @@ só porque roda de CDN; os nomes lucide de cada lugar estão nas tabelas acima e
 | Passos da revisão     | `collect` `Download` · `inbox` `Inbox` · `mind` `Brain` · `next` `CircleArrowRight` · `past` `History` · `upcoming` `CalendarDays` · `waiting` `Hourglass` · `projects` `FolderKanban` · `someday` `Lightbulb` · `creative` `Rocket`           |
 | Menu da tarefa e ações em massa | Abrir `FileText` · timer `Play`/`Pause` · hoje `CalendarDays` · marcar como `CircleCheck` · categoria `Flag` · projeto `Folder` · contextos `MapPin` · copiar `Copy` · Jira `Plug` · abrir no Jira `ExternalLink` · campos do Jira `SlidersHorizontal` · arquivar `Archive` · excluir `Trash2` |
 | Contextos e tags      | abas `MapPin`/`Tags` · busca `Search` · Cards `LayoutGrid` · Tabela `Table2` · novo `Plus` · mais `Ellipsis` · Ver tarefas `ListTodo` · editar `Pencil` · mesclar `Merge` · excluir `Trash2` |
+| Arquivo               | busca `Search` · abrir `FileText` · desarquivar `ArchiveRestore` · excluir de vez `Trash2` · limpar o arquivo `Eraser` · mais `Ellipsis` · grupo por mês `CalendarDays` · grupo sem projeto `Folder` |
 | Legenda do calendário | urgente `Flame` · prioridade `Flag` · time leak `Clock` · no Google `CalendarSync`                                                                                                                                                             |
 
 ## 7. AppShell
@@ -277,7 +278,7 @@ ConfigProvider (tema, cssVar) → App (message, modal, notification) → RegionB
   | Conhecimento | Cadernos                            | `NotebookTabs`                     | `/notebooks`                                             | —                                          |
   | Conhecimento | Dashboard                           | `BarChart3`                        | `/dashboard`                                             | —                                          |
   | Rodapé       | Terminais                           | `SquareTerminal`                   | abre/fecha o painel de terminal (`Ctrl+'`), não navega   | número de sessões abertas, neutro          |
-  | Rodapé       | Arquivo                             | `Archive`                          | `/archived` (visão que reaproveita a tabela de tarefas)  | —                                          |
+  | Rodapé       | Arquivo                             | `Archive`                          | `/archived` (tabela de arquivadas no molde da de tarefas) | —                                          |
   | Rodapé       | Configurações                       | `Settings`                         | `/settings`                                              | —                                          |
   | Rodapé       | Recolher / Expandir menu            | `PanelLeftClose` / `PanelLeftOpen` | alterna 232px ⇄ 64px; some abaixo de `lg`                | —                                          |
 

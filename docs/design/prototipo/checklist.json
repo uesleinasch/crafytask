@@ -1167,7 +1167,7 @@
     {
       "id": "F6.8",
       "fase": "F6",
-      "titulo": "Arquivo com a tabela de tarefas, filtros, desarquivar e limpar por idade",
+      "titulo": "Arquivo com tabela de arquivadas, filtros, desarquivar e limpar por idade",
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/pages/ArchivePage.tsx",

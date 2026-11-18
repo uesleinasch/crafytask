@@ -36,9 +36,10 @@ describe('datas do arquivo', () => {
   })
 
   it('formata horas e minutos', () => {
-    expect(formatHoursMinutes(0)).toBe('0min')
-    expect(formatHoursMinutes(45 * 60)).toBe('45min')
-    expect(formatHoursMinutes(21 * 3600 + 17 * 60)).toBe('21h 17min')
+    expect(formatHoursMinutes(0)).toBe('0 min')
+    expect(formatHoursMinutes(45 * 60)).toBe('45 min')
+    expect(formatHoursMinutes(3600)).toBe('1h')
+    expect(formatHoursMinutes(21 * 3600 + 7 * 60)).toBe('21h 07min')
   })
 
   it('traduz o filtro de idade em data de corte', () => {

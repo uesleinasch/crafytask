@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useErrorBoundary } from 'react-error-boundary'
 import {
@@ -39,6 +39,8 @@ import {
 } from '@shared/types'
 import { archiveCutoff, ARCHIVE_AGE_MONTHS } from '@shared/archiveAge'
 import { PageContainer } from '@renderer/components/shell/PageContainer'
+import { MenuRow } from '@renderer/components/shell/MenuRow'
+import { RowMenuContext } from '@renderer/components/shell/rowMenuContext'
 import { Field } from '@renderer/components/shell/SectionHeader'
 import { StatusChip } from '@renderer/components/chips/StatusChip'
 import { ProjectLabel } from '@renderer/components/tasks/ProjectLabel'
@@ -81,21 +83,6 @@ const PURGE_LABELS: Record<number, string> = {
   24: 'mais de 2 anos'
 }
 
-const RowMenuContext = createContext<((key: string) => MenuProps | null) | null>(null)
-
-function MenuRow(
-  props: React.HTMLAttributes<HTMLTableRowElement> & { 'data-row-key'?: string | number }
-): React.JSX.Element {
-  const menuOf = useContext(RowMenuContext)
-  const menu = menuOf?.(String(props['data-row-key']))
-  if (!menu) return <tr {...props} />
-  return (
-    <Dropdown menu={menu} trigger={['contextMenu']}>
-      <tr {...props} />
-    </Dropdown>
-  )
-}
-
 const TABLE_COMPONENTS: TableProps<Row>['components'] = { body: { row: MenuRow } }
 
 export function ArchivePage(): React.JSX.Element {
@@ -120,7 +107,7 @@ export function ArchivePage(): React.JSX.Element {
   const [purge, setPurge] = useState<number | null>(null)
   const [purgeCount, setPurgeCount] = useState(0)
 
-  const wide = screens.lg === true
+  const wide = screens.lg !== false
   const medium = screens.md !== false
   const effectiveStatus = medium ? status : ALL
   const effectiveSort: ArchiveSort = medium ? sort : 'archived'
@@ -247,6 +234,7 @@ export function ArchivePage(): React.JSX.Element {
     try {
       const deleted = await window.api.deleteArchivedBefore(archiveCutoff(purge, new Date()))
       setPurge(null)
+      setPurgeCount(0)
       await load()
       message.success(`${plural(deleted, 'tarefa excluída', 'tarefas excluídas')} de vez`)
     } catch (error) {
@@ -647,7 +635,10 @@ export function ArchivePage(): React.JSX.Element {
         }
         okButtonProps={{ danger: true, disabled: !purgeCount }}
         cancelText="Cancelar"
-        onCancel={() => setPurge(null)}
+        onCancel={() => {
+          setPurge(null)
+          setPurgeCount(0)
+        }}
         onOk={() => void runPurge()}
         destroyOnHidden
       >

@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
   App,
@@ -34,6 +34,8 @@ import {
   Trash2
 } from 'lucide-react'
 import { PageContainer } from '@renderer/components/shell/PageContainer'
+import { MenuRow } from '@renderer/components/shell/MenuRow'
+import { RowMenuContext } from '@renderer/components/shell/rowMenuContext'
 import { LabelMark } from '@renderer/components/labels/LabelMark'
 import { LabelEditModal } from '@renderer/components/labels/LabelEditModal'
 import { LabelMergeModal } from '@renderer/components/labels/LabelMergeModal'
@@ -61,21 +63,6 @@ const INTRO: Record<LabelKind, string> = {
   context:
     'Onde ou com o que uma ação pode ser feita. Filtre a lista por contexto para ver o que dá para fazer agora.',
   tag: 'Rótulos livres, criados enquanto você digita. Variações de grafia viram tags diferentes: use Mesclar para juntar.'
-}
-
-const RowMenuContext = createContext<((id: number) => MenuProps | null) | null>(null)
-
-function MenuRow(
-  props: React.HTMLAttributes<HTMLTableRowElement> & { 'data-row-key'?: string | number }
-): React.JSX.Element {
-  const menuOf = useContext(RowMenuContext)
-  const menu = menuOf?.(Number(props['data-row-key']))
-  if (!menu) return <tr {...props} />
-  return (
-    <Dropdown menu={menu} trigger={['contextMenu']}>
-      <tr {...props} />
-    </Dropdown>
-  )
 }
 
 const TABLE_COMPONENTS: TableProps<Label>['components'] = { body: { row: MenuRow } }
@@ -176,8 +163,8 @@ export function LabelsPage(): React.JSX.Element {
     }
   }
 
-  const menuById = (id: number): MenuProps | null => {
-    const label = list.find((item) => item.id === id)
+  const menuById = (key: string): MenuProps | null => {
+    const label = list.find((item) => String(item.id) === key)
     return label ? menuFor(label) : null
   }
 
