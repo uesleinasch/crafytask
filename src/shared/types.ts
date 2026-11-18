@@ -524,27 +524,11 @@ export const STATUS_LABELS: Record<TaskStatus, string> = {
   someday: 'Someday/Maybe'
 }
 
-export const STATUS_COLORS: Record<TaskStatus, string> = {
-  inbox: 'bg-gray-500',
-  aguardando: 'bg-yellow-500',
-  proximas: 'bg-blue-500',
-  executando: 'bg-green-500',
-  finalizada: 'bg-purple-500',
-  someday: 'bg-teal-500'
-}
-
 export const CATEGORY_LABELS: Record<TaskCategory, string> = {
   urgente: 'Urgente',
   prioridade: 'Prioridade',
   normal: 'Normal',
   time_leak: 'Time Leak'
-}
-
-export const CATEGORY_COLORS: Record<TaskCategory, string> = {
-  urgente: 'bg-red-500',
-  prioridade: 'bg-orange-500',
-  normal: 'bg-blue-500',
-  time_leak: 'bg-yellow-500'
 }
 
 export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
