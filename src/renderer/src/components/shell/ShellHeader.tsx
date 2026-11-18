@@ -1,9 +1,10 @@
-import { Button, Dropdown, Grid, Typography, type MenuProps } from 'antd'
-import { Menu, Palette, Plus, Rows3, Rows4 } from 'lucide-react'
+import { Button, Dropdown, Grid, Tooltip, Typography, theme, type MenuProps } from 'antd'
+import { Menu, Palette, Plus, Rows3, Rows4, Search } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { requestNewTask } from '@renderer/lib/newTaskRequest'
 import { useThemeSettings } from '@renderer/theme/themeSettings'
 import { HeaderCapture } from './HeaderCapture'
+import { openCommandPalette } from './paletteCommands'
 import { RunningTimersPill } from './RunningTimersPill'
 import { screenTitle } from './navigation'
 
@@ -30,6 +31,31 @@ function AppearanceMenu(): React.JSX.Element {
     >
       <Button aria-label="Aparência" icon={<Palette size={16} strokeWidth={1.75} />} />
     </Dropdown>
+  )
+}
+
+function SearchButton({ showLabel }: { showLabel: boolean }): React.JSX.Element {
+  const { token } = theme.useToken()
+  return (
+    <Tooltip title="Buscar e comandos (Ctrl+K)">
+      <Button
+        aria-label="Buscar"
+        icon={<Search size={16} strokeWidth={1.75} />}
+        onClick={openCommandPalette}
+      >
+        {showLabel && (
+          <span>
+            Buscar{' '}
+            <Typography.Text
+              type="secondary"
+              style={{ fontSize: 12, marginInlineStart: 6, fontFamily: token.fontFamilyCode }}
+            >
+              Ctrl K
+            </Typography.Text>
+          </span>
+        )}
+      </Button>
+    </Tooltip>
   )
 }
 
@@ -80,6 +106,7 @@ export function ShellHeader({ onOpenMenu }: ShellHeaderProps): React.JSX.Element
         }}
       >
         {screens.md && <RunningTimersPill />}
+        <SearchButton showLabel={!!screens.xxl} />
         <AppearanceMenu />
         <Button
           type="primary"
