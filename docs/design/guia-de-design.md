@@ -344,7 +344,7 @@ ConfigProvider (tema, cssVar) → App (message, modal, notification) → RegionB
   | Cabeçalho, linha 1    | Voltar para Tarefas e o nome do projeto (abre o projeto)                                                                                                                                                                                                                                                                                                             |
   | Cabeçalho, linha 2    | Status (Executando desabilitado se bloqueada) · `#id` (clique copia) · etiqueta Jira com tipo, chave e status Jira · "Arquivada" · **bloco do timer** (ponto de executando, cronômetro mono 30px, Iniciar/Pausar, Finalizar) · Terminal · Campos do Jira (só Jira) · mostrar/esconder inspetor · menu `⋯` (Copiar `#id`, Zerar tempo, Arquivar/Desarquivar, Excluir) |
   | Cabeçalho, linhas 3–4 | Nome e descrição editáveis no lugar                                                                                                                                                                                                                                                                                                                                  |
-  | Barra de propriedades | Pílulas que abrem um `Popover` de edição: Categoria, Projeto (+ "Abrir projeto →"), Contextos, Prazo (data + hora, cor de vencido/hoje), Energia (clicar no ativo limpa). Programado (data + início/fim), Recorrência, Tags e Link externo aparecem quando têm valor; vazias, entram por "+ Propriedade"                                                             |
+  | Barra de propriedades | Pílulas que abrem um `Popover` de edição: Aguardando (primeira, só com status Aguardando ou com texto salvo: "Aguardando: Revisor externo" na cor de Aguardando, vazia "Aguardando quem?"), Categoria, Projeto (+ "Abrir projeto →"), Contextos, Prazo (data + hora, cor de vencido/hoje), Energia (clicar no ativo limpa). Programado (data + início/fim), Recorrência, Tags e Link externo aparecem quando têm valor; vazias, entram por "+ Propriedade"                                                             |
   | Aviso                 | `Alert` de bloqueio com "Ver dependências", que abre o inspetor em Relações                                                                                                                                                                                                                                                                                          |
   | Área de trabalho      | Abas Notas e Desenho, botão de modo foco                                                                                                                                                                                                                                                                                                                             |
   | Inspetor · Tempo      | Barra do limite (`success` → `warning` 80% → `error` 100%), Total e Sessões, lista de sessões (em andamento no topo; encerradas com editar início/fim e excluir), Ajustes de tempo (adicionar, ajustar total, limite, remover limite)                                                                                                                                |
@@ -391,7 +391,8 @@ mais um badge (pesquisa: poucos elementos por linha; Hick e carga cognitiva).
 - **Célula Tarefa:** caret de subtarefas (quando houver), cadeado de bloqueio (tooltip "Bloqueada:
   depende de #id", até três ids e "e mais N"), ponto de executando,
   o nome (link focável) e, à direita dele, relógio com o horário agendado e ampulheta com
-  "Aguardando: …" no tooltip (a ampulheta depende do campo da F2-h). O caret já diz que
+  "Aguardando: …" no tooltip (texto de `waiting_for`) e, em task do Jira, só a chave em mono
+  discreto (`CONNECT-1234`, tipo e status Jira no tooltip). O caret já diz que
   há subtarefas; a quantidade fica no rótulo acessível e no tooltip, e o progresso aparece nos
   cards, no detalhe da task (aba Relações) e ao expandir.
 - **Contextos:** o primeiro como tag e `+N` ao lado. Passar o mouse abre um popover com todos, já
@@ -416,7 +417,8 @@ mais um badge (pesquisa: poucos elementos por linha; Hick e carga cognitiva).
 - **Vazio:** `Empty` simples, "Inbox zerado. Tudo processado." no Inbox, "Nenhuma tarefa aqui." nas
   outras abas e, com busca ou filtro ativo, "Nenhuma tarefa com esses filtros." com "Limpar filtros".
 - **Menu de contexto** (botão direito na linha ou no card): Abrir · Iniciar/Pausar timer · Planejar
-  para hoje · Marcar como ▸ · Categoria ▸ · Mover para projeto ▸ · Contextos ▸ · Copiar `#id` ·
+  para hoje · Marcar como ▸ · Categoria ▸ · Mover para projeto ▸ · Jira ▸ (só em task do Jira e sem
+  seleção: Abrir no Jira, Status no Jira ▸ com as transições, Campos do Jira…) · Contextos ▸ · Copiar `#id` ·
   Arquivar · Excluir… (com confirmação). O item atual de cada submenu aparece marcado. Se a linha
   faz parte de uma seleção maior, o menu age sobre a seleção toda (título "N tarefas selecionadas",
   sem Abrir, timer, contextos e copiar), igual à barra de ações em massa.
