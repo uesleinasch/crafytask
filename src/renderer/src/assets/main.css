@@ -148,6 +148,32 @@
     @apply bg-background text-foreground;
     font-family: var(--font-sans);
   }
+  :where(button, a, summary, [role='button'], [tabindex]:not([tabindex='-1'])):focus-visible {
+    outline: 2px solid var(--ant-color-primary);
+    outline-offset: 2px;
+  }
+}
+
+@keyframes ct-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--ant-color-success) 55%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 7px color-mix(in srgb, var(--ant-color-success) 0%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--ant-color-success) 0%, transparent);
+  }
+}
+
+.ct-live {
+  animation: ct-pulse 1.8s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ct-live {
+    animation: none;
+  }
 }
 
 /* Animações customizadas */

@@ -2,6 +2,10 @@ import { theme, type ThemeConfig } from 'antd'
 import type { Density, ThemeMode } from '@shared/themePreference'
 import { PALETTE, seedTokens } from './tokens'
 
+export function componentSizeFor(density: Density): 'small' | undefined {
+  return density === 'compact' ? 'small' : undefined
+}
+
 export function buildTheme(mode: ThemeMode, density: Density): ThemeConfig {
   const c = PALETTE[mode]
   const compact = density === 'compact'

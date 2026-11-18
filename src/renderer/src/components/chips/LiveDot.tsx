@@ -7,7 +7,7 @@ export function LiveDot({ label }: { label?: string }): React.JSX.Element {
       role={label ? 'img' : undefined}
       aria-label={label}
       aria-hidden={label ? undefined : true}
-      className="animate-pulse-slow motion-reduce:animate-none"
+      className="ct-live"
       style={{
         display: 'inline-block',
         width: 8,

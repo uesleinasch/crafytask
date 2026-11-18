@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { CATEGORY_COLORS, HORIZON_COLORS, STATUS_COLORS, TIME_LEAK_SCALE } from './semantic'
+import {
+  CAL_BLOCK_COLORS,
+  CATEGORY_COLORS,
+  HORIZON_COLORS,
+  STATUS_COLORS,
+  TIME_LEAK_SCALE
+} from './semantic'
 import { PALETTE, seedTokens, type ThemeMode } from './tokens'
 
 function luminance(hex: string): number {
@@ -37,6 +43,13 @@ describe.each(MODES)('contraste WCAG no tema %s', (mode) => {
   it('borda de controle passa 3:1 sobre as superfícies', () => {
     for (const surface of [c.bg, c.surface, c.elevated, c.sider, c.hover, c.rowHover]) {
       expect(contrast(c.borderStrong, surface)).toBeGreaterThanOrEqual(3)
+    }
+  })
+
+  it('texto passa AA sobre o bloco do calendário', () => {
+    const { calBlock } = CAL_BLOCK_COLORS[mode]
+    for (const key of ['text', 'text2'] as const) {
+      expect(contrast(c[key], calBlock)).toBeGreaterThanOrEqual(TEXT_AA)
     }
   })
 

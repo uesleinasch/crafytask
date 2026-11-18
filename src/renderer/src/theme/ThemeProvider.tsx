@@ -9,7 +9,7 @@ import {
   type ThemePreference
 } from '@shared/themePreference'
 import { shouldBootstrapTimerStore } from '@renderer/stores/timerWindow'
-import { buildTheme } from './buildTheme'
+import { buildTheme, componentSizeFor } from './buildTheme'
 import {
   DENSITY_KEY,
   THEME_PREFERENCE_KEY,
@@ -73,7 +73,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }): Reac
 
   return (
     <ThemeSettingsContext.Provider value={settings}>
-      <ConfigProvider theme={config} locale={ptBR}>
+      <ConfigProvider theme={config} locale={ptBR} componentSize={componentSizeFor(density)}>
         <AntApp component={false}>{children}</AntApp>
       </ConfigProvider>
     </ThemeSettingsContext.Provider>
