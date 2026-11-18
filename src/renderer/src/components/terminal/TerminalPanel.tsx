@@ -367,7 +367,7 @@ export function TerminalPanel(): React.JSX.Element | null {
                   </div>
                 )}
                 <div className="flex-1 min-h-0">
-                  <RegionBoundary region="terminal" resetKeys={[session.id]}>
+                  <RegionBoundary region="terminal" resetKeys={[session.id]} surface>
                     <TerminalView
                       session={session}
                       visible={open && index !== -1}

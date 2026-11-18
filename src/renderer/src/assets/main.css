@@ -173,7 +173,7 @@
 .ct-popup {
   padding: 4px;
   border: 1px solid var(--ant-color-border-secondary);
-  border-radius: 8px;
+  border-radius: var(--ant-border-radius-lg);
   background: var(--ant-color-bg-elevated);
   color: var(--ant-color-text);
   box-shadow: var(--ant-box-shadow-secondary);
@@ -187,11 +187,11 @@
   width: 100%;
   padding: 6px 8px;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--ant-border-radius-sm);
   background: transparent;
   color: var(--ant-color-text);
   font: inherit;
-  font-size: 14px;
+  font-size: var(--ant-font-size);
   text-align: left;
   cursor: pointer;
 }
@@ -211,7 +211,7 @@
 
 .ct-popup-muted {
   color: var(--ant-color-text-tertiary);
-  font-size: 12px;
+  font-size: var(--ant-font-size-sm);
 }
 
 .ct-popup-divider {
@@ -226,7 +226,7 @@
   justify-content: center;
   padding: 6px;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--ant-border-radius-sm);
   background: transparent;
   color: var(--ant-color-text-secondary);
   cursor: pointer;
@@ -397,13 +397,14 @@ body.float-window #root {
   vertical-align: top;
   text-align: left;
   min-width: 3em;
+  position: relative;
 }
 .notes-editor-content th {
   background: var(--ant-color-fill-quaternary);
   font-weight: 600;
 }
 .notes-editor-content .selectedCell::after {
-  background: var(--ant-color-primary-bg);
+  background: color-mix(in srgb, var(--ant-color-primary) 12%, transparent);
   content: '';
   position: absolute;
   inset: 0;

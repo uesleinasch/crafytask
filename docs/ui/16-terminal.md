@@ -74,6 +74,10 @@ main) são puras, em `stores/terminalPanes.ts` (testadas).
 
 ## Comportamento que não aparece no JSX
 
+- Cada `TerminalView` fica dentro de um `RegionBoundary` ("terminal", com fundo de superfície no
+  fallback): se o xterm quebra, só aquela sessão mostra "Esta área falhou"; "Tentar de novo"
+  remonta a view, que repõe o buffer da sessão.
+
 - As sessões vivem no **main** (`src/main/terminal.ts` + `terminalSessions.ts`) e sobrevivem à
   navegação e ao fechar a janela (que só esconde para o tray). Morrem ao **Sair** do app e quando
   a task é apagada (inclusive pelo MCP).

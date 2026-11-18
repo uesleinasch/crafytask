@@ -29,6 +29,8 @@ function FontSizePicker({ editor }: { editor: Editor }): React.JSX.Element {
       <button
         className={current ? 'ct-tool active' : 'ct-tool'}
         aria-label="Tamanho da fonte"
+        aria-haspopup="menu"
+        aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
         title="Tamanho da fonte"
       >

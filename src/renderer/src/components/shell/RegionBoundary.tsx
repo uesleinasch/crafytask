@@ -1,4 +1,4 @@
-import { App, Button, Result } from 'antd'
+import { App, Button, Result, theme } from 'antd'
 import { Copy, RotateCcw } from 'lucide-react'
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary'
 import { formatErrorDetails } from './regionError'
@@ -6,15 +6,18 @@ import { formatErrorDetails } from './regionError'
 interface RegionBoundaryProps {
   region: string
   resetKeys?: unknown[]
+  surface?: boolean
   children: React.ReactNode
 }
 
 function RegionFallback({
   region,
+  surface,
   error,
   resetErrorBoundary
-}: FallbackProps & { region: string }): React.JSX.Element {
+}: FallbackProps & { region: string; surface?: boolean }): React.JSX.Element {
   const { message } = App.useApp()
+  const { token } = theme.useToken()
 
   const copyDetails = async (): Promise<void> => {
     try {
@@ -25,7 +28,7 @@ function RegionFallback({
     }
   }
 
-  return (
+  const result = (
     <Result
       status="warning"
       title={`Esta área falhou: ${region}`}
@@ -45,17 +48,32 @@ function RegionFallback({
       ]}
     />
   )
+
+  if (!surface) return result
+  return (
+    <div
+      style={{
+        height: '100%',
+        overflow: 'auto',
+        background: token.colorBgContainer,
+        color: token.colorText
+      }}
+    >
+      {result}
+    </div>
+  )
 }
 
 export function RegionBoundary({
   region,
   resetKeys,
+  surface,
   children
 }: RegionBoundaryProps): React.JSX.Element {
   return (
     <ErrorBoundary
       resetKeys={resetKeys}
-      fallbackRender={(props) => <RegionFallback region={region} {...props} />}
+      fallbackRender={(props) => <RegionFallback region={region} surface={surface} {...props} />}
     >
       {children}
     </ErrorBoundary>
