@@ -327,7 +327,7 @@ Chaves em `localStorage` (via `usePersistedState`):
 | `ticktask:taskListGroupBy` | `'project'` | Agrupar por projeto ou contexto |
 | `ticktask:executandoKanban` | `false` | Kanban na aba Executando |
 | `ticktask:executandoKanbanGroupBy` | o `taskListGroupBy` atual | Colunas do Kanban (projeto, contexto, Jira) |
-| `ticktask.notesWidth` | `550` | Largura do painel de notas |
-| `ticktask.notesZenWidth` | `640` | Largura da coluna no modo zen |
+| `ticktask:taskInspectorOpen` | `true` | Inspetor aberto no detalhe da tarefa (a partir de `xl`) |
+| `ticktask.notesZenWidth` | `640` | Largura da coluna no modo zen dos cadernos |
 
 Note a inconsistência de nomenclatura: cinco chaves usam `:` e duas usam `.`.

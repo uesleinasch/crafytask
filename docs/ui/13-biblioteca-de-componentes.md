@@ -129,12 +129,12 @@ um terceiro.
 | `mention/mentionConfig` + `MentionList` | menções `@` a tarefas, projetos e contextos, com o tipo à direita de cada item |
 | `TableContextMenu` | menu de botão direito: 10 operações de tabela dentro dela, "Inserir tabela" fora |
 | `NotesActions` | botões "Salvar local" e "Salvar e sincronizar" |
-| `NotesFocusBar` | barra de 48px do modo maximizado: voltar, nome, cronômetro, iniciar/pausar, ações, zen, restaurar |
+| `FocusOverlay` | modo foco do detalhe da tarefa: camada fixa sobre o shell com barra de 48px (sair, nome, cronômetro, iniciar/pausar, Notas/Desenho, ações da nota); `Esc` sai |
 | `TaskDrawingEditor` | Excalidraw em `pt-BR`; auto-save com debounce de 800ms; grava JSON + PNG derivado |
 | `imageUpload` | seleção/colagem de imagem → `notesAssets` → `ticktask-asset://` |
 | `suggestionPopup` | infraestrutura compartilhada dos popups de `/` e `@`; marca `[data-suggestion-popup]` para que o `Esc` da página não interfira |
 | `notesFormat.ts` | ProseMirror ↔ formato legado do Editor.js (unitário) |
-| `notesLayout.ts` | limites de largura do painel (unitário) |
+| `notesLayout.ts` | modos do editor dos cadernos (`NotesViewMode`) e largura padrão do zen |
 | `drawingAssetPath.ts` | resolve as fontes do Excalidraw pelo esquema `ticktask-asset://` (host `excalidraw`) |
 
 ---

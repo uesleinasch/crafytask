@@ -1,7 +1,8 @@
-import { Suspense, lazy, type ReactNode, type Ref } from 'react'
+import { Suspense, lazy, type CSSProperties, type ReactNode, type Ref } from 'react'
 import type { JSONContent } from '@tiptap/core'
 import type { NotesOwner } from '@shared/types'
-import { Focus, Loader2, Maximize2 } from 'lucide-react'
+import { Flex, Spin } from 'antd'
+import { Focus, Maximize2 } from 'lucide-react'
 import { cn } from '@renderer/lib/utils'
 import { TaskNotesEditor, type TaskNotesEditorHandle } from './TaskNotesEditor'
 import type { TaskDrawingEditorHandle } from './TaskDrawingEditor'
@@ -119,35 +120,78 @@ export function NotesPanel({
           </div>
         </div>
       )}
-      {tab === 'notes' ? (
-        <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
-          <TaskNotesEditor
-            ref={editorRef}
-            owner={owner}
-            initialContent={initialContent}
-            onChange={onChange}
-            onSaved={onSaved}
-          />
-        </div>
-      ) : (
-        <div className="flex-1 min-h-0">
-          <Suspense
-            fallback={
-              <div className="h-full flex items-center justify-center text-slate-400">
-                <Loader2 size={18} className="animate-spin" />
-              </div>
-            }
-          >
-            <TaskDrawingEditor
-              ref={drawingRef}
-              owner={owner}
-              initialDrawing={initialDrawing}
-              onChange={onDrawingChange}
-              onSaved={onDrawingSaved}
-            />
-          </Suspense>
-        </div>
-      )}
+      <NotesBody
+        owner={owner}
+        tab={tab}
+        initialContent={initialContent}
+        editorRef={editorRef}
+        onChange={onChange}
+        onSaved={onSaved}
+        initialDrawing={initialDrawing}
+        drawingRef={drawingRef}
+        onDrawingChange={onDrawingChange}
+        onDrawingSaved={onDrawingSaved}
+      />
+    </div>
+  )
+}
+
+type NotesBodyProps = Pick<
+  NotesPanelProps,
+  | 'owner'
+  | 'tab'
+  | 'initialContent'
+  | 'editorRef'
+  | 'onChange'
+  | 'onSaved'
+  | 'initialDrawing'
+  | 'drawingRef'
+  | 'onDrawingChange'
+  | 'onDrawingSaved'
+> & { notesStyle?: CSSProperties }
+
+export function NotesBody({
+  owner,
+  tab,
+  initialContent,
+  editorRef,
+  onChange,
+  onSaved,
+  initialDrawing,
+  drawingRef,
+  onDrawingChange,
+  onDrawingSaved,
+  notesStyle
+}: NotesBodyProps): React.JSX.Element {
+  return tab === 'notes' ? (
+    <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+      <div style={notesStyle}>
+        <TaskNotesEditor
+          ref={editorRef}
+          owner={owner}
+          initialContent={initialContent}
+          onChange={onChange}
+          onSaved={onSaved}
+        />
+      </div>
+    </div>
+  ) : (
+    <div className="flex-1 min-h-0">
+      <Suspense
+        fallback={
+          <Flex align="center" justify="center" style={{ height: '100%' }}>
+            <Spin />
+          </Flex>
+        }
+      >
+        <TaskDrawingEditor
+          ref={drawingRef}
+          owner={owner}
+          initialDrawing={initialDrawing}
+          onChange={onDrawingChange}
+          onSaved={onDrawingSaved}
+        />
+      </Suspense>
     </div>
   )
 }

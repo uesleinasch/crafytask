@@ -153,8 +153,8 @@ Each task carries a `notes` column holding **ProseMirror JSON** (migrated away f
 Editor.js format). The editor lives in `src/renderer/src/components/editor/`: `TaskNotesEditor.tsx`
 mounts Tiptap with the extension set in `extensions.ts` (starter kit, tables, highlight, images,
 file handler, drag handle, mention), plus a slash menu (`slash/`), `@` mentions of other tasks
-(`mention/`, backed by `notes:searchMentions`), a bubble toolbar, and `NotesFocusBar` for the
-zen/maximized modes. `notesFormat.ts` and `notesLayout.ts` hold the pure bits and are unit-tested.
+(`mention/`, backed by `notes:searchMentions`), a bubble toolbar, and `FocusOverlay` for the
+task detail's focus mode. `notesFormat.ts` holds the pure bits and is unit-tested.
 
 The JSON is converted, never stored twice: `notesMarkdown.ts` for Markdown (local export),
 `notionBlocks.ts` for Notion blocks. Pasted/dropped images go through `notesAssets.ts` — bytes land

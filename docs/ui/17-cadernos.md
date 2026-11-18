@@ -61,7 +61,7 @@ pelo main, que revalida tudo em `movePage`.
   título, notas e desenho pendentes são gravados antes de desmontar.
 - O editor é montado com `key={pageId}`; trocar de página recria Tiptap/Excalidraw.
 - **Maximizar** esconde cabeçalho, cadernos, abas e lista; **Zen** também, e centraliza o texto.
-  Esc ou o botão redondo no canto voltam ao normal. Sem `NotesFocusBar` (não há timer de página).
+  Esc ou o botão redondo no canto voltam ao normal. Sem a barra de foco do detalhe da tarefa (não há timer de página).
 
 ## Preferências persistidas (`localStorage`)
 

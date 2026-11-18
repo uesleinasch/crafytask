@@ -593,10 +593,9 @@
       "fase": "F3",
       "titulo": "Detalhe responsivo: inspetor ao lado (xl), em Drawer (md), abas (estreito)",
       "check": {
-        "tipo": "contem",
+        "tipo": "contem-todos",
         "arquivos": "src/renderer/src/pages/SingleTaskPage.tsx",
-        "padrao": "useBreakpoint|<Tabs",
-        "minimo": 2
+        "padroes": ["useBreakpoint", "<Drawer", "<TaskDetailTabs", "<TaskInspector"]
       }
     },
     {
@@ -623,12 +622,11 @@
     {
       "id": "F3.4",
       "fase": "F3",
-      "titulo": "Modos normal, maximizado e zen preservados",
+      "titulo": "Modo normal e modo foco (o maximizado e o zen de antes viraram o foco)",
       "check": {
-        "tipo": "contem",
-        "arquivos": "src/renderer/src/pages/SingleTaskPage.tsx",
-        "padrao": "'zen'|'maximized'",
-        "minimo": 2
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/components/tasks/TaskWorkspace.tsx",
+        "padroes": ["<FocusOverlay", "68ch"]
       },
       "guarda": true
     },
@@ -739,6 +737,16 @@
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/components/editor/NotesActions.tsx",
         "padroes": ["<Tooltip", "Salvar e sincronizar com o Notion", "Salvar em arquivo local"]
+      }
+    },
+    {
+      "id": "F3.15",
+      "fase": "F3",
+      "titulo": "Campos do Jira num Drawer do antd",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/components/jira/JiraFieldsSheet.tsx",
+        "padroes": ["<Drawer", "Campos do Jira"]
       }
     },
     {
