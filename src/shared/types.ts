@@ -24,6 +24,7 @@ export interface Tag {
 
 export interface TagWithUsage extends Tag {
   task_count: number
+  open_count: number
 }
 
 export interface UpdateTagInput {
@@ -39,6 +40,11 @@ export interface Context {
   icon: string
   color: string
   created_at: string
+}
+
+export interface ContextWithUsage extends Context {
+  task_count: number
+  open_count: number
 }
 
 // ===================== PROJECT =====================

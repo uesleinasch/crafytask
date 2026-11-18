@@ -84,6 +84,8 @@ import {
   // Contexts
   createContext,
   listContexts,
+  listContextsWithUsage,
+  mergeContexts,
   updateContext,
   deleteContext,
   getTaskContexts,
@@ -1031,6 +1033,12 @@ function setupIpcHandlers(): void {
     createContext(name, icon, color)
   )
   ipcMain.handle('context:list', () => listContexts())
+  ipcMain.handle('context:listWithUsage', () => listContextsWithUsage())
+  ipcMain.handle('context:merge', (_, sourceId: number, targetId: number) => {
+    const affected = mergeContexts(sourceId, targetId)
+    syncTasksAfterTagChange(affected)
+    return affected.length
+  })
   ipcMain.handle(
     'context:update',
     (_, id: number, data: { name?: string; icon?: string; color?: string }) =>

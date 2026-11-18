@@ -42,6 +42,7 @@ import type {
   TaskListFilters,
   TaskListItem,
   TagWithUsage,
+  ContextWithUsage,
   UpdateTagInput,
   McpStatus,
   BackupSnapshot,
@@ -288,6 +289,10 @@ const api = {
   createContext: (name: string, icon?: string, color?: string): Promise<Context> =>
     ipcRenderer.invoke('context:create', name, icon, color),
   listContexts: (): Promise<Context[]> => ipcRenderer.invoke('context:list'),
+  listContextsWithUsage: (): Promise<ContextWithUsage[]> =>
+    ipcRenderer.invoke('context:listWithUsage'),
+  mergeContexts: (sourceId: number, targetId: number): Promise<number> =>
+    ipcRenderer.invoke('context:merge', sourceId, targetId),
   updateContext: (
     id: number,
     data: { name?: string; icon?: string; color?: string }

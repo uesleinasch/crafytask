@@ -46,6 +46,13 @@ import {
   type SqliteLike,
   type TagUsageRow
 } from './tagQueries'
+import {
+  assertContextNameFree,
+  listContextsWithUsage as listContextsWithUsageQuery,
+  listTaskIdsWithContext as listTaskIdsWithContextQuery,
+  mergeContexts as mergeContextsQuery,
+  type ContextUsageRow
+} from './contextQueries'
 import { ensureNotebookSchema } from './notebookQueries'
 import {
   deleteTimeEntry as deleteTimeEntryQuery,
@@ -618,6 +625,7 @@ export function updateContext(
   const values: unknown[] = []
 
   if (data.name !== undefined) {
+    assertContextNameFree(tagDb(), data.name, id)
     updates.push('name = ?')
     values.push(data.name.trim())
   }
@@ -635,6 +643,18 @@ export function updateContext(
     const stmt = db.prepare(`UPDATE contexts SET ${updates.join(', ')} WHERE id = ?`)
     stmt.run(...values)
   }
+}
+
+export function listContextsWithUsage(): ContextUsageRow[] {
+  return listContextsWithUsageQuery(tagDb())
+}
+
+export function listTaskIdsWithContext(contextId: number): number[] {
+  return listTaskIdsWithContextQuery(tagDb(), contextId)
+}
+
+export function mergeContexts(sourceId: number, targetId: number): number[] {
+  return mergeContextsQuery(tagDb(), sourceId, targetId)
 }
 
 export function deleteContext(id: number): void {

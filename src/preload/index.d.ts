@@ -43,6 +43,7 @@ import type {
   TaskListFilters,
   TaskListItem,
   TagWithUsage,
+  ContextWithUsage,
   UpdateTagInput,
   McpStatus,
   BackupSnapshot,
@@ -238,6 +239,8 @@ interface API {
   // Contexts
   createContext: (name: string, icon?: string, color?: string) => Promise<Context>
   listContexts: () => Promise<Context[]>
+  listContextsWithUsage: () => Promise<ContextWithUsage[]>
+  mergeContexts: (sourceId: number, targetId: number) => Promise<number>
   updateContext: (
     id: number,
     data: { name?: string; icon?: string; color?: string }
