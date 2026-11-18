@@ -786,6 +786,45 @@
       }
     },
     {
+      "id": "F7.7",
+      "fase": "F7",
+      "titulo": "Dashboard sem pizza nem rosca (barras ordenadas)",
+      "check": {
+        "tipo": "ausente",
+        "arquivos": "src/renderer/src/pages/DashboardPage.tsx",
+        "padrao": "PieChart|FunnelChart|<Pie\\b|<Funnel\\b"
+      }
+    },
+    {
+      "id": "F7.8",
+      "fase": "F7",
+      "titulo": "Paleta de gráficos validada (série, recuada, sequencial e categórica)",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/theme/semantic.ts",
+        "padroes": ["#8F8BA6", "#A99DFF", "#4532C4", "#EB6834", "#8577F5", "#B7AEFF"]
+      }
+    },
+    {
+      "id": "F7.9",
+      "fase": "F7",
+      "titulo": "Dashboard com filtro de período e métricas clicáveis",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/pages/DashboardPage.tsx",
+        "padroes": ["Segmented", "RangePicker", "navigate\\("]
+      }
+    },
+    {
+      "id": "F7.10",
+      "fase": "F7",
+      "titulo": "Dashboard: saúde do sistema, heatmap por hora e visão de tabela conferidos",
+      "check": {
+        "tipo": "manual",
+        "descricao": "Seção Agora com os seis cartões levando às listas filtradas, heatmap dia × hora, 'Ver como tabela' em todo gráfico e período vazio com atalhos."
+      }
+    },
+    {
       "id": "F7.4",
       "fase": "F7",
       "titulo": "Configurações com navegação agrupada, busca e estado das integrações",
