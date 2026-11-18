@@ -42,20 +42,23 @@ Cada princípio vem de uma conclusão da pesquisa ([lista completa](pesquisa/REA
 Neutros com croma baixo puxado para o violeta (matiz ≈ 282 em OKLCH), nunca cinza puro. Valores
 calculados e conferidos: todo texto passa WCAG AA (4,5:1) sobre a superfície onde aparece.
 
-| Token          | Claro     | Escuro    | Uso                          | Token antd                                   |
-| -------------- | --------- | --------- | ---------------------------- | -------------------------------------------- |
-| `bg`           | `#F6F5FA` | `#111018` | fundo do layout              | `colorBgLayout`                              |
-| `surface`      | `#FFFFFF` | `#1A1923` | cards, tabela, header        | `colorBgContainer`                           |
-| `elevated`     | `#FFFFFF` | `#22202E` | popover, modal, dropdown     | `colorBgElevated`                            |
-| `sider`        | `#FBFAFE` | `#15141D` | navegação lateral            | `Layout.siderBg`                             |
-| `border`       | `#E4E2EE` | `#2E2B3C` | divisórias, borda de card    | `colorBorderSecondary`                       |
-| `borderStrong` | `#CFCCDD` | `#403C52` | borda de controle            | `colorBorder`                                |
-| `text`         | `#1B1A27` | `#ECEAF6` | texto principal              | `colorText`                                  |
-| `text2`        | `#5B5970` | `#A9A6BE` | texto secundário             | `colorTextSecondary`                         |
-| `text3`        | `#6B6980` | `#8A879F` | metadado, rótulo de seção    | `colorTextTertiary`                          |
-| `primary`      | `#5B47EB` | `#8F82FF` | ação primária, link, seleção | `colorPrimary`, `colorLink`                  |
-| `primarySoft`  | `#EFEDFF` | `#221E3D` | item selecionado             | `Menu.itemSelectedBg`, `Table.rowSelectedBg` |
-| `brand`        | `#705EFF` | `#8F82FF` | logo                         | —                                            |
+| Token          | Claro     | Escuro    | Uso                            | Token antd                                   |
+| -------------- | --------- | --------- | ------------------------------ | -------------------------------------------- |
+| `bg`           | `#F6F5FA` | `#111018` | fundo do layout                | `colorBgLayout`                              |
+| `surface`      | `#FFFFFF` | `#1A1923` | cards, tabela, header          | `colorBgContainer`                           |
+| `elevated`     | `#FFFFFF` | `#22202E` | popover, modal, dropdown       | `colorBgElevated`                            |
+| `sider`        | `#FBFAFE` | `#15141D` | navegação lateral              | `Layout.siderBg`                             |
+| `border`       | `#E4E2EE` | `#2E2B3C` | divisórias, borda de card      | `colorBorderSecondary`                       |
+| `borderStrong` | `#CFCCDD` | `#403C52` | borda de controle              | `colorBorder`                                |
+| `text`         | `#1B1A27` | `#ECEAF6` | texto principal                | `colorText`                                  |
+| `text2`        | `#5B5970` | `#A9A6BE` | texto secundário               | `colorTextSecondary`                         |
+| `text3`        | `#6B6980` | `#8A879F` | metadado, rótulo de seção      | `colorTextTertiary`                          |
+| `primary`      | `#5B47EB` | `#8F82FF` | ação primária, link, seleção   | `colorPrimary`, `colorLink`                  |
+| `primarySoft`  | `#EFEDFF` | `#221E3D` | item selecionado               | `Menu.itemSelectedBg`, `Table.rowSelectedBg` |
+| `brand`        | `#705EFF` | `#8F82FF` | logo                           | —                                            |
+| `hover`        | `#F0EFF6` | `#25232F` | item de menu sob o ponteiro    | `Menu.itemHoverBg`                           |
+| `rowHover`     | `#F7F6FC` | `#201E2B` | linha de tabela sob o ponteiro | `Table.rowHoverBg`                           |
+| `track`        | `#ECEBF3` | `#15141D` | trilho do `Segmented`          | `Segmented.trackBg`                          |
 
 `#705EFF` com texto branco dá 4,44:1 e não passa AA; por isso o botão usa `#5B47EB` (5,92:1) e o
 `#705EFF` fica no logo, que é texto grande ([cálculo](pesquisa/03-cor-acessibilidade-e-modo-escuro.md)).
@@ -94,7 +97,8 @@ Time leak é âmbar em todo lugar. O roxo que ele usa hoje no acento da task e n
 (inconsistência A1).
 
 **Escala de time leak** — a única semântica que pinta o fundo da linha ou do card inteiro. Três
-níveis, nos limiares atuais: `#FFF6DD` → `#FFF0E5` → `#FDECEE` no claro, `#2A2412` → `#2E2016` →
+níveis pelo quanto a tarefa passou do limite de tempo — qualquer excesso, 30 min ou mais, 60 min
+ou mais (os limiares de hoje em `TaskTable`; viram preferência em F7-f): `#FFF6DD` → `#FFF0E5` → `#FDECEE` no claro, `#2A2412` → `#2E2016` →
 `#301A1E` no escuro. O texto continua `text`.
 
 **Energia** — não usa cor: um medidor de três barras na cor primária (cheias = nível), com tooltip
@@ -123,6 +127,12 @@ Status, categoria e energia **não** viram cor de série: as cores de status rep
 categórica (inbox e próximas com ΔE 14,8). Nesses gráficos a barra é da cor única e a identidade
 vem do chip com ícone e texto ao lado.
 
+**Horizontes H0–H5** — uma escala violeta única, do mais claro (H0, ações) ao mais escuro (H5,
+propósito), usada só no chip `H0`…`H5` (fundo / texto): claro `#F1EFFF/#4B3BC9`, `#E4E0FF/#4433B8`,
+`#D5CFFF/#3B2BA6`, `#C3BAFF/#2E218C`, `#AFA3FA/#24196F`, `#9D8FF5/#170F4D`; escuro
+`#1E1B33/#B9B0FF`, `#262143/#C3BBFF`, `#2F2854/#CEC7FF`, `#3A3168/#D9D3FF`, `#463B80/#E6E2FF`,
+`#5B4CA8/#FFFFFF`. Mora em `semantic.ts` com as outras cores de domínio.
+
 ### 3.3 Regras
 
 - Sem paleta padrão do antd: `colorPrimary` sempre definido pelos tokens.
@@ -133,16 +143,16 @@ vem do chip com ícone e texto ao lado.
 
 ## 4. Tipografia
 
-| Papel            | Fonte                           | Tamanho / peso                                | Onde                                              |
-| ---------------- | ------------------------------- | --------------------------------------------- | ------------------------------------------------- |
-| Marca            | Denk One                        | 22px (header), 28px (vitrine)                 | só o logo                                         |
-| Título de tela   | Geist                           | 20–24 / 600                                   | cabeçalho da página                               |
-| Título de seção  | Geist                           | 16 / 600                                      | card, painel                                      |
-| Interface        | Geist                           | 14 / 400–500                                  | texto, tabela, controles                          |
-| Metadado         | Geist                           | 12 / 400                                      | ids, datas, legendas; nunca abaixo de 12          |
-| Rótulo de seção  | Geist                           | 11 / 600, maiúsculas, `letter-spacing: .08em` | "ORGANIZAÇÃO", "AGENDA"                           |
-| Números          | Geist Mono, `tabular-nums`      | 12–14 em listas; 52–72 no timer               | tempo, ids, contadores, prazos                    |
-| Número de painel | Geist, algarismos proporcionais | 48 / 600 (herói, um por tela); 26 / 600       | totais do dashboard, que não se alinham em coluna |
+| Papel            | Fonte                           | Tamanho / peso                                                             | Onde                                              |
+| ---------------- | ------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------- |
+| Marca            | Denk One                        | 22px (header), 28px (vitrine)                                              | só o logo                                         |
+| Título de tela   | Geist                           | 15 / 600 no Header; 20–24 / 600 só em cabeçalho próprio (detalhe, revisão) | o Header do shell mostra o nome da tela           |
+| Título de seção  | Geist                           | 15 / 600; 14 no card pequeno (`Card.headerFontSize`, `headerFontSizeSM`)   | card, painel                                      |
+| Interface        | Geist                           | 14 / 400–500                                                               | texto, tabela, controles                          |
+| Metadado         | Geist                           | 12 / 400                                                                   | ids, datas, legendas; nunca abaixo de 12          |
+| Rótulo de seção  | Geist                           | 11 / 600, maiúsculas, `letter-spacing: .08em`                              | "ORGANIZAÇÃO", "AGENDA"                           |
+| Números          | Geist Mono, `tabular-nums`      | 12–14 em listas; 24–30 no cronômetro da task; 40 na vitrine                | tempo, ids, contadores, prazos                    |
+| Número de painel | Geist, algarismos proporcionais | 48 / 600 (herói, um por tela); 26 / 600 (`Statistic.contentFontSize`)      | totais do dashboard, que não se alinham em coluna |
 
 Geist e Geist Mono entram por `@fontsource-variable/*` (o app é offline e a CSP bloqueia fonte
 remota). Isso também corrige `--font-sans`/`--font-mono`, que hoje apontam para variáveis que não
@@ -152,7 +162,8 @@ existem. Token antd: `fontFamily` (Geist) e `fontFamilyCode` (Geist Mono), `font
 
 - **Raio:** 4 (`borderRadiusXS`, tag), 6 (`borderRadiusSM`, chip e controle pequeno), 8
   (`borderRadius`, controle e card), 12 (`borderRadiusLG`, modal, coluna do Kanban, barra
-  flutuante). `999px` só para pílula de timer e ponto. Nada de outros valores.
+  flutuante). `999px` só para pílula de timer e ponto. Nada de outros valores, exceto 1–3px em micro-elementos
+  (barras do medidor de energia, células de heatmap).
 - **Cabeçalho de card:** altura mínima de 48px no `size="small"` (56px no normal), 16px de
   padding lateral (20px no normal), corpo com o mesmo padding. Título com subtítulo (duas linhas)
   ganha 12px de padding vertical via `styles.header`, nunca encostando nas bordas; entre o
@@ -185,7 +196,7 @@ só porque roda de CDN; os nomes lucide de cada lugar estão nas tabelas acima.
 ConfigProvider (tema, cssVar) → App (message, modal, notification) → RegionBoundary raiz
 └─ Layout
    ├─ Sider ............ RegionBoundary "navegação"
-   │   logo · Fluxo · Organizar · Conhecimento · (rodapé) Arquivo, Configurações
+   │   logo · Fluxo · Organizar · Conhecimento · (rodapé) Terminais, Arquivo, Configurações, Recolher
    └─ Layout
       ├─ Header ........ RegionBoundary "barra superior"
       │   menu · título · captura · timers · Ctrl+K · aparência · Nova tarefa
@@ -211,7 +222,7 @@ ConfigProvider (tema, cssVar) → App (message, modal, notification) → RegionB
   | Conhecimento | Cadernos                            | `NotebookTabs`                     | `/notebooks`                                             | —                                          |
   | Conhecimento | Dashboard                           | `BarChart3`                        | `/dashboard`                                             | —                                          |
   | Rodapé       | Terminais                           | `SquareTerminal`                   | abre/fecha o painel de terminal (`Ctrl+'`), não navega   | número de sessões abertas, neutro          |
-  | Rodapé       | Arquivo                             | `Archive`                          | `/archived` (até a F6; depois, filtro da lista)          | —                                          |
+  | Rodapé       | Arquivo                             | `Archive`                          | `/archived` (visão que reaproveita a tabela de tarefas)  | —                                          |
   | Rodapé       | Configurações                       | `Settings`                         | `/settings`                                              | —                                          |
   | Rodapé       | Recolher / Expandir menu            | `PanelLeftClose` / `PanelLeftOpen` | alterna 232px ⇄ 64px; some abaixo de `lg`                | —                                          |
 
@@ -282,7 +293,7 @@ ConfigProvider (tema, cssVar) → App (message, modal, notification) → RegionB
   leitura). O protótipo tem um seletor "Task local / Task do Jira" para mostrar os blocos que só
   aparecem em task do Jira.
 
-## 8. Responsividade
+## 8. Responsividade e telas
 
 Breakpoints do antd para a casca; container queries para componentes dentro de painéis
 redimensionáveis (notas, terminal). A janela principal passa a aceitar `minWidth` 400 (hoje 800,
@@ -443,6 +454,47 @@ Mesmo esqueleto das outras telas, com navegação própria porque são muitas se
   atalho da captura e backup automático. Tudo isso hoje é fixo no código (E8) e precisa de backend;
   no protótipo leva a etiqueta "novo".
 
+### Arquivo
+
+Arquivar tira a tarefa de todas as listas sem apagar nada. A tela deixa de ser a "Arquivo Morto"
+de cartões sem ação e vira uma **visão da tabela de tarefas** (`TaskTable` com `archived: true`),
+com as mesmas colunas, menu e ações em massa (C3, D2).
+
+- **Topo:** uma frase do que é arquivar e onde ficam os projetos arquivados (Projetos →
+  Arquivados, com link), e o total em mono ("12 tarefas · 21h 17min registradas").
+- **Filtros** numa linha: busca por nome ou `#id`, projeto (inclui "Sem projeto"), status que a
+  tarefa tinha ao ser arquivada, "Arquivada em" (30 dias, 90 dias, último ano), ordenar
+  (arquivadas por último, nome, mais tempo) e agrupar (por mês, padrão; por projeto; nenhum).
+  Os grupos são as mesmas linhas de cabeçalho da tabela de tarefas.
+- **Tabela:** ID, Tarefa (abre a tarefa **só leitura**, com a faixa "Arquivada · Desarquivar"),
+  Status (o de quando foi arquivada, com tooltip explicando), Projeto, Arquivada em, Tempo e
+  "Desarquivar" + `⋯`. Botão direito na linha abre o mesmo menu. Abaixo de `lg`, projeto e data
+  descem para baixo do nome.
+- **Desarquivar** devolve a tarefa ao status que tinha e mostra "Desfazer" na mensagem. **Excluir
+  de vez** confirma com o tempo de sessões que vai junto e avisa do Notion e do Google.
+- **Ações em massa:** a mesma barra flutuante da lista, com Desarquivar e Excluir de vez.
+- **Limpar o arquivo** (novo, no `⋯` da barra e num `Alert` quando há tarefas arquivadas há mais de
+  um ano): `Modal` com "arquivadas há mais de 3 / 6 / 12 / 24 meses", a contagem que vai sair e a
+  dica de fazer backup antes. Uma confirmação só, em vez de uma por tarefa.
+- **Vazio:** "Nada no arquivo" e como arquivar; com filtros, "Limpar filtros".
+- **Backend novo:** coluna `tasks.archived_at` (gravada ao arquivar, limpa ao desarquivar), filtros
+  e ordenação no SQL (`listTasks` com `archived`, `archivedBefore`, `archivedAfter`) e exclusão em
+  lote por idade.
+
+### Hoje
+
+O plano do dia é o "plano específico" que libera a mente (Masicampo e Baumeister 2011): o que
+fazer hoje e em que ordem.
+
+- **Card "Plano de {dia da semana}, {data}"**: lista ordenável por arrasto (alça ⋮⋮), cada linha com
+  nome (abre a tarefa), chip de status, projeto e, à direita, a hora do prazo ou o tempo em mono.
+  No cabeçalho do card, a carga planejada contra a jornada ("6,5h de 8h", `Progress` fino). Passou
+  da jornada: âmbar e "passa da jornada", nunca vermelho (aviso, não alarme).
+- **Card "Semana"** ao lado (abaixo de `lg`, embaixo): um `Progress` por dia com as horas
+  planejadas; hoje em negrito; dia acima da jornada em âmbar.
+- **Vazio:** "Nada planejado para hoje" com o atalho para marcar tarefas como Hoje na lista (D5).
+- A jornada vem das preferências (F7-f); até lá, 8h.
+
 ### Calendário
 
 O calendário é onde a próxima ação ganha hora: o _time blocking_ que Masicampo e Baumeister (2011)
@@ -560,8 +612,12 @@ tempo?** Toda métrica abre o que ela conta (E4). Base: NN/g (comprimento e posi
   (> 7 dias), Aguardando sem resposta (> 7 dias), Prazos vencidos (novo) e Revisão semanal (dias
   desde a última). Ícone num quadrado tingido: verde com check quando está em dia, âmbar quando
   pede atenção, vermelho **só** para prazo vencido, cinza para o que só informa (Someday). Cada
-  cartão leva à lista já filtrada. Os indicadores e limiares são os mesmos da revisão semanal e
-  vêm de uma consulta só (`review:healthIndicators`), para as duas telas nunca discordarem.
+  cartão leva à lista já filtrada. Os limiares são os mesmos da revisão semanal e tudo vem de uma
+  consulta só (`review:healthIndicators`), para as duas telas nunca discordarem. A consulta traz
+  oito indicadores: Inbox, sem próxima ação, projetos parados (> 7 dias), aguardando (> 7 dias),
+  próximas paradas (> 14 dias), prazos vencidos, someday e dias desde a última revisão. O dashboard
+  mostra seis (sem próximas paradas e someday); a revisão mostra seis (sem projetos parados e a
+  própria revisão).
 - **Tarefas abertas por status** (Agora): barras horizontais ordenadas pelo fluxo, chip do status
   ao lado, contagem e %. Substitui o funil, que punha Aguardando como etapa depois de Executando.
 - **Filtros** (No período): `Segmented` 7 dias / 30 dias / 90 dias / 12 meses (padrão 30),
@@ -659,7 +715,9 @@ Erros dizem o que houve e o que fazer, sem pedir desculpa.
 
 ## 14. Proibido
 
-- Paleta padrão do antd, cor de marca como fundo decorativo, gradiente.
+- Paleta padrão do antd, cor de marca como fundo decorativo, gradiente decorativo (gradiente
+  funcional, como a linha da grade ou a sessão em andamento no calendário, pode).
+- Pizza, rosca e funil em gráfico; status, categoria ou energia como cor de série.
 - Hex solto e classe de cor do Tailwind em componente.
 - CSS mirando classes internas `.ant-*` (o DOM interno muda entre versões); customizar por token,
   `classNames` e `styles`.
