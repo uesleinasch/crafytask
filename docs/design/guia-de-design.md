@@ -554,6 +554,13 @@ barra flutuante (`FloatingActionBar`), com as colunas próprias do arquivo abaix
   Status (o de quando foi arquivada, com tooltip explicando), Projeto, Arquivada em, Tempo e
   "Desarquivar" + `⋯`. Botão direito na linha abre o mesmo menu. Abaixo de `lg`, projeto e data
   descem para baixo do nome.
+- **Tarefa arquivada aberta** (pelo Arquivo, pela busca ou por link): o detalhe abre **só leitura**.
+  Acima do cabeçalho, a faixa `ArchivedTaskBanner` (`Alert` informativo com `Archive`): "Arquivada em
+  DD/MM/AAAA · só leitura", a frase "Notas, desenho, campos e timer ficam travados. Desarquive para
+  editar; a tarefa volta ao status que tinha." e o botão **Desarquivar** (`ArchiveRestore`). Ficam
+  travados nome, descrição, status, pílulas, notas, desenho, os campos do inspetor e o timer
+  (Iniciar e Finalizar desabilitados); continuam ativos voltar, as abas, o menu `⋯` (Desarquivar,
+  Copiar `#id`, Excluir) e exportar as notas. Desarquivar libera a tela na hora.
 - **Desarquivar** devolve a tarefa ao status que tinha e mostra "Desfazer" na mensagem. **Excluir
   de vez** confirma com o tempo de sessões que vai junto e avisa do Notion e do Google.
 - **Ações em massa:** a mesma barra flutuante da lista, com Desarquivar e Excluir de vez.
