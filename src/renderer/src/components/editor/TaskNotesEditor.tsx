@@ -1,5 +1,5 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from 'react'
-import { useEditor, EditorContent } from '@tiptap/react'
+import { useEditor, EditorContent, type Editor } from '@tiptap/react'
 import { useNavigate } from 'react-router-dom'
 import type { JSONContent } from '@tiptap/core'
 import type { NotesOwner } from '@shared/types'
@@ -28,6 +28,7 @@ export const TaskNotesEditor = forwardRef<TaskNotesEditorHandle, TaskNotesEditor
   function TaskNotesEditor({ owner, initialContent, onSaved, onChange }, ref) {
     const { kind, id } = owner
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const pendingDocRef = useRef<Editor['state']['doc'] | null>(null)
     const onChangeRef = useRef(onChange)
     onChangeRef.current = onChange
     const onSavedRef = useRef(onSaved)
@@ -46,8 +47,8 @@ export const TaskNotesEditor = forwardRef<TaskNotesEditorHandle, TaskNotesEditor
             if (node.type.name !== 'mention') return false
             const route = mentionRoute(node.attrs.entityType, node.attrs.id)
             if (!route) return false
-            // Sair da tela desmonta o editor e descarta o save pendente do debounce.
             if (debounceRef.current) clearTimeout(debounceRef.current)
+            pendingDocRef.current = null
             const notes = JSON.stringify(view.state.doc.toJSON())
             saveOwnerNotes({ kind, id }, notes)
               .catch((e) => console.error('Falha ao salvar notas:', e))
@@ -58,7 +59,9 @@ export const TaskNotesEditor = forwardRef<TaskNotesEditorHandle, TaskNotesEditor
         onUpdate: ({ editor }) => {
           onChangeRef.current?.()
           if (debounceRef.current) clearTimeout(debounceRef.current)
+          pendingDocRef.current = editor.state.doc
           debounceRef.current = setTimeout(() => {
+            pendingDocRef.current = null
             const notes = JSON.stringify(editor.getJSON())
             saveOwnerNotes({ kind, id }, notes)
               .then(() => onSavedRef.current?.(notes))
@@ -81,17 +84,25 @@ export const TaskNotesEditor = forwardRef<TaskNotesEditorHandle, TaskNotesEditor
       () => ({
         flushSave: async () => {
           if (debounceRef.current) clearTimeout(debounceRef.current)
+          pendingDocRef.current = null
           await persist()
         }
       }),
       [persist]
     )
 
-    // Cancela um save pendente ao trocar de dono/desmontar, evitando que o
-    // timeout dispare getJSON() sobre uma instância de editor já destruída.
+    // Ao trocar de dono ou sair da tela, grava a edição pendente a partir do documento guardado:
+    // a instância do editor já pode ter sido destruída e getJSON() falharia.
     useEffect(() => {
       return () => {
         if (debounceRef.current) clearTimeout(debounceRef.current)
+        const doc = pendingDocRef.current
+        pendingDocRef.current = null
+        if (!doc) return
+        const notes = JSON.stringify(doc.toJSON())
+        saveOwnerNotes({ kind, id }, notes)
+          .then(() => onSavedRef.current?.(notes))
+          .catch((e) => console.error('Falha ao salvar notas:', e))
       }
     }, [kind, id])
 
