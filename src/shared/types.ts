@@ -169,6 +169,7 @@ export interface Task {
   category: TaskCategory
   is_running: boolean
   is_archived: boolean
+  archived_at?: string | null
   project_id?: number
   project_name?: string
   project_color?: string
@@ -419,7 +420,7 @@ export interface TimeEntry {
 
 // ===================== TASK LIST FILTERS =====================
 
-export type TaskSort = 'updated' | 'due_date'
+export type TaskSort = 'updated' | 'due_date' | 'archived' | 'name' | 'total_time'
 
 export interface TaskListFilters {
   archived?: boolean
@@ -432,6 +433,8 @@ export interface TaskListFilters {
   blockedOnly?: boolean
   dueBefore?: string
   dueAfter?: string
+  archivedBefore?: string
+  archivedAfter?: string
   overdueAt?: { date: string; time: string }
   energy?: EnergyLevel
   excludeStatus?: TaskStatus[]

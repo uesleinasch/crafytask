@@ -36,7 +36,13 @@ import type {
 import { DEFAULT_CONTEXTS } from '@shared/types'
 import { toStatusCounts, type TaskStatusCounts } from '@shared/taskStatusCounts'
 import { UNTITLED_PAGE } from '@shared/notebookTree'
-import { buildTaskCountQuery, buildTaskListQuery, buildTaskStatusCountQuery } from './taskQuery'
+import {
+  buildTaskCountQuery,
+  buildTaskIdsQuery,
+  buildTaskTotalsQuery,
+  buildTaskListQuery,
+  buildTaskStatusCountQuery
+} from './taskQuery'
 import type { LocalJiraChild } from './jiraPlan'
 import {
   listTagsWithUsage as listTagsWithUsageQuery,
@@ -363,6 +369,13 @@ export function initDatabase(): void {
   }
 
   db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_tasks_jira_key ON tasks(jira_key)')
+
+  try {
+    db.exec('ALTER TABLE tasks ADD COLUMN archived_at DATETIME')
+    db.exec('UPDATE tasks SET archived_at = updated_at WHERE is_archived = 1')
+  } catch {
+    /* já existe */
+  }
 
   try {
     db.exec('ALTER TABLE time_entries ADD COLUMN jira_worklog_id TEXT')
@@ -890,7 +903,7 @@ const TASK_LIST_COLUMNS = `
   t.recurrence_rule, t.parent_task_id, t.recurrence_source_id, t.day_order,
   t.energy_level, t.scheduled_time, t.scheduled_end_time, t.due_time,
   t.external_url, t.jira_key, t.jira_status, t.jira_space, t.jira_issue_type, t.jira_issue_kind,
-  t.jira_parent_key, t.jira_parent_summary, t.waiting_for,
+  t.jira_parent_key, t.jira_parent_summary, t.waiting_for, t.archived_at,
   p.name as project_name, p.color as project_color
 `
 
@@ -1017,6 +1030,27 @@ export function countTasks(filters: TaskListFilters = {}): number {
   const { sql, params } = buildTaskCountQuery(filters)
   const row = db.prepare(sql).get(...params) as { total: number }
   return row.total
+}
+
+export function taskTotals(filters: TaskListFilters): { count: number; seconds: number } {
+  const { sql, params } = buildTaskTotalsQuery(filters)
+  return db.prepare(sql).get(...params) as { count: number; seconds: number }
+}
+
+export function restoreArchived(entries: { id: number; archived_at: string | null }[]): void {
+  const stmt = db.prepare(
+    `UPDATE tasks SET is_archived = 1, archived_at = COALESCE(?, CURRENT_TIMESTAMP),
+      updated_at = CURRENT_TIMESTAMP
+    WHERE id = ?`
+  )
+  db.transaction(() => {
+    for (const entry of entries) stmt.run(entry.archived_at, entry.id)
+  })()
+}
+
+export function listTaskIds(filters: TaskListFilters): number[] {
+  const { sql, params } = buildTaskIdsQuery(filters)
+  return (db.prepare(sql).all(...params) as { id: number }[]).map((row) => row.id)
 }
 
 export function countTasksByStatus(filters: TaskListFilters = {}): TaskStatusCounts {
@@ -1327,14 +1361,14 @@ export function deleteTasks(ids: number[]): void {
 
 export function archiveTask(id: number): void {
   const stmt = db.prepare(
-    'UPDATE tasks SET is_archived = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+    'UPDATE tasks SET is_archived = 1, archived_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
   )
   stmt.run(id)
 }
 
 export function unarchiveTask(id: number): void {
   const stmt = db.prepare(
-    'UPDATE tasks SET is_archived = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+    'UPDATE tasks SET is_archived = 0, archived_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
   )
   stmt.run(id)
 }
@@ -1344,10 +1378,13 @@ export function setTasksArchived(ids: number[], archived: boolean): void {
 
   const transaction = db.transaction((taskIds: number[], value: number) => {
     const stmt = db.prepare(
-      'UPDATE tasks SET is_archived = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+      `UPDATE tasks SET is_archived = ?,
+        archived_at = CASE WHEN ? = 1 THEN CURRENT_TIMESTAMP ELSE NULL END,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?`
     )
     for (const id of taskIds) {
-      stmt.run(value, id)
+      stmt.run(value, value, id)
     }
   })
 
