@@ -28,7 +28,10 @@
       "titulo": "Fontes Geist e Geist Mono empacotadas (app offline)",
       "check": {
         "tipo": "dependencia",
-        "nome": ["@fontsource-variable/geist", "@fontsource-variable/geist-mono"]
+        "nome": [
+          "@fontsource-variable/geist",
+          "@fontsource-variable/geist-mono"
+        ]
       }
     },
     {
@@ -48,7 +51,11 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/theme/semantic.ts",
-        "padroes": ["executando", "time_leak", "alto"]
+        "padroes": [
+          "executando",
+          "time_leak",
+          "alto"
+        ]
       }
     },
     {
@@ -77,8 +84,15 @@
       "titulo": "ConfigProvider com cssVar e App do antd na raiz",
       "check": {
         "tipo": "contem-todos",
-        "arquivos": ["src/renderer/src/{App,main}.tsx", "src/renderer/src/theme/**/*.{ts,tsx}"],
-        "padroes": ["<ConfigProvider", "cssVar", "App as AntApp|<AntApp\\b"]
+        "arquivos": [
+          "src/renderer/src/{App,main}.tsx",
+          "src/renderer/src/theme/**/*.{ts,tsx}"
+        ],
+        "padroes": [
+          "<ConfigProvider",
+          "cssVar",
+          "App as AntApp|<AntApp\\b"
+        ]
       }
     },
     {
@@ -88,7 +102,10 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/**/*.{ts,tsx}",
-        "padroes": ["ticktask:theme", "ticktask:density"]
+        "padroes": [
+          "ticktask:theme",
+          "ticktask:density"
+        ]
       }
     },
     {
@@ -98,7 +115,11 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/theme/**/*.{ts,tsx}",
-        "padroes": ["horizontalItemGutter", "horizontalItemPaddingSM", "horizontalItemPaddingLG"]
+        "padroes": [
+          "horizontalItemGutter",
+          "horizontalItemPaddingSM",
+          "horizontalItemPaddingLG"
+        ]
       }
     },
     {
@@ -108,7 +129,11 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/theme/**/*.{ts,tsx}",
-        "padroes": ["headerHeightSM", "headerPaddingSM", "bodyPaddingSM"]
+        "padroes": [
+          "headerHeightSM",
+          "headerPaddingSM",
+          "bodyPaddingSM"
+        ]
       }
     },
     {
@@ -129,7 +154,11 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/theme/**/*.{ts,tsx}",
-        "padroes": ["boxShadowSecondary", "rgba\\(17,16,24,\\.10\\)", "rgba\\(0,0,0,\\.45\\)"]
+        "padroes": [
+          "boxShadowSecondary",
+          "rgba\\(17,16,24,\\.10\\)",
+          "rgba\\(0,0,0,\\.45\\)"
+        ]
       }
     },
     {
@@ -139,7 +168,11 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/theme/**/*.{ts,tsx}",
-        "padroes": ["calBlock", "#252047", "#3E3770"],
+        "padroes": [
+          "calBlock",
+          "#252047",
+          "#3E3770"
+        ],
         "flags": "i"
       }
     },
@@ -223,7 +256,11 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/components/shell/*.{ts,tsx}",
-        "padroes": ["'Fluxo'", "'Organizar'", "'Conhecimento'"]
+        "padroes": [
+          "'Fluxo'",
+          "'Organizar'",
+          "'Conhecimento'"
+        ]
       }
     },
     {
@@ -311,7 +348,10 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/components/shell/*.{ts,tsx}",
-        "padroes": ["Terminais", "Recolher menu"]
+        "padroes": [
+          "Terminais",
+          "Recolher menu"
+        ]
       }
     },
     {
@@ -321,7 +361,10 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/components/shell/*.{ts,tsx,css}",
-        "padroes": ["HeaderCapture", "gridTemplateColumns|grid-template-columns"]
+        "padroes": [
+          "HeaderCapture",
+          "gridTemplateColumns|grid-template-columns"
+        ]
       }
     },
     {
@@ -347,7 +390,10 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/components/shell/PageContainer.tsx",
-        "padroes": ["maxWidth|max-width", "1480"]
+        "padroes": [
+          "maxWidth|max-width",
+          "1480"
+        ]
       }
     },
     {
@@ -376,7 +422,8 @@
       "titulo": "Shell conferido de 400px a 1920px e falha simulada isolada",
       "check": {
         "tipo": "manual"
-      }
+      },
+      "validado": "2026-11-18"
     },
     {
       "id": "F2.1",
@@ -478,7 +525,10 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/components/tasks/TaskTable.tsx",
-        "padroes": ["=== 'all'", "title: 'ID'|title: \"ID\""]
+        "padroes": [
+          "=== 'all'",
+          "title: 'ID'|title: \"ID\""
+        ]
       }
     },
     {
@@ -498,7 +548,10 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/components/tasks/TaskTable.tsx",
-        "padroes": ["expandedRowKeys", "checkStrictly"]
+        "padroes": [
+          "expandedRowKeys",
+          "checkStrictly"
+        ]
       }
     },
     {
@@ -508,7 +561,10 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/components/tasks/TaskTable.tsx",
-        "padroes": ["colSpan", "Selecionar grupo"]
+        "padroes": [
+          "colSpan",
+          "Selecionar grupo"
+        ]
       }
     },
     {
@@ -535,7 +591,10 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/theme/**/*.{ts,tsx}",
-        "padroes": ["TIME_LEAK_THRESHOLDS", "timeLeakLevel"]
+        "padroes": [
+          "TIME_LEAK_THRESHOLDS",
+          "timeLeakLevel"
+        ]
       }
     },
     {
@@ -666,7 +725,12 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/components/tasks/TaskInspector.tsx",
-        "padroes": ["<Tabs", "Tempo", "Detalhes", "Relações"]
+        "padroes": [
+          "<Tabs",
+          "Tempo",
+          "Detalhes",
+          "Relações"
+        ]
       }
     },
     {
@@ -715,7 +779,11 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/pages/CalendarPage.tsx",
-        "padroes": ["Segmented", "3days|threeDays", "agenda"]
+        "padroes": [
+          "Segmented",
+          "3days|threeDays",
+          "agenda"
+        ]
       }
     },
     {
@@ -745,7 +813,10 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/{pages/CalendarPage.tsx,components/calendar/*.tsx}",
-        "padroes": ["A agendar", "Repetir no dia seguinte"]
+        "padroes": [
+          "A agendar",
+          "Repetir no dia seguinte"
+        ]
       }
     },
     {
@@ -765,7 +836,12 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/{pages/CalendarPage.tsx,components/calendar/**/*.tsx}",
-        "padroes": ["'Enter'", "'Delete'", "<Drawer", "<Select"]
+        "padroes": [
+          "'Enter'",
+          "'Delete'",
+          "<Drawer",
+          "<Select"
+        ]
       }
     },
     {
@@ -832,7 +908,12 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/{pages/ProjectsPage.tsx,components/projects/*.tsx}",
-        "padroes": ["<Table", "<Segmented", "Buscar", "Agrupar por área"]
+        "padroes": [
+          "<Table",
+          "<Segmented",
+          "Buscar",
+          "Agrupar por área"
+        ]
       }
     },
     {
@@ -902,7 +983,12 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/pages/WeeklyReviewPage.tsx",
-        "padroes": ["<Steps", "skipped", "Retomar", "Pular"]
+        "padroes": [
+          "<Steps",
+          "skipped",
+          "Retomar",
+          "Pular"
+        ]
       }
     },
     {
@@ -921,7 +1007,12 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/pages/WeeklyReviewPage.tsx",
-        "padroes": ["Começar revisão", "Ritmo", "HealthCard", "<Drawer"]
+        "padroes": [
+          "Começar revisão",
+          "Ritmo",
+          "HealthCard",
+          "<Drawer"
+        ]
       }
     },
     {
@@ -941,7 +1032,12 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/components/health/*.tsx",
-        "padroes": ["executando", "aguardando", "urgente", "inbox"]
+        "padroes": [
+          "executando",
+          "aguardando",
+          "urgente",
+          "inbox"
+        ]
       }
     },
     {
@@ -951,7 +1047,11 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/{pages/WeeklyReviewPage.tsx,components/review/**/*.tsx}",
-        "padroes": ["Abrir a tela", "ctrlKey", "'past'"]
+        "padroes": [
+          "Abrir a tela",
+          "ctrlKey",
+          "'past'"
+        ]
       }
     },
     {
@@ -1026,7 +1126,12 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/{pages/LabelsPage.tsx,components/labels/*.tsx}",
-        "padroes": ["Mesclar", "Prévia", "abertas", "Só sem uso"]
+        "padroes": [
+          "Mesclar",
+          "Prévia",
+          "abertas",
+          "Só sem uso"
+        ]
       }
     },
     {
@@ -1056,7 +1161,12 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/pages/ArchivePage.tsx",
-        "padroes": ["TaskTable", "Desarquivar", "Limpar o arquivo", "archived"]
+        "padroes": [
+          "TaskTable",
+          "Desarquivar",
+          "Limpar o arquivo",
+          "archived"
+        ]
       }
     },
     {
@@ -1142,7 +1252,14 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/theme/semantic.ts",
-        "padroes": ["#8F8BA6", "#A99DFF", "#4532C4", "#EB6834", "#8577F5", "#B7AEFF"],
+        "padroes": [
+          "#8F8BA6",
+          "#A99DFF",
+          "#4532C4",
+          "#EB6834",
+          "#8577F5",
+          "#B7AEFF"
+        ],
         "flags": "i"
       }
     },
@@ -1153,7 +1270,11 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/pages/DashboardPage.tsx",
-        "padroes": ["Segmented", "RangePicker", "RegionBoundary"]
+        "padroes": [
+          "Segmented",
+          "RangePicker",
+          "RegionBoundary"
+        ]
       }
     },
     {
@@ -1163,7 +1284,11 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/components/dashboard/**/*.tsx",
-        "padroes": ["Exportar PDF", "0?\\.55", "média"]
+        "padroes": [
+          "Exportar PDF",
+          "0?\\.55",
+          "média"
+        ]
       }
     },
     {
@@ -1173,7 +1298,10 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/theme/semantic.ts",
-        "padroes": ["export const TERMINAL", "#15141D"],
+        "padroes": [
+          "export const TERMINAL",
+          "#15141D"
+        ],
         "flags": "i"
       }
     },
@@ -1184,7 +1312,11 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/{pages/SettingsPage.tsx,components/settings/*.tsx,components/**/Kbd.tsx}",
-        "padroes": ["usePersistedState", "780", "export function Kbd"]
+        "padroes": [
+          "usePersistedState",
+          "780",
+          "export function Kbd"
+        ]
       }
     },
     {
@@ -1194,7 +1326,11 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/components/shell/*.{ts,tsx}",
-        "padroes": ["Seguir o sistema", "Claro", "Escuro"]
+        "padroes": [
+          "Seguir o sistema",
+          "Claro",
+          "Escuro"
+        ]
       }
     },
     {
@@ -1204,7 +1340,12 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/{main,shared}/**/*{pref,Pref}*.ts",
-        "padroes": ["captureShortcut", "autoBackup", "weekStart", "notesSyncInterval"]
+        "padroes": [
+          "captureShortcut",
+          "autoBackup",
+          "weekStart",
+          "notesSyncInterval"
+        ]
       }
     },
     {
@@ -1222,7 +1363,13 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/{pages/SettingsPage.tsx,components/settings/*.tsx}",
-        "padroes": ["<Menu", "Buscar configuração", "<Badge", "Aplicativo", "Integrações"]
+        "padroes": [
+          "<Menu",
+          "Buscar configuração",
+          "<Badge",
+          "Aplicativo",
+          "Integrações"
+        ]
       }
     },
     {
@@ -1232,7 +1379,10 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/components/settings/*.tsx",
-        "padroes": ["SettingRow", "<Steps"]
+        "padroes": [
+          "SettingRow",
+          "<Steps"
+        ]
       }
     },
     {
@@ -1242,7 +1392,11 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/main/**/*.ts",
-        "padroes": ["workdayHours|jornada", "timeLeak", "calendarStart|calendarRange"]
+        "padroes": [
+          "workdayHours|jornada",
+          "timeLeak",
+          "calendarStart|calendarRange"
+        ]
       }
     },
     {
@@ -1252,7 +1406,10 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/{pages/NotebooksPage.tsx,components/notebooks/*.tsx}",
-        "padroes": ["<Tree\\b|<Menu\\b", "<RegionBoundary"]
+        "padroes": [
+          "<Tree\\b|<Menu\\b",
+          "<RegionBoundary"
+        ]
       }
     },
     {
@@ -1272,7 +1429,10 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/pages/DashboardPage.tsx",
-        "padroes": ["HealthCard", "navigate\\("]
+        "padroes": [
+          "HealthCard",
+          "navigate\\("
+        ]
       }
     },
     {
@@ -1282,7 +1442,10 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/components/terminal/*.tsx",
-        "padroes": ["RegionBoundary", "useToken"]
+        "padroes": [
+          "RegionBoundary",
+          "useToken"
+        ]
       }
     },
     {
