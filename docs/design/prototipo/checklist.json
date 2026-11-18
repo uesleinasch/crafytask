@@ -376,7 +376,8 @@
       "titulo": "Shell conferido de 400px a 1920px e falha simulada isolada",
       "check": {
         "tipo": "manual"
-      }
+      },
+      "validado": "2026-11-18"
     },
     {
       "id": "F2.1",
