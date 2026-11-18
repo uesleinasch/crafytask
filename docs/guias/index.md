@@ -29,7 +29,7 @@ A barra superior da tela de tarefas leva a todas as telas:
 | Horizontes | áreas de foco, metas, visão e propósito |
 | Projetos | lista e detalhe de projetos |
 | Dashboard | tempo por tarefa/projeto, métricas GTD, relatório em PDF |
-| Arquivadas | tarefas arquivadas ("Arquivo Morto") |
+| Arquivo | tarefas arquivadas: restaurar, apagar de vez e limpar por idade |
 | Nova Tarefa | abre o diálogo de criação |
 
 As outras telas têm um botão **← Voltar** que retorna à lista de tarefas.

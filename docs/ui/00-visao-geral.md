@@ -193,7 +193,7 @@ acento e caixa (`paletteCommands.ts`, testado).
 | `/dashboard` | Dashboard | [08](08-dashboard.md) | sim |
 | `/contexts` | Contextos e tags (aba Contextos) | [09](09-contextos-e-tags.md) | sim |
 | `/tags` | Contextos e tags (aba Tags) | [09](09-contextos-e-tags.md) | sim |
-| `/archived` | Arquivadas | [10](10-arquivadas.md) | sim |
+| `/archived` | Arquivo | [10](10-arquivadas.md) | sim |
 | `/settings` | Configurações | [11](11-configuracoes.md) | sim |
 | `/float` | Timer flutuante | [12](12-janelas-auxiliares.md) | janela própria |
 | `/quick-capture` | Captura rápida | [12](12-janelas-auxiliares.md) | janela própria |

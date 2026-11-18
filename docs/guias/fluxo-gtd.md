@@ -70,7 +70,7 @@ A tela **Horizontes** reúne as seis alturas de perspectiva do GTD — da ação
 
 !!! tip "Arquivar não é finalizar"
     Finalizar muda o status. **Arquivar** tira a tarefa de todas as listagens, em qualquer
-    status. As arquivadas ficam em **Arquivadas** ("Arquivo Morto"), de onde podem ser restauradas.
+    status. As arquivadas ficam no **Arquivo**, de onde podem ser restauradas ou apagadas de vez.
 
 ## 4. Revisar
 
