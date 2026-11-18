@@ -39,6 +39,7 @@ import { UNTITLED_PAGE } from '@shared/notebookTree'
 import {
   buildTaskCountQuery,
   buildTaskIdsQuery,
+  buildTaskTotalsQuery,
   buildTaskListQuery,
   buildTaskStatusCountQuery
 } from './taskQuery'
@@ -1029,6 +1030,22 @@ export function countTasks(filters: TaskListFilters = {}): number {
   const { sql, params } = buildTaskCountQuery(filters)
   const row = db.prepare(sql).get(...params) as { total: number }
   return row.total
+}
+
+export function taskTotals(filters: TaskListFilters): { count: number; seconds: number } {
+  const { sql, params } = buildTaskTotalsQuery(filters)
+  return db.prepare(sql).get(...params) as { count: number; seconds: number }
+}
+
+export function restoreArchived(entries: { id: number; archived_at: string | null }[]): void {
+  const stmt = db.prepare(
+    `UPDATE tasks SET is_archived = 1, archived_at = COALESCE(?, CURRENT_TIMESTAMP),
+      updated_at = CURRENT_TIMESTAMP
+    WHERE id = ?`
+  )
+  db.transaction(() => {
+    for (const entry of entries) stmt.run(entry.archived_at, entry.id)
+  })()
 }
 
 export function listTaskIds(filters: TaskListFilters): number[] {

@@ -10,6 +10,11 @@ function pad(n: number): string {
   return String(n).padStart(2, '0')
 }
 
+export function daysAgo(days: number, today: Date): string {
+  const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() - days)
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+
 export function archiveCutoff(months: number, today: Date): string {
   const day = today.getDate()
   const cutoff = new Date(today.getFullYear(), today.getMonth() - months, 1)

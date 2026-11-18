@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { archiveCutoff, isIsoDate } from './archiveAge'
+import { archiveCutoff, daysAgo, isIsoDate } from './archiveAge'
 
 describe('archiveCutoff', () => {
   it('volta N meses a partir de hoje', () => {
@@ -19,5 +19,12 @@ describe('isIsoDate', () => {
     expect(isIsoDate('2026-11-18')).toBe(true)
     expect(isIsoDate('2026-11-18 10:00')).toBe(false)
     expect(isIsoDate(20261118)).toBe(false)
+  })
+})
+
+describe('daysAgo', () => {
+  it('volta N dias atravessando mês e ano', () => {
+    expect(daysAgo(30, new Date(2026, 10, 18))).toBe('2026-10-19')
+    expect(daysAgo(90, new Date(2026, 0, 15))).toBe('2025-10-17')
   })
 })

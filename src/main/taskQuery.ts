@@ -50,9 +50,15 @@ export function buildTaskListWhere(filters: TaskListFilters): {
 
   const search = filters.search?.trim()
   if (search) {
-    conditions.push("(t.name LIKE ? ESCAPE '\\' OR t.description LIKE ? ESCAPE '\\')")
     const pattern = `%${escapeLike(search)}%`
-    params.push(pattern, pattern)
+    const id = /^#?(\d+)$/.exec(search)?.[1]
+    if (id) {
+      conditions.push("(t.id = ? OR t.name LIKE ? ESCAPE '\\' OR t.description LIKE ? ESCAPE '\\')")
+      params.push(Number(id), pattern, pattern)
+    } else {
+      conditions.push("(t.name LIKE ? ESCAPE '\\' OR t.description LIKE ? ESCAPE '\\')")
+      params.push(pattern, pattern)
+    }
   }
 
   if (filters.blockedOnly) {
@@ -74,12 +80,12 @@ export function buildTaskListWhere(filters: TaskListFilters): {
   }
 
   if (filters.archivedAfter) {
-    conditions.push('t.archived_at IS NOT NULL AND t.archived_at >= ?')
+    conditions.push("t.archived_at IS NOT NULL AND date(t.archived_at, 'localtime') >= ?")
     params.push(filters.archivedAfter)
   }
 
   if (filters.archivedBefore) {
-    conditions.push('t.archived_at IS NOT NULL AND t.archived_at < ?')
+    conditions.push("t.archived_at IS NOT NULL AND date(t.archived_at, 'localtime') < ?")
     params.push(filters.archivedBefore)
   }
 
@@ -134,6 +140,17 @@ export function buildTaskListQuery(
 export function buildTaskIdsQuery(filters: TaskListFilters): { sql: string; params: unknown[] } {
   const { clause, params } = buildTaskListWhere(filters)
   return { sql: `SELECT t.id FROM tasks t WHERE ${clause} ORDER BY t.id`, params }
+}
+
+export function buildTaskTotalsQuery(filters: TaskListFilters): {
+  sql: string
+  params: unknown[]
+} {
+  const { clause, params } = buildTaskListWhere(filters)
+  return {
+    sql: `SELECT COUNT(*) AS count, COALESCE(SUM(t.total_seconds), 0) AS seconds FROM tasks t WHERE ${clause}`,
+    params
+  }
 }
 
 export function buildTaskCountQuery(filters: TaskListFilters): {

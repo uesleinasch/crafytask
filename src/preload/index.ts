@@ -170,6 +170,10 @@ const api = {
   // Archive
   archiveTask: (id: number): Promise<void> => ipcRenderer.invoke('task:archive', id),
   unarchiveTask: (id: number): Promise<void> => ipcRenderer.invoke('task:unarchive', id),
+  taskTotals: (filters?: TaskListFilters): Promise<{ count: number; seconds: number }> =>
+    ipcRenderer.invoke('task:totals', filters),
+  restoreArchived: (entries: { id: number; archived_at: string | null }[]): Promise<void> =>
+    ipcRenderer.invoke('task:restoreArchived', entries),
   bulkSetArchived: (ids: number[], archived: boolean): Promise<void> =>
     ipcRenderer.invoke('task:bulkSetArchived', ids, archived),
 

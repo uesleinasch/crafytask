@@ -3,6 +3,7 @@ import {
   buildTaskCountQuery,
   buildTaskIdsQuery,
   buildTaskListQuery,
+  buildTaskTotalsQuery,
   buildTaskStatusCountQuery,
   buildTaskListWhere,
   escapeLike
@@ -274,8 +275,8 @@ describe('arquivo', () => {
       archivedBefore: '2026-06-01'
     })
 
-    expect(clause).toContain('t.archived_at IS NOT NULL AND t.archived_at >= ?')
-    expect(clause).toContain('t.archived_at IS NOT NULL AND t.archived_at < ?')
+    expect(clause).toContain("date(t.archived_at, 'localtime') >= ?")
+    expect(clause).toContain("date(t.archived_at, 'localtime') < ?")
     expect(params).toEqual([1, '2026-01-01', '2026-06-01'])
   })
 
@@ -297,5 +298,25 @@ describe('arquivo', () => {
     expect(sql).toContain('SELECT t.id FROM tasks t WHERE t.is_archived = ?')
     expect(sql).toContain('t.parent_task_id IS NULL')
     expect(params).toEqual([1, '2025-11-18'])
+  })
+})
+
+describe('busca por #id e totais', () => {
+  it('casa #id ou número com o id da tarefa, além do nome', () => {
+    for (const search of ['#42', '42']) {
+      const { clause, params } = buildTaskListWhere({ search })
+      expect(clause).toContain('(t.id = ? OR t.name LIKE ?')
+      expect(params).toEqual([0, 42, `%${search}%`, `%${search}%`])
+    }
+  })
+
+  it('texto comum não compara id', () => {
+    expect(buildTaskListWhere({ search: '#abc' }).clause).not.toContain('t.id = ?')
+  })
+
+  it('soma contagem e tempo com o mesmo filtro', () => {
+    const { sql, params } = buildTaskTotalsQuery({ archived: true, projectId: 3 })
+    expect(sql).toContain('COUNT(*) AS count, COALESCE(SUM(t.total_seconds), 0) AS seconds')
+    expect(params).toEqual([1, 3])
   })
 })
