@@ -19,7 +19,15 @@ describe('sessionRange', () => {
     expect(new Date(result.startIso).getDate()).toBe(18)
   })
 
-  it('recusa fim igual ou antes do início', () => {
+  it('fim antes do início vira o dia seguinte (sessão que cruza a meia-noite)', () => {
+    const result = sessionRange(day, '23:30', '00:30')
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(new Date(result.endIso).getDate()).toBe(19)
+    expect(Date.parse(result.endIso) - Date.parse(result.startIso)).toBe(3600_000)
+  })
+
+  it('recusa fim igual ao início', () => {
     expect(sessionRange(day, '10:00', '10:00')).toEqual({
       ok: false,
       error: 'O fim precisa ser depois do início (HH:MM).'

@@ -32,7 +32,13 @@ import {
 } from './database'
 import { createKeyedQueue } from './gcalSyncQueue'
 import { collectAdfMedia, parseDoc, prosemirrorToAdf, type DocNode } from './jiraAdf'
-import { createJiraApi, type JiraApi, type JiraBoard, type JiraIssue } from './jiraApi'
+import {
+  createJiraApi,
+  JiraApiError,
+  type JiraApi,
+  type JiraBoard,
+  type JiraIssue
+} from './jiraApi'
 import { describeIssueFields, isSprintField, toJiraValue } from './jiraFields'
 import {
   buildIssueUrl,
@@ -524,6 +530,19 @@ export function deleteJiraWorklogs(captured: CapturedWorklogs | null): void {
   })().catch(reportBackgroundError)
 }
 
+const worklogEdits = new Map<number, Promise<void>>()
+
+function queueWorklogEdit(taskId: number, run: () => Promise<void>): void {
+  const previous = worklogEdits.get(taskId) ?? Promise.resolve()
+  const next = previous
+    .then(run)
+    .catch(reportBackgroundError)
+    .finally(() => {
+      if (worklogEdits.get(taskId) === next) worklogEdits.delete(taskId)
+    })
+  worklogEdits.set(taskId, next)
+}
+
 async function updateEditedWorklog(
   taskId: number,
   entryId: number,
@@ -539,7 +558,13 @@ async function updateEditedWorklog(
     setTimeEntryWorklogId(entryId, null)
     return
   }
-  await api.updateWorklog(issueKey, worklogId, worklogFor(entry))
+  try {
+    await api.updateWorklog(issueKey, worklogId, worklogFor(entry))
+  } catch (error) {
+    if (!(error instanceof JiraApiError && error.status === 404)) throw error
+    setTimeEntryWorklogId(entryId, null)
+    await runWorklogPush(taskId)
+  }
 }
 
 export function syncEditedTimeEntry(
@@ -547,15 +572,15 @@ export function syncEditedTimeEntry(
   entryId: number,
   worklogId: string | null
 ): void {
-  if (!readConfig().worklogSince || !getTask(taskId)?.jira_key) return
-  if (!worklogId) return
-  updateEditedWorklog(taskId, entryId, worklogId).catch(reportBackgroundError)
+  if (!worklogId || !readConfig().worklogSince || !getTask(taskId)?.jira_key) return
+  queueWorklogEdit(taskId, () => updateEditedWorklog(taskId, entryId, worklogId))
 }
 
 export function syncDeletedTimeEntry(taskId: number, worklogId: string | null): void {
   const issueKey = getTask(taskId)?.jira_key
-  if (!worklogId || !issueKey || !readConfig().worklogSince) return
-  deleteJiraWorklogs({ issueKey, worklogIds: [worklogId] })
+  const connection = currentConnection()
+  if (!worklogId || !issueKey || !connection || !readConfig().worklogSince) return
+  queueWorklogEdit(taskId, () => apiFor(connection).deleteWorklog(issueKey, worklogId))
 }
 
 export async function getJiraChildren(taskId: number): Promise<JiraChildrenResult> {

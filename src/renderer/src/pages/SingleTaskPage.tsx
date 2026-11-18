@@ -186,20 +186,25 @@ export function SingleTaskPage(): React.JSX.Element {
     [run, deleteTask, navigate]
   )
 
+  const afterTimeChange = useCallback(async (): Promise<void> => {
+    await refreshTask()
+    if (useTimerStore.getState().timers[taskId]) syncWithDatabase()
+  }, [refreshTask, taskId, syncWithDatabase])
+
   const handleAddTime = useCallback(
     async (seconds: number): Promise<void> => {
       await window.api.addManualTime(taskId, seconds)
-      await refreshTask()
+      await afterTimeChange()
     },
-    [taskId, refreshTask]
+    [taskId, afterTimeChange]
   )
 
   const handleSetTotal = useCallback(
     async (seconds: number): Promise<void> => {
       await window.api.setTotalTime(taskId, seconds)
-      await refreshTask()
+      await afterTimeChange()
     },
-    [taskId, refreshTask]
+    [taskId, afterTimeChange]
   )
 
   const handleNotesChange = useCallback((): void => {
@@ -383,11 +388,11 @@ export function SingleTaskPage(): React.JSX.Element {
         onSetLimit={(seconds) => update({ time_limit_seconds: seconds })}
         onUpdateEntry={async (id, startIso, endIso) => {
           await window.api.updateTimeEntry(id, startIso, endIso)
-          await refreshTask()
+          await afterTimeChange()
         }}
         onDeleteEntry={async (id) => {
           await window.api.deleteTimeEntry(id)
-          await refreshTask()
+          await afterTimeChange()
         }}
       />
     ),

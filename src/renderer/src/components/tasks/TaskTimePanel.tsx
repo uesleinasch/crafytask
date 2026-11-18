@@ -22,11 +22,17 @@ import { Field, Section } from '@renderer/components/shell/SectionHeader'
 import { formatDate, formatDateTime, formatTime, parseTimeInput } from '@renderer/lib/utils'
 import { formatShortDuration } from './taskTableFormat'
 import { sessionClock, sessionRange } from './sessionEdit'
+import { errorMessage } from '@renderer/components/settings/settingsStatus'
 
 const ICON = { size: 14, strokeWidth: 1.75, 'aria-hidden': true } as const
 
 function clockTime(iso: string): string {
   return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+}
+
+function endLabel(startIso: string, endIso: string): string {
+  const sameDay = new Date(startIso).toDateString() === new Date(endIso).toDateString()
+  return sameDay ? clockTime(endIso) : formatDateTime(endIso)
 }
 
 interface TaskTimePanelProps {
@@ -77,6 +83,10 @@ export function TaskTimePanel({
     a.end_time === null ? -1 : b.end_time === null ? 1 : b.start_time.localeCompare(a.start_time)
   )
 
+  const cancelOnEscape = (event: React.KeyboardEvent): void => {
+    if (event.key === 'Escape') setEditing(null)
+  }
+
   const saveSession = async (entry: TimeEntry): Promise<void> => {
     const range = sessionRange(entry.start_time, draft.start, draft.end)
     if (!range.ok) {
@@ -88,7 +98,7 @@ export function TaskTimePanel({
       setEditing(null)
       message.success('Sessão atualizada')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Não foi possível salvar a sessão')
+      message.error(errorMessage(error))
     }
   }
 
@@ -97,7 +107,7 @@ export function TaskTimePanel({
       await onDeleteEntry(id)
       message.success('Sessão excluída')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Não foi possível excluir a sessão')
+      message.error(errorMessage(error))
     }
   }
 
@@ -182,6 +192,7 @@ export function TaskTimePanel({
                     value={draft.start}
                     onChange={(event) => setDraft({ ...draft, start: event.target.value })}
                     onPressEnter={() => void saveSession(entry)}
+                    onKeyDown={cancelOnEscape}
                     style={{ ...mono, width: 68 }}
                   />
                   <span>–</span>
@@ -191,9 +202,7 @@ export function TaskTimePanel({
                     value={draft.end}
                     onChange={(event) => setDraft({ ...draft, end: event.target.value })}
                     onPressEnter={() => void saveSession(entry)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Escape') setEditing(null)
-                    }}
+                    onKeyDown={cancelOnEscape}
                     style={{ ...mono, width: 68 }}
                   />
                   <span style={{ flex: 1 }} />
@@ -227,7 +236,7 @@ export function TaskTimePanel({
                   <Popconfirm
                     key="delete"
                     title="Excluir esta sessão?"
-                    description="O tempo dela sai do total. Se já foi enviada ao Jira, o worklog também é apagado."
+                    description="O tempo dela sai do total. Se ela já foi enviada ao Jira e o worklog está ligado, o worklog também é apagado."
                     okText="Excluir"
                     okButtonProps={{ danger: true }}
                     cancelText="Cancelar"
@@ -245,7 +254,8 @@ export function TaskTimePanel({
               >
                 <Flex align="center" gap={8} style={{ width: '100%' }}>
                   <span style={mono}>
-                    {formatDateTime(entry.start_time)} – {clockTime(entry.end_time as string)}
+                    {formatDateTime(entry.start_time)} –{' '}
+                    {endLabel(entry.start_time, entry.end_time as string)}
                   </span>
                   <span style={{ flex: 1 }} />
                   <span style={mono}>+{formatTime(entry.duration_seconds ?? 0)}</span>

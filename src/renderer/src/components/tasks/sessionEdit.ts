@@ -22,6 +22,9 @@ export function sessionRange(dayIso: string, start: string, end: string): Sessio
   const from = atClock(day, start)
   const to = atClock(day, end)
   if (!from || !to) return { ok: false, error: 'Use HH:MM, por exemplo 09:30.' }
-  if (to <= from) return { ok: false, error: 'O fim precisa ser depois do início (HH:MM).' }
+  if (to.getTime() === from.getTime()) {
+    return { ok: false, error: 'O fim precisa ser depois do início (HH:MM).' }
+  }
+  if (to < from) to.setDate(to.getDate() + 1)
   return { ok: true, startIso: from.toISOString(), endIso: to.toISOString() }
 }
