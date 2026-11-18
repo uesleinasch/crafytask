@@ -86,6 +86,7 @@ interface TaskTableProps {
   onToggleGroupSelection: (taskIds: number[], selected: boolean) => void
   onTaskClick: (taskId: number) => void
   onScheduleForToday?: (taskId: number) => void
+  onSubtaskIdsChange?: (ids: number[]) => void
 }
 
 interface RowMenu {
@@ -96,6 +97,7 @@ interface RowMenu {
 
 const RowMenuContext = createContext<RowMenu | null>(null)
 const ICON = { size: 14, strokeWidth: 1.75, 'aria-hidden': true } as const
+const NAME_MIN_WIDTH = 240
 const INTERACTIVE = 'button, a, input, label, [role="checkbox"], [data-row-click="ignore"]'
 
 function MenuRow(
@@ -132,7 +134,8 @@ export function TaskTable({
   onToggleSelectAll,
   onToggleGroupSelection,
   onTaskClick,
-  onScheduleForToday
+  onScheduleForToday,
+  onSubtaskIdsChange
 }: TaskTableProps): React.JSX.Element {
   const { token } = theme.useToken()
   const { mode } = useThemeSettings()
@@ -162,12 +165,17 @@ export function TaskTable({
       setSubtasks((current) => ({ ...current, ...Object.fromEntries(entries) }))
     } catch (error) {
       console.error('[TaskTable] subtarefas', error)
+      toast.error('Não foi possível carregar as subtarefas')
     }
   }, [])
 
   useEffect(() => {
     void loadSubtasks([...expandedRef.current])
   }, [tasks, loadSubtasks])
+
+  useEffect(() => {
+    onSubtaskIdsChange?.(Object.values(subtasks).flatMap((list) => list.map((t) => t.id)))
+  }, [subtasks, onSubtaskIdsChange])
 
   const toggleExpand = (taskId: number): void => {
     const next = new Set(expanded)
@@ -258,19 +266,7 @@ export function TaskTable({
           onClick={() => toggleGroup(group.key)}
         />
         {group.icon ? (
-          <span
-            aria-hidden
-            style={{
-              display: 'inline-grid',
-              placeItems: 'center',
-              width: 22,
-              height: 22,
-              borderRadius: token.borderRadiusSM,
-              background: group.color ? `${group.color}24` : token.colorFillTertiary
-            }}
-          >
-            {group.icon}
-          </span>
+          <span aria-hidden>{group.icon}</span>
         ) : (
           <span
             aria-hidden
@@ -287,12 +283,14 @@ export function TaskTable({
         <Typography.Text type="secondary" style={mono}>
           {group.tasks.length}
         </Typography.Text>
-        <Typography.Link
-          style={{ fontSize: 12 }}
+        <Button
+          size="small"
+          type="link"
+          style={{ fontSize: 12, paddingInline: 0 }}
           onClick={() => onToggleGroupSelection(ids, !allSelected)}
         >
           {allSelected ? 'Desmarcar grupo' : 'Selecionar grupo'}
-        </Typography.Link>
+        </Button>
         <span style={{ flex: 1 }} />
         <Tooltip title="Tempo somado do grupo">
           <Typography.Text type="secondary" style={mono}>
@@ -313,6 +311,10 @@ export function TaskTable({
         ? (task.contexts ?? []).filter((c) => `c:${c.id}` !== row.groupKey).map((c) => c.name)
         : []
     const schedule = formatTimeRange(task.scheduled_time, task.scheduled_end_time)
+    const scheduleLabel =
+      task.scheduled_date && schedule
+        ? `Agendada: ${formatDueShort(task.scheduled_date)} · ${schedule}`
+        : null
     const done = task.status === 'finalizada'
     const parentBlocked = isSub && row.parent.is_blocked && !done
 
@@ -354,27 +356,33 @@ export function TaskTable({
             <Lock
               size={14}
               strokeWidth={1.75}
+              role="img"
               aria-label="Bloqueada por dependências"
               style={{ flex: 'none', color: CATEGORY_COLORS.prioridade[mode].fg }}
             />
           </Tooltip>
         )}
         {task.is_running && <LiveDot label="Timer rodando" />}
-        <Typography.Text
+        <Typography.Link
+          href={`#/task/${task.id}`}
           ellipsis
           delete={done}
-          type={done ? 'secondary' : undefined}
-          style={{ fontWeight: 500, minWidth: 0 }}
+          style={{
+            fontWeight: 500,
+            minWidth: 0,
+            color: done ? token.colorTextTertiary : token.colorText
+          }}
         >
           {task.name}
-        </Typography.Text>
+        </Typography.Link>
         {isSub && !showStatus && <StatusChip status={task.status} />}
-        {task.scheduled_date && schedule && (
-          <Tooltip title={`Agendada: ${formatDueShort(task.scheduled_date)} · ${schedule}`}>
+        {scheduleLabel && (
+          <Tooltip title={scheduleLabel}>
             <Clock
               size={13}
               strokeWidth={1.75}
-              aria-label="Horário agendado"
+              role="img"
+              aria-label={scheduleLabel}
               style={{ flex: 'none', color: token.colorTextTertiary }}
             />
           </Tooltip>
@@ -384,7 +392,8 @@ export function TaskTable({
             <Copy
               size={12}
               strokeWidth={1.75}
-              aria-label="Aparece em outros grupos"
+              role="img"
+              aria-label={`Também em ${otherContexts.join(', ')}`}
               style={{ flex: 'none', color: token.colorTextTertiary }}
             />
           </Tooltip>
@@ -578,14 +587,18 @@ export function TaskTable({
       row.kind === 'group' ? { colSpan: index === 0 ? baseColumns.length : 0 } : {}
   }))
 
+  const minTableWidth =
+    baseColumns.reduce((sum, column) => sum + (column.width ?? 0), 0) + 40 + NAME_MIN_WIDTH
+
   const onRow = (row: TableRow): React.HTMLAttributes<HTMLElement> => {
-    if (row.kind === 'group') return { style: { background: token.colorBgLayout } }
+    if (row.kind === 'group') return {}
     const level =
       row.kind === 'task' ? timeLeakLevel(row.task.category, liveSeconds(row.task, timers)) : 0
     return {
       style: { cursor: 'pointer', background: timeLeakBackground(mode, level) },
       onClick: (event) => {
-        if ((event.target as HTMLElement).closest(INTERACTIVE)) return
+        const target = event.target as HTMLElement
+        if (!event.currentTarget.contains(target) || target.closest(INTERACTIVE)) return
         onTaskClick(row.task.id)
       }
     }
@@ -597,6 +610,8 @@ export function TaskTable({
         rowKey="key"
         size={screens.xxl ? 'middle' : 'small'}
         tableLayout="fixed"
+        scroll={{ x: minTableWidth }}
+        rowClassName={(row) => (row.kind === 'group' ? 'ct-table-grouprow' : '')}
         columns={columns}
         dataSource={data}
         pagination={false}
@@ -613,10 +628,10 @@ export function TaskTable({
           checkStrictly: true,
           columnWidth: 40,
           getCheckboxProps: (row) => ({
-            disabled: row.kind !== 'task',
+            disabled: row.kind === 'group',
             'aria-label': row.kind === 'group' ? undefined : `Selecionar ${row.task.name}`
           }),
-          renderCell: (_checked, row, _index, node) => (row.kind === 'task' ? node : null),
+          renderCell: (_checked, row, _index, node) => (row.kind === 'group' ? null : node),
           onSelect: (row, selected) => {
             if (row.kind !== 'group') onToggleTaskSelection(row.task.id, selected)
           },
