@@ -90,10 +90,10 @@ function PropPill({
       aria-haspopup={readOnly ? undefined : 'dialog'}
       aria-expanded={readOnly ? undefined : open}
       disabled={readOnly}
-      style={tone ? { color: tone } : undefined}
+      style={tone && !readOnly ? { color: tone } : undefined}
     >
       <span className="sr-only">{label}: </span>
-      {Icon && <Icon {...ICON} color={tone ?? token.colorTextTertiary} />}
+      {Icon && <Icon {...ICON} color={(!readOnly && tone) || token.colorTextTertiary} />}
       {children}
     </button>
   )

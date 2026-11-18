@@ -135,7 +135,7 @@ export function TaskWorkspace({
       <Tooltip title={isRunning ? 'Pausar' : 'Iniciar'}>
         <Button
           type="text"
-          disabled={readOnly || startBlocked}
+          disabled={(readOnly && !isRunning) || startBlocked}
           aria-label={isRunning ? 'Pausar' : 'Iniciar'}
           icon={isRunning ? <Pause {...ICON} /> : <Play {...ICON} />}
           onClick={onToggleTimer}

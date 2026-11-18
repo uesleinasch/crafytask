@@ -273,6 +273,8 @@
 
 .ct-prop:disabled {
   cursor: default;
+  border-style: dashed;
+  color: var(--ant-color-text-tertiary);
 }
 
 .ct-prop:disabled:hover {

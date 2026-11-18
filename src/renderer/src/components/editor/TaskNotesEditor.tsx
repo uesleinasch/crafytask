@@ -49,6 +49,10 @@ export const TaskNotesEditor = forwardRef<TaskNotesEditorHandle, TaskNotesEditor
             if (node.type.name !== 'mention') return false
             const route = mentionRoute(node.attrs.entityType, node.attrs.id)
             if (!route) return false
+            if (!view.editable) {
+              navigateRef.current(route)
+              return true
+            }
             if (debounceRef.current) clearTimeout(debounceRef.current)
             pendingDocRef.current = null
             const notes = JSON.stringify(view.state.doc.toJSON())
@@ -87,10 +91,11 @@ export const TaskNotesEditor = forwardRef<TaskNotesEditorHandle, TaskNotesEditor
         flushSave: async () => {
           if (debounceRef.current) clearTimeout(debounceRef.current)
           pendingDocRef.current = null
+          if (readOnly) return
           await persist()
         }
       }),
-      [persist]
+      [persist, readOnly]
     )
 
     // Ao trocar de dono ou sair da tela, grava a edição pendente a partir do documento guardado:
@@ -109,7 +114,7 @@ export const TaskNotesEditor = forwardRef<TaskNotesEditorHandle, TaskNotesEditor
     }, [kind, id])
 
     useEffect(() => {
-      if (editor && editor.isEditable === readOnly) editor.setEditable(!readOnly)
+      if (editor && editor.isEditable === readOnly) editor.setEditable(!readOnly, false)
     }, [editor, readOnly])
 
     if (readOnly) return <EditorContent editor={editor} />

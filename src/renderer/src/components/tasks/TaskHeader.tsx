@@ -369,7 +369,7 @@ export function TaskHeader({
             <Tooltip title={startBlocked ? blockedLabel(task.blocked_by) : ''}>
               <Button
                 type="primary"
-                disabled={readOnly || startBlocked}
+                disabled={(readOnly && !isRunning) || startBlocked}
                 aria-label={isRunning ? 'Pausar' : 'Iniciar'}
                 icon={isRunning ? <Pause {...ICON} /> : <Play {...ICON} />}
                 onClick={() => void (isRunning ? onPause() : onStart())}
