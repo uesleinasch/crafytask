@@ -100,6 +100,9 @@ Na revisão semanal, **o mesmo comando aparece duas vezes na mesma tela em duas 
 
 ### B5. O comportamento de "fechar" nunca é explicado onde importa
 
+**Resolvida na F1-f:** a barra de status diz, em toda tela, que fechar a janela mantém o app na
+bandeja.
+
 Fechar a janela esconde o app na bandeja. O único lugar que diz isso é uma nota de rodapé em
 `/settings` — tela que o usuário pode nunca abrir.
 
