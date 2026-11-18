@@ -157,8 +157,9 @@ export function LabelEditModal({
                       cursor: 'pointer',
                       background: color,
                       border: 'none',
-                      outline: on ? `2px solid ${token.colorText}` : 'none',
-                      outlineOffset: 2
+                      boxShadow: on
+                        ? `0 0 0 2px ${token.colorBgElevated}, 0 0 0 4px ${token.colorText}`
+                        : undefined
                     }}
                   />
                 )
