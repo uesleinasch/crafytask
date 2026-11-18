@@ -92,7 +92,9 @@ export function LabelEditModal({
         <Flex vertical gap={14}>
           {original && original.task_count > 0 && (
             <Typography.Text type="secondary">
-              O novo nome vale para as {original.task_count} tarefas que já usam{' '}
+              {original.task_count === 1
+                ? 'O novo nome vale para a tarefa que já usa '
+                : `O novo nome vale para as ${original.task_count} tarefas que já usam `}
               {isContext ? 'este contexto' : 'esta tag'}.
             </Typography.Text>
           )}

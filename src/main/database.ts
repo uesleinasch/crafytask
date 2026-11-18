@@ -602,6 +602,7 @@ export interface ContextRow {
 }
 
 export function createContext(name: string, icon?: string, color?: string): ContextRow {
+  assertContextNameFree(tagDb(), name)
   const stmt = db.prepare('INSERT INTO contexts (name, icon, color) VALUES (?, ?, ?)')
   const result = stmt.run(name.trim(), icon || '📋', color || '#6366f1')
   return getContext(result.lastInsertRowid as number)!
