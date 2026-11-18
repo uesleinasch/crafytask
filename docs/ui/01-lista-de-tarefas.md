@@ -111,10 +111,15 @@ rolável (`position: sticky; bottom: 12px`). É uma faixa flutuante (`colorBgEle
 - **Hoje** (planeja todas para hoje, ou tira do plano se todas já estão), **Arquivar** e
   **Excluir** (`danger`, pede confirmação com `modal.confirm`: "Excluir N tarefas?").
 
-As ações vêm de `useTaskBulkActions` (`components/tasks/`), o mesmo do menu de contexto: status de
-uma tarefa só passa por `task:updateStatus` (recorrência, desbloqueio); de várias, por
-`task:bulkUpdateStatus`. Cada ação mostra um toast com a quantidade e recarrega a lista. A seleção é
-podada quando os filtros mudam: ids que saíram do resultado deixam de estar selecionados.
+As ações vêm de `useTaskBulkActions` (`components/tasks/`), o mesmo do menu de contexto. No main,
+`task:updateStatus` e `task:bulkUpdateStatus` passam pela mesma `applyStatusChange` (bloqueio,
+subtarefa de pai bloqueado, recorrência, fechar o pai, aviso de desbloqueio); o lote aplica a cada
+tarefa e, se alguma for recusada, devolve um erro com os ids. Cada ação mostra um toast com a
+quantidade e recarrega a lista, mesmo quando parte falha. "Selecionar todas" soma as visíveis à
+seleção atual (subtarefas marcadas continuam). A seleção é podada quando os filtros mudam: ids que
+saíram do resultado (e não são subtarefas carregadas) deixam de estar selecionados. Quando a barra
+some com o foco dentro (depois de arquivar ou excluir), o foco vai para a área das tarefas. Um
+`aria-live` sempre montado anuncia a contagem.
 
 ## ⑤ Conteúdo
 
@@ -139,7 +144,7 @@ grupos passa do total."
 
 A página inteira rola num só contêiner (`h-full overflow-y-auto`, dentro do `PageContainer`):
 abas, barra de ferramentas e conteúdo sobem juntos, como no protótipo. Só a barra de ações em massa
-fica presa no topo, e só com seleção.
+flutua, presa ao fundo, e só com seleção.
 
 ### Menu de contexto (`components/tasks/TaskContextMenu.tsx`)
 
