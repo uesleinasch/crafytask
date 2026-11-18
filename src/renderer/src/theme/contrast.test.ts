@@ -28,6 +28,18 @@ describe.each(MODES)('contraste WCAG no tema %s', (mode) => {
     }
   )
 
+  it('metadado passa AA sobre o hover e as linhas de time leak', () => {
+    for (const surface of [c.hover, ...TIME_LEAK_SCALE[mode]]) {
+      expect(contrast(c.text3, surface)).toBeGreaterThanOrEqual(TEXT_AA)
+    }
+  })
+
+  it('borda de controle passa 3:1 sobre as superfícies', () => {
+    for (const surface of [c.bg, c.surface, c.elevated, c.sider, c.hover, c.rowHover]) {
+      expect(contrast(c.borderStrong, surface)).toBeGreaterThanOrEqual(3)
+    }
+  })
+
   it('texto do botão primário passa AA', () => {
     expect(contrast(c.onPrimary, c.primary)).toBeGreaterThanOrEqual(TEXT_AA)
   })

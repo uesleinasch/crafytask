@@ -49,10 +49,10 @@ calculados e conferidos: todo texto passa WCAG AA (4,5:1) sobre a superfície on
 | `elevated`     | `#FFFFFF` | `#22202E` | popover, modal, dropdown       | `colorBgElevated`                            |
 | `sider`        | `#FBFAFE` | `#15141D` | navegação lateral              | `Layout.siderBg`                             |
 | `border`       | `#E4E2EE` | `#2E2B3C` | divisórias, borda de card      | `colorBorderSecondary`                       |
-| `borderStrong` | `#CFCCDD` | `#403C52` | borda de controle              | `colorBorder`                                |
+| `borderStrong` | `#8A8796` | `#706C85` | borda de controle              | `colorBorder`                                |
 | `text`         | `#1B1A27` | `#ECEAF6` | texto principal                | `colorText`                                  |
 | `text2`        | `#5B5970` | `#A9A6BE` | texto secundário               | `colorTextSecondary`                         |
-| `text3`        | `#6B6980` | `#8A879F` | metadado, rótulo de seção      | `colorTextTertiary`                          |
+| `text3`        | `#6B6980` | `#8C89A1` | metadado, rótulo de seção      | `colorTextTertiary`                          |
 | `primary`      | `#5B47EB` | `#8F82FF` | ação primária, link, seleção   | `colorPrimary`, `colorLink`                  |
 | `primarySoft`  | `#EFEDFF` | `#221E3D` | item selecionado               | `Menu.itemSelectedBg`, `Table.rowSelectedBg` |
 | `onPrimary`    | `#FFFFFF` | `#111018` | texto sobre `primary` (botão)  | `colorTextLightSolid`                        |
@@ -65,6 +65,10 @@ calculados e conferidos: todo texto passa WCAG AA (4,5:1) sobre a superfície on
 `#705EFF` fica no logo, que é texto grande ([cálculo](pesquisa/03-cor-acessibilidade-e-modo-escuro.md)).
 No escuro, branco sobre `#8F82FF` dá 3,09:1; por isso o texto do botão primário usa o `bg` escuro
 (6,12:1).
+
+`borderStrong` passa 3:1 (WCAG 1.4.11, borda que identifica o controle) sobre `bg`, `surface`,
+`sider` e as cores de hover nos dois temas; `text3` passa 4,5:1 também sobre o hover e as linhas
+de time leak do escuro. O teste `theme/contrast.test.ts` confere cada par.
 
 Feedback do sistema: sucesso `#0B7A50` / `#4CD69A`, aviso `#A15C00` / `#F0B44C`, erro `#C02331` /
 `#FF7A82`, informação `#2A62D6` / `#7AA5FF` (`colorSuccess`, `colorWarning`, `colorError`,
