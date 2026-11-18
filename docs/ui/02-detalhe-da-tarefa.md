@@ -142,67 +142,57 @@ um número em mono à direita.
 
 ### Detalhes — `TaskDetailsPanel`
 
-Até a F3-c, com os controles legados: **Jira** (só task do Jira: `JiraTaskControls` e a issue pai),
-**Google Calendar** e **Ambiente** (diretório de trabalho e comando).
+Cada seção usa `Field` (rótulo de 92px à esquerda, controle à direita).
 
-**`JiraTaskControls`** (`components/jira/`) — usado só no detalhe (a lista mostra a chave e o submenu Jira desde a F2-i), só quando a
-task tem `jira_key`. Quatro peças, num wrapper que para a propagação do clique (senão abriria a task):
-- chip cinza com `Layers` e o **espaço** da issue (`tasks.jira_space`, gravado pela importação; antes
-  da primeira importação que o preenche, mostra o prefixo da chave, ex.: `CON`).
-- `JiraIssueTypeBadge`: chip colorido com o **tipo** da issue (`tasks.jira_issue_type`), cor e ícone
-  pela classe em `tasks.jira_issue_kind` — épico roxo, história verde, tarefa azul, bug vermelho,
-  subtarefa cinza. A classe vem de `classifyIssueType` (`jiraPlan.ts`): nível da hierarquia do
-  Jira primeiro (>0 épico, <0 subtarefa), nome do tipo depois. Some antes da primeira importação.
-- chip azul **Jira · {status}**: um `Select` que, ao abrir, busca as transições da issue
-  (`jira:listTransitions`) e aplica a escolhida (`jira:transition`). É independente do `StatusChip`
-  local — mudar um não muda o outro.
-- botão `SlidersHorizontal` (desligado aqui: o detalhe usa o botão Campos do Jira do cabeçalho, e a lista abre
-  pelo submenu Jira) que abre o `JiraFieldsSheet`: painel lateral direito com os campos
-  editáveis da issue (vindos do `editmeta`), um editor por tipo (texto, número, data, seleção,
-  múltipla escolha, rótulos, pessoa com "Atribuir a mim", sprint). Múltipla escolha (ex.: Cliente,
-  Equipe) é um `SearchableSelect` "Adicionar opção…" com as escolhidas em chips removíveis. Cada campo grava ao sair do
-  campo/escolher; erro do Jira volta como toast e o campo retorna ao valor anterior.
-
-Detalhes do ambiente e do Google:
-
-- **Diretório de trabalho** — `WorkingDirField`: mostra o fim do caminho (`…/pasta/repo`, completo
-  no `title`) e um botão **Escolher/Alterar** que abre o seletor de pasta do sistema
-  (`terminal:pickDirectory`, grava na hora). Com diretório definido aparece **Comando ao abrir o
-  terminal**, gravado ao sair do campo. Os dois campos são locais: não vão ao Notion nem ao Jira.
-- **Google Calendar** — `GoogleCalendarTaskToggle`, só renderizado com o Google conectado: switch
-  que grava `gcal_sync` e sincroniza na hora (desligar apaga os eventos da task), mais um botão
-  `RefreshCw` de ressincronizar quando ligado.
+- **Jira** (só task do Jira):
+  - **Issue:** o tipo (`tasks.jira_issue_type`) numa `Tag` — o tooltip diz o espaço
+    (`tasks.jira_space`, ou o prefixo da chave antes da primeira importação que o preenche) — e a
+    chave em mono, que abre a issue no navegador.
+  - **Status Jira:** `JiraStatusSelect`, um `Select` que mostra o status atual e, ao abrir, busca as
+    transições da issue (`jira:listTransitions`) e aplica a escolhida (`jira:transition`); cada
+    transição tem um ponto na cor de Inbox (a fazer), Próximas (em andamento) ou Executando
+    (concluída). É independente do status local: mudar um não muda o outro.
+  - **Pai:** chave + resumo da issue pai, que abre no navegador.
+  - Botão **Campos do Jira**, que abre o `JiraFieldsSheet` (o mesmo do cabeçalho): campos editáveis
+    da issue (vindos do `editmeta`), um editor por tipo; cada campo grava ao sair ou escolher; erro
+    do Jira volta como aviso e o campo retorna ao valor anterior.
+- **Google Calendar** — só com o Google conectado: `Switch` que grava `gcal_sync` e sincroniza na
+  hora (desligar apaga os eventos da task), o texto "Na agenda TickTask" / "Fora do Google
+  Calendar" e, ligado, o botão de ressincronizar (`RefreshCw`).
+- **Ambiente** — Diretório: o fim do caminho em mono (`…/pasta/repo`, completo no tooltip), etiqueta
+  "do projeto" quando herdado, **Escolher/Alterar** (seletor de pasta do sistema,
+  `terminal:pickDirectory`, grava na hora) e, com diretório próprio num projeto que também tem um,
+  o botão de voltar a herdar (`Undo2`). Com diretório, **Comando ao abrir o terminal** (mono, grava
+  ao sair ou com Enter). **Abrir terminal** alterna o painel de terminal na sessão desta task (sem
+  diretório, pede a pasta antes). Diretório e comando são locais: não vão ao Notion nem ao Jira.
 
 ### Relações — `TaskRelationsPanel`
 
 **Subtarefas** — só quando a tarefa não é ela mesma uma subtarefa (`!task.parent_task_id`): não há
 hierarquia de três níveis. O `SectionHeader` mostra `feitas/total`.
 
-`SubtaskList` mostra:
-- aviso laranja "Subtarefas bloqueadas — conclua as dependências da tarefa pai primeiro", quando a
-  tarefa-pai está bloqueada;
-- contador `{feitas}/{total} concluídas` + porcentagem + `Progress` de 6px;
-- cada subtarefa: checkbox (desabilitado se a pai está bloqueada) + nome clicável que **navega para a
-  subtarefa** (com sublinhado no hover);
-- botão "Nova subtarefa" que vira campo inline (Enter confirma, Esc cancela) com botões Adicionar /
-  Cancelar.
+- `Alert` "Subtarefas bloqueadas: conclua as dependências da tarefa pai primeiro." quando a pai está
+  bloqueada;
+- `Progress` pequeno com a porcentagem;
+- cada subtarefa: `Checkbox` (desabilitado para as abertas se a pai está bloqueada) + nome que
+  **navega para a subtarefa** (riscado quando finalizada);
+- botão tracejado **Nova subtarefa**, que vira campo inline (Enter confirma, Esc cancela) com
+  Adicionar / Cancelar.
 
 Marcar o checkbox alterna entre `finalizada` e `inbox` — não devolve ao status anterior.
 
-**Depende de** — `DependencySelector`:
-- cada dependência é uma linha colorida — **verde** com "✓ concluída" se já finalizada, **laranja**
-  caso contrário — com cadeado, nome e "×" para remover;
-- botão "Adicionar dependência" abre um seletor embutido com campo de busca e até 10 resultados,
-  mostrando o status cru (`inbox`, `proximas`…) à direita de cada opção.
+**Depende de** — cada dependência é uma linha com fundo da cor de Executando e "✓ concluída" quando
+já não bloqueia, ou da cor de Prioridade e "pendente" quando bloqueia (vem de `blocked_by`), com
+cadeado, nome e "×" para remover. Abaixo, um `Select` "Adicionar dependência…" que **busca no main**
+(`listTasks` com `search` e `limit`, 250ms de debounce) e mostra até 10 tarefas com o `StatusChip` à
+direita.
 
-> Esse seletor carrega **todas** as tarefas via `window.api.listTasks()` e filtra no cliente — é o
-> único lugar do app que ainda faz isso.
-
-**Issues filhas no Jira** — em task do Jira que não é subtarefa (`JiraChildIssues`). Ao abrir, busca no Jira as issues com `parent = <chave>` (`jira:getChildren`)
-— **todas**, inclusive as de outras pessoas, que a importação não traz. Cada linha: tipo, chave,
-resumo e status Jira. Clique abre a task no CrafyTask se a issue já foi importada; senão abre a
-issue no navegador (ícone `ExternalLink`). Sem filhas, a seção some. Se o Jira falhar, mostra um
-aviso âmbar e só as filhas já importadas (`jira_parent_key` local).
+**Issues filhas no Jira** — em task do Jira que não é subtarefa. Ao abrir, busca no Jira as issues
+com `parent = <chave>` (`jira:getChildren`) — **todas**, inclusive as de outras pessoas, que a
+importação não traz. Cada linha: tipo, chave em mono, resumo e status Jira. A chave abre a task no
+CrafyTask se a issue já foi importada; senão abre a issue no navegador (ícone `ExternalLink`). Sem
+filhas, a seção some. Se o Jira falhar, mostra um aviso e só as filhas já importadas
+(`jira_parent_key` local).
 
 ## Notas e desenho
 

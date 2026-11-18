@@ -232,8 +232,8 @@ aparece no item; aplicar usa `jira:transition`) e **Campos do Jira…** (abre o 
 `issue?expand=editmeta` e grava cada campo com `jira:updateField`). O status do Jira continua
 independente do `StatusChip` local.
 
-O `JiraTaskControls` (`components/jira/`: espaço, tipo, status e botão de campos) ficou só no detalhe
-da tarefa até a F3.
+No detalhe da tarefa, a aba Detalhes do inspetor mostra tipo, chave, status Jira (com transição) e pai
+(ver [02-detalhe-da-tarefa.md](02-detalhe-da-tarefa.md)).
 
 ### Modo cards (`components/tasks/TaskCardViews.tsx` → `TaskCard`)
 

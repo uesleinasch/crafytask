@@ -674,12 +674,16 @@
         "padroes": [
           "<TaskPropertyBar",
           "Copiar número",
-          "JiraTaskControls",
-          "WorkingDirField",
-          "GoogleCalendarTaskToggle",
-          "JiraChildIssues",
-          "SubtaskList",
-          "DependencySelector",
+          "<TaskDetailsPanel",
+          "<TaskRelationsPanel",
+          "Status no Jira",
+          "Campos do Jira",
+          "Sincronizar com o Google Calendar",
+          "Comando ao abrir o terminal",
+          "Abrir terminal",
+          "Nova subtarefa",
+          "Adicionar dependência",
+          "Issues filhas no Jira",
           "JiraFieldsSheet",
           "Desarquivar"
         ]
