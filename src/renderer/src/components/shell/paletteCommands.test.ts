@@ -6,7 +6,9 @@ import {
   moveIndex,
   normalizeSearch,
   onCommandPaletteRequest,
-  openCommandPalette
+  onSimulatedCrash,
+  openCommandPalette,
+  simulateCrash
 } from './paletteCommands'
 
 describe('paleta de comandos', () => {
@@ -47,5 +49,13 @@ describe('paleta de comandos', () => {
     off()
     openCommandPalette()
     expect(listener).toHaveBeenCalledTimes(1)
+  })
+
+  it('avisa a região que deve simular a falha', () => {
+    const listener = vi.fn()
+    const off = onSimulatedCrash(listener)
+    simulateCrash()
+    expect(listener).toHaveBeenCalledTimes(1)
+    off()
   })
 })
