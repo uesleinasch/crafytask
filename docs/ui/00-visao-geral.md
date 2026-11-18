@@ -97,7 +97,11 @@ O shell é `components/shell/AppShell.tsx` (antd `Layout`), com as rotas aninhad
 (`App.tsx`); `/float` e `/quick-capture` ficam fora dele. Sidebar, header e conteúdo têm cada um o
 seu `RegionBoundary`: se um quebra, os outros continuam.
 
-Dimensões da janela: `1024 × 700`, mínimo `800 × 600`, moldura nativa do SO com menu escondido
+Abaixo do breakpoint `lg` (992px) a sidebar fica sempre recolhida em 64px e o item "Recolher menu"
+some; abaixo de `md` (768px) ela sai e abre num `Drawer` pelo botão de menu do header, que fecha ao
+navegar (`Grid.useBreakpoint`).
+
+Dimensões da janela: `1024 × 700`, mínimo `400 × 600`, moldura nativa do SO com menu escondido
 (`autoHideMenuBar`). Os canais `window:minimize` / `maximize` / `close` existem no preload mas **não
 estão ligados a nenhum botão**.
 
