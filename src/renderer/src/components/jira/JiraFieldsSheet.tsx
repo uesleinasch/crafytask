@@ -13,6 +13,8 @@ interface JiraFieldsSheetProps {
   onOpenChange: (open: boolean) => void
 }
 
+const MULTILINE_KINDS = new Set<JiraField['kind']>(['text', 'user', 'multiselect', 'labels'])
+
 const stop = (event: SyntheticEvent): void => event.stopPropagation()
 
 function FieldLabel({ field, saving }: { field: JiraField; saving: boolean }): React.JSX.Element {
@@ -115,7 +117,7 @@ export function JiraFieldsSheet({
               <Field
                 key={field.id}
                 label={<FieldLabel field={field} saving={savingField === field.id} />}
-                align={field.kind === 'text' ? 'start' : 'center'}
+                align={MULTILINE_KINDS.has(field.kind) ? 'start' : 'center'}
               >
                 <JiraFieldEditor
                   key={`${field.id}:${revision}:${JSON.stringify(field.value)}`}
@@ -128,7 +130,7 @@ export function JiraFieldsSheet({
               </Field>
             ))}
             <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-              Campos lidos do editmeta da issue; cada um grava na hora no Jira.
+              Campos lidos do editmeta da issue; cada um grava na hora (PUT na issue).
             </Typography.Text>
           </Flex>
         )}
