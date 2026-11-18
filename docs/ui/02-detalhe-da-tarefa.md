@@ -156,9 +156,12 @@ Cada seção usa `Field` (rótulo de 92px à esquerda, controle à direita).
     transições da issue (`jira:listTransitions`) e aplica a escolhida (`jira:transition`). É
     independente do status local: mudar um não muda o outro.
   - **Pai:** chave + resumo da issue pai, que abre no navegador.
-  - Botão **Campos do Jira**, que abre o `JiraFieldsSheet` (o mesmo do cabeçalho): campos editáveis
-    da issue (vindos do `editmeta`), um editor por tipo; cada campo grava ao sair ou escolher; erro
-    do Jira volta como aviso e o campo retorna ao valor anterior.
+  - Botão **Campos do Jira**, que abre o `JiraFieldsSheet` (o mesmo do cabeçalho): um `Drawer` do
+    antd de 380px, título "Campos do Jira · CHAVE", com Abrir no Jira e Recarregar no canto. Dentro,
+    o status Jira e os campos editáveis da issue (vindos do `editmeta`) em `Field`, um editor antd
+    por tipo (`Input`, `TextArea`, `InputNumber`, `DatePicker`, `Select` simples, múltiplo, de tags e
+    de pessoa com busca e "Atribuir a mim"); cada campo grava ao sair ou escolher; erro do Jira volta
+    por `message` e o campo retorna ao valor anterior.
 - **Google Calendar** — só com o Google conectado: `Switch` que grava `gcal_sync` e sincroniza na
   hora (desligar apaga os eventos da task), o texto "Na agenda TickTask" / "Fora do Google
   Calendar" e, ligado, o botão de ressincronizar (`RefreshCw`).
