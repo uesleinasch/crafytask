@@ -11,6 +11,13 @@ describe('visão da lista', () => {
     expect(effectiveListView('cards', 'all')).toBe('cards')
   })
 
+  it('abaixo de md a tabela vira cards, Kanban continua', () => {
+    expect(effectiveListView('table', 'inbox', true)).toBe('cards')
+    expect(effectiveListView('kanban', 'inbox', true)).toBe('cards')
+    expect(effectiveListView('kanban', 'executando', true)).toBe('kanban')
+    expect(effectiveListView('table', 'inbox', false)).toBe('table')
+  })
+
   it('Kanban sem agrupamento usa projeto como coluna', () => {
     expect(kanbanGroup('none')).toBe('project')
     expect(kanbanGroup('context')).toBe('context')
