@@ -676,8 +676,6 @@
           "Copiar número",
           "<TaskDetailsPanel",
           "<TaskRelationsPanel",
-          "Status no Jira",
-          "Campos do Jira",
           "Sincronizar com o Google Calendar",
           "Comando ao abrir o terminal",
           "Abrir terminal",
@@ -769,6 +767,28 @@
           "label=\"Tags\"",
           "label=\"Link externo\"",
           "Adicionar propriedade"
+        ]
+      },
+      "guarda": true
+    },
+    {
+      "id": "F3.17",
+      "fase": "F3",
+      "titulo": "Recursos das abas Detalhes e Relações do inspetor",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/components/tasks/Task{Details,Relations}Panel.tsx",
+        "padroes": [
+          "<JiraStatusSelect",
+          "onOpenJiraFields",
+          "Ressincronizar",
+          "Herdar do projeto",
+          "Comando ao abrir o terminal",
+          "Abrir terminal",
+          "Nova subtarefa",
+          "Remover dependência",
+          "search:",
+          "Issues filhas no Jira"
         ]
       },
       "guarda": true

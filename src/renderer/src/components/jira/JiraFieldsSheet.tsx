@@ -92,6 +92,7 @@ export function JiraFieldsSheet({
                 status={issue.statusName}
                 onChanged={load}
                 style={{ width: 200 }}
+                getPopupContainer={(trigger) => trigger.parentElement ?? document.body}
               />
             </div>
           )}

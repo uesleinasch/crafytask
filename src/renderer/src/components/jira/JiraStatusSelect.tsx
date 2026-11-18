@@ -1,20 +1,13 @@
 import { useEffect, useState, type CSSProperties } from 'react'
-import { App, Select, Space } from 'antd'
+import { App, Select } from 'antd'
 import type { JiraTransitionOption } from '@shared/types'
 import { errorMessage } from '@renderer/components/settings/settingsStatus'
-import { STATUS_COLORS } from '@renderer/theme/semantic'
-import { useThemeSettings } from '@renderer/theme/themeSettings'
-
-const CATEGORY_STATUS = {
-  new: 'inbox',
-  indeterminate: 'proximas',
-  done: 'executando'
-} as const satisfies Record<JiraTransitionOption['category'], keyof typeof STATUS_COLORS>
 
 interface JiraStatusSelectProps {
   taskId: number
   status: string | null | undefined
   style?: CSSProperties
+  getPopupContainer?: (trigger: HTMLElement) => HTMLElement
   onChanged?: (status: string) => void
 }
 
@@ -22,10 +15,10 @@ export function JiraStatusSelect({
   taskId,
   status,
   style,
+  getPopupContainer,
   onChanged
 }: JiraStatusSelectProps): React.JSX.Element {
   const { message } = App.useApp()
-  const { mode } = useThemeSettings()
   const [current, setCurrent] = useState(status ?? '')
   const [transitions, setTransitions] = useState<JiraTransitionOption[] | null>(null)
   const [saving, setSaving] = useState(false)
@@ -70,24 +63,8 @@ export function JiraStatusSelect({
       onChange={(id: string) => void apply(id)}
       notFoundContent={transitions === null ? 'Carregando transições…' : 'Nenhuma transição'}
       style={{ width: '100%', ...style }}
-      options={(transitions ?? []).map((t) => ({
-        value: t.id,
-        label: (
-          <Space size={6}>
-            <span
-              aria-hidden
-              style={{
-                display: 'inline-block',
-                width: 8,
-                height: 8,
-                borderRadius: 999,
-                background: STATUS_COLORS[CATEGORY_STATUS[t.category]][mode].fg
-              }}
-            />
-            {t.name}
-          </Space>
-        )
-      }))}
+      getPopupContainer={getPopupContainer}
+      options={(transitions ?? []).map((t) => ({ value: t.id, label: t.name }))}
     />
   )
 }

@@ -7,15 +7,17 @@ import {
   Checkbox,
   Flex,
   Input,
+  List,
   Progress,
   Select,
   Space,
   Spin,
+  Tag,
   Tooltip,
   Typography,
   theme
 } from 'antd'
-import { ExternalLink, ListChecks, Lock, Network, Plus, X } from 'lucide-react'
+import { ExternalLink, ListChecks, ListTree, Lock, Plus, X } from 'lucide-react'
 import type { JiraChildrenResult, Task, TaskDependency, TaskListItem } from '@shared/types'
 import { StatusChip } from '@renderer/components/chips/StatusChip'
 import { Section } from '@renderer/components/shell/SectionHeader'
@@ -61,7 +63,6 @@ function Subtasks({ task, refreshTask }: TaskRelationsPanelProps): React.JSX.Ele
   const toggle = async (subtask: Task, done: boolean): Promise<void> => {
     try {
       await window.api.updateStatus(subtask.id, done ? 'finalizada' : 'inbox')
-      await load()
       await refreshTask()
     } catch (error) {
       message.error(errorText(error, 'Não foi possível atualizar a subtarefa'))
@@ -76,13 +77,17 @@ function Subtasks({ task, refreshTask }: TaskRelationsPanelProps): React.JSX.Ele
       await window.api.createSubtask({ name: trimmed, parent_task_id: task.id })
       setName('')
       setAdding(false)
-      await load()
       await refreshTask()
     } catch (error) {
       message.error(errorText(error, 'Não foi possível criar a subtarefa'))
     } finally {
       setSaving(false)
     }
+  }
+
+  const cancel = (): void => {
+    setName('')
+    setAdding(false)
   }
 
   const list = subtasks ?? []
@@ -128,6 +133,7 @@ function Subtasks({ task, refreshTask }: TaskRelationsPanelProps): React.JSX.Ele
                   style={{
                     flex: 1,
                     minWidth: 0,
+                    fontWeight: 500,
                     color: isDone ? token.colorTextTertiary : token.colorText,
                     textDecoration: isDone ? 'line-through' : undefined
                   }}
@@ -147,13 +153,18 @@ function Subtasks({ task, refreshTask }: TaskRelationsPanelProps): React.JSX.Ele
                 onChange={(event) => setName(event.target.value)}
                 onPressEnter={() => void add()}
                 onKeyDown={(event) => {
-                  if (event.key === 'Escape') setAdding(false)
+                  if (event.key === 'Escape') cancel()
                 }}
               />
-              <Button type="primary" loading={saving} onClick={() => void add()}>
+              <Button
+                type="primary"
+                loading={saving}
+                disabled={!name.trim()}
+                onClick={() => void add()}
+              >
                 Adicionar
               </Button>
-              <Button onClick={() => setAdding(false)}>Cancelar</Button>
+              <Button onClick={cancel}>Cancelar</Button>
             </Space.Compact>
           ) : (
             <Button
@@ -238,7 +249,7 @@ function Dependencies({ task, refreshTask }: TaskRelationsPanelProps): React.JSX
     .slice(0, SEARCH_LIMIT)
 
   return (
-    <Section icon={Lock} title="Depende de" extra={deps?.length || null}>
+    <Section icon={Lock} title="Depende de">
       {deps === null ? (
         <Spin size="small" />
       ) : (
@@ -336,7 +347,7 @@ function JiraChildIssues({
   if (result && result.children.length === 0 && !result.remoteError) return null
 
   return (
-    <Section icon={Network} title="Issues filhas no Jira" extra={result?.children.length ?? null}>
+    <Section icon={ListTree} title="Issues filhas no Jira" extra={result?.children.length ?? null}>
       {!result ? (
         <Flex gap={8} align="center">
           <Spin size="small" />
@@ -349,35 +360,44 @@ function JiraChildIssues({
               Não foi possível consultar o Jira ({result.remoteError}). Mostrando só as importadas.
             </Typography.Text>
           )}
-          {result.children.map((child) => (
-            <Flex key={child.key} gap={6} align="center" style={{ minWidth: 0 }}>
-              {child.issueType && (
-                <Typography.Text type="secondary" style={{ fontSize: 12, flex: 'none' }}>
-                  {child.issueType}
-                </Typography.Text>
-              )}
-              <Typography.Link
-                href={child.taskId ? `#/task/${child.taskId}` : child.url}
-                title={child.taskId ? 'Abrir a task no CrafyTask' : 'Não importada: abrir no Jira'}
-                onClick={(event) => {
-                  event.preventDefault()
-                  if (child.taskId) navigate(`/task/${child.taskId}`)
-                  else void window.api.appOpenExternal(child.url)
-                }}
-                style={{ fontFamily: token.fontFamilyCode, flex: 'none' }}
-              >
-                {child.key} {!child.taskId && <ExternalLink {...ICON} />}
-              </Typography.Link>
-              <Typography.Text ellipsis style={{ flex: 1, minWidth: 0 }}>
-                {child.summary}
-              </Typography.Text>
-              {child.statusName && (
-                <Typography.Text type="secondary" style={{ fontSize: 12, flex: 'none' }}>
-                  {child.statusName}
-                </Typography.Text>
-              )}
-            </Flex>
-          ))}
+          <List
+            size="small"
+            split={false}
+            dataSource={result.children}
+            renderItem={(child) => (
+              <List.Item key={child.key} style={{ padding: '4px 0' }}>
+                <Flex gap={6} align="center" style={{ width: '100%', minWidth: 0 }}>
+                  {child.issueType && (
+                    <Tag bordered={false} style={{ margin: 0, flex: 'none' }}>
+                      {child.issueType}
+                    </Tag>
+                  )}
+                  <Typography.Link
+                    href={child.taskId ? `#/task/${child.taskId}` : child.url}
+                    title={
+                      child.taskId ? 'Abrir a task no CrafyTask' : 'Não importada: abrir no Jira'
+                    }
+                    onClick={(event) => {
+                      event.preventDefault()
+                      if (child.taskId) navigate(`/task/${child.taskId}`)
+                      else void window.api.appOpenExternal(child.url)
+                    }}
+                    style={{ fontFamily: token.fontFamilyCode, flex: 'none' }}
+                  >
+                    {child.key} {!child.taskId && <ExternalLink {...ICON} />}
+                  </Typography.Link>
+                  <Typography.Text ellipsis style={{ flex: 1, minWidth: 0 }}>
+                    {child.summary}
+                  </Typography.Text>
+                  {child.statusName && (
+                    <Typography.Text type="secondary" style={{ fontSize: 12, flex: 'none' }}>
+                      {child.statusName}
+                    </Typography.Text>
+                  )}
+                </Flex>
+              </List.Item>
+            )}
+          />
         </>
       )}
     </Section>

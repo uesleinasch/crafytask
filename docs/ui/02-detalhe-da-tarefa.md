@@ -145,13 +145,12 @@ um número em mono à direita.
 Cada seção usa `Field` (rótulo de 92px à esquerda, controle à direita).
 
 - **Jira** (só task do Jira):
-  - **Issue:** o tipo (`tasks.jira_issue_type`) numa `Tag` — o tooltip diz o espaço
-    (`tasks.jira_space`, ou o prefixo da chave antes da primeira importação que o preenche) — e a
-    chave em mono, que abre a issue no navegador.
+  - **Issue:** o tipo (`tasks.jira_issue_type`) numa `Tag` e a chave em mono, que abre a issue no
+    navegador; o tooltip da chave diz o espaço (`tasks.jira_space`, ou o prefixo da chave antes da
+    primeira importação que o preenche).
   - **Status Jira:** `JiraStatusSelect`, um `Select` que mostra o status atual e, ao abrir, busca as
-    transições da issue (`jira:listTransitions`) e aplica a escolhida (`jira:transition`); cada
-    transição tem um ponto na cor de Inbox (a fazer), Próximas (em andamento) ou Executando
-    (concluída). É independente do status local: mudar um não muda o outro.
+    transições da issue (`jira:listTransitions`) e aplica a escolhida (`jira:transition`). É
+    independente do status local: mudar um não muda o outro.
   - **Pai:** chave + resumo da issue pai, que abre no navegador.
   - Botão **Campos do Jira**, que abre o `JiraFieldsSheet` (o mesmo do cabeçalho): campos editáveis
     da issue (vindos do `editmeta`), um editor por tipo; cada campo grava ao sair ou escolher; erro
@@ -163,8 +162,9 @@ Cada seção usa `Field` (rótulo de 92px à esquerda, controle à direita).
   "do projeto" quando herdado, **Escolher/Alterar** (seletor de pasta do sistema,
   `terminal:pickDirectory`, grava na hora) e, com diretório próprio num projeto que também tem um,
   o botão de voltar a herdar (`Undo2`). Com diretório, **Comando ao abrir o terminal** (mono, grava
-  ao sair ou com Enter). **Abrir terminal** alterna o painel de terminal na sessão desta task (sem
-  diretório, pede a pasta antes). Diretório e comando são locais: não vão ao Notion nem ao Jira.
+  ao sair ou com Enter). **Abrir terminal** mostra o painel de terminal na sessão desta task (sem
+  diretório, pede a pasta antes; se o painel já mostra esta task, não fecha). Erros dessas ações
+  aparecem como aviso. Diretório e comando são locais: não vão ao Notion nem ao Jira.
 
 ### Relações — `TaskRelationsPanel`
 
@@ -176,8 +176,8 @@ hierarquia de três níveis. O `SectionHeader` mostra `feitas/total`.
 - `Progress` pequeno com a porcentagem;
 - cada subtarefa: `Checkbox` (desabilitado para as abertas se a pai está bloqueada) + nome que
   **navega para a subtarefa** (riscado quando finalizada);
-- botão tracejado **Nova subtarefa**, que vira campo inline (Enter confirma, Esc cancela) com
-  Adicionar / Cancelar.
+- botão tracejado **Nova subtarefa**, que vira campo inline (Enter confirma, Esc ou Cancelar
+  descartam o texto) com Adicionar (desabilitado com o nome vazio) / Cancelar.
 
 Marcar o checkbox alterna entre `finalizada` e `inbox` — não devolve ao status anterior.
 
@@ -189,7 +189,7 @@ direita.
 
 **Issues filhas no Jira** — em task do Jira que não é subtarefa. Ao abrir, busca no Jira as issues
 com `parent = <chave>` (`jira:getChildren`) — **todas**, inclusive as de outras pessoas, que a
-importação não traz. Cada linha: tipo, chave em mono, resumo e status Jira. A chave abre a task no
+importação não traz. Cada linha: tipo numa `Tag`, chave em mono, resumo e status Jira. A chave abre a task no
 CrafyTask se a issue já foi importada; senão abre a issue no navegador (ícone `ExternalLink`). Sem
 filhas, a seção some. Se o Jira falhar, mostra um aviso e só as filhas já importadas
 (`jira_parent_key` local).

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { App, Button, Flex, Input, Switch, Tag, Tooltip, Typography, theme } from 'antd'
 import {
-  CalendarSync,
+  Calendar,
   ExternalLink,
   FolderOpen,
   Plug,
@@ -49,22 +49,22 @@ function JiraSection({
       <Field label="Issue">
         <Flex gap={6} align="center" wrap="wrap">
           {task.jira_issue_type && (
-            <Tooltip title={space ? `Espaço no Jira: ${space}` : undefined}>
-              <Tag bordered={false} style={{ margin: 0 }}>
-                {task.jira_issue_type}
-              </Tag>
-            </Tooltip>
+            <Tag bordered={false} style={{ margin: 0 }}>
+              {task.jira_issue_type}
+            </Tag>
           )}
-          <Typography.Link
-            href={task.external_url ?? undefined}
-            onClick={(event) => {
-              event.preventDefault()
-              open(task.external_url)
-            }}
-            style={{ fontFamily: token.fontFamilyCode }}
-          >
-            {task.jira_key}
-          </Typography.Link>
+          <Tooltip title={space ? `Espaço no Jira: ${space}` : undefined}>
+            <Typography.Link
+              href={task.external_url ?? undefined}
+              onClick={(event) => {
+                event.preventDefault()
+                open(task.external_url)
+              }}
+              style={{ fontFamily: token.fontFamilyCode }}
+            >
+              {task.jira_key}
+            </Typography.Link>
+          </Tooltip>
         </Flex>
       </Field>
       <Field label="Status Jira">
@@ -129,7 +129,7 @@ function GoogleSection({ task, refreshTask }: TaskDetailsPanelProps): React.JSX.
   }
 
   return (
-    <Section icon={CalendarSync} title="Google Calendar">
+    <Section icon={Calendar} title="Google Calendar">
       <Flex gap={8} align="center">
         <Switch
           size="small"
@@ -168,32 +168,50 @@ function GoogleSection({ task, refreshTask }: TaskDetailsPanelProps): React.JSX.
 
 function EnvironmentSection({ task, refreshTask }: TaskDetailsPanelProps): React.JSX.Element {
   const { token } = theme.useToken()
+  const { message } = App.useApp()
   const { dir, source } = effectiveWorkingDir(task)
   const [command, setCommand] = useState(task.start_command ?? '')
 
   useEffect(() => setCommand(task.start_command ?? ''), [task.start_command])
 
-  const pick = async (): Promise<string | null> => {
-    const picked = await window.api.terminalPickDirectory(task.id)
-    if (picked) await refreshTask()
-    return picked
+  const attempt = async <T,>(action: () => Promise<T>, fallback: string): Promise<T | null> => {
+    try {
+      return await action()
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : fallback)
+      return null
+    }
   }
 
-  const inherit = async (): Promise<void> => {
-    await window.api.terminalSetTaskWorkspace(task.id, { working_dir: null })
-    await refreshTask()
-  }
+  const pick = (): Promise<string | null> =>
+    attempt(async () => {
+      const picked = await window.api.terminalPickDirectory(task.id)
+      if (picked) await refreshTask()
+      return picked
+    }, 'Não foi possível escolher o diretório')
+
+  const inherit = (): Promise<void | null> =>
+    attempt(async () => {
+      await window.api.terminalSetTaskWorkspace(task.id, { working_dir: null })
+      await refreshTask()
+    }, 'Não foi possível voltar ao diretório do projeto')
 
   const saveCommand = async (): Promise<void> => {
     const next = command.trim()
     if (next === (task.start_command ?? '')) return
-    await window.api.terminalSetTaskWorkspace(task.id, { start_command: next || null })
-    await refreshTask()
+    await attempt(async () => {
+      await window.api.terminalSetTaskWorkspace(task.id, { start_command: next || null })
+      await refreshTask()
+    }, 'Não foi possível salvar o comando')
   }
 
   const openTerminal = async (): Promise<void> => {
     if (!dir && !(await pick())) return
-    await useTerminalStore.getState().toggleForTask(task.id)
+    const state = useTerminalStore.getState()
+    const showing =
+      state.open && state.sessions.find((s) => s.id === state.activeId)?.taskId === task.id
+    if (showing) return
+    await attempt(() => state.toggleForTask(task.id), 'Não foi possível abrir o terminal')
   }
 
   return (
