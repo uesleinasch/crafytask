@@ -25,7 +25,7 @@ Cada cartão, em duas colunas:
 
 **Esquerda:**
 - caixa de seleção para a ação em massa do cabeçalho;
-- `StatusBadge` com o status que a tarefa tinha ao ser arquivada + data de criação em
+- `StatusChip` com o status que a tarefa tinha ao ser arquivada + data de criação em
   `text-xs text-slate-400` (formato local do sistema, não `pt-BR` explícito);
 - nome em `font-medium text-slate-900`;
 - `Tempo Final: HH:MM:SS` em `text-sm font-mono text-slate-500`.

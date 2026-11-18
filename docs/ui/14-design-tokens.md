@@ -125,7 +125,7 @@ elevado ainda usa sombra — e em cinco intensidades.
 Duas definições no código legado para as mesmas seis coisas (a nova, ainda sem uso, é
 `theme/semantic.ts`):
 
-| Status | `StatusBadge` (o que se vê) | `STATUS_COLORS` local do Dashboard |
+| Status | `StatusBadge` (até a F2-b; hoje `StatusChip`) | `STATUS_COLORS` local do Dashboard |
 | --- | --- | --- |
 | inbox | `bg-slate-100 text-slate-500 border-slate-200` | `#94a3b8` |
 | aguardando | `bg-yellow-100 text-yellow-600 border-yellow-200` | `#f59e0b` |
@@ -141,7 +141,7 @@ Duas definições no código legado para as mesmas seis coisas (a nova, ainda se
 
 Quatro definições:
 
-| Categoria | `CategoryBadge` | `CategorySelect` (gatilho) | Acento da tela de tarefa | Bloco do calendário | Gráfico do dashboard |
+| Categoria | `CategoryBadge` (até a F2-b; hoje `CategoryChip`) | `CategorySelect` (gatilho) | Acento da tela de tarefa | Bloco do calendário | Gráfico do dashboard |
 | --- | --- | --- | --- | --- | --- |
 | urgente | `bg-red-100 text-red-700` | `text-red-600 bg-red-50` | `#ef4444` | `bg-red-400` | `#ef4444` |
 | prioridade | `bg-orange-100 text-orange-700` | `text-orange-600 bg-orange-50` | `#f59e0b` ⚠️ | `bg-orange-400` | `#f59e0b` |

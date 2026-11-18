@@ -346,9 +346,9 @@ Defined in `electron.vite.config.ts` and the tsconfigs:
   `buildTheme(mode, density)`. Preferences `ticktask:theme` (default `light` until every screen has
   dark tokens) and `ticktask:density` live in `localStorage`; the main window sends the theme to
   `app:setThemeSource` (`nativeTheme.themeSource`). Use `App.useApp()` for message/modal.
-  Legacy screens still declare their own status/category colors (`StatusBadge`, `CategoryBadge`,
-  local copies in `DashboardPage` and `CalendarPage`) and they **disagree** — check
-  `docs/ui/14-design-tokens.md` until each screen is migrated.
+  Status, category and energy render through `components/chips/` (`StatusChip`, `CategoryChip`,
+  `EnergyMeter`: icon + text, never color alone). `DashboardPage` and `CalendarPage` still keep
+  local color copies that **disagree** — check `docs/ui/14-design-tokens.md` until they migrate.
 - Carried over from `.github/copilot-instructions.md`: change only what the task requires, keep the
   code simple over clever, and reserve inline comments for genuinely non-obvious constraints.
 

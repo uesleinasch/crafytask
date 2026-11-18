@@ -124,7 +124,7 @@ Título de seção `Tarefas do Projeto (N)` em `text-sm font-bold uppercase trac
 text-slate-400`.
 
 Cada tarefa é uma linha clicável (`rounded-lg px-4 py-3`) com:
-- `StatusBadge` + `CategoryBadge` na primeira linha;
+- `StatusChip` + `CategoryChip` na primeira linha;
 - nome truncado na segunda;
 - à direita, `Activity` pulsante se rodando e o tempo em `font-mono tabular-nums`.
 
