@@ -1,6 +1,19 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { App, Button, Dropdown, Flex, Input, Tooltip, Typography, theme } from 'antd'
+import {
+  Alert,
+  App,
+  Button,
+  Dropdown,
+  Flex,
+  Input,
+  Select,
+  Space,
+  Tag,
+  Tooltip,
+  Typography,
+  theme
+} from 'antd'
 import type { MenuProps } from 'antd'
 import {
   Archive,
@@ -9,6 +22,7 @@ import {
   Check,
   Copy,
   Ellipsis,
+  Lock,
   PanelRightClose,
   PanelRightOpen,
   Pause,
@@ -17,14 +31,25 @@ import {
   SlidersHorizontal,
   Trash2
 } from 'lucide-react'
-import type { Task, TaskStatus } from '@shared/types'
+import type { Task, TaskStatus, UpdateTaskInput } from '@shared/types'
 import { effectiveWorkingDir } from '@shared/workingDir'
-import { StatusSelect } from '@renderer/components/StatusSelect'
-import { TaskIdBadge } from '@renderer/components/TaskIdBadge'
+import { STATUS_CHIP_LABELS, STATUS_ICONS } from '@renderer/components/chips/statusMeta'
+import { STATUS_COLORS } from '@renderer/theme/semantic'
+import { useThemeSettings } from '@renderer/theme/themeSettings'
 import { LiveDot } from '@renderer/components/chips/LiveDot'
 import { TerminalTaskButton } from '@renderer/components/terminal/TerminalTaskButton'
 import { formatTime } from '@renderer/lib/utils'
 import { blockedLabel } from './taskTableFormat'
+import { TaskPropertyBar } from './TaskPropertyBar'
+
+const STATUSES: TaskStatus[] = [
+  'inbox',
+  'aguardando',
+  'proximas',
+  'executando',
+  'finalizada',
+  'someday'
+]
 
 const ICON = { size: 16, strokeWidth: 1.75, 'aria-hidden': true } as const
 
@@ -52,6 +77,8 @@ interface TaskHeaderProps {
   onDelete: () => Promise<void>
   onOpenJiraFields: () => void
   onWorkingDirChange: () => Promise<void>
+  onUpdate: (data: UpdateTaskInput) => Promise<void>
+  onShowRelations: () => void
 }
 
 export function TaskHeader({
@@ -75,16 +102,44 @@ export function TaskHeader({
   onUnarchive,
   onDelete,
   onOpenJiraFields,
-  onWorkingDirChange
+  onWorkingDirChange,
+  onUpdate,
+  onShowRelations
 }: TaskHeaderProps): React.JSX.Element {
   const navigate = useNavigate()
   const { token } = theme.useToken()
   const { message, modal } = App.useApp()
+  const { mode } = useThemeSettings()
+  const [blockerNames, setBlockerNames] = useState<string[]>([])
+  const blockerKey = (task.blocked_by ?? []).join(',')
   const [name, setName] = useState(task.name)
   const [description, setDescription] = useState(task.description ?? '')
 
   useEffect(() => setName(task.name), [task.name])
   useEffect(() => setDescription(task.description ?? ''), [task.description])
+
+  useEffect(() => {
+    const open = blockerKey ? blockerKey.split(',').map(Number) : []
+    if (!open.length) {
+      setBlockerNames([])
+      return
+    }
+    let alive = true
+    window.api
+      .getDependencies(task.id)
+      .then((deps) => {
+        if (!alive) return
+        setBlockerNames(
+          deps
+            .filter((d) => open.includes(d.depends_on_task_id))
+            .map((d) => d.depends_on_task_name ?? `#${d.depends_on_task_id}`)
+        )
+      })
+      .catch(console.error)
+    return () => {
+      alive = false
+    }
+  }, [task.id, blockerKey])
 
   const startBlocked = task.is_blocked && !isRunning
   const timeColor = overLimit
@@ -194,8 +249,68 @@ export function TaskHeader({
       >
         <div style={{ flex: '1 1 380px', minWidth: 0 }}>
           <Flex align="center" gap={8} wrap="wrap">
-            <StatusSelect value={task.status} onChange={(status) => void onStatusChange(status)} />
-            <TaskIdBadge id={task.id} />
+            <Select
+              size="small"
+              variant="filled"
+              aria-label="Status"
+              value={task.status}
+              onChange={(status: TaskStatus) => void onStatusChange(status)}
+              popupMatchSelectWidth={false}
+              style={{ width: 152 }}
+              options={STATUSES.map((status) => {
+                const Icon = STATUS_ICONS[status]
+                return {
+                  value: status,
+                  disabled: status === 'executando' && task.is_blocked && task.status !== status,
+                  label: (
+                    <Space size={6}>
+                      <Icon
+                        size={14}
+                        strokeWidth={1.75}
+                        aria-hidden
+                        color={STATUS_COLORS[status][mode].fg}
+                      />
+                      {STATUS_CHIP_LABELS[status]}
+                    </Space>
+                  )
+                }
+              })}
+            />
+            <Tooltip title="Copiar número">
+              <Tag
+                bordered={false}
+                role="button"
+                tabIndex={0}
+                aria-label={`Copiar #${task.id}`}
+                onClick={() => void copyId()}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    void copyId()
+                  }
+                }}
+                style={{
+                  margin: 0,
+                  cursor: 'pointer',
+                  fontFamily: token.fontFamilyCode,
+                  fontVariantNumeric: 'tabular-nums'
+                }}
+              >
+                #{task.id}
+              </Tag>
+            </Tooltip>
+            {task.jira_key && (
+              <Tag bordered={false} style={{ margin: 0 }}>
+                {[task.jira_issue_type, task.jira_key, task.jira_status]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </Tag>
+            )}
+            {task.is_archived && (
+              <Tag bordered={false} style={{ margin: 0 }}>
+                Arquivada
+              </Tag>
+            )}
           </Flex>
           <Input
             variant="borderless"
@@ -305,6 +420,21 @@ export function TaskHeader({
           </Flex>
         </Flex>
       </Flex>
+      <TaskPropertyBar task={task} update={onUpdate} />
+      {task.is_blocked && (
+        <Alert
+          type="warning"
+          showIcon
+          icon={<Lock {...ICON} />}
+          style={{ marginTop: 12 }}
+          title={`Bloqueada por dependências${blockerNames.length ? `: ${blockerNames.join(', ')}` : ''}`}
+          action={
+            <Button size="small" onClick={onShowRelations}>
+              Ver dependências
+            </Button>
+          }
+        />
+      )}
     </div>
   )
 }

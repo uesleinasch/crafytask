@@ -170,6 +170,35 @@
   border-top: 1px solid var(--ant-color-border-secondary);
 }
 
+.ct-prop {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 9px;
+  max-width: 100%;
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 6px;
+  background: var(--ant-color-bg-container);
+  color: var(--ant-color-text);
+  font: inherit;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.ct-prop:hover {
+  border-color: var(--ant-color-border);
+  background: var(--ant-color-bg-layout);
+}
+
+.ct-prop.muted {
+  color: var(--ant-color-text-tertiary);
+  border-style: dashed;
+}
+
 /* Scrollbar hide utility */
 .scrollbar-hide {
   -ms-overflow-style: none;

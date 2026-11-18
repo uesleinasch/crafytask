@@ -280,6 +280,13 @@ export function SingleTaskPage(): React.JSX.Element {
     return () => clearInterval(interval)
   }, [taskId])
 
+  const showRelations = useCallback((): void => {
+    setInspectorTab('relacoes')
+    setNarrowTab('relacoes')
+    if (placement === 'side') setInspectorOpen(true)
+    else if (placement === 'drawer') setInspectorDrawer(true)
+  }, [placement, setInspectorOpen])
+
   const toggleInspector = useCallback((): void => {
     if (placement === 'side') setInspectorOpen(!inspectorOpen)
     else setInspectorDrawer(true)
@@ -325,6 +332,8 @@ export function SingleTaskPage(): React.JSX.Element {
       onDelete={handleDelete}
       onOpenJiraFields={() => setJiraFieldsOpen(true)}
       onWorkingDirChange={refreshTask}
+      onUpdate={update}
+      onShowRelations={showRelations}
     />
   )
 
@@ -374,7 +383,7 @@ export function SingleTaskPage(): React.JSX.Element {
         onSetLimit={(seconds) => update({ time_limit_seconds: seconds })}
       />
     ),
-    detalhes: <TaskDetailsPanel task={task} updateTask={update} refreshTask={refreshTask} />,
+    detalhes: <TaskDetailsPanel task={task} refreshTask={refreshTask} />,
     relacoes: <TaskRelationsPanel task={task} refreshTask={refreshTask} />
   }
 
