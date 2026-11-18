@@ -15,7 +15,8 @@ import { CategorySelect } from './CategorySelect'
 import { TagInput } from './TagInput'
 import { RecurrenceSelect } from './RecurrenceSelect'
 import type { CreateTaskInput, TaskCategory, Tag, Project, Context, EnergyLevel } from '../../../shared/types'
-import { ENERGY_LABELS, ENERGY_ICONS } from '../../../shared/types'
+import { ENERGY_LABELS } from '../../../shared/types'
+import { EnergyMeter } from '@renderer/components/chips/EnergyMeter'
 
 interface TaskDialogProps {
   open: boolean
@@ -265,7 +266,7 @@ export function TaskDialog({ open, onOpenChange, onSubmit }: TaskDialogProps): R
                       : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
                   }`}
                 >
-                  <span>{ENERGY_ICONS[level]}</span>
+                  <EnergyMeter level={level} tooltip={false} />
                   {ENERGY_LABELS[level]}
                 </button>
               ))}

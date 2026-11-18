@@ -507,12 +507,6 @@ export const ENERGY_COLORS: Record<EnergyLevel, string> = {
   baixo: '#94a3b8'
 }
 
-export const ENERGY_ICONS: Record<EnergyLevel, string> = {
-  alto: '⚡',
-  medio: '🔋',
-  baixo: '😴'
-}
-
 // ===================== LABELS & COLORS =====================
 
 export const STATUS_LABELS: Record<TaskStatus, string> = {
@@ -536,13 +530,6 @@ export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
   someday: 'Someday',
   done: 'Concluído',
   archived: 'Arquivado'
-}
-
-export const PROJECT_STATUS_COLORS: Record<ProjectStatus, string> = {
-  active: 'bg-emerald-500',
-  someday: 'bg-teal-500',
-  done: 'bg-purple-500',
-  archived: 'bg-gray-500'
 }
 
 // ===================== MCP SERVER =====================

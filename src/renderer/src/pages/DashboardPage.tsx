@@ -36,7 +36,8 @@ import {
   LabelList
 } from 'recharts'
 import type { GtdMetrics, EnergyStats } from '@shared/types'
-import { ENERGY_LABELS, ENERGY_COLORS, ENERGY_ICONS } from '@shared/types'
+import { ENERGY_LABELS, ENERGY_COLORS } from '@shared/types'
+import { EnergyMeter } from '@renderer/components/chips/EnergyMeter'
 import { toast } from '@renderer/components/ui/sonner'
 import { cn } from '@renderer/lib/utils'
 import { RunningNowPanel } from '@renderer/components/RunningNowPanel'
@@ -554,7 +555,7 @@ export function DashboardPage(): React.JSX.Element {
                 <div className="space-y-3">
                   {energyStats.map((e) => (
                     <div key={e.energy_level} className="p-3 rounded-lg bg-slate-50 flex items-center gap-3">
-                      <span className="text-xl">{ENERGY_ICONS[e.energy_level]}</span>
+                      <EnergyMeter level={e.energy_level} />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-slate-800">{ENERGY_LABELS[e.energy_level]}</p>
                         <p className="text-xs text-slate-500">{e.taskCount} tarefa{e.taskCount !== 1 ? 's' : ''}</p>

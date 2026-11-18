@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
-import { StatusBadge } from './StatusBadge'
+import { StatusChip } from '@renderer/components/chips/StatusChip'
 import { JiraTaskControls } from './jira/JiraTaskControls'
-import { CategoryBadge } from './CategoryBadge'
+import { CategoryChip } from '@renderer/components/chips/CategoryChip'
 import { DueDateBadge } from './DueDateBadge'
 import { ScheduledTimeBadge } from './ScheduledTimeBadge'
 import { TaskIdBadge } from './TaskIdBadge'
@@ -279,12 +279,12 @@ export function TaskTable({
 
                 {/* Status */}
                 <td className="px-4 py-3">
-                  <StatusBadge status={task.status} />
+                  <StatusChip status={task.status} />
                 </td>
 
                 {/* Categoria */}
                 <td className="px-4 py-3">
-                  <CategoryBadge category={task.category || 'normal'} />
+                  <CategoryChip category={task.category || 'normal'} />
                 </td>
 
                 {/* Projeto */}
@@ -392,7 +392,7 @@ export function TaskTable({
                       </div>
                     </td>
                     <td className="px-4 py-2">
-                      <StatusBadge status={sub.status} />
+                      <StatusChip status={sub.status} />
                     </td>
                     <td />
                     <td />

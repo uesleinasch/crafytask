@@ -1,7 +1,6 @@
 import { ArrowRight, CheckCircle2, Clock } from 'lucide-react'
 import type { Project } from '@shared/types'
-import { PROJECT_STATUS_COLORS, PROJECT_STATUS_LABELS } from '@shared/types'
-import { cn } from '@renderer/lib/utils'
+import { ProjectStatusChip } from '@renderer/components/chips/ProjectStatusChip'
 
 interface ProjectListRowProps {
   project: Project
@@ -40,13 +39,8 @@ export function ProjectListRow({
         )}
       </div>
 
-      <span
-        className={cn(
-          'shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white',
-          PROJECT_STATUS_COLORS[project.status]
-        )}
-      >
-        {PROJECT_STATUS_LABELS[project.status]}
+      <span className="shrink-0">
+        <ProjectStatusChip status={project.status} />
       </span>
 
       <div className="shrink-0 w-32">

@@ -41,7 +41,8 @@ import type {
   Context,
   EnergyLevel
 } from '../../../shared/types'
-import { ENERGY_LABELS, ENERGY_ICONS } from '../../../shared/types'
+import { ENERGY_LABELS } from '../../../shared/types'
+import { EnergyMeter } from '@renderer/components/chips/EnergyMeter'
 import {
   ArrowLeft,
   Archive,
@@ -844,7 +845,7 @@ export function SingleTaskPage(): React.JSX.Element {
                           : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-600'
                       )}
                     >
-                      <span>{ENERGY_ICONS[level]}</span>
+                      <EnergyMeter level={level} tooltip={false} />
                       {ENERGY_LABELS[level]}
                     </button>
                   ))}

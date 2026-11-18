@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Button } from '@renderer/components/ui/button'
 import { ScrollArea } from '@renderer/components/ui/scroll-area'
-import { StatusBadge } from '@renderer/components/StatusBadge'
+import { StatusChip } from '@renderer/components/chips/StatusChip'
 import { DeleteConfirmDialog } from '@renderer/components/DeleteConfirmDialog'
 import { useTasks } from '@renderer/hooks/useTasks'
 import { formatTime } from '@renderer/lib/utils'
@@ -126,7 +126,7 @@ export function ArchivedTasksPage(): React.JSX.Element {
                   />
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <StatusBadge status={task.status} />
+                      <StatusChip status={task.status} />
                       <span className="text-xs text-slate-400">
                         {new Date(task.created_at).toLocaleDateString()}
                       </span>

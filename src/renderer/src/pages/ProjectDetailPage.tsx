@@ -11,8 +11,8 @@ import {
   SelectValue
 } from '@renderer/components/ui/select'
 import { DeleteConfirmDialog } from '@renderer/components/DeleteConfirmDialog'
-import { StatusBadge } from '@renderer/components/StatusBadge'
-import { CategoryBadge } from '@renderer/components/CategoryBadge'
+import { StatusChip } from '@renderer/components/chips/StatusChip'
+import { CategoryChip } from '@renderer/components/chips/CategoryChip'
 import { useProjectDetail } from '@renderer/hooks/useProjects'
 import { ColorPicker } from '@renderer/components/ColorPicker'
 import { ProjectWorkingDirField } from '@renderer/components/terminal/ProjectWorkingDirField'
@@ -267,8 +267,8 @@ export function ProjectDetailPage(): React.JSX.Element {
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <StatusBadge status={task.status} />
-                        <CategoryBadge category={task.category || 'normal'} />
+                        <StatusChip status={task.status} />
+                        <CategoryChip category={task.category || 'normal'} />
                       </div>
                       <p className="text-sm font-medium text-slate-900 truncate">{task.name}</p>
                     </div>
