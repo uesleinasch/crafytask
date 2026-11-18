@@ -32,7 +32,7 @@ export function RunningTimersPill({
   const [latest] = running
 
   const content = (
-    <Flex vertical style={{ width: 300, maxWidth: 'calc(100vw - 48px)' }}>
+    <Flex vertical style={{ width: 280, maxWidth: 'calc(100vw - 48px)' }}>
       {running.map((timer) => (
         <Flex key={timer.task.id} align="center" gap={8} style={{ paddingBlock: 6 }}>
           <LiveDot />

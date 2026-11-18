@@ -105,7 +105,7 @@ export function ShellHeader({ onOpenMenu }: ShellHeaderProps): React.JSX.Element
           minWidth: 0
         }}
       >
-        <RunningTimersPill compact={screens.md === false} />
+        <RunningTimersPill compact={!screens.md} />
         <SearchButton showLabel={!!screens.xxl} />
         <AppearanceMenu />
         <Button

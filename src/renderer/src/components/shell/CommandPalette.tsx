@@ -107,6 +107,8 @@ export function CommandPalette(): React.JSX.Element {
     }
   }, [open, query])
 
+  useEffect(() => setActive(0), [tasks, pages])
+
   const close = useCallback(() => setOpen(false), [])
 
   const items = useMemo<PaletteItem[]>(() => {
@@ -263,7 +265,7 @@ export function CommandPalette(): React.JSX.Element {
         }}
         onKeyDown={handleKeyDown}
         placeholder="Buscar tarefas, projetos, páginas ou comandos…"
-        aria-label="Buscar tarefas, páginas ou comandos"
+        aria-label="Buscar tarefas, projetos, páginas ou comandos"
         prefix={<Search size={18} strokeWidth={1.75} aria-hidden />}
       />
       <Divider style={{ margin: '6px 0' }} />
