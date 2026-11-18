@@ -86,9 +86,9 @@ médio para aguardando, baixo para inbox, someday e finalizada.
 | ---------- | ----------------------------- | --------------------- | --------------------- |
 | Inbox      | `Inbox`                       | `#5D6B82` / `#EEF1F6` | `#9AA8C0` / `#232A36` |
 | Aguardando | `Hourglass`                   | `#A15C00` / `#FFF4E0` | `#F0B44C` / `#33280F` |
-| Próximas   | `ArrowRightCircle`            | `#2A62D6` / `#EAF0FF` | `#7AA5FF` / `#1C2744` |
-| Executando | `PlayCircle` + ponto pulsando | `#0B7A50` / `#E3F6EC` | `#4CD69A` / `#123326` |
-| Finalizada | `CheckCircle2` + nome riscado | `#526B5E` / `#EDF2EF` | `#93AE9F` / `#1F2A25` |
+| Próximas   | `CircleArrowRight`            | `#2A62D6` / `#EAF0FF` | `#7AA5FF` / `#1C2744` |
+| Executando | `CirclePlay` + ponto pulsando | `#0B7A50` / `#E3F6EC` | `#4CD69A` / `#123326` |
+| Finalizada | `CircleCheck` + nome riscado  | `#526B5E` / `#EDF2EF` | `#93AE9F` / `#1F2A25` |
 | Someday    | `Lightbulb`                   | `#0F6E7A` / `#E2F4F6` | `#5CC8D4` / `#12302F` |
 
 **Categoria** — `normal` não tem cor (é o caso comum e não deve gritar).

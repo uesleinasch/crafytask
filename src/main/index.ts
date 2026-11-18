@@ -27,6 +27,7 @@ import {
   createTask,
   listTasks,
   countTasks,
+  countTasksByStatus,
   listActiveTasksLight,
   listRunningTasks,
   listTasksForSync,
@@ -695,6 +696,7 @@ function setupIpcHandlers(): void {
   })
   ipcMain.handle('task:list', (_, filters?: TaskListFilters) => listTasks(filters))
   ipcMain.handle('task:count', (_, filters?: TaskListFilters) => countTasks(filters))
+  ipcMain.handle('task:statusCounts', (_, filters?: TaskListFilters) => countTasksByStatus(filters))
   ipcMain.handle('task:listActiveLight', () => listActiveTasksLight())
   ipcMain.handle('task:listRunning', () => listRunningTasks())
   ipcMain.handle('task:get', (_, id: number) => getTask(id))

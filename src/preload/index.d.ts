@@ -62,6 +62,7 @@ import type {
   PageSearchResult
 } from '../shared/types'
 import type { ThemePreference } from '../shared/themePreference'
+import type { TaskStatusCounts } from '../shared/taskStatusCounts'
 import type { RendererErrorReport } from '../shared/rendererError'
 
 interface FloatTimerData {
@@ -151,6 +152,7 @@ interface API {
   createTask: (data: CreateTaskInput) => Promise<Task>
   listTasks: (filters?: TaskListFilters) => Promise<Task[]>
   countTasks: (filters?: TaskListFilters) => Promise<number>
+  getTaskStatusCounts: (filters?: TaskListFilters) => Promise<TaskStatusCounts>
   listActiveTasksLight: () => Promise<TaskListItem[]>
   listRunningTasks: () => Promise<Task[]>
   getTask: (id: number) => Promise<Task | undefined>

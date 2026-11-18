@@ -133,3 +133,20 @@ export function buildTaskCountQuery(filters: TaskListFilters): {
     params
   }
 }
+
+export function buildTaskStatusCountQuery(filters: TaskListFilters): {
+  sql: string
+  params: unknown[]
+} {
+  const { clause, params } = buildTaskListWhere({ ...filters, status: 'all' })
+
+  return {
+    sql: `
+      SELECT t.status as status, COUNT(*) as total
+      FROM tasks t
+      WHERE ${clause}
+      GROUP BY t.status
+    `,
+    params
+  }
+}

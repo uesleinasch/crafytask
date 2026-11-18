@@ -61,6 +61,7 @@ import type {
   PageSearchResult
 } from '../shared/types'
 import type { ThemePreference } from '../shared/themePreference'
+import type { TaskStatusCounts } from '../shared/taskStatusCounts'
 import type { RendererErrorReport } from '../shared/rendererError'
 
 // Custom APIs for renderer
@@ -127,6 +128,8 @@ const api = {
     ipcRenderer.invoke('task:list', filters),
   countTasks: (filters?: TaskListFilters): Promise<number> =>
     ipcRenderer.invoke('task:count', filters),
+  getTaskStatusCounts: (filters?: TaskListFilters): Promise<TaskStatusCounts> =>
+    ipcRenderer.invoke('task:statusCounts', filters),
   listActiveTasksLight: (): Promise<TaskListItem[]> => ipcRenderer.invoke('task:listActiveLight'),
   listRunningTasks: (): Promise<Task[]> => ipcRenderer.invoke('task:listRunning'),
   getTask: (id: number): Promise<Task | undefined> => ipcRenderer.invoke('task:get', id),

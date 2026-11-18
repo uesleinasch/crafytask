@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { Grid, Select, Tabs } from 'antd'
 import { useNavigate } from 'react-router-dom'
 import { ScrollArea } from '@renderer/components/ui/scroll-area'
 import { Input } from '@renderer/components/ui/input'
@@ -27,6 +28,8 @@ import { TaskKanban } from '@renderer/components/TaskKanban'
 import { TaskMenuChangedContext } from '@renderer/components/taskMenuContext'
 import { onNewTaskRequest } from '@renderer/lib/newTaskRequest'
 import { cn } from '@renderer/lib/utils'
+import { StatusTabLabel } from '@renderer/components/tasks/StatusTabLabel'
+import { TASK_STATUSES, type TaskStatusCounts } from '@shared/taskStatusCounts'
 import {
   STATUS_LABELS,
   type TaskStatus,
@@ -39,17 +42,11 @@ import {
 } from '../../../shared/types'
 import {
   ListTodo,
-  Inbox,
-  Hourglass,
-  Calendar,
-  Activity,
-  CheckSquare,
   LayoutGrid,
   List,
   Search,
   Filter,
   X,
-  Lightbulb,
   Trash2,
   Archive,
   FolderInput,
@@ -71,21 +68,7 @@ type BulkAction =
   | { type: 'status'; status: TaskStatus }
   | { type: 'project'; projectId: number | null }
 
-interface TabItem {
-  id: FilterStatus
-  label: string
-  icon: React.ElementType
-}
-
-const tabs: TabItem[] = [
-  { id: 'all', label: 'Todas', icon: ListTodo },
-  { id: 'inbox', label: 'Inbox', icon: Inbox },
-  { id: 'aguardando', label: 'Aguardando', icon: Hourglass },
-  { id: 'proximas', label: 'Próximas', icon: Calendar },
-  { id: 'executando', label: 'Executando', icon: Activity },
-  { id: 'finalizada', label: 'Finalizadas', icon: CheckSquare },
-  { id: 'someday', label: 'Someday', icon: Lightbulb }
-]
+const STATUS_TABS: FilterStatus[] = ['all', ...TASK_STATUSES]
 
 const CATEGORY_COLOR_MAP: Record<TaskCategory | 'all', string> = {
   all: '#64748b',
@@ -177,6 +160,12 @@ export function TaskListPage(): React.JSX.Element {
   )
 
   const { tasks, loading, error, createTask, refreshTasks } = useTasks(filters)
+  const screens = Grid.useBreakpoint()
+  const [statusCounts, setStatusCounts] = useState<TaskStatusCounts | null>(null)
+
+  useEffect(() => {
+    window.api.getTaskStatusCounts(filters).then(setStatusCounts).catch(console.error)
+  }, [filters, tasks])
   const [totalTasks, setTotalTasks] = useState(0)
   const {
     visible: renderedTasks,
@@ -507,28 +496,29 @@ export function TaskListPage(): React.JSX.Element {
       {/* Header: Tabs + View Toggle */}
       <div className="px-6 pt-6 pb-2">
         <div className="flex items-center justify-between gap-4">
-          {/* Tabs */}
-          <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-hide flex-1">
-            {tabs.map((tab) => {
-              const Icon = tab.icon
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setStatusFilter(tab.id)}
-                  className={`
-                    flex items-center px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all
-                    ${
-                      statusFilter === tab.id
-                        ? 'bg-slate-900 text-white shadow-md'
-                        : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-                    }
-                  `}
-                >
-                  <Icon size={14} className="mr-2" />
-                  {tab.label}
-                </button>
-              )
-            })}
+          <div className="flex-1 min-w-0">
+            {screens.md === false ? (
+              <Select
+                value={statusFilter}
+                onChange={setStatusFilter}
+                style={{ width: '100%' }}
+                aria-label="Status"
+                options={STATUS_TABS.map((status) => ({
+                  value: status,
+                  label: <StatusTabLabel status={status} count={statusCounts?.[status]} />
+                }))}
+              />
+            ) : (
+              <Tabs
+                activeKey={statusFilter}
+                onChange={(key) => setStatusFilter(key as FilterStatus)}
+                tabBarStyle={{ marginBottom: 0 }}
+                items={STATUS_TABS.map((status) => ({
+                  key: status,
+                  label: <StatusTabLabel status={status} count={statusCounts?.[status]} />
+                }))}
+              />
+            )}
           </div>
 
           {/* Actions */}
