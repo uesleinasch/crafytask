@@ -2,6 +2,7 @@ import Database from 'better-sqlite3'
 import { app } from 'electron'
 import path from 'path'
 import { mergeTaskTimes, normalizeTaskTimes, type TaskTimeFields } from '@shared/taskTime'
+import { normalizeWaitingFor } from '@shared/waitingFor'
 import type {
   Task,
   TimeEntry,
@@ -339,7 +340,8 @@ export function initDatabase(): void {
     'jira_parent_key',
     'jira_parent_summary',
     'working_dir',
-    'start_command'
+    'start_command',
+    'waiting_for'
   ]) {
     try {
       db.exec(`ALTER TABLE tasks ADD COLUMN ${column} TEXT`)
@@ -799,8 +801,9 @@ export function createTask(data: CreateTaskInput): Task {
     const stmt = db.prepare(`
       INSERT INTO tasks (name, description, time_limit_seconds, category, project_id,
                          scheduled_date, due_date, recurrence_rule, parent_task_id, recurrence_source_id,
-                         energy_level, gcal_sync, scheduled_time, scheduled_end_time, due_time, external_url)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                         energy_level, gcal_sync, scheduled_time, scheduled_end_time, due_time, external_url,
+                         waiting_for)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
     const result = stmt.run(
       data.name,
@@ -818,7 +821,8 @@ export function createTask(data: CreateTaskInput): Task {
       times.scheduled_time,
       times.scheduled_end_time,
       times.due_time,
-      data.external_url || null
+      data.external_url || null,
+      normalizeWaitingFor(data.waiting_for)
     )
     const taskId = result.lastInsertRowid as number
 
@@ -860,7 +864,7 @@ const TASK_LIST_COLUMNS = `
   t.recurrence_rule, t.parent_task_id, t.recurrence_source_id, t.day_order,
   t.energy_level, t.scheduled_time, t.scheduled_end_time, t.due_time,
   t.external_url, t.jira_key, t.jira_status, t.jira_space, t.jira_issue_type, t.jira_issue_kind,
-  t.jira_parent_key, t.jira_parent_summary,
+  t.jira_parent_key, t.jira_parent_summary, t.waiting_for,
   p.name as project_name, p.color as project_color
 `
 
@@ -1089,6 +1093,10 @@ export function updateTask(id: number, data: UpdateTaskInput): void {
     if (data.external_url !== undefined) {
       updates.push('external_url = ?')
       values.push(data.external_url || null)
+    }
+    if (data.waiting_for !== undefined) {
+      updates.push('waiting_for = ?')
+      values.push(normalizeWaitingFor(data.waiting_for))
     }
     const touchesTime = (
       ['scheduled_date', 'scheduled_time', 'scheduled_end_time', 'due_date', 'due_time'] as const
