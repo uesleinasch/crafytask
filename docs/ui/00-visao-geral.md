@@ -95,6 +95,11 @@ Quanto de disposição a tarefa exige. Usado como filtro mental e alimenta o gr�
 Sobreposto: Toaster (sonner)
 ```
 
+Dentro do `Content`, a página usa `PageContainer` (`components/shell/`): 24px de margem lateral
+(12px abaixo de `md`), 20px em cima e 32px embaixo, e largura máxima de 1480px centralizada; com
+`fullWidth` a largura é livre (calendário, cadernos, modo foco). `padBlock` deixa só o padding de
+cima ou de baixo, para telas com cabeçalho fixo e conteúdo rolável, como a lista de tarefas.
+
 O shell é `components/shell/AppShell.tsx` (antd `Layout`), com as rotas aninhadas no `HashRouter`
 (`App.tsx`); `/float` e `/quick-capture` ficam fora dele. Sidebar, header e conteúdo têm cada um o
 seu `RegionBoundary`: se um quebra, os outros continuam.
