@@ -55,6 +55,7 @@ calculados e conferidos: todo texto passa WCAG AA (4,5:1) sobre a superfície on
 | `text3`        | `#6B6980` | `#8A879F` | metadado, rótulo de seção      | `colorTextTertiary`                          |
 | `primary`      | `#5B47EB` | `#8F82FF` | ação primária, link, seleção   | `colorPrimary`, `colorLink`                  |
 | `primarySoft`  | `#EFEDFF` | `#221E3D` | item selecionado               | `Menu.itemSelectedBg`, `Table.rowSelectedBg` |
+| `onPrimary`    | `#FFFFFF` | `#111018` | texto sobre `primary` (botão)  | `colorTextLightSolid`                        |
 | `brand`        | `#705EFF` | `#8F82FF` | logo                           | —                                            |
 | `hover`        | `#F0EFF6` | `#25232F` | item de menu sob o ponteiro    | `Menu.itemHoverBg`                           |
 | `rowHover`     | `#F7F6FC` | `#201E2B` | linha de tabela sob o ponteiro | `Table.rowHoverBg`                           |
@@ -62,6 +63,8 @@ calculados e conferidos: todo texto passa WCAG AA (4,5:1) sobre a superfície on
 
 `#705EFF` com texto branco dá 4,44:1 e não passa AA; por isso o botão usa `#5B47EB` (5,92:1) e o
 `#705EFF` fica no logo, que é texto grande ([cálculo](pesquisa/03-cor-acessibilidade-e-modo-escuro.md)).
+No escuro, branco sobre `#8F82FF` dá 3,09:1; por isso o texto do botão primário usa o `bg` escuro
+(6,12:1).
 
 Feedback do sistema: sucesso `#0B7A50` / `#4CD69A`, aviso `#A15C00` / `#F0B44C`, erro `#C02331` /
 `#FF7A82`, informação `#2A62D6` / `#7AA5FF` (`colorSuccess`, `colorWarning`, `colorError`,

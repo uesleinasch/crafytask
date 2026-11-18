@@ -19,8 +19,9 @@ esmeralda no dashboard.
 
 ### A2. Exports de cor mortos em `shared/types.ts`
 
-`STATUS_COLORS` e `CATEGORY_COLORS` estão exportados e não são importados por ninguém. `CalendarPage`
-e `DashboardPage` declararam cópias locais em vez de usá-los. `ContextsPage` duplica literalmente
+**Resolvida em parte na F0-b:** `STATUS_COLORS` e `CATEGORY_COLORS`, que ninguém importava, saíram;
+as cores de domínio agora moram em `theme/semantic.ts`. `CalendarPage` e `DashboardPage` ainda
+declaram cópias locais até serem migradas. `ContextsPage` duplica literalmente
 `DEFAULT_COLORS` como `CONTEXT_COLORS`.
 
 ### A3. Duas gramáticas de badge

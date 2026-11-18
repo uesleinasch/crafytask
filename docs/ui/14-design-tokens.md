@@ -122,18 +122,19 @@ elevado ainda usa sombra — e em cinco intensidades.
 
 ### Status da tarefa
 
-Existem **três definições** para as mesmas seis coisas:
+Duas definições no código legado para as mesmas seis coisas (a nova, ainda sem uso, é
+`theme/semantic.ts`):
 
-| Status | `StatusBadge` (o que se vê) | `STATUS_COLORS` em `shared/types.ts` | `STATUS_COLORS` local do Dashboard |
-| --- | --- | --- | --- |
-| inbox | `bg-slate-100 text-slate-500 border-slate-200` | `bg-gray-500` | `#94a3b8` |
-| aguardando | `bg-yellow-100 text-yellow-600 border-yellow-200` | `bg-yellow-500` | `#f59e0b` |
-| proximas | `bg-blue-100 text-blue-600 border-blue-200` | `bg-blue-500` | `#3b82f6` |
-| executando | `bg-emerald-100 text-emerald-600 border-emerald-200` + `animate-pulse` | `bg-green-500` | `#22c55e` |
-| finalizada | `bg-purple-100 text-purple-600 border-purple-200` | `bg-purple-500` | `#10b981` ⚠️ |
-| someday | `bg-teal-100 text-teal-600 border-teal-200` | `bg-teal-500` | `#14b8a6` |
+| Status | `StatusBadge` (o que se vê) | `STATUS_COLORS` local do Dashboard |
+| --- | --- | --- |
+| inbox | `bg-slate-100 text-slate-500 border-slate-200` | `#94a3b8` |
+| aguardando | `bg-yellow-100 text-yellow-600 border-yellow-200` | `#f59e0b` |
+| proximas | `bg-blue-100 text-blue-600 border-blue-200` | `#3b82f6` |
+| executando | `bg-emerald-100 text-emerald-600 border-emerald-200` + `animate-pulse` | `#22c55e` |
+| finalizada | `bg-purple-100 text-purple-600 border-purple-200` | `#10b981` ⚠️ |
+| someday | `bg-teal-100 text-teal-600 border-teal-200` | `#14b8a6` |
 
-- `STATUS_COLORS` de `shared/types.ts` **não é importado por nenhum arquivo** — é um export morto.
+- O `STATUS_COLORS` morto de `shared/types.ts` saiu na F0-b.
 - No dashboard, `finalizada` é **esmeralda**, não roxo — a mesma família de `executando`.
 
 ### Categoria da tarefa
@@ -150,8 +151,8 @@ Quatro definições:
 **Time leak é amarelo em três lugares e roxo em dois.** Prioridade é laranja nos badges e âmbar no
 acento.
 
-Além disso, `CATEGORY_COLORS` de `shared/types.ts` também é um export morto — `CalendarPage` e
-`DashboardPage` declararam cópias locais em vez de importá-lo.
+`CalendarPage` e `DashboardPage` declaram cópias locais. O `CATEGORY_COLORS` morto de
+`shared/types.ts` saiu na F0-b; as cores novas moram em `theme/semantic.ts`.
 
 ### Status do projeto
 
