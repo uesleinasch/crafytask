@@ -672,13 +672,8 @@
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/{pages/SingleTaskPage.tsx,components/**/*.tsx}",
         "padroes": [
-          "TaskPropertyBar",
+          "<TaskPropertyBar",
           "Copiar número",
-          "aria-label=\"Status\"",
-          "label=\"Categoria\"",
-          "label=\"Recorrência\"",
-          "label=\"Link externo\"",
-          "label=\"Programado\"",
           "JiraTaskControls",
           "WorkingDirField",
           "GoogleCalendarTaskToggle",
@@ -750,6 +745,29 @@
         "arquivos": "src/renderer/src/components/jira/JiraFieldsSheet.tsx",
         "padroes": ["<Drawer", "Campos do Jira"]
       }
+    },
+    {
+      "id": "F3.16",
+      "fase": "F3",
+      "titulo": "Todas as pílulas da barra de propriedades",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/components/tasks/TaskPropertyBar.tsx",
+        "padroes": [
+          "label=\"Aguardando\"",
+          "label=\"Categoria\"",
+          "label=\"Projeto\"",
+          "label=\"Contextos\"",
+          "label=\"Prazo\"",
+          "label=\"Energia\"",
+          "label=\"Programado\"",
+          "label=\"Recorrência\"",
+          "label=\"Tags\"",
+          "label=\"Link externo\"",
+          "Adicionar propriedade"
+        ]
+      },
+      "guarda": true
     },
     {
       "id": "F3.5",

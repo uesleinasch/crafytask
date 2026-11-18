@@ -17,7 +17,7 @@ describe('recurrenceOptionValue', () => {
 
 describe('recurrenceLabel', () => {
   it('dá o rótulo da opção', () => {
-    expect(recurrenceLabel('{"type":"daily"}')).toBe('Diariamente')
+    expect(recurrenceLabel('{"type":"daily"}')).toBe('Diária')
     expect(recurrenceLabel(undefined)).toBe('Não repete')
   })
 

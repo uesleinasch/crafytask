@@ -62,17 +62,18 @@ na aba Desenho) e cresce com o conteúdo.
 ### Barra de propriedades — `TaskPropertyBar`
 
 Pílulas de 28px (classe `.ct-prop` em `main.css`, sobre as variáveis do antd; vazia fica tracejada e
-apagada) que abrem um `Popover` de edição. Cada mudança grava na hora.
+apagada) que abrem um `Popover` de edição (`role="dialog"`, foco no primeiro controle, `aria-expanded`
+na pílula). Cada mudança grava na hora; campos de texto gravam ao sair ou com Enter.
 
 | Pílula | Aparece | Edição |
 | --- | --- | --- |
 | Aguardando (`Hourglass`) | primeira, com status Aguardando ou texto salvo | campo de até 120 caracteres; grava `waiting_for` ao sair ou com Enter (vazio limpa). Com texto: "Aguardando: Revisor externo" na cor de Aguardando; vazia: "Aguardando quem?" |
-| Categoria | sempre | os quatro `CategoryChip`; Normal aparece como texto |
+| Categoria | sempre | os quatro `CategoryChip` (Urgente, Prioridade, Normal, Time leak); Normal aparece como texto |
 | Projeto | sempre | `Select` com busca (ativos, someday e o atual, mesmo concluído ou arquivado, para não perder o vínculo) + "Abrir projeto →" |
 | Contextos (`MapPin` quando vazia) | sempre | `CheckableTag` por contexto; a pílula mostra dois e "+N" |
 | Prazo (`Flag`) | sempre | data + hora (`DatePicker`/`TimePicker`), "Remover prazo"; vermelha se vencido, âmbar se hoje |
 | Energia | sempre | três botões com `EnergyMeter`; clicar no ativo limpa |
-| Programado (`CalendarClock`) | com valor, ou por "+ Propriedade" | data + início/fim (`TimePicker.RangePicker`), "Remover agendamento" |
+| Programado (`CalendarClock`) | com valor, ou por "+ Propriedade" | data + início/fim (`TimePicker.RangePicker`; o fim só libera com início, e fim antes do início avisa e não grava), "Remover agendamento" |
 | Recorrência (`Repeat`) | idem | `Select` (Não repete, diária, semanal, mensal; regra fora disso aparece como Personalizada) |
 | Tags (`Tags`) | idem | `Select` em modo tags; nome novo vira tag (`tag:getOrCreate`) |
 | Link externo (`Link`) | idem | URL `http(s)` gravada ao sair ou com Enter (inválida avisa e volta), botão abre no navegador por `appOpenExternal`; em task do Jira, avisa que é o link da issue |

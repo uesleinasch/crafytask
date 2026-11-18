@@ -2,9 +2,9 @@ import type { RecurrenceRule } from './types'
 
 export const RECURRENCE_OPTIONS = [
   { value: 'none', label: 'Não repete' },
-  { value: JSON.stringify({ type: 'daily' } satisfies RecurrenceRule), label: 'Diariamente' },
-  { value: JSON.stringify({ type: 'weekly' } satisfies RecurrenceRule), label: 'Semanalmente' },
-  { value: JSON.stringify({ type: 'monthly' } satisfies RecurrenceRule), label: 'Mensalmente' }
+  { value: JSON.stringify({ type: 'daily' } satisfies RecurrenceRule), label: 'Diária' },
+  { value: JSON.stringify({ type: 'weekly' } satisfies RecurrenceRule), label: 'Semanal' },
+  { value: JSON.stringify({ type: 'monthly' } satisfies RecurrenceRule), label: 'Mensal' }
 ]
 
 export function recurrenceOptionValue(rule: string | null | undefined): string {

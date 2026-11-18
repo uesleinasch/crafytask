@@ -53,10 +53,11 @@ import { ProjectLabel } from './ProjectLabel'
 import { dueTone, formatDueShort } from './taskTableFormat'
 
 const ICON = { size: 14, strokeWidth: 1.75, 'aria-hidden': true } as const
-const CATEGORIES: TaskCategory[] = ['normal', 'urgente', 'prioridade', 'time_leak']
+const CATEGORIES: TaskCategory[] = ['urgente', 'prioridade', 'normal', 'time_leak']
 const ENERGIES: EnergyLevel[] = ['alto', 'medio', 'baixo']
 const DATE_FORMAT = 'DD/MM/YYYY'
 const ISO = 'YYYY-MM-DD'
+const LINK_BUTTON = { padding: 0, height: 'auto', alignSelf: 'flex-start' } as const
 
 type OptionalKey = 'programado' | 'recorrencia' | 'tags' | 'link'
 
@@ -78,18 +79,26 @@ function PropPill({
   children
 }: PropPillProps): React.JSX.Element {
   const { token } = theme.useToken()
+  const [open, setOpen] = useState(false)
   return (
     <Popover
       trigger="click"
       placement="bottomLeft"
       title={label}
       destroyOnHidden
-      content={<div style={{ width: 280, maxWidth: '80vw' }}>{content}</div>}
+      open={open}
+      onOpenChange={setOpen}
+      content={
+        <div role="dialog" aria-label={label} style={{ width: 280, maxWidth: '80vw' }}>
+          {content}
+        </div>
+      }
     >
       <button
         type="button"
         className={muted ? 'ct-prop muted' : 'ct-prop'}
         aria-haspopup="dialog"
+        aria-expanded={open}
         style={tone ? { color: tone } : undefined}
       >
         <span className="sr-only">{label}: </span>
@@ -130,7 +139,7 @@ function WaitingForEditor({
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
         onBlur={commit}
-        onPressEnter={commit}
+        onPressEnter={(event) => event.currentTarget.blur()}
       />
       <Typography.Text type="secondary" style={{ fontSize: 12 }}>
         Aparece na lista (ampulheta) e no passo Aguardando da revisão semanal. Fica guardado se o
@@ -176,7 +185,7 @@ function LinkEditor({
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           onBlur={commit}
-          onPressEnter={commit}
+          onPressEnter={(event) => event.currentTarget.blur()}
         />
         <Button
           aria-label="Abrir no navegador"
@@ -203,6 +212,7 @@ export function TaskPropertyBar({ task, update }: TaskPropertyBarProps): React.J
   const navigate = useNavigate()
   const { token } = theme.useToken()
   const { mode } = useThemeSettings()
+  const { message } = App.useApp()
   const [projects, setProjects] = useState<Project[]>([])
   const [contexts, setContexts] = useState<Context[]>([])
   const [allTags, setAllTags] = useState<TaskTag[]>([])
@@ -246,16 +256,35 @@ export function TaskPropertyBar({ task, update }: TaskPropertyBarProps): React.J
     }))
 
   const saveTags = async (names: string[]): Promise<void> => {
-    const resolved = await Promise.all(
-      names.map(
-        (name) =>
-          allTags.find((t) => t.name === name) ??
-          tags.find((t) => t.name === name) ??
-          window.api.getOrCreateTag(name)
+    try {
+      const resolved = await Promise.all(
+        names.map(
+          (name) =>
+            allTags.find((t) => t.name === name) ??
+            tags.find((t) => t.name === name) ??
+            window.api.getOrCreateTag(name)
+        )
       )
-    )
-    await update({ tagIds: resolved.map((t) => t.id) })
-    window.api.listTags().then(setAllTags).catch(console.error)
+      await update({ tagIds: resolved.map((t) => t.id) })
+      window.api.listTags().then(setAllTags).catch(console.error)
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Não foi possível salvar as tags')
+    }
+  }
+
+  const saveSchedule = async (start: Dayjs | null, end: Dayjs | null): Promise<void> => {
+    if (!start) {
+      await update({ scheduled_time: null, scheduled_end_time: null })
+      return
+    }
+    if (end && !end.isAfter(start, 'minute')) {
+      message.error('O fim precisa ser depois do início.')
+      end = null
+    }
+    await update({
+      scheduled_time: start.format('HH:mm'),
+      scheduled_end_time: end ? end.format('HH:mm') : null
+    })
   }
 
   const contextLabel = contextIds.length ? (
@@ -300,6 +329,7 @@ export function TaskPropertyBar({ task, update }: TaskPropertyBarProps): React.J
             {CATEGORIES.map((category) => (
               <Button
                 key={category}
+                autoFocus={category === task.category}
                 type={task.category === category ? 'primary' : 'text'}
                 ghost={task.category === category}
                 aria-pressed={task.category === category}
@@ -325,6 +355,7 @@ export function TaskPropertyBar({ task, update }: TaskPropertyBarProps): React.J
         content={
           <Flex vertical gap={8}>
             <Select
+              autoFocus
               showSearch
               allowClear
               placeholder="Sem projeto"
@@ -335,9 +366,14 @@ export function TaskPropertyBar({ task, update }: TaskPropertyBarProps): React.J
               onChange={(value: number | undefined) => void update({ project_id: value ?? null })}
             />
             {task.project_id && (
-              <Typography.Link onClick={() => navigate(`/project/${task.project_id}`)}>
+              <Button
+                type="link"
+                size="small"
+                style={LINK_BUTTON}
+                onClick={() => navigate(`/project/${task.project_id}`)}
+              >
                 Abrir projeto →
-              </Typography.Link>
+              </Button>
             )}
           </Flex>
         }
@@ -392,6 +428,7 @@ export function TaskPropertyBar({ task, update }: TaskPropertyBarProps): React.J
           <Flex vertical gap={8}>
             <Flex gap={6}>
               <DatePicker
+                autoFocus
                 format={DATE_FORMAT}
                 placeholder="Data"
                 aria-label="Data do prazo"
@@ -412,9 +449,14 @@ export function TaskPropertyBar({ task, update }: TaskPropertyBarProps): React.J
               />
             </Flex>
             {dueDate && (
-              <Typography.Link onClick={() => void update({ due_date: null })}>
+              <Button
+                type="link"
+                size="small"
+                style={LINK_BUTTON}
+                onClick={() => void update({ due_date: null })}
+              >
                 Remover prazo
-              </Typography.Link>
+              </Button>
             )}
           </Flex>
         }
@@ -430,6 +472,7 @@ export function TaskPropertyBar({ task, update }: TaskPropertyBarProps): React.J
             {ENERGIES.map((level) => (
               <Button
                 key={level}
+                autoFocus={level === (task.energy_level ?? 'alto')}
                 size="small"
                 type={task.energy_level === level ? 'primary' : 'default'}
                 ghost={task.energy_level === level}
@@ -464,6 +507,7 @@ export function TaskPropertyBar({ task, update }: TaskPropertyBarProps): React.J
           content={
             <Flex vertical gap={8}>
               <DatePicker
+                autoFocus
                 format={DATE_FORMAT}
                 placeholder="Data"
                 aria-label="Data programada"
@@ -472,25 +516,27 @@ export function TaskPropertyBar({ task, update }: TaskPropertyBarProps): React.J
               />
               <TimePicker.RangePicker
                 format="HH:mm"
+                aria-label="Início e fim"
                 placeholder={['Início', 'Fim']}
                 allowEmpty={[true, true]}
-                disabled={!task.scheduled_date}
+                order={false}
+                disabled={[!task.scheduled_date, !task.scheduled_date || !task.scheduled_time]}
                 value={
                   task.scheduled_time
                     ? [clock(task.scheduled_time), clock(task.scheduled_end_time)]
                     : null
                 }
-                onChange={(value) =>
-                  void update({
-                    scheduled_time: value?.[0] ? value[0].format('HH:mm') : null,
-                    scheduled_end_time: value?.[1] ? value[1].format('HH:mm') : null
-                  })
-                }
+                onChange={(value) => void saveSchedule(value?.[0] ?? null, value?.[1] ?? null)}
               />
               {task.scheduled_date && (
-                <Typography.Link onClick={() => void update({ scheduled_date: null })}>
+                <Button
+                  type="link"
+                  size="small"
+                  style={LINK_BUTTON}
+                  onClick={() => void update({ scheduled_date: null })}
+                >
                   Remover agendamento
-                </Typography.Link>
+                </Button>
               )}
             </Flex>
           }
@@ -510,6 +556,7 @@ export function TaskPropertyBar({ task, update }: TaskPropertyBarProps): React.J
           muted={!task.recurrence_rule}
           content={
             <Select
+              autoFocus
               aria-label="Recorrência"
               value={recurrenceOptionValue(task.recurrence_rule)}
               options={RECURRENCE_OPTIONS}
@@ -531,6 +578,7 @@ export function TaskPropertyBar({ task, update }: TaskPropertyBarProps): React.J
           muted={!tags.length}
           content={
             <Select
+              autoFocus
               mode="tags"
               aria-label="Tags"
               placeholder="Adicionar tag"
