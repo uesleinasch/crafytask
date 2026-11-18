@@ -7,8 +7,7 @@ import { DashboardPage } from './pages/DashboardPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { ProjectsPage } from './pages/ProjectsPage'
 import { ProjectDetailPage } from './pages/ProjectDetailPage'
-import { ContextsPage } from './pages/ContextsPage'
-import { TagsPage } from './pages/TagsPage'
+import { LabelsPage } from './pages/LabelsPage'
 import { WeeklyReviewPage } from './pages/WeeklyReviewPage'
 import { QuickCapturePage } from './pages/QuickCapturePage'
 import { TodayPage } from './pages/TodayPage'
@@ -45,8 +44,8 @@ function App(): React.JSX.Element {
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/project/:id" element={<ProjectDetailPage />} />
-          <Route path="/contexts" element={<ContextsPage />} />
-          <Route path="/tags" element={<TagsPage />} />
+          <Route path="/contexts" element={<LabelsPage />} />
+          <Route path="/tags" element={<LabelsPage />} />
           <Route path="/review" element={<WeeklyReviewPage />} />
           <Route path="/today" element={<TodayPage />} />
           <Route path="/horizons" element={<HorizonsPage />} />

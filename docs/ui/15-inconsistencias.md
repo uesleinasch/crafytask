@@ -24,8 +24,7 @@ esmeralda no dashboard.
 
 **Resolvida em parte na F0-b:** `STATUS_COLORS` e `CATEGORY_COLORS`, que ninguém importava, saíram;
 as cores de domínio agora moram em `theme/semantic.ts`. `CalendarPage` e `DashboardPage` ainda
-declaram cópias locais até serem migradas. `ContextsPage` duplica literalmente
-`DEFAULT_COLORS` como `CONTEXT_COLORS`.
+declaram cópias locais até serem migradas. A cópia `CONTEXT_COLORS` saiu com a `LabelsPage` (F6-a).
 
 ### A3. Duas gramáticas de badge
 
@@ -144,6 +143,8 @@ para abrir a tarefa, sem busca, sem filtro, sem ações em massa, sem projeto/ta
 
 ### C4. Contextos e Tags são a mesma tela duas vezes
 
+**Resolvida na F6-a:** uma tela só (`LabelsPage`), com abas e os mesmos recursos nas duas.
+
 Mesma estrutura (cabeçalho, faixa azul, grade de cartões, diálogo), com recursos distribuídos de
 forma arbitrária: contextos têm emoji e preview ao vivo mas não mostram uso; tags mostram uso e têm
 mesclagem, mas não têm ícone nem preview.
@@ -154,7 +155,7 @@ mesclagem, mas não têm ícone nem preview.
 
 ### D1. "Tag" tem três nomes
 
-**Em parte resolvida na F2-c:** o filtro da lista agora diz "Tag". Falta o diálogo de nova tarefa.
+**Resolvida na F2-c e na F6-a:** o filtro da lista e o diálogo de nova tarefa dizem "Tag(s)".
 
 - filtro na lista de tarefas: **"Fonte / Tag"**
 - campo no diálogo de nova tarefa: **"Fontes / Tags"**
@@ -165,6 +166,8 @@ mesclagem, mas não têm ícone nem preview.
 O botão que leva à tela diz "Arquivadas"; o título da tela diz "Arquivo Morto".
 
 ### D3. `DeleteConfirmDialog` genérico fala em "tarefa" para tudo
+
+**Resolvida para contextos na F6-a:** a exclusão de contexto cita o uso, como a de tag.
 
 O texto padrão é *"Esta ação não pode ser desfeita. Isso irá deletar permanentemente a tarefa."* —
 exibido também ao excluir **contextos** e ao apagar tarefas arquivadas. Só a tela de tags
@@ -195,6 +198,9 @@ O campo existe, aparece como etiqueta em `/horizons`, e só o **servidor MCP** c
 projeto criado pela interface nunca terá área — o que esvazia o H2 dos horizontes.
 
 ### E3. Rótulos não navegam para o que rotulam
+
+**Resolvida para contextos e tags na F6-a:** clicar abre a lista de tarefas filtrada
+(`/?context=<id>` ou `/?tag=<id>`). Áreas e metas continuam sem destino.
 
 Clicar num contexto, numa tag, numa área ou numa meta não filtra nem abre nada. As duas telas de
 taxonomia são becos sem saída.

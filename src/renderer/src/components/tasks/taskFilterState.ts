@@ -31,3 +31,16 @@ export function activeFilterCount(value: TaskFiltersValue): number {
     (value.sort !== 'updated' ? 1 : 0)
   )
 }
+
+function idParam(params: URLSearchParams, key: string): number | null {
+  const id = Number(params.get(key))
+  return Number.isInteger(id) && id > 0 ? id : null
+}
+
+export function labelFilterFromSearch(search: string): TaskFiltersValue | null {
+  const params = new URLSearchParams(search)
+  const contextId = idParam(params, 'context')
+  const tagId = idParam(params, 'tag')
+  if (contextId === null && tagId === null) return null
+  return { ...EMPTY_TASK_FILTERS, contextId, tagId }
+}

@@ -122,3 +122,20 @@ export const HORIZON_COLORS: ByMode<readonly ChipColors[]> = {
     { bg: '#5B4CA8', fg: '#FFFFFF' }
   ]
 }
+
+export const USER_COLORS = [
+  '#E5484D',
+  '#A84803',
+  '#A15C00',
+  '#0B7A50',
+  '#0F6E7A',
+  '#2A62D6',
+  '#5B47EB',
+  '#7647B0',
+  '#B8327A',
+  '#5D6B82'
+] as const
+
+export function userColorTint(color: string): string | undefined {
+  return /^#[0-9a-f]{6}$/i.test(color) ? `${color}24` : undefined
+}

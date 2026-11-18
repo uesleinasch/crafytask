@@ -68,8 +68,6 @@ export function navKeyFor(pathname: string): NavKey | null {
 export function screenTitle(pathname: string): string {
   if (pathname.startsWith('/task/')) return 'Tarefa'
   if (pathname.startsWith('/project/')) return 'Projeto'
-  if (pathname === '/tags') return 'Tags'
-  if (pathname === '/contexts') return 'Contextos'
   const key = navKeyFor(pathname)
   return ALL_ROUTES.find((item) => item.key === key)?.label ?? 'CrafyTask'
 }

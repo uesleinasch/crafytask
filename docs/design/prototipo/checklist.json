@@ -1140,7 +1140,7 @@
       "titulo": "Mesmos recursos para contextos e tags (uso, prévia, mesclar)",
       "check": {
         "tipo": "contem-todos",
-        "arquivos": "src/renderer/src/{pages/LabelsPage.tsx,components/labels/*.tsx}",
+        "arquivos": "src/renderer/src/{pages/LabelsPage.tsx,components/labels/{*.tsx,labels.ts}}",
         "padroes": ["Mesclar", "Prévia", "abertas", "Só sem uso"]
       }
     },

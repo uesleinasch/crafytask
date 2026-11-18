@@ -133,8 +133,7 @@ no guia de design §7. Itens e rotas em `navigation.ts`:
 | Rodapé | Configurações | `Settings` | `/settings` | — |
 | Rodapé | Recolher menu | `PanelLeftClose` | alterna 232px ⇄ 64px (`ticktask:siderCollapsed`) | — |
 
-Os contadores (`useNavCounts`) são relidos a cada troca de rota e a cada `tasks:refresh`. Até a
-tela única de rótulos (F6-a), Contextos e Tags se ligam por um link no cabeçalho de cada uma.
+Os contadores (`useNavCounts`) são relidos a cada troca de rota e a cada `tasks:refresh`.
 
 ### Header (`components/shell/ShellHeader.tsx`)
 
@@ -192,8 +191,8 @@ acento e caixa (`paletteCommands.ts`, testado).
 | `/horizons` | Horizontes GTD | [06](06-horizontes.md) | sim |
 | `/review` | Revisão semanal | [07](07-revisao-semanal.md) | sim |
 | `/dashboard` | Dashboard | [08](08-dashboard.md) | sim |
-| `/contexts` | Contextos | [09](09-contextos-e-tags.md) | sim |
-| `/tags` | Tags | [09](09-contextos-e-tags.md) | sim |
+| `/contexts` | Contextos e tags (aba Contextos) | [09](09-contextos-e-tags.md) | sim |
+| `/tags` | Contextos e tags (aba Tags) | [09](09-contextos-e-tags.md) | sim |
 | `/archived` | Arquivadas | [10](10-arquivadas.md) | sim |
 | `/settings` | Configurações | [11](11-configuracoes.md) | sim |
 | `/float` | Timer flutuante | [12](12-janelas-auxiliares.md) | janela própria |
