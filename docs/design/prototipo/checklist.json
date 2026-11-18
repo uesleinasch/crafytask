@@ -562,7 +562,7 @@
     {
       "id": "F2.19",
       "fase": "F2",
-      "titulo": "Aguardando o quê: ampulheta na lista e pílula no detalhe",
+      "titulo": "Aguardando o quê: campo waiting_for e ampulheta na lista",
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/components/tasks/{TaskTable,WaitingFor}.tsx",
@@ -719,6 +719,16 @@
         "tipo": "contem",
         "arquivos": "src/renderer/src/components/**/SectionHeader.tsx",
         "padrao": "export function SectionHeader"
+      }
+    },
+    {
+      "id": "F3.13",
+      "fase": "F3",
+      "titulo": "Pílula Aguardando na barra de propriedades do detalhe",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/components/tasks/TaskPropertyBar.tsx",
+        "padroes": ["waiting_for", "Aguardando quem\\?"]
       }
     },
     {

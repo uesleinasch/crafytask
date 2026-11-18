@@ -1,5 +1,5 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
-import { WAITING_FOR_MAX } from '@shared/waitingFor'
+import { normalizeWaitingFor } from '@shared/waitingFor'
 import type { CreateTaskInput, Task, TaskListFilters, UpdateTaskInput } from '@shared/types'
 import { z } from 'zod'
 import {
@@ -46,7 +46,7 @@ const ENERGY = z.enum(['alto', 'medio', 'baixo'])
 const DATE = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use o formato AAAA-MM-DD.')
 const TIME = z.string().regex(/^\d{2}:\d{2}$/, 'Use o formato HH:MM.')
 const EXTERNAL_URL = z.string().refine(isSafeHttpUrl, 'Use um link http:// ou https://.')
-const WAITING_FOR = z.string().max(WAITING_FOR_MAX)
+const WAITING_FOR = z.string().transform(normalizeWaitingFor)
 
 type Resolution = { ok: true; id: number } | { ok: false; response: ReturnType<typeof fail> }
 
@@ -207,7 +207,7 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
         parent_task_id: z.number().int().positive().optional(),
         external_url: EXTERNAL_URL.optional(),
         waiting_for: WAITING_FOR.optional().describe(
-          'Quem ou o quê a task aguarda (ex.: "Revisor externo"). Aparece na lista e na revisão semanal.'
+          'Quem ou o quê a task aguarda (ex.: "Revisor externo"), até 120 caracteres. Aparece na lista de tarefas.'
         )
       }
     },
