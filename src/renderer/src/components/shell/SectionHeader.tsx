@@ -60,7 +60,7 @@ export function Field({
   children,
   align = 'center'
 }: {
-  label: string
+  label: ReactNode
   children: ReactNode
   align?: 'center' | 'start'
 }): React.JSX.Element {

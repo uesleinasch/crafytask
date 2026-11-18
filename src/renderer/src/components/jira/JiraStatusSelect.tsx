@@ -7,7 +7,6 @@ interface JiraStatusSelectProps {
   taskId: number
   status: string | null | undefined
   style?: CSSProperties
-  getPopupContainer?: (trigger: HTMLElement) => HTMLElement
   onChanged?: (status: string) => void
 }
 
@@ -15,7 +14,6 @@ export function JiraStatusSelect({
   taskId,
   status,
   style,
-  getPopupContainer,
   onChanged
 }: JiraStatusSelectProps): React.JSX.Element {
   const { message } = App.useApp()
@@ -63,7 +61,6 @@ export function JiraStatusSelect({
       onChange={(id: string) => void apply(id)}
       notFoundContent={transitions === null ? 'Carregando transições…' : 'Nenhuma transição'}
       style={{ width: '100%', ...style }}
-      getPopupContainer={getPopupContainer}
       options={(transitions ?? []).map((t) => ({ value: t.id, label: t.name }))}
     />
   )
