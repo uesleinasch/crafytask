@@ -263,7 +263,9 @@ todos puros e testados — e `jira.ts` (lado Electron: `userData/jira-config.jso
   que envia cada sessão de tempo encerrada (≥ 1 min, posterior a ligar) e guarda o id em
   `time_entries.jira_worklog_id` — a coluna é o que impede envio duplo. `task:reset` captura esses
   ids **antes** de apagar as sessões e depois os apaga no Jira (`captureJiraWorklogs` →
-  `deleteJiraWorklogs`). Regras puras em `jiraWorklog.ts`.
+  `deleteJiraWorklogs`). Editar ou excluir uma sessão (`timeEntry:update`/`timeEntry:delete`,
+  `timeEntryQueries.ts`) atualiza ou apaga o worklog dela (`syncEditedTimeEntry`/
+  `syncDeletedTimeEntry`). Regras puras em `jiraWorklog.ts`.
 - O painel lateral (`components/jira/JiraFieldsSheet.tsx`) lê `issue?expand=editmeta` e grava cada
   campo com PUT na issue (`jira:updateField`). Depois de transição ou edição, a task é relida do
   Jira (nome, prazo, status Jira).

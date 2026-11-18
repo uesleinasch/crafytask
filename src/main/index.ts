@@ -53,6 +53,8 @@ import {
   resetTaskTimer,
   addManualTimeEntry,
   setTaskTotalTime,
+  updateTimeEntry,
+  deleteTimeEntry,
   getWeeklyStats,
   getTaskTimeStats,
   getStatusStats,
@@ -153,6 +155,8 @@ import {
   getJiraChildren,
   captureJiraWorklogs,
   deleteJiraWorklogs,
+  syncEditedTimeEntry,
+  syncDeletedTimeEntry,
   searchJiraUsers,
   startJiraScheduler,
   saveJiraBoards,
@@ -913,6 +917,16 @@ function setupIpcHandlers(): void {
 
   // Time Entries
   ipcMain.handle('task:getTimeEntries', (_, taskId: number) => getTimeEntries(taskId))
+  ipcMain.handle('timeEntry:update', (_, id: number, startIso: string, endIso: string) => {
+    const { taskId, worklogId } = updateTimeEntry(id, startIso, endIso)
+    syncEditedTimeEntry(taskId, id, worklogId)
+    autoSyncTask(taskId)
+  })
+  ipcMain.handle('timeEntry:delete', (_, id: number) => {
+    const { taskId, worklogId } = deleteTimeEntry(id)
+    syncDeletedTimeEntry(taskId, worklogId)
+    autoSyncTask(taskId)
+  })
   ipcMain.handle('task:getActiveTimeEntry', (_, taskId: number) => getActiveTimeEntry(taskId))
 
   // Notifications

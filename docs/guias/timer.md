@@ -33,7 +33,11 @@ Ainda no detalhe da tarefa:
 | **Ajustar total** | substitui o total pelo valor informado |
 | **Limite de tempo** | define ou limpa o limite |
 
-**Resetar** apaga todo o tempo registrado da tarefa (pede confirmação). Se o
+Na lista de **Sessões** (aba Tempo do inspetor), cada sessão encerrada pode ter o início e o fim
+editados (lápis; horas `HH:MM` no mesmo dia) ou ser excluída (lixeira, com confirmação). O total da
+tarefa muda pela diferença. A sessão em andamento só muda depois de pausar o timer.
+
+**Zerar tempo** (menu `⋯` do detalhe) apaga todo o tempo registrado da tarefa (pede confirmação). Se o
 [worklog do Jira](../integracoes/jira.md#worklog) estiver ligado, os registros que o app criou no
 Jira também são apagados.
 
@@ -54,6 +58,6 @@ vermelho e o sistema avisa a cada 5 minutos.
 
 - **Dashboard** — tempo por tarefa e por projeto, métricas do GTD e **Exportar PDF** com o
   relatório semanal.
-- **Histórico de sessões** — no detalhe da tarefa.
+- **Sessões** — na aba Tempo do detalhe da tarefa, com edição e exclusão.
 - **MCP** — a ferramenta `time_report` devolve tempo geral, semanal, por tarefa ou os registros de
   uma tarefa.

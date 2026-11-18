@@ -44,7 +44,7 @@ import {
   type SpaceProjects,
   type StatusMapping
 } from './jiraPlan'
-import { pendingWorklogEntries, worklogFor } from './jiraWorklog'
+import { MIN_WORKLOG_SECONDS, pendingWorklogEntries, worklogFor } from './jiraWorklog'
 
 interface StoredConfig {
   site?: string
@@ -522,6 +522,40 @@ export function deleteJiraWorklogs(captured: CapturedWorklogs | null): void {
       await api.deleteWorklog(captured.issueKey, worklogId)
     }
   })().catch(reportBackgroundError)
+}
+
+async function updateEditedWorklog(
+  taskId: number,
+  entryId: number,
+  worklogId: string
+): Promise<void> {
+  const issueKey = getTask(taskId)?.jira_key
+  const entry = listJiraWorklogEntries(taskId).find((e) => e.id === entryId)
+  const connection = currentConnection()
+  if (!issueKey || !entry || !connection) return
+  const api = apiFor(connection)
+  if ((entry.duration_seconds ?? 0) < MIN_WORKLOG_SECONDS) {
+    await api.deleteWorklog(issueKey, worklogId)
+    setTimeEntryWorklogId(entryId, null)
+    return
+  }
+  await api.updateWorklog(issueKey, worklogId, worklogFor(entry))
+}
+
+export function syncEditedTimeEntry(
+  taskId: number,
+  entryId: number,
+  worklogId: string | null
+): void {
+  if (!readConfig().worklogSince || !getTask(taskId)?.jira_key) return
+  if (!worklogId) return
+  updateEditedWorklog(taskId, entryId, worklogId).catch(reportBackgroundError)
+}
+
+export function syncDeletedTimeEntry(taskId: number, worklogId: string | null): void {
+  const issueKey = getTask(taskId)?.jira_key
+  if (!worklogId || !issueKey || !readConfig().worklogSince) return
+  deleteJiraWorklogs({ issueKey, worklogIds: [worklogId] })
 }
 
 export async function getJiraChildren(taskId: number): Promise<JiraChildrenResult> {

@@ -381,6 +381,14 @@ export function SingleTaskPage(): React.JSX.Element {
         onAddTime={handleAddTime}
         onSetTotal={handleSetTotal}
         onSetLimit={(seconds) => update({ time_limit_seconds: seconds })}
+        onUpdateEntry={async (id, startIso, endIso) => {
+          await window.api.updateTimeEntry(id, startIso, endIso)
+          await refreshTask()
+        }}
+        onDeleteEntry={async (id) => {
+          await window.api.deleteTimeEntry(id)
+          await refreshTask()
+        }}
       />
     ),
     detalhes: (

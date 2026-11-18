@@ -136,7 +136,11 @@ um número em mono à direita.
 - **Total** (o cronômetro ao vivo, em formato curto: `2h32`, `45 min`) e **Sessões** (quantidade),
   em `Statistic` com valor mono. O rótulo do limite usa o mesmo formato curto.
 - **Sessões:** a em andamento no topo, com ponto ao vivo e "– agora"; as encerradas com dia,
-  início e fim e `+HH:MM:SS`. Só leitura (editar e excluir chegam na F3-f).
+  início e fim e `+HH:MM:SS`. Cada encerrada tem **editar** (`Pencil`: início e fim em `HH:MM` no
+  dia da sessão, Enter ou Salvar grava, Esc ou Cancelar desiste; fim antes do início avisa) e
+  **excluir** (`Trash2`, `Popconfirm` que avisa que o tempo sai do total e o worklog do Jira é
+  apagado). O main (`timeEntry:update`/`timeEntry:delete`, regras em `timeEntryQueries.ts`) recusa
+  a sessão em andamento e ajusta `total_seconds` pela diferença.
 - **Ajustes de tempo:** Adicionar, Total e Limite, cada um com campo mono `HH:MM:SS` e botão (Enter
   também confirma; valor fora do formato avisa e não grava). **Remover limite** grava 0.
 

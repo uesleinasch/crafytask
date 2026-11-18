@@ -47,6 +47,11 @@ import {
   type TagUsageRow
 } from './tagQueries'
 import { ensureNotebookSchema } from './notebookQueries'
+import {
+  deleteTimeEntry as deleteTimeEntryQuery,
+  updateTimeEntry as updateTimeEntryQuery,
+  type TimeEntryChange
+} from './timeEntryQueries'
 
 let db: Database.Database
 
@@ -1442,7 +1447,7 @@ export function listJiraWorklogEntries(taskId: number): JiraWorklogEntry[] {
     .all(taskId) as JiraWorklogEntry[]
 }
 
-export function setTimeEntryWorklogId(entryId: number, worklogId: string): void {
+export function setTimeEntryWorklogId(entryId: number, worklogId: string | null): void {
   db.prepare('UPDATE time_entries SET jira_worklog_id = ? WHERE id = ?').run(worklogId, entryId)
 }
 
@@ -1645,6 +1650,14 @@ export function addManualTimeEntry(taskId: number, seconds: number): void {
   })
 
   transaction()
+}
+
+export function updateTimeEntry(id: number, startIso: string, endIso: string): TimeEntryChange {
+  return updateTimeEntryQuery(tagDb(), id, startIso, endIso)
+}
+
+export function deleteTimeEntry(id: number): TimeEntryChange {
+  return deleteTimeEntryQuery(tagDb(), id)
 }
 
 export function setTaskTotalTime(taskId: number, totalSeconds: number): void {

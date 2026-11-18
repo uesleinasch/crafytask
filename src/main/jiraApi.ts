@@ -78,6 +78,7 @@ export interface JiraApi {
   searchUsers: (query: string, assignableTo?: string) => Promise<JiraAccount[]>
   listChildIssues: (parentKey: string) => Promise<JiraIssue[]>
   addWorklog: (issueKey: string, worklog: JiraWorklogInput) => Promise<string>
+  updateWorklog: (issueKey: string, worklogId: string, worklog: JiraWorklogInput) => Promise<void>
   deleteWorklog: (issueKey: string, worklogId: string) => Promise<void>
 }
 
@@ -291,6 +292,14 @@ export function createJiraApi(deps: JiraApiDeps): JiraApi {
         worklog
       )
       return data.id
+    },
+
+    async updateWorklog(issueKey, worklogId, worklog) {
+      await request<unknown>(
+        'PUT',
+        `/rest/api/3/issue/${encodeURIComponent(issueKey)}/worklog/${encodeURIComponent(worklogId)}?adjustEstimate=auto`,
+        worklog
+      )
     },
 
     async deleteWorklog(issueKey, worklogId) {
