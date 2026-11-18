@@ -31,7 +31,7 @@ import { ContextsCell } from './ContextsCell'
 import { GroupHeader } from './GroupHeader'
 import { ProjectLabel } from './ProjectLabel'
 import { TaskActions } from './TaskActions'
-import { dueTone, formatDueShort, formatShortDuration } from './taskTableFormat'
+import { blockedLabel, dueTone, formatDueShort, formatShortDuration } from './taskTableFormat'
 
 interface TaskRow {
   key: string
@@ -299,12 +299,12 @@ export function TaskTable({
           <span aria-hidden style={{ width: 24, flex: 'none' }} />
         )}
         {task.is_blocked && (
-          <Tooltip title="Bloqueada por dependências">
+          <Tooltip title={blockedLabel(task.blocked_by)}>
             <Lock
               size={14}
               strokeWidth={1.75}
               role="img"
-              aria-label="Bloqueada por dependências"
+              aria-label={blockedLabel(task.blocked_by)}
               style={{ flex: 'none', color: CATEGORY_COLORS.prioridade[mode].fg }}
             />
           </Tooltip>

@@ -8,6 +8,8 @@ import { TaskMenuChangedContext } from '@renderer/components/taskMenuContext'
 import { toast } from '@renderer/components/ui/sonner'
 import { useTimerStore } from '@renderer/stores/timerStore'
 
+import { blockedLabel } from './taskTableFormat'
+
 const ICON = { size: 14, strokeWidth: 1.75, 'aria-hidden': true } as const
 
 interface TaskActionsProps {
@@ -30,7 +32,7 @@ export function TaskActions({
   const stopTimer = useTimerStore((s) => s.stopTimer)
   const scheduledToday = task.scheduled_date === localDateString(new Date())
   const timerTitle = task.is_blocked
-    ? 'Bloqueada por dependências'
+    ? blockedLabel(task.blocked_by)
     : task.is_running
       ? 'Pausar timer'
       : 'Iniciar timer'

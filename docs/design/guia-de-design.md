@@ -388,7 +388,8 @@ mais um badge (pesquisa: poucos elementos por linha; Hick e carga cognitiva).
 - **Altura de linha constante:** toda linha da tabela tem uma linha de texto só. Nada de barra de
   progresso, contador ou texto secundário embaixo do nome; o que for extra vira ícone com tooltip na
   mesma linha.
-- **Célula Tarefa:** caret de subtarefas (quando houver), cadeado de bloqueio, ponto de executando,
+- **Célula Tarefa:** caret de subtarefas (quando houver), cadeado de bloqueio (tooltip "Bloqueada:
+  depende de #id", até três ids e "e mais N"), ponto de executando,
   o nome (link focável) e, à direita dele, relógio com o horário agendado e ampulheta com
   "Aguardando: …" no tooltip (a ampulheta depende do campo da F2-h). O caret já diz que
   há subtarefas; a quantidade fica no rótulo acessível e no tooltip, e o progresso aparece nos
