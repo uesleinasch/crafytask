@@ -96,6 +96,13 @@ export const PageEditor = forwardRef<PageEditorHandle, PageEditorProps>(function
   useEffect(
     () => () => {
       if (titleTimer.current) clearTimeout(titleTimer.current)
+      const next = pendingTitle.current
+      pendingTitle.current = null
+      if (next !== null) {
+        window.api
+          .updatePageTitle(pageId, next)
+          .catch((e) => console.error('Falha ao salvar o título:', e))
+      }
     },
     [pageId]
   )
