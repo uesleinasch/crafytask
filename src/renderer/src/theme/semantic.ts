@@ -37,6 +37,25 @@ export const TIME_LEAK_SCALE: ByMode<readonly [string, string, string]> = {
   dark: ['#2A2412', '#2E2016', '#301A1E']
 }
 
+export const TIME_LEAK_THRESHOLDS = [30 * 60, 60 * 60, 120 * 60] as const
+
+export type TimeLeakLevel = 0 | 1 | 2 | 3
+
+export function timeLeakLevel(
+  category: TaskCategory | null | undefined,
+  seconds: number,
+  thresholds: readonly number[] = TIME_LEAK_THRESHOLDS
+): TimeLeakLevel {
+  if (category !== 'time_leak') return 0
+  let level = 0
+  for (const limit of thresholds) if (seconds >= limit) level += 1
+  return Math.min(level, 3) as TimeLeakLevel
+}
+
+export function timeLeakBackground(mode: ThemeMode, level: TimeLeakLevel): string | undefined {
+  return level === 0 ? undefined : TIME_LEAK_SCALE[mode][level - 1]
+}
+
 export const ENERGY_BARS: Record<EnergyLevel, 1 | 2 | 3> = { alto: 3, medio: 2, baixo: 1 }
 
 export const ENERGY_LABELS: Record<EnergyLevel, string> = {

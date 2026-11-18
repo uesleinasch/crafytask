@@ -54,6 +54,8 @@ export function buildTheme(mode: ThemeMode, density: Density): ThemeConfig {
         rowSelectedBg: c.primarySoft,
         rowSelectedHoverBg: c.primarySoft,
         cellPaddingBlock: compact ? 6 : 10,
+        cellPaddingBlockMD: compact ? 8 : 12,
+        cellPaddingBlockSM: compact ? 6 : 10,
         borderColor: c.border
       },
       Card: {

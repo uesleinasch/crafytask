@@ -135,59 +135,82 @@ A ordem de decisão do que renderizar é:
 1. Carregando → "Carregando…"
 2. Zero tarefas → estado vazio (ícone `ListTodo` num círculo cinza + frase que muda conforme a aba)
 3. Aba Executando **e** Kanban ligado → `TaskKanban`
-4. Agrupamento ligado → `TaskGroups`
+4. Agrupamento ligado em cards → `TaskGroups`
 5. Modo cards → `TaskList`
-6. Caso contrário → `TaskTable`
+6. Caso contrário → `TaskTable` (com ou sem agrupamento)
+
+A página inteira rola num só contêiner (`h-full overflow-y-auto`, dentro do `PageContainer`):
+abas, barra de ferramentas e conteúdo sobem juntos, como no protótipo. Só a barra de ações em massa
+fica presa no topo, e só com seleção.
 
 ### Menu de contexto (`TaskContextMenu`)
 
-Clicar com o botão direito num card (cards, grupos, Kanban) ou numa linha da tabela abre um menu:
-**Abrir** · **Iniciar timer** / **Parar timer** (iniciar fica desabilitado em tarefa bloqueada) ·
-**Planejar para hoje** / **Tirar do plano de hoje** · **Marcar como ▸** (os 6 status, com o atual
-marcado; Executando desabilitado em tarefa bloqueada) · **Arquivar** · **Excluir** (vermelho, abre o
-`DeleteConfirmDialog`). Cada ação mostra um toast e recarrega a lista pelo
-`TaskMenuChangedContext` (`components/taskMenuContext.ts`), que a `TaskListPage` fornece. As
-linhas de subtarefa da tabela não têm menu. O menu usa `modal={false}` para o diálogo de exclusão
-abrir sem deixar o `body` travado.
+`Dropdown` do antd. Abre com o botão direito num card (cards, grupos, Kanban) ou numa linha da
+tabela, e com o clique no botão `⋯` da linha (`trigger={['click']}`): **Abrir** · **Iniciar timer** /
+**Parar timer** (iniciar fica desabilitado em tarefa bloqueada) · **Planejar para hoje** / **Tirar
+do plano de hoje** · **Marcar como ▸** (os 6 status, o atual com `✓`; Executando desabilitado em
+tarefa bloqueada) · **Arquivar** · **Excluir** (vermelho, abre o `DeleteConfirmDialog`). Cada ação
+mostra um toast e recarrega a lista pelo `TaskMenuChangedContext` (`components/taskMenuContext.ts`),
+que a `TaskListPage` fornece. Linhas de subtarefa também têm o menu. Categoria, projeto, contextos,
+copiar `#id` e a ação sobre a seleção entram na F2-f.
 
-### Modo tabela (`TaskTable`) — padrão
+### Modo tabela (`components/tasks/TaskTable.tsx`) — padrão
 
-Tabela dentro de `bg-white border rounded-sm overflow-hidden`. Cabeçalho `bg-slate-50` com rótulos
-em `text-xs font-semibold uppercase tracking-wider`.
+`Table` do antd (`tableLayout="fixed"`, sem paginação, `size` `small` e `middle` a partir de `xxl`,
+com o respiro de linha da densidade em `buildTheme`: 10/6px, 12/8px no `middle`). Largura mínima =
+soma das colunas + 240px para Tarefa; abaixo disso a tabela rola na horizontal. Fica dentro de um
+`RegionBoundary` próprio.
+Toda linha tem uma linha de texto só: nada de descrição, barra ou contador embaixo do nome.
 
-| Coluna | Largura | Conteúdo |
-| --- | --- | --- |
-| ☐ | `w-12` | Checkbox "selecionar todas visíveis", com estado indeterminado quando a seleção é parcial |
-| **Tarefa** | flexível (`max-w-0`) | Ver detalhamento abaixo |
-| **Status** | `w-28` | `StatusChip` |
-| **Categoria** | `w-28` | `CategoryChip` (sempre, inclusive "Normal") |
-| **Projeto** | `w-32` | Bolinha da cor + nome truncado em 100px, ou "—" |
-| **Tags** | `w-32` | Até 2 pílulas coloridas + "+N", ou "—" |
-| **Tempo** | `w-32`, direita | `formatTime` em `font-mono tabular-nums` + `Activity` pulsando se rodando |
-| **Limite** | `w-24`, direita | `AlertCircle` + tempo, ou "—" |
+| Coluna | Largura | Quando aparece | Conteúdo |
+| --- | --- | --- | --- |
+| ☐ | 40px | sempre | `rowSelection` do antd; o cabeçalho seleciona todas as visíveis |
+| **ID** | 72px | sempre | `#id` em Geist Mono, texto secundário |
+| **Tarefa** | resto | sempre | ver abaixo |
+| **Status** | 132px | só na aba "Todas" | `StatusChip` |
+| **Categoria** | 124px | a partir de `lg` | `CategoryChip`; vazia quando normal |
+| **Projeto** | 160px | a partir de `xl`, fora do agrupar por projeto | ponto de 8px na cor + nome |
+| **Contextos** | 150px | a partir de `lg`, fora do agrupar por contexto | `ContextsCell` |
+| **Energia** | 76px | a partir de `xl` | `EnergyMeter` |
+| **Prazo** | 104px | a partir de `md` | `dd/mm` (e a hora) em mono; vermelho vencido, aviso hoje |
+| **Tempo** | 84px, direita | sempre | `1h05`, `25 min` ou `—` (`formatShortDuration`), ao vivo se rodando |
+| ações | 104px | sempre | **Hoje** (`CalendarDays`, primário quando já está no plano), timer (`Play`/`Pause`) e `⋯` |
 
-A célula **Tarefa** empilha, da esquerda para a direita:
-- caixa de 28px com o botão de expandir subtarefas (`ChevronRight`/`ChevronDown`) — vazia quando não
-  há subtarefas, preservando o alinhamento;
-- caixa de 16px com o indicador de estado: `Lock` laranja se bloqueada, senão um ponto pulsante
-  (esmeralda, ou amarelo se time leak) se rodando, senão nada;
-- `TaskIdBadge` (`#id` em mono cinza; o clique copia o número, sem abrir a task);
-- nome da tarefa (`font-medium truncate`, `font-semibold` quando rodando);
-- `DueDateBadge`, se houver prazo;
-- botão **Hoje** (`CalendarDays`) — azul sólido com "Hoje ✓" se já agendada para hoje, contorno cinza
-  caso contrário;
-- contador `ListChecks {feitas}/{total}` de subtarefas;
-- `JiraTaskControls`, só em task importada do Jira (ver abaixo);
-- descrição em `text-xs text-slate-400 truncate max-w-md`, na segunda linha.
+A célula **Tarefa**, da esquerda para a direita: botão de expandir subtarefas (`ChevronRight`/
+`ChevronDown`; a quantidade fica no rótulo acessível e no tooltip, e o espaço é mantido quando não
+há subtarefas), `Lock` se bloqueada, ponto pulsante (`LiveDot`) se rodando, o nome (500, reticências,
+riscado se finalizada; é um link `#/task/<id>`, então recebe foco pelo Tab), `Clock` com o horário
+agendado no tooltip e no rótulo acessível, `Copy` com "Também em …" ao agrupar por contexto e
+`JiraTaskControls` em task do Jira (ver abaixo; a forma do Jira na tabela é a F2-i).
 
-**Linhas de subtarefa** (ao expandir) aparecem como linhas irmãs com `bg-slate-50/70`, recuo
-`pl-16`, um traço vertical, ícone de checkbox/círculo, nome (riscado se finalizada), `StatusChip` e
-tempo. Clicar navega para a subtarefa. As subtarefas são carregadas sob demanda
-(`window.api.listSubtasks`) e memorizadas por sessão.
+Clicar na linha abre a task. Botões, links, checkboxes, a célula de contextos e qualquer clique que
+venha de um popup em portal (popover, menu, diálogo) não abrem: o `onClick` da linha confere se o
+alvo está dentro do `<tr>`.
 
-**Coloração Time Leak da linha:** `bg-red-50` acima de 60min, `bg-orange-50` acima de 30min,
-`bg-yellow-50` acima de 0. Acima de 1h o tempo fica `text-red-600 font-bold`. A linha selecionada
-sobrescreve tudo com `!bg-sky-50`.
+**`ContextsCell`** (`components/tasks/`): o primeiro contexto como `Tag` e `+N` ao lado. Passar o mouse
+ou o clique (e Enter/Espaço com foco na célula) abre um `Popover` com todos os contextos em
+`Tag.CheckableTag`; marcar ou desmarcar grava na hora (`setTaskContexts`), com estado otimista local
+para dois cliques seguidos não se sobrescreverem, e recarrega a lista.
+
+**Subtarefas** são linhas filhas da tabela (`children` + `expandedRowKeys`, `indentSize` 28), carregadas
+sob demanda (`window.api.listSubtasks`) e recarregadas quando a lista muda. Cada uma tem checkbox de
+concluir (desabilitado se a tarefa pai está bloqueada), `StatusChip` quando a coluna Status está
+oculta, timer e `⋯`. Vêm de `getSubtasks`, que usa a mesma projeção e o mesmo `enrichTasks` da
+listagem (cadeado, contextos e contadores corretos). As filhas são selecionáveis, mas a seleção não
+propaga do pai para elas (`checkStrictly`); a página conta os ids das subtarefas carregadas ao
+podar a seleção.
+
+**Agrupamento na tabela:** com "Agrupar por" ligado, cada grupo vira uma linha de cabeçalho que ocupa
+a largura toda (`colSpan`), com fundo `colorBgLayout` e borda superior (`.ct-table-grouprow` em
+`main.css`, sobre as variáveis CSS do antd): botão de recolher, ponto da cor (projeto) ou
+emoji (contexto), nome, quantidade, **Selecionar grupo** / **Desmarcar
+grupo** e o tempo somado do grupo à direita. Recolher é por sessão e volta ao trocar o agrupamento.
+A ordem dos grupos segue a ordem salva (ver "Modo agrupado"), mas o arrastar só existe nos cards e
+no Kanban.
+
+**Time leak:** tarefa da categoria time leak pinta o fundo da linha pelo tempo acumulado, em três
+níveis: 30 min, 1 h e 2 h (`TIME_LEAK_THRESHOLDS` e `timeLeakLevel` em `theme/semantic.ts`, com as
+cores de `TIME_LEAK_SCALE`). Hover e seleção do antd passam por cima da cor.
 
 **`JiraTaskControls`** (`components/jira/`) — usado no card, na tabela e no detalhe, só quando a
 task tem `jira_key`. Quatro peças, num wrapper que para a propagação do clique (senão abriria a task):
@@ -234,8 +257,8 @@ Hover do card: `hover:border-slate-300 hover:-translate-y-0.5`.
 
 ### Modo agrupado (`TaskGroups`)
 
-Envolve cards ou tabela — respeita o alternador de visualização. Cada grupo é um cartão com
-cabeçalho clicável que recolhe/expande:
+Só na visão de cards (na tabela, os grupos são linhas de cabeçalho; ver "Modo tabela"). Cada grupo
+é um cartão com cabeçalho clicável que recolhe/expande:
 
 ```
 [⠿] [▾] [● cor | 🏠 emoji] Nome do grupo   (N)

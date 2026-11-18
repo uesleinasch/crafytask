@@ -2052,23 +2052,18 @@ export function getEnergyStats(): EnergyStats[] {
 // ===================== FASE 2: SUBTAREFAS =====================
 
 export function getSubtasks(parentId: number): Task[] {
-  const stmt = db.prepare(`
-    SELECT t.*, p.name as project_name, p.color as project_color
+  const rows = db
+    .prepare(
+      `
+    SELECT ${TASK_LIST_COLUMNS}
     FROM tasks t
     LEFT JOIN projects p ON t.project_id = p.id
     WHERE t.parent_task_id = ? AND t.is_archived = 0
     ORDER BY t.created_at ASC
-  `)
-  const rows = stmt.all(parentId) as (Task & { project_name?: string })[]
-  return rows.map((row) => ({
-    ...row,
-    category: row.category || 'normal',
-    is_running: Boolean(row.is_running),
-    is_archived: Boolean(row.is_archived),
-    subtask_count: 0,
-    completed_subtask_count: 0,
-    is_blocked: false
-  }))
+  `
+    )
+    .all(parentId) as (Task & { project_name?: string })[]
+  return enrichTasks(rows)
 }
 
 export function completeSubtasksCheck(parentId: number): boolean {

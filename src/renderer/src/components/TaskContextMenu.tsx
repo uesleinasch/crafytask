@@ -1,43 +1,36 @@
 import { useContext, useState } from 'react'
-import { Archive, CalendarDays, CheckCheck, ExternalLink, Play, Square, Trash2 } from 'lucide-react'
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuRadioGroup,
-  ContextMenuRadioItem,
-  ContextMenuSeparator,
-  ContextMenuSub,
-  ContextMenuSubContent,
-  ContextMenuSubTrigger,
-  ContextMenuTrigger
-} from '@renderer/components/ui/context-menu'
+import { Dropdown, type MenuProps } from 'antd'
+import { Archive, CalendarDays, CheckCheck, ExternalLink, Pause, Play, Trash2 } from 'lucide-react'
 import { TaskMenuChangedContext } from '@renderer/components/taskMenuContext'
 import { DeleteConfirmDialog } from '@renderer/components/DeleteConfirmDialog'
 import { toast } from '@renderer/components/ui/sonner'
 import { useTimerStore } from '@renderer/stores/timerStore'
 import { STATUS_LABELS, type Task, type TaskStatus } from '@shared/types'
+import { localDateString } from '@shared/dueState'
 
 const STATUSES = Object.keys(STATUS_LABELS) as TaskStatus[]
+const ICON = { size: 14, strokeWidth: 1.75, 'aria-hidden': true } as const
 
 interface TaskContextMenuProps {
   task: Task
   onOpen: () => void
   onScheduleForToday?: (taskId: number) => void
-  children: React.ReactNode
+  trigger?: Array<'contextMenu' | 'click'>
+  children: React.ReactElement
 }
 
 export function TaskContextMenu({
   task,
   onOpen,
   onScheduleForToday,
+  trigger = ['contextMenu'],
   children
 }: TaskContextMenuProps): React.JSX.Element {
   const onChanged = useContext(TaskMenuChangedContext)
   const startTimer = useTimerStore((s) => s.startTimer)
   const stopTimer = useTimerStore((s) => s.stopTimer)
   const [deleteOpen, setDeleteOpen] = useState(false)
-  const isScheduledToday = task.scheduled_date === new Date().toISOString().split('T')[0]
+  const isScheduledToday = task.scheduled_date === localDateString(new Date())
 
   const run = async (action: () => Promise<unknown>, success: string): Promise<void> => {
     try {
@@ -50,69 +43,62 @@ export function TaskContextMenu({
     }
   }
 
+  const items: MenuProps['items'] = [
+    { key: 'open', icon: <ExternalLink {...ICON} />, label: 'Abrir' },
+    task.is_running
+      ? { key: 'stop', icon: <Pause {...ICON} />, label: 'Pausar timer' }
+      : {
+          key: 'start',
+          icon: <Play {...ICON} />,
+          label: 'Iniciar timer',
+          disabled: task.is_blocked
+        },
+    ...(onScheduleForToday
+      ? [
+          {
+            key: 'today',
+            icon: <CalendarDays {...ICON} />,
+            label: isScheduledToday ? 'Tirar do plano de hoje' : 'Planejar para hoje'
+          }
+        ]
+      : []),
+    {
+      key: 'status',
+      icon: <CheckCheck {...ICON} />,
+      label: 'Marcar como',
+      children: STATUSES.map((status) => ({
+        key: `status:${status}`,
+        label: `${task.status === status ? '✓ ' : ''}${STATUS_LABELS[status]}`,
+        disabled: status === 'executando' && task.is_blocked
+      }))
+    },
+    { type: 'divider' },
+    { key: 'archive', icon: <Archive {...ICON} />, label: 'Arquivar' },
+    { key: 'delete', icon: <Trash2 {...ICON} />, label: 'Excluir', danger: true }
+  ]
+
+  const onClick: MenuProps['onClick'] = ({ key, domEvent }) => {
+    domEvent.stopPropagation()
+    if (key === 'open') onOpen()
+    if (key === 'stop') void run(() => stopTimer(task.id), 'Timer pausado')
+    if (key === 'start') void run(() => startTimer(task.id), 'Timer iniciado')
+    if (key === 'today') onScheduleForToday?.(task.id)
+    if (key.startsWith('status:')) {
+      const status = key.slice('status:'.length) as TaskStatus
+      void run(
+        () => window.api.updateStatus(task.id, status),
+        `Marcada como ${STATUS_LABELS[status]}`
+      )
+    }
+    if (key === 'archive') void run(() => window.api.archiveTask(task.id), 'Tarefa arquivada')
+    if (key === 'delete') setDeleteOpen(true)
+  }
+
   return (
     <>
-      <ContextMenu modal={false}>
-        <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
-        <ContextMenuContent className="w-56">
-          <ContextMenuItem onSelect={onOpen}>
-            <ExternalLink /> Abrir
-          </ContextMenuItem>
-          {task.is_running ? (
-            <ContextMenuItem onSelect={() => void run(() => stopTimer(task.id), 'Timer parado')}>
-              <Square /> Parar timer
-            </ContextMenuItem>
-          ) : (
-            <ContextMenuItem
-              disabled={task.is_blocked}
-              onSelect={() => void run(() => startTimer(task.id), 'Timer iniciado')}
-            >
-              <Play /> Iniciar timer
-            </ContextMenuItem>
-          )}
-          {onScheduleForToday && (
-            <ContextMenuItem onSelect={() => onScheduleForToday(task.id)}>
-              <CalendarDays /> {isScheduledToday ? 'Tirar do plano de hoje' : 'Planejar para hoje'}
-            </ContextMenuItem>
-          )}
-          <ContextMenuSub>
-            <ContextMenuSubTrigger>
-              <CheckCheck /> Marcar como
-            </ContextMenuSubTrigger>
-            <ContextMenuSubContent className="w-44">
-              <ContextMenuRadioGroup
-                value={task.status}
-                onValueChange={(value) => {
-                  const status = value as TaskStatus
-                  void run(
-                    () => window.api.updateStatus(task.id, status),
-                    `Marcada como ${STATUS_LABELS[status]}`
-                  )
-                }}
-              >
-                {STATUSES.map((status) => (
-                  <ContextMenuRadioItem
-                    key={status}
-                    value={status}
-                    disabled={status === 'executando' && task.is_blocked}
-                  >
-                    {STATUS_LABELS[status]}
-                  </ContextMenuRadioItem>
-                ))}
-              </ContextMenuRadioGroup>
-            </ContextMenuSubContent>
-          </ContextMenuSub>
-          <ContextMenuSeparator />
-          <ContextMenuItem
-            onSelect={() => void run(() => window.api.archiveTask(task.id), 'Tarefa arquivada')}
-          >
-            <Archive /> Arquivar
-          </ContextMenuItem>
-          <ContextMenuItem variant="destructive" onSelect={() => setDeleteOpen(true)}>
-            <Trash2 /> Excluir
-          </ContextMenuItem>
-        </ContextMenuContent>
-      </ContextMenu>
+      <Dropdown menu={{ items, onClick }} trigger={trigger} placement="bottomRight">
+        {children}
+      </Dropdown>
       <DeleteConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
