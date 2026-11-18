@@ -109,7 +109,7 @@ um terceiro.
 | Componente | Detalhe |
 | --- | --- |
 | `TitleBar` | logo + 11 botões de navegação, **só na rota `/`** |
-| `SyncNotification` | banner fixo em `top-14 right-4`, três estados (sincronizando com `Cloud`+`Loader2`, sucesso verde, erro vermelho); some sozinho, com botão de fechar nos estados finais |
+| `StatusBar` | barra de 28px no pé do shell com o estado de Notion, Google Calendar, Jira e MCP (substituiu o `SyncNotification`) |
 | `Versions` | **componente morto** — mostra versões de Electron/Chrome/Node; não é importado por ninguém |
 | `Timer` | **componente morto** — cronômetro completo substituído pela implementação inline da `SingleTaskPage` |
 
@@ -170,4 +170,3 @@ A única store global. Guarda um mapa `taskId → { task, entry, displaySeconds 
 | `formatDate` / `formatDateTime` | `dd/mm` e `dd/mm, HH:MM` em `pt-BR` |
 | `calculateProgress(atual, limite)` | 0–100 |
 | `DEFAULT_COLORS` | as 12 cores do `ColorPicker` |
-| `syncEvents` | ponte entre os eventos IPC do Notion e o `SyncNotification` |

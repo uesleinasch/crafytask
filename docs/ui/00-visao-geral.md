@@ -89,8 +89,10 @@ Quanto de disposição a tarefa exige. Usado como filtro mental e alimenta o gr�
 │ recolhida)│                                                  │
 │          ├───────────────────────────────────────────────────┤
 │          │ TerminalPanel (quando aberto)                     │
+│          ├───────────────────────────────────────────────────┤
+│          │ StatusBar — 28px: Notion · Google · Jira · MCP    │
 └──────────┴───────────────────────────────────────────────────┘
-Sobrepostos: SyncNotification, Toaster (sonner)
+Sobreposto: Toaster (sonner)
 ```
 
 O shell é `components/shell/AppShell.tsx` (antd `Layout`), com as rotas aninhadas no `HashRouter`
@@ -145,6 +147,16 @@ Grid de três zonas (`minmax(max-content, 1fr) · 200–520px · minmax(max-cont
   e abrir o `TaskDialog`.
 
 As telas não têm mais botão "Voltar"; só os detalhes (tarefa e projeto) mantêm o seu.
+
+### Barra de status (`components/shell/StatusBar.tsx`)
+
+Faixa de 28px no pé da coluna de conteúdo, com indicadores passivos: Notion, Google Calendar e Jira
+(ponto + texto: sincronizando, sincronizado há X, não conectado, com erro) e o MCP (porta, parado
+ou desligado). Erro vira ponto vermelho com tooltip; clicar abre Configurações. À direita, a dica
+de que fechar a janela mantém o app na bandeja. Abaixo de `md` fica só o Notion. O estado inicial
+vem das configs (`notionGetConfig`, `gcalGetStatus`, `jiraGetStatus`, `mcpGetStatus`, relidas a
+cada troca de rota) e muda com os eventos de sync; as regras ficam em `integrationStatus.ts`
+(testado). Substituiu o banner `SyncNotification`.
 
 ### Paleta de comandos (`components/shell/CommandPalette.tsx`)
 
@@ -270,8 +282,8 @@ botão de ação. Formulações e tamanhos variam de tela para tela.
 
 ### 8. Feedback de ação
 
-`toast` (sonner) no canto inferior direito para sucesso e erro. A sincronização com o Notion tem seu
-próprio banner (`SyncNotification`) no topo direito, logo abaixo do header.
+`toast` (sonner) no canto inferior direito para sucesso e erro; o shell usa `App.useApp().message`.
+A sincronização (Notion, Google Calendar, Jira) não gera aviso: aparece na barra de status.
 
 ## Como os dados chegam à tela
 

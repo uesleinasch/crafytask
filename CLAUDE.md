@@ -105,7 +105,7 @@ renderer (React)  →  preload (window.api)  →  main (ipcMain.handle)  →  da
 ### IPC conventions
 
 - Channels are named `domain:action` — e.g. `task:create`, `project:getTasks`, `schedule:getWeekly`, `notion:syncAllTasks`, `timeBlock:getForMonth`, `stats:gtdMetrics`. Adding a backend capability almost always means adding a matching channel in all three places.
-- Renderer→main is request/response via `invoke`/`handle`. Main→renderer pushes are **events** sent with `webContents.send`: `tasks:refresh`, `float:update`, `float:clear`, `timer:stopped`, `task:unblocked`, and `notion:syncStart`/`syncSuccess`/`syncError`. The renderer subscribes via `window.api.on*` listeners (e.g. `SyncNotification`, the float timer). `lib/syncEvents.ts` helps bridge these.
+- Renderer→main is request/response via `invoke`/`handle`. Main→renderer pushes are **events** sent with `webContents.send`: `tasks:refresh`, `float:update`, `float:clear`, `timer:stopped`, `task:unblocked`, and `notion:syncStart`/`syncSuccess`/`syncError`. The renderer subscribes via `window.api.on*` listeners (e.g. the shell's `StatusBar`, which turns the Notion/Jira/Google sync events into per-integration state, and the float timer).
 - Task mutation handlers in `index.ts` call `autoSyncToNotion(...)` after the DB write when Notion auto-sync is enabled — keep that side effect in mind when touching task handlers.
 
 ### Adding a feature (the cross-cutting path)
