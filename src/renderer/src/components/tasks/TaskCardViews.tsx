@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { Flex, Typography, theme } from 'antd'
 import type { Context, Task } from '@shared/types'
 import { GroupDragButton, SortableGroups } from '@renderer/components/SortableGroups'
@@ -53,20 +52,22 @@ interface TaskCardGroupsProps extends CardCommonProps {
   groupBy: GroupBy
   onToggleGroupSelection: (taskIds: number[], selected: boolean) => void
   onReorderGroups?: (activeKey: string, overKey: string) => void
+  collapsedGroups: Set<string>
+  onToggleGroup: (key: string) => void
 }
 
 export function TaskCardGroups(props: TaskCardGroupsProps): React.JSX.Element {
   const { token } = theme.useToken()
   const timers = useTimerStore((s) => s.timers)
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
-  const { groups, groupBy, selectedTaskIds, onToggleGroupSelection, onReorderGroups } = props
-
-  const toggle = (key: string): void => {
-    const next = new Set(collapsed)
-    if (next.has(key)) next.delete(key)
-    else next.add(key)
-    setCollapsed(next)
-  }
+  const {
+    groups,
+    groupBy,
+    selectedTaskIds,
+    onToggleGroupSelection,
+    onReorderGroups,
+    collapsedGroups,
+    onToggleGroup
+  } = props
 
   return (
     <SortableGroups
@@ -76,7 +77,7 @@ export function TaskCardGroups(props: TaskCardGroupsProps): React.JSX.Element {
     >
       {groups.map((group) => {
         const ids = group.tasks.map((t) => t.id)
-        const isCollapsed = collapsed.has(group.key)
+        const isCollapsed = collapsedGroups.has(group.key)
         return (
           <SortableGroups.Item key={group.key} id={group.key} style={{ marginBottom: 16 }}>
             <div
@@ -89,11 +90,11 @@ export function TaskCardGroups(props: TaskCardGroupsProps): React.JSX.Element {
               <GroupHeader
                 group={group}
                 collapsed={isCollapsed}
-                onToggle={() => toggle(group.key)}
+                onToggle={() => onToggleGroup(group.key)}
                 allSelected={ids.length > 0 && ids.every((id) => selectedTaskIds.has(id))}
                 onToggleSelection={(selected) => onToggleGroupSelection(ids, selected)}
                 totalSeconds={group.tasks.reduce((sum, t) => sum + liveSeconds(t, timers), 0)}
-                dragHandle={onReorderGroups ? <GroupDragButton /> : undefined}
+                dragHandle={onReorderGroups ? <GroupDragButton label={group.label} /> : undefined}
               />
             </div>
             {!isCollapsed && <div style={GRID}>{cardsOf(group.tasks, props, groupBy)}</div>}
@@ -145,10 +146,10 @@ export function TaskKanban(props: TaskKanbanProps): React.JSX.Element {
           }}
         >
           <Flex align="center" gap={8} style={{ marginBottom: 8, minWidth: 0 }}>
-            {onReorderColumns && <GroupDragButton />}
+            {onReorderColumns && <GroupDragButton label={col.label} />}
             {col.icon ? (
               <span aria-hidden>{col.icon}</span>
-            ) : (
+            ) : col.color ? (
               <span
                 aria-hidden
                 style={{
@@ -156,10 +157,10 @@ export function TaskKanban(props: TaskKanbanProps): React.JSX.Element {
                   height: 8,
                   borderRadius: 999,
                   flex: 'none',
-                  background: col.color || token.colorBorder
+                  background: col.color
                 }}
               />
-            )}
+            ) : null}
             <Typography.Text strong ellipsis style={{ minWidth: 0 }}>
               {col.label}
             </Typography.Text>
@@ -168,13 +169,7 @@ export function TaskKanban(props: TaskKanbanProps): React.JSX.Element {
             </Typography.Text>
           </Flex>
           <Flex vertical gap={8}>
-            {col.tasks.length > 0 ? (
-              cardsOf(col.tasks, props, groupBy)
-            ) : (
-              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                Nada executando
-              </Typography.Text>
-            )}
+            {cardsOf(col.tasks, props, groupBy)}
           </Flex>
         </SortableGroups.Item>
       ))}

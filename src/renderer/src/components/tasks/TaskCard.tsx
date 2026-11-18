@@ -133,7 +133,7 @@ export function TaskCard({
                     type="text"
                     size="small"
                     aria-expanded={expanded}
-                    aria-label={`${expanded ? 'Recolher' : 'Expandir'} ${subtaskCount} subtarefas, ${completed} concluídas`}
+                    aria-label={`Subtarefas ${completed}/${subtaskCount} concluídas, ${expanded ? 'recolher' : 'expandir'}`}
                     onClick={() => void toggleSubtasks()}
                     style={{ alignSelf: 'flex-start', paddingInline: 4 }}
                   >

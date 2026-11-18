@@ -18,7 +18,7 @@ import {
   verticalListSortingStrategy
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Button, theme } from 'antd'
+import { Button, Tooltip, theme } from 'antd'
 import { GripVertical } from 'lucide-react'
 import { cn } from '@renderer/lib/utils'
 
@@ -137,21 +137,22 @@ export function GroupDragHandle({ className }: { className?: string }): React.JS
   )
 }
 
-export function GroupDragButton(): React.JSX.Element | null {
+export function GroupDragButton({ label }: { label: string }): React.JSX.Element | null {
   const binding = useContext(HandleContext)
   if (!binding) return null
   return (
-    <Button
-      type="text"
-      size="small"
-      ref={binding.setActivatorNodeRef}
-      {...binding.attributes}
-      {...binding.listeners}
-      onClick={(event) => event.stopPropagation()}
-      title="Arrastar para reordenar"
-      aria-label="Arrastar para reordenar"
-      icon={<GripVertical size={14} strokeWidth={1.75} aria-hidden />}
-      style={{ cursor: 'grab', flex: 'none' }}
-    />
+    <Tooltip title="Arrastar para reordenar">
+      <Button
+        type="text"
+        size="small"
+        ref={binding.setActivatorNodeRef}
+        {...binding.attributes}
+        {...binding.listeners}
+        onClick={(event) => event.stopPropagation()}
+        aria-label={`Arrastar ${label} para reordenar`}
+        icon={<GripVertical size={14} strokeWidth={1.75} aria-hidden />}
+        style={{ cursor: 'grab', flex: 'none' }}
+      />
+    </Tooltip>
   )
 }

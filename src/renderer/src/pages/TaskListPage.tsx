@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
+  Button,
   Empty,
   Flex,
   Grid,
@@ -45,6 +46,7 @@ import { RegionBoundary } from '@renderer/components/shell/RegionBoundary'
 import { TaskFilters } from '@renderer/components/tasks/TaskFilters'
 import {
   EMPTY_TASK_FILTERS,
+  activeFilterCount,
   type TaskFiltersValue
 } from '@renderer/components/tasks/taskFilterState'
 import { useDebouncedValue } from '@renderer/hooks/useDebouncedValue'
@@ -223,6 +225,17 @@ export function TaskListPage(): React.JSX.Element {
     [showGroups, activeGroupBy, tasks]
   )
   const hasJiraTasks = useMemo(() => tasks.some((task) => task.jira_key), [tasks])
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
+  useEffect(() => setCollapsedGroups(new Set()), [activeGroupBy])
+  const toggleCollapsedGroup = useCallback((key: string): void => {
+    setCollapsedGroups((current) => {
+      const next = new Set(current)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }, [])
+  const filtering = searchQuery.trim() !== '' || activeFilterCount(filterValue) > 0
   const contextGroupingRepeats =
     !loading &&
     showGroups &&
@@ -668,56 +681,76 @@ export function TaskListPage(): React.JSX.Element {
 
             {loading ? (
               <Flex justify="center" style={{ paddingBlock: 48 }}>
-                <Spin aria-label="Carregando tarefas" />
+                <Spin description="Carregando tarefas" />
               </Flex>
             ) : tasks.length === 0 ? (
               <Empty
                 image={Empty.PRESENTED_IMAGE_SIMPLE}
                 description={
-                  statusFilter === 'inbox'
-                    ? 'Inbox zerado. Tudo processado.'
-                    : 'Nenhuma tarefa aqui.'
+                  filtering
+                    ? 'Nenhuma tarefa com esses filtros.'
+                    : statusFilter === 'inbox'
+                      ? 'Inbox zerado. Tudo processado.'
+                      : 'Nenhuma tarefa aqui.'
                 }
-              />
+              >
+                {filtering && (
+                  <Button
+                    onClick={() => {
+                      setFilterValue(EMPTY_TASK_FILTERS)
+                      setSearchInput('')
+                    }}
+                  >
+                    Limpar filtros
+                  </Button>
+                )}
+              </Empty>
             ) : kanbanActive ? (
-              <TaskKanban
-                columns={taskGroups}
-                groupBy={activeGroupBy}
-                onTaskClick={handleTaskClick}
-                selectedTaskIds={selectedTaskIdSet}
-                onToggleTaskSelection={toggleTaskSelection}
-                onScheduleForToday={handleScheduleForToday}
-                showStatus={statusFilter === 'all'}
-                contexts={availableContexts}
-                onReorderColumns={handleReorderGroups}
-              />
+              <RegionBoundary region="kanban de tarefas">
+                <TaskKanban
+                  columns={taskGroups}
+                  groupBy={activeGroupBy}
+                  onTaskClick={handleTaskClick}
+                  selectedTaskIds={selectedTaskIdSet}
+                  onToggleTaskSelection={toggleTaskSelection}
+                  onScheduleForToday={handleScheduleForToday}
+                  showStatus={statusFilter === 'all'}
+                  contexts={availableContexts}
+                  onReorderColumns={handleReorderGroups}
+                />
+              </RegionBoundary>
             ) : groupingEnabled && viewMode === 'cards' ? (
-              <TaskCardGroups
-                groups={taskGroups}
-                groupBy={activeGroupBy}
-                onTaskClick={handleTaskClick}
-                selectedTaskIds={selectedTaskIdSet}
-                onToggleTaskSelection={toggleTaskSelection}
-                onScheduleForToday={handleScheduleForToday}
-                showStatus={statusFilter === 'all'}
-                contexts={availableContexts}
-                onToggleGroupSelection={toggleGroupSelection}
-                onReorderGroups={handleReorderGroups}
-              />
+              <RegionBoundary region="cards de tarefas">
+                <TaskCardGroups
+                  groups={taskGroups}
+                  groupBy={activeGroupBy}
+                  onTaskClick={handleTaskClick}
+                  selectedTaskIds={selectedTaskIdSet}
+                  onToggleTaskSelection={toggleTaskSelection}
+                  onScheduleForToday={handleScheduleForToday}
+                  showStatus={statusFilter === 'all'}
+                  contexts={availableContexts}
+                  onToggleGroupSelection={toggleGroupSelection}
+                  onReorderGroups={handleReorderGroups}
+                  collapsedGroups={collapsedGroups}
+                  onToggleGroup={toggleCollapsedGroup}
+                />
+              </RegionBoundary>
             ) : viewMode === 'cards' ? (
-              <TaskCardGrid
-                tasks={renderedTasks}
-                onTaskClick={handleTaskClick}
-                selectedTaskIds={selectedTaskIdSet}
-                onToggleTaskSelection={toggleTaskSelection}
-                onScheduleForToday={handleScheduleForToday}
-                showStatus={statusFilter === 'all'}
-                contexts={availableContexts}
-              />
+              <RegionBoundary region="cards de tarefas">
+                <TaskCardGrid
+                  tasks={renderedTasks}
+                  onTaskClick={handleTaskClick}
+                  selectedTaskIds={selectedTaskIdSet}
+                  onToggleTaskSelection={toggleTaskSelection}
+                  onScheduleForToday={handleScheduleForToday}
+                  showStatus={statusFilter === 'all'}
+                  contexts={availableContexts}
+                />
+              </RegionBoundary>
             ) : (
               <RegionBoundary region="tabela de tarefas">
                 <TaskTable
-                  key={groupingEnabled ? activeGroupBy : 'none'}
                   tasks={renderedTasks}
                   groups={groupingEnabled ? taskGroups : null}
                   groupBy={groupingEnabled ? activeGroupBy : null}
@@ -730,6 +763,8 @@ export function TaskListPage(): React.JSX.Element {
                   onToggleGroupSelection={toggleGroupSelection}
                   onScheduleForToday={handleScheduleForToday}
                   onSubtaskIdsChange={setLoadedSubtaskIds}
+                  collapsedGroups={collapsedGroups}
+                  onToggleGroup={toggleCollapsedGroup}
                 />
               </RegionBoundary>
             )}

@@ -42,7 +42,7 @@ export function GroupHeader({
       />
       {group.icon ? (
         <span aria-hidden>{group.icon}</span>
-      ) : (
+      ) : group.color ? (
         <span
           aria-hidden
           style={{
@@ -50,10 +50,10 @@ export function GroupHeader({
             height: 8,
             borderRadius: 999,
             flex: 'none',
-            background: group.color || token.colorBorder
+            background: group.color
           }}
         />
-      )}
+      ) : null}
       <Typography.Text strong ellipsis style={{ minWidth: 0 }}>
         {group.label}
       </Typography.Text>

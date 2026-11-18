@@ -78,6 +78,8 @@ interface TaskTableProps {
   onTaskClick: (taskId: number) => void
   onScheduleForToday?: (taskId: number) => void
   onSubtaskIdsChange?: (ids: number[]) => void
+  collapsedGroups: Set<string>
+  onToggleGroup: (key: string) => void
 }
 
 interface RowMenu {
@@ -126,7 +128,9 @@ export function TaskTable({
   onToggleGroupSelection,
   onTaskClick,
   onScheduleForToday,
-  onSubtaskIdsChange
+  onSubtaskIdsChange,
+  collapsedGroups,
+  onToggleGroup
 }: TaskTableProps): React.JSX.Element {
   const { token } = theme.useToken()
   const { mode } = useThemeSettings()
@@ -136,7 +140,6 @@ export function TaskTable({
   const timers = useTimerStore((s) => s.timers)
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
   const [subtasks, setSubtasks] = useState<Record<number, Task[]>>({})
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
   const expandedRef = useRef(expanded)
   expandedRef.current = expanded
 
@@ -175,13 +178,6 @@ export function TaskTable({
       if (!subtasks[taskId]) void loadSubtasks([taskId])
     }
     setExpanded(next)
-  }
-
-  const toggleGroup = (key: string): void => {
-    const next = new Set(collapsedGroups)
-    if (next.has(key)) next.delete(key)
-    else next.add(key)
-    setCollapsedGroups(next)
   }
 
   const run = async (action: () => Promise<unknown>, success: string): Promise<void> => {
@@ -244,7 +240,7 @@ export function TaskTable({
       <GroupHeader
         group={group}
         collapsed={collapsedGroups.has(group.key)}
-        onToggle={() => toggleGroup(group.key)}
+        onToggle={() => onToggleGroup(group.key)}
         allSelected={ids.length > 0 && ids.every((id) => selectedTaskIds.has(id))}
         onToggleSelection={(selected) => onToggleGroupSelection(ids, selected)}
         totalSeconds={group.tasks.reduce((sum, t) => sum + liveSeconds(t, timers), 0)}
