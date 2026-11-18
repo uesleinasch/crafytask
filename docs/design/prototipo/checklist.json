@@ -799,7 +799,8 @@
       "titulo": "Detalhe conferido nas três larguras",
       "check": {
         "tipo": "manual"
-      }
+      },
+      "validado": "2026-11-18"
     },
     {
       "id": "F4.1",
