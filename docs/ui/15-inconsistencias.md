@@ -154,6 +154,8 @@ mesclagem, mas não têm ícone nem preview.
 
 ### D1. "Tag" tem três nomes
 
+**Em parte resolvida na F2-c:** o filtro da lista agora diz "Tag". Falta o diálogo de nova tarefa.
+
 - filtro na lista de tarefas: **"Fonte / Tag"**
 - campo no diálogo de nova tarefa: **"Fontes / Tags"**
 - tela dedicada e botão do TitleBar: **"Tags"**
@@ -253,6 +255,8 @@ real. É o comportamento correto para o caso de uso, mas precisa ser comunicado.
 Reordenar uma lista de 40 itens dispara 40 chamadas IPC em paralelo.
 
 ### F6. A busca da lista de tarefas não tem debounce
+
+**Resolvida na F2-c:** a busca espera 250 ms sem digitar.
 
 Cada tecla digitada refaz a consulta.
 

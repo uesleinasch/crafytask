@@ -18,12 +18,11 @@ Ver, filtrar e triar todas as tarefas não arquivadas. Na prática cumpre três 
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│ ① ABAS DE STATUS (Tabs do antd, com contador)       ② CONTROLES         │
-│ [Todas][Inbox][Aguardando][Próximas]…      [Filtros ③][▦ ▤][Agrupar]  │
+│ ① ABAS DE STATUS (Tabs do antd, com contador)                          │
+│ [Todas 42][Inbox 3][Aguardando 5][Próximas 12]…                        │
 ├────────────────────────────────────────────────────────────────────────┤
-│ ③ PAINEL DE FILTROS (recolhível)                                       │
-│ [Buscar…] [Categoria▾] [Contexto▾] [Projeto▾] [Tag▾] [Bloqueadas]     │
-│ [Prazo] [Limpar filtros]           Mostrando N de M tarefas            │
+│ ② BARRA DE FERRAMENTAS                                                 │
+│ [🔍 Buscar…] [Filtros ③ 2]      [Tabela|Cards|Kanban] [Agrupar por ▾]  │
 ├────────────────────────────────────────────────────────────────────────┤
 │ ④ BARRA DE AÇÕES EM MASSA                                              │
 │ N selecionada(s) · Selecionar todas visíveis · Limpar seleção          │
@@ -57,65 +56,44 @@ mesmos filtros da lista menos o status, relida a cada mudança da lista. Com uma
 ligado, cada aba diz quantas tarefas daquele status casam com ele. A aba ativa é persistida em
 `ticktask:taskListStatusFilter` (padrão: **Inbox**).
 
-## ② Controles de visualização
+## ② Barra de ferramentas
 
-Três grupos à direita das abas.
+Uma linha abaixo das abas (`Flex` com quebra):
 
-### Botão "Filtros"
-
-Alterna o painel ③. Fica escuro (`bg-slate-900 text-white`) quando o painel está aberto **ou** quando
-há filtro ativo. Exibe um badge circular branco com a **contagem de filtros ativos** — soma de:
-categoria ≠ todas, busca preenchida, tag, contexto, projeto, "bloqueadas" e ordenação por prazo.
-
-### Alternador Cards / Tabela
-
-Dois botões-ícone (`LayoutGrid` / `List`) num contêiner `bg-white border rounded-lg p-1`. Persistido
-em `ticktask:taskListViewMode`; o padrão é **tabela**.
-
-### Agrupar / Kanban
-
-No mesmo contêiner:
-
-- **Agrupar** (`Layers`) — liga ou desliga o agrupamento de todas as abas. Na aba Executando com
-  Kanban ligado, desliga o Kanban e liga o agrupamento.
-- **Kanban** (`Columns3`) — **só aparece na aba Executando**; liga e desliga o Kanban. Não mexe no
-  agrupamento: na aba Executando o Kanban vence, e as outras abas seguem agrupadas como estavam.
-- Quando um dos dois está ligado, surge um sub-alternador à direita de uma barra divisória:
-  **Projeto** | **Contexto** | **Espaço Jira** | **Pai Jira**. O agrupamento das listas guarda a
-  escolha em `ticktask:taskListGroupBy`; o Kanban, em `ticktask:executandoKanbanGroupBy`. Os dois
-  modos do Jira só aparecem quando há task do Jira na lista (ou quando um deles já está escolhido).
-  O agrupamento é puro, em `lib/taskGrouping.ts` (testado):
+- **Busca** — `Input` com ícone `Search` e botão de limpar. Busca em nome e descrição, com
+  **debounce de 250 ms** (`useDebouncedValue`): a consulta sai quando a pessoa para de digitar.
+- **Filtros** — botão com `ListFilter` e o número de filtros ativos; abre o painel ③.
+- **Visão** — `Segmented` Tabela | Cards | Kanban (rótulos a partir de `lg`). Kanban só aparece na
+  aba Executando; em outra aba a visão Kanban guardada vale como Tabela.
+- **Agrupar** — `Select` com Sem agrupamento, Projeto, Contexto, Espaço Jira e Pai Jira (os dois do
+  Jira só com task do Jira na lista). No Kanban, o mesmo `Select` escolhe as colunas e não tem "Sem
+  agrupamento" (cai em Projeto). O agrupamento é puro, em `lib/taskGrouping.ts` (testado):
   - **Espaço Jira** — por `jira_space` (ou prefixo da chave); o resto vai para "Fora do Jira".
   - **Pai Jira** — por `jira_parent_key` (épico ou história da issue). Se a própria issue pai foi
     importada, ela entra no grupo, no topo; o resto vai para "Sem issue pai". Não usa subtarefa
     local (`parent_task_id`): issue filha continua aparecendo na lista.
 
-Os dois modos são mutuamente exclusivos por código, mas cada um tem sua própria chave em
-`localStorage`, o que permite estados de reabertura contraintuitivos.
+Visão e agrupamento são duas chaves só, `ticktask:taskListView` e `ticktask:taskListGroup`
+(`lib/taskListView.ts`, testado). Na primeira abertura elas são lidas das quatro chaves antigas
+(`taskListViewMode`, `taskListGrouping`, `taskListGroupBy`, `executandoKanban*`), que davam estados
+de reabertura contraditórios.
 
-## ③ Painel de filtros
+## ③ Filtros
 
-Recolhível, com animação `slide-in-from-top-2 fade-in duration-200`. Dentro de um cartão branco, os
-campos ficam em `flex flex-wrap items-end gap-4`. Cada um tem rótulo em
-`text-xs font-semibold uppercase tracking-wider text-slate-600`.
+`components/tasks/TaskFilters.tsx`: um `Popover` sob o botão (abaixo de `md`, um `Drawer` que sobe
+de baixo). Campos, em `Select` do antd com busca onde a lista é longa:
 
-| Campo | Rótulo | Controle | Comportamento |
-| --- | --- | --- | --- |
-| Busca | Buscar | `Input` com ícone `Search` à esquerda e "×" à direita quando preenchido | Busca em nome **e** descrição; sem debounce — dispara consulta a cada tecla |
-| Categoria | Categoria | `SearchableSelect` com bolinha de cor | Todas / Urgente / Prioridade / Normal / Time Leak |
-| Contexto | Contexto | `SearchableSelect` (`ícone nome`) | Só renderiza se existir ao menos um contexto |
-| Projeto | Projeto | `SearchableSelect` | Inclui a opção **"Sem projeto"** (mapeada internamente para `-1` → `'none'`) |
-| Tag | **Fonte / Tag** | `SearchableSelect` com bolinha de cor | Só renderiza se existir ao menos uma tag |
-| Bloqueadas | Situação | Botão-toggle com `Lock` | Ativo: `bg-orange-100 text-orange-700` |
-| Ordenação | Ordenar por | Botão-toggle com `CalendarDays` | Alterna `updated` ⇄ `due_date`; rótulo vira "Prazo ↑" quando ativo |
-| Limpar | — | Link vermelho com "×" | Só aparece com filtro ativo; **não limpa a aba de status** |
+| Campo | Comportamento |
+| --- | --- |
+| Categoria | Urgente / Prioridade / Normal / Time leak; limpar = todas |
+| Contexto | `ícone nome` |
+| Projeto | Inclui **"Sem projeto"** (`-1` → `'none'`) |
+| Tag | nome da tag |
+| Ordenar | por atualização (padrão) ou por prazo |
+| Só bloqueadas | `Checkbox` |
 
-Rodapé do painel (só com filtro ativo): `Mostrando {tasks.length} de {totalTasks} tarefas`, onde
-`totalTasks` é a contagem de todas as tarefas não arquivadas.
-
-> **Nota de design:** o rótulo do filtro de tag é "Fonte / Tag" aqui, mas a tela dedicada se chama
-> apenas "Tags" e o campo no diálogo de criação também diz "Fontes / Tags". Três nomes para uma
-> coisa.
+No pé: `Mostrando {tasks.length} de {totalTasks}` e **Limpar filtros** (não mexe na aba nem na
+busca). A contagem do botão soma os campos acima (`taskFilterState.ts`, testado).
 
 ## ④ Barra de ações em massa
 
