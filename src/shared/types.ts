@@ -194,6 +194,7 @@ export interface Task {
   scheduled_end_time?: string | null
   due_time?: string | null
   external_url?: string | null
+  waiting_for?: string | null
   working_dir?: string | null
   project_working_dir?: string | null
   start_command?: string | null
@@ -245,6 +246,7 @@ export interface CreateTaskInput {
   scheduled_end_time?: string | null
   due_time?: string | null
   external_url?: string | null
+  waiting_for?: string | null
 }
 
 export interface UpdateTaskInput {
@@ -269,6 +271,7 @@ export interface UpdateTaskInput {
   scheduled_end_time?: string | null
   due_time?: string | null
   external_url?: string | null
+  waiting_for?: string | null
 }
 
 export interface GcalStatus {

@@ -14,6 +14,7 @@ import { DependencySelector } from '@renderer/components/DependencySelector'
 import { RecurrenceSelect } from '@renderer/components/RecurrenceSelect'
 import { GoogleCalendarTaskToggle } from '@renderer/components/GoogleCalendarTaskToggle'
 import { ExternalLinkField } from '@renderer/components/ExternalLinkField'
+import { WaitingForField } from '@renderer/components/tasks/WaitingFor'
 import { TerminalTaskButton } from '@renderer/components/terminal/TerminalTaskButton'
 import { WorkingDirField } from '@renderer/components/terminal/WorkingDirField'
 import { TimeInput } from '@renderer/components/TimeInput'
@@ -677,6 +678,13 @@ export function SingleTaskPage(): React.JSX.Element {
                 <span className="text-xs text-slate-400">Status</span>
                 <StatusSelect value={task.status} onChange={handleStatusChange} />
               </div>
+
+              {(task.status === 'aguardando' || task.waiting_for) && (
+                <WaitingForField
+                  value={task.waiting_for}
+                  onSave={(value) => updateTask({ waiting_for: value })}
+                />
+              )}
 
               {task.jira_key && (
                 <div className="grid grid-cols-[90px_1fr] items-center gap-3">
