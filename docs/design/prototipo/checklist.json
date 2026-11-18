@@ -117,7 +117,8 @@
       "titulo": "Paleta e tipografia conferidas no app, claro e escuro",
       "check": {
         "tipo": "manual"
-      }
+      },
+      "validado": "2026-11-18"
     },
     {
       "id": "F1.1",

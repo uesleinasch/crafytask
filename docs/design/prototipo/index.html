@@ -9,7 +9,7 @@
   --ct-surface: #FFFFFF;
   --ct-elevated: #FFFFFF;
   --ct-border: #E4E2EE;
-  --ct-border-strong: #CFCCDD;
+  --ct-border-strong: #8A8796;
   --ct-text: #1B1A27;
   --ct-text-2: #5B5970;
   --ct-text-3: #6B6980;
@@ -24,14 +24,14 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --ct-bg: #111018; --ct-surface: #1A1923; --ct-elevated: #22202E; --ct-border: #2E2B3C;
-    --ct-border-strong: #403C52; --ct-text: #ECEAF6; --ct-text-2: #A9A6BE; --ct-text-3: #8A879F;
+    --ct-border-strong: #706C85; --ct-text: #ECEAF6; --ct-text-2: #A9A6BE; --ct-text-3: #8C89A1;
     --ct-brand: #8F82FF; --ct-primary: #8F82FF; --ct-primary-soft: #221E3D; --ct-sider: #15141D;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --ct-bg: #111018; --ct-surface: #1A1923; --ct-elevated: #22202E; --ct-border: #2E2B3C;
-  --ct-border-strong: #403C52; --ct-text: #ECEAF6; --ct-text-2: #A9A6BE; --ct-text-3: #8A879F;
+  --ct-border-strong: #706C85; --ct-text: #ECEAF6; --ct-text-2: #A9A6BE; --ct-text-3: #8C89A1;
   --ct-brand: #8F82FF; --ct-primary: #8F82FF; --ct-primary-soft: #221E3D; --ct-sider: #15141D;
   color-scheme: dark;
 }
@@ -269,13 +269,13 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
 
   const PALETTE = {
     light: {
-      bg: '#F6F5FA', surface: '#FFFFFF', elevated: '#FFFFFF', border: '#E4E2EE', borderStrong: '#CFCCDD',
+      bg: '#F6F5FA', surface: '#FFFFFF', elevated: '#FFFFFF', border: '#E4E2EE', borderStrong: '#8A8796',
       text: '#1B1A27', text2: '#5B5970', text3: '#6B6980', primary: '#5B47EB', primarySoft: '#EFEDFF', brand: '#705EFF',
       success: '#0B7A50', warning: '#A15C00', error: '#C02331', info: '#2A62D6', sider: '#FBFAFE'
     },
     dark: {
-      bg: '#111018', surface: '#1A1923', elevated: '#22202E', border: '#2E2B3C', borderStrong: '#403C52',
-      text: '#ECEAF6', text2: '#A9A6BE', text3: '#8A879F', primary: '#8F82FF', primarySoft: '#221E3D', brand: '#8F82FF',
+      bg: '#111018', surface: '#1A1923', elevated: '#22202E', border: '#2E2B3C', borderStrong: '#706C85',
+      text: '#ECEAF6', text2: '#A9A6BE', text3: '#8C89A1', primary: '#8F82FF', primarySoft: '#221E3D', brand: '#8F82FF',
       success: '#4CD69A', warning: '#F0B44C', error: '#FF7A82', info: '#7AA5FF', sider: '#15141D'
     }
   };
@@ -680,7 +680,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         title=${html`<${Space}><${I.CodeOutlined} />Terminais<${Text} type="secondary" style=${{ fontSize: 12 }}>Ctrl+'<//><//>`}
         styles=${{ body: { padding: 0, background: '#15141D' }, header: { padding: '8px 16px' } }}>
         <div className="ct-mono" style=${{ color: '#ECEAF6', padding: '10px 14px', fontSize: 13, lineHeight: 1.6 }}>
-          <div style=${{ color: '#8A879F' }}>#711 · ~/Code/pessoal/crafytask</div>
+          <div style=${{ color: '#8C89A1' }}>#711 · ~/Code/pessoal/crafytask</div>
           <div>$ npm run dev</div>
           <div style=${{ color: '#4CD69A' }}>  ➜ electron-vite dev server running</div>
           <div>$ <span className="ct-live" style=${{ display: 'inline-block', background: '#ECEAF6', borderRadius: 1, width: 7, height: 14, animation: 'none', verticalAlign: 'middle' }}></span></div>
