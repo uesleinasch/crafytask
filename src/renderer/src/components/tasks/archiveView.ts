@@ -41,6 +41,12 @@ export function formatArchivedShort(value: string | null | undefined): string {
   return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${String(date.getFullYear()).slice(2)}`
 }
 
+export function formatArchivedDate(value: string | null | undefined): string | null {
+  const date = parseArchivedAt(value)
+  if (!date) return null
+  return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}`
+}
+
 export function formatArchivedLong(value: string | null | undefined): string {
   const date = parseArchivedAt(value)
   if (!date) return 'Sem data de arquivamento'

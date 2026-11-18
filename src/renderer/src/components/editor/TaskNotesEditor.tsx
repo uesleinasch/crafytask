@@ -20,12 +20,13 @@ interface TaskNotesEditorProps {
   initialContent: JSONContent
   onSaved?: (notes: string) => void
   onChange?: () => void
+  readOnly?: boolean
 }
 
 const DEBOUNCE_MS = 400
 
 export const TaskNotesEditor = forwardRef<TaskNotesEditorHandle, TaskNotesEditorProps>(
-  function TaskNotesEditor({ owner, initialContent, onSaved, onChange }, ref) {
+  function TaskNotesEditor({ owner, initialContent, onSaved, onChange, readOnly = false }, ref) {
     const { kind, id } = owner
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
     const pendingDocRef = useRef<Editor['state']['doc'] | null>(null)
@@ -41,6 +42,7 @@ export const TaskNotesEditor = forwardRef<TaskNotesEditorHandle, TaskNotesEditor
       {
         extensions: buildExtensions({ kind, id }),
         content: initialContent,
+        editable: !readOnly,
         editorProps: {
           attributes: { class: 'notes-editor-content p-5 min-h-[200px] focus:outline-none' },
           handleClickOn: (view, _pos, node) => {
@@ -105,6 +107,12 @@ export const TaskNotesEditor = forwardRef<TaskNotesEditorHandle, TaskNotesEditor
           .catch((e) => console.error('Falha ao salvar notas:', e))
       }
     }, [kind, id])
+
+    useEffect(() => {
+      if (editor && editor.isEditable === readOnly) editor.setEditable(!readOnly)
+    }, [editor, readOnly])
+
+    if (readOnly) return <EditorContent editor={editor} />
 
     return (
       <div>

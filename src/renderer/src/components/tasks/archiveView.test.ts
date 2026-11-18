@@ -3,6 +3,7 @@ import type { Task } from '@shared/types'
 import {
   archiveMonthKey,
   archivedAfterFor,
+  formatArchivedDate,
   formatHoursMinutes,
   groupArchive,
   monthLabel,
@@ -24,6 +25,12 @@ describe('datas do arquivo', () => {
     expect(parseArchivedAt('2026-11-18 12:00:00')?.toISOString()).toBe('2026-11-18T12:00:00.000Z')
     expect(parseArchivedAt(null)).toBeNull()
     expect(parseArchivedAt('lixo')).toBeNull()
+  })
+
+  it('formata a data completa da faixa', () => {
+    const local = new Date(2026, 2, 12, 10)
+    expect(formatArchivedDate(local.toISOString())).toBe('12/03/2026')
+    expect(formatArchivedDate(null)).toBeNull()
   })
 
   it('agrupa pelo mês local e nomeia em português', () => {

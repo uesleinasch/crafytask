@@ -44,8 +44,8 @@ data completa no tooltip; só `lg`), Tempo (`md`) e ações: **Desarquivar** (`m
 `lg`, projeto e data descem para baixo do nome. Botão direito na linha abre o mesmo menu: Abrir (só
 leitura) · Desarquivar · Excluir de vez…. Sem agrupamento, pagina de 20 em 20.
 
-O modo só leitura do detalhe, com a faixa "Arquivada · Desarquivar", é da F6-b3; até lá a tarefa
-abre no detalhe normal.
+Abrir leva ao detalhe em modo só leitura, com a faixa "Arquivada em … · só leitura" e Desarquivar
+(ver [02](02-detalhe-da-tarefa.md), "Estados especiais").
 
 ## Ações
 

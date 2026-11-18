@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { App, Button, Card, Drawer, Empty, Flex, Grid, Spin } from 'antd'
+import { App, Button, Card, ConfigProvider, Drawer, Empty, Flex, Grid, Spin } from 'antd'
+import { ArchivedTaskBanner } from '@renderer/components/tasks/ArchivedTaskBanner'
 import { ArrowLeft } from 'lucide-react'
 import type { TaskStatus, UpdateTaskInput } from '@shared/types'
 import { useTaskDetail } from '@renderer/hooks/useTaskDetail'
@@ -313,6 +314,12 @@ export function SingleTaskPage(): React.JSX.Element {
   }
 
   const startBlocked = !!task.is_blocked && !isRunning
+  const readOnly = !!task.is_archived
+  const lock = (node: React.JSX.Element): React.JSX.Element =>
+    readOnly ? <ConfigProvider componentDisabled>{node}</ConfigProvider> : node
+  const banner = readOnly ? (
+    <ArchivedTaskBanner archivedAt={task.archived_at} onUnarchive={() => void handleUnarchive()} />
+  ) : null
 
   const header = (
     <TaskHeader
@@ -374,11 +381,12 @@ export function SingleTaskPage(): React.JSX.Element {
       drawingRef={drawingEditorRef}
       onDrawingChange={handleNotesChange}
       onDrawingSaved={handleDrawingSaved}
+      readOnly={readOnly}
     />
   )
 
   const panels = {
-    tempo: (
+    tempo: lock(
       <TaskTimePanel
         task={task}
         displaySeconds={displaySeconds}
@@ -396,14 +404,14 @@ export function SingleTaskPage(): React.JSX.Element {
         }}
       />
     ),
-    detalhes: (
+    detalhes: lock(
       <TaskDetailsPanel
         task={task}
         refreshTask={refreshTask}
         onOpenJiraFields={() => setJiraFieldsOpen(true)}
       />
     ),
-    relacoes: <TaskRelationsPanel task={task} refreshTask={refreshTask} />
+    relacoes: lock(<TaskRelationsPanel task={task} refreshTask={refreshTask} />)
   }
 
   const inspector = (
@@ -423,6 +431,7 @@ export function SingleTaskPage(): React.JSX.Element {
     return (
       <div className="h-full" style={{ overflowY: 'auto' }}>
         <PageContainer>
+          {banner}
           {header}
           <TaskDetailTabs
             task={task}
@@ -442,7 +451,10 @@ export function SingleTaskPage(): React.JSX.Element {
       <PageContainer
         style={{ minHeight: '100%', display: 'flex', flexDirection: 'column', gap: 16 }}
       >
-        {header}
+        <div>
+          {banner}
+          {header}
+        </div>
         <Flex gap={16} style={{ flex: 1, minHeight: 520 }}>
           <div style={{ flex: '1 1 0', minWidth: 0 }}>{workspace}</div>
           {placement === 'side' && inspectorOpen && (

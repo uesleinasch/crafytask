@@ -271,6 +271,15 @@
   border-style: dashed;
 }
 
+.ct-prop:disabled {
+  cursor: default;
+}
+
+.ct-prop:disabled:hover {
+  border-color: var(--ant-color-border-secondary);
+  background: var(--ant-color-bg-container);
+}
+
 /* Scrollbar hide utility */
 .scrollbar-hide {
   -ms-overflow-style: none;
