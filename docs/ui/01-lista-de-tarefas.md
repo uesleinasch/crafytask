@@ -18,7 +18,7 @@ Ver, filtrar e triar todas as tarefas não arquivadas. Na prática cumpre três 
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│ ① ABAS DE STATUS (7 pílulas, rolagem horizontal)   ② CONTROLES         │
+│ ① ABAS DE STATUS (Tabs do antd, com contador)       ② CONTROLES         │
 │ [Todas][Inbox][Aguardando][Próximas]…      [Filtros ③][▦ ▤][Agrupar]  │
 ├────────────────────────────────────────────────────────────────────────┤
 │ ③ PAINEL DE FILTROS (recolhível)                                       │
@@ -39,20 +39,23 @@ Ver, filtrar e triar todas as tarefas não arquivadas. Na prática cumpre três 
 
 ## ① Abas de status
 
-Sete pílulas em `flex overflow-x-auto gap-2 scrollbar-hide`, cada uma com ícone `lucide` de 14px.
+`Tabs` do antd (a partir de `md`; abaixo disso, um `Select` com os mesmos itens). Cada aba tem o
+ícone do status na cor de `theme/semantic.ts`, o rótulo e o contador em Geist Mono.
 
 | Aba | Ícone | Filtro aplicado |
 | --- | --- | --- |
 | Todas | `ListTodo` | `status: 'all'` |
 | Inbox | `Inbox` | `status: 'inbox'` |
 | Aguardando | `Hourglass` | `status: 'aguardando'` |
-| Próximas | `Calendar` | `status: 'proximas'` |
-| Executando | `Activity` | `status: 'executando'` |
-| Finalizadas | `CheckSquare` | `status: 'finalizada'` |
+| Próximas | `CircleArrowRight` | `status: 'proximas'` |
+| Executando | `CirclePlay` | `status: 'executando'` |
+| Finalizada | `CircleCheck` | `status: 'finalizada'` |
 | Someday | `Lightbulb` | `status: 'someday'` |
 
-A aba ativa é persistida em `ticktask:taskListStatusFilter` (padrão: **Inbox**). Não há contador de
-itens em nenhuma aba — informação que existe em `/projects` mas não aqui.
+Os contadores vêm de `task:statusCounts` (`countTasksByStatus`): uma query `GROUP BY status` com os
+mesmos filtros da lista menos o status, relida a cada mudança da lista. Com uma busca ou filtro
+ligado, cada aba diz quantas tarefas daquele status casam com ele. A aba ativa é persistida em
+`ticktask:taskListStatusFilter` (padrão: **Inbox**).
 
 ## ② Controles de visualização
 
