@@ -1,6 +1,7 @@
 import { App, Button, Divider, Flex, Input, Modal, Typography, theme } from 'antd'
 import {
   ArrowRight,
+  Bug,
   FileText,
   Inbox,
   NotebookText,
@@ -19,7 +20,8 @@ import {
   isCtrlShortcut,
   matchesQuery,
   moveIndex,
-  onCommandPaletteRequest
+  onCommandPaletteRequest,
+  simulateCrash
 } from './paletteCommands'
 
 const SHORTCUT_CODE = 'KeyK'
@@ -135,6 +137,19 @@ export function CommandPalette(): React.JSX.Element {
         run: () => {
           close()
           setDensity(density === 'compact' ? 'comfortable' : 'compact')
+        }
+      })
+    }
+
+    if (import.meta.env.DEV && matchesQuery('Simular falha nesta tela', term)) {
+      list.push({
+        id: 'crash',
+        group: 'Desenvolvimento',
+        label: 'Simular falha nesta tela',
+        icon: Bug,
+        run: () => {
+          close()
+          simulateCrash()
         }
       })
     }

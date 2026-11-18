@@ -6,6 +6,7 @@ import { TerminalPanel } from '@renderer/components/terminal/TerminalPanel'
 import { usePersistedState } from '@renderer/hooks/usePersistedState'
 import { CommandPalette } from './CommandPalette'
 import { RegionBoundary } from './RegionBoundary'
+import { SimulatedCrash } from './SimulatedCrash'
 import { ShellHeader } from './ShellHeader'
 import { SiderNav } from './SiderNav'
 import { StatusBar } from './StatusBar'
@@ -78,6 +79,7 @@ export function AppShell(): React.JSX.Element {
             region={screenTitle(location.pathname)}
             resetKeys={[regionResetKey(location.pathname, location.search)]}
           >
+            {import.meta.env.DEV && <SimulatedCrash />}
             <Outlet />
           </RegionBoundary>
         </Content>

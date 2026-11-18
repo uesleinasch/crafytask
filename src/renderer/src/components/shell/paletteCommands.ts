@@ -34,6 +34,18 @@ export function isCtrlShortcut(event: KeyInfo, code: string, insideTerminal: boo
 
 type Listener = () => void
 const listeners = new Set<Listener>()
+const crashListeners = new Set<Listener>()
+
+export function simulateCrash(): void {
+  crashListeners.forEach((listener) => listener())
+}
+
+export function onSimulatedCrash(listener: Listener): () => void {
+  crashListeners.add(listener)
+  return () => {
+    crashListeners.delete(listener)
+  }
+}
 
 export function openCommandPalette(): void {
   listeners.forEach((listener) => listener())
