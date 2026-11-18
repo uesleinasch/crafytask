@@ -98,7 +98,7 @@ primeira vista.
 
 | Componente | Onde |
 | --- | --- |
-| `FloatingTimer` | pílula preta fixa em `bottom-6 right-6`; uma por timer ativo; **só fora de sub-páginas**. Ícone com `animate-ping`, nome truncado, tempo em mono e `Maximize2`. Clicar navega para a tarefa |
+| `RunningTimersPill` | pílula no header do shell (substituiu o `FloatingTimer`); tempo do timer mais recente, contador e popover com todos, link e pausar |
 | `RunningNowPanel` | painel esmeralda no dashboard; lista os timers com botão de parar individual e "Parar todos" |
 
 Os dois mostram a mesma informação em dois desenhos completamente diferentes, e o `FloatTimerPage` é

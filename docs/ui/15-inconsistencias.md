@@ -122,6 +122,9 @@ Nenhuma delas faz o conjunto. Reagendar arrastando só existe no mês; ordenar o
 
 ### C2. Três desenhos para "timers em execução"
 
+**Em parte resolvida na F1-d:** o `FloatingTimer` deu lugar à pílula do header. Faltam o painel do
+dashboard (F7) e a janela flutuante (F8).
+
 `FloatingTimer` (pílula preta fixa), `RunningNowPanel` (painel esmeralda no dashboard) e
 `FloatTimerPage` (janela escura). Mesma informação, três layouts, três conjuntos de ações.
 

@@ -90,7 +90,7 @@ Quanto de disposição a tarefa exige. Usado como filtro mental e alimenta o gr�
 │          ├───────────────────────────────────────────────────┤
 │          │ TerminalPanel (quando aberto)                     │
 └──────────┴───────────────────────────────────────────────────┘
-Sobrepostos: FloatingTimer (só em "/"), SyncNotification, Toaster (sonner)
+Sobrepostos: SyncNotification, Toaster (sonner)
 ```
 
 O shell é `components/shell/AppShell.tsx` (antd `Layout`), com as rotas aninhadas no `HashRouter`
@@ -131,9 +131,19 @@ tela única de rótulos (F6-a), Contextos e Tags se ligam por um link no cabeça
 
 ### Header (`components/shell/ShellHeader.tsx`)
 
-Título da tela (`screenTitle`) e **Nova tarefa**. Fora de `/`, o botão volta para a lista e o pedido
-fica guardado (`lib/newTaskRequest.ts`) até a `TaskListPage` montar e abrir o `TaskDialog`. As telas
-não têm mais botão "Voltar"; só os detalhes (tarefa e projeto) mantêm o seu.
+Grid de três zonas (`minmax(max-content, 1fr) · 200–520px · minmax(max-content, 1fr)`):
+
+- **Esquerda:** botão de menu (só abaixo de `md`, abre o `Drawer`) e o título da tela (`screenTitle`).
+- **Centro:** `HeaderCapture`, o campo "Capturar para o Inbox…": Enter grava pelo mesmo
+  `quickCapture` da janela de captura rápida e confirma com `message`. Some abaixo de `sm`.
+- **Direita:** `RunningTimersPill` (a partir de `md`): o tempo do timer iniciado por último e, com
+  mais de um, o número; o popover lista todos, com link para a tarefa e botão de pausar. Substitui
+  o antigo `FloatingTimer`. Depois, **Aparência** (por enquanto só a densidade; o tema entra com a
+  seção de Configurações) e **Nova tarefa** (só ícone abaixo de `lg`). Fora de `/`, Nova tarefa
+  volta para a lista e o pedido fica guardado (`lib/newTaskRequest.ts`) até a `TaskListPage` montar
+  e abrir o `TaskDialog`.
+
+As telas não têm mais botão "Voltar"; só os detalhes (tarefa e projeto) mantêm o seu.
 
 ## Rotas
 
@@ -156,8 +166,8 @@ não têm mais botão "Voltar"; só os detalhes (tarefa e projeto) mantêm o seu
 | `/float` | Timer flutuante | [12](12-janelas-auxiliares.md) | janela própria |
 | `/quick-capture` | Captura rápida | [12](12-janelas-auxiliares.md) | janela própria |
 
-¹ "Sub-página" controla apenas uma coisa: o `FloatingTimer` (a pílula preta no canto inferior
-direito) **não aparece** em sub-páginas. Fora isso, todas as rotas se comportam igual.
+¹ "Sub-página" decidia onde aparecia o antigo `FloatingTimer`. Com a pílula de timers no header
+(F1-d), todas as rotas se comportam igual.
 
 ## As três janelas
 
@@ -210,7 +220,7 @@ Voltar às vezes é `<Button variant="ghost">` e às vezes um `<button>` cru; o 
 ```
 
 O `h-full` (não `h-screen`) é deliberado: o `Content` do shell já descontou a altura do header. O
-`pb-24` reserva espaço para o `FloatingTimer` não cobrir a última linha.
+`pb-24` reservava espaço para o antigo `FloatingTimer`, que saiu na F1-d.
 
 ### 3. Abas em pílula
 
