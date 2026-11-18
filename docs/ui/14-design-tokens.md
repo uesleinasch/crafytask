@@ -219,7 +219,10 @@ Dez cores rotativas, sem relação com qualquer semântica do app:
 
 Desde a F0-e o `main.css` também tem o anel de foco global (`:focus-visible` em botão, link e
 `[tabindex]` próprios: 2px na cor primária, afastado 2px; na camada `base`, então os componentes do
-antd mantêm o foco deles), a densidade compacta passa `componentSize="small"` ao `ConfigProvider` e
+antd mantêm o foco deles; as variáveis `--ant-*` valem na janela toda porque o `cssVar` usa a chave
+fixa `ct-theme` e o `ThemeProvider` põe essa classe no `<html>`, inclusive no timer flutuante, na
+captura rápida e nos diálogos Radix), a densidade compacta passa `componentSize="small"` ao
+`ConfigProvider` (com `controlHeightSM` 24, o alvo mínimo do guia) e
 `theme/semantic.ts` ganhou `CAL_BLOCK_COLORS` (`calBlock`/`calBlockBorder`) para o calendário.
 
 Transições comuns: `transition-colors`, `transition-all duration-200`,

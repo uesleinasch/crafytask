@@ -2,6 +2,8 @@ import { theme, type ThemeConfig } from 'antd'
 import type { Density, ThemeMode } from '@shared/themePreference'
 import { PALETTE, seedTokens } from './tokens'
 
+export const THEME_CSS_VAR_KEY = 'ct-theme'
+
 export function componentSizeFor(density: Density): 'small' | undefined {
   return density === 'compact' ? 'small' : undefined
 }
@@ -10,13 +12,13 @@ export function buildTheme(mode: ThemeMode, density: Density): ThemeConfig {
   const c = PALETTE[mode]
   const compact = density === 'compact'
   return {
-    cssVar: { prefix: 'ant' },
+    cssVar: { prefix: 'ant', key: THEME_CSS_VAR_KEY },
     hashed: false,
     algorithm: [
       mode === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm,
       ...(compact ? [theme.compactAlgorithm] : [])
     ],
-    token: seedTokens(mode),
+    token: compact ? { ...seedTokens(mode), controlHeightSM: 24 } : seedTokens(mode),
     components: {
       Layout: {
         siderBg: c.sider,

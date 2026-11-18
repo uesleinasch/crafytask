@@ -14,7 +14,7 @@ describe('buildTheme', () => {
 
   it('liga cssVar e desliga o hash', () => {
     const config = buildTheme('light', 'comfortable')
-    expect(config.cssVar).toBeTruthy()
+    expect(config.cssVar).toEqual({ prefix: 'ant', key: 'ct-theme' })
     expect(config.hashed).toBe(false)
   })
 
@@ -41,5 +41,12 @@ describe('componentSizeFor', () => {
   it('densidade compacta diminui os componentes', () => {
     expect(componentSizeFor('compact')).toBe('small')
     expect(componentSizeFor('comfortable')).toBeUndefined()
+  })
+})
+
+describe('densidade compacta', () => {
+  it('não deixa controle pequeno abaixo de 24px', () => {
+    expect(buildTheme('light', 'compact').token?.controlHeightSM).toBe(24)
+    expect(buildTheme('light', 'comfortable').token?.controlHeightSM).toBeUndefined()
   })
 })
