@@ -301,7 +301,7 @@ busca o que precisa através de hooks que chamam `window.api.*` (IPC para o proc
 | `useTasks(filters)` | Lista de tarefas filtrada + `createTask` / `refreshTasks` |
 | `useTaskDetail(id)` | Tarefa, sessões de tempo, update/status/arquivar/deletar |
 | `useProjects()` / `useProjectDetail(id)` | Projetos |
-| `useContexts()` / `useTags()` | Taxonomias |
+| `useLabels()` | Contextos e tags com uso e abertas |
 | `useHorizons()` → `useAreas()` / `useGoals()` | Áreas e metas |
 | `useCalendarWeek(inicio)` / `useCalendarMonth(ano-mês)` | Agenda e blocos de tempo |
 | `useWeeklyReview()` | Revisão corrente, histórico, indicadores de saúde |
