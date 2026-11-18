@@ -19,6 +19,8 @@ import { createTray, destroyTray } from './tray'
 import { isAutostartEnabled, setAutostartEnabled } from './autostart'
 import { isSafeHttpUrl } from '@shared/externalUrl'
 import { isThemePreference } from '@shared/themePreference'
+import type { RendererErrorReport } from '@shared/rendererError'
+import { guardRenderer } from './rendererGuard'
 import {
   initDatabase,
   closeDatabase,
@@ -420,6 +422,7 @@ function createFloatWindow(): void {
       sandbox: false
     }
   })
+  guardRenderer(floatWindow, 'float')
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     floatWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}#/float`)
@@ -514,6 +517,7 @@ function createQuickCaptureWindow(): void {
       sandbox: false
     }
   })
+  guardRenderer(quickCaptureWindow, 'captura')
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     quickCaptureWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}#/quick-capture`)
@@ -591,6 +595,7 @@ function createWindow(): void {
       sandbox: false
     }
   })
+  guardRenderer(mainWindow, 'principal')
 
   mainWindow.on('ready-to-show', () => {
     if (startHidden) {
@@ -1232,6 +1237,15 @@ function setupIpcHandlers(): void {
     return shell.openExternal(url)
   })
   ipcMain.handle('app:setAutostart', (_, enabled: boolean) => setAutostartEnabled(enabled))
+  ipcMain.handle('app:logRendererError', (event, report: RendererErrorReport) => {
+    const where = report.region ? ` em "${report.region}"` : ''
+    console.error(
+      `[renderer] erro ${report.kind === 'caught' ? 'capturado' : 'não capturado'}${where}: ${report.message}`,
+      report.stack ?? '',
+      report.componentStack ?? '',
+      `(janela ${event.sender.id})`
+    )
+  })
   ipcMain.handle('app:setThemeSource', (_, preference: unknown) => {
     if (!isThemePreference(preference)) throw new Error('Tema inválido')
     nativeTheme.themeSource = preference

@@ -11,12 +11,25 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
 import { ThemeProvider } from './theme/ThemeProvider'
+import { RegionBoundary } from './components/shell/RegionBoundary'
+import { toErrorReport } from './components/shell/regionError'
 
-createRoot(document.getElementById('root')!).render(
+const reportError =
+  (kind: 'caught' | 'uncaught') =>
+  (error: unknown, info: { componentStack?: string | null }): void => {
+    void window.api.appLogRendererError(toErrorReport(kind, error, info.componentStack))
+  }
+
+createRoot(document.getElementById('root')!, {
+  onCaughtError: reportError('caught'),
+  onUncaughtError: reportError('uncaught')
+}).render(
   <StrictMode>
     <StyleProvider layer>
       <ThemeProvider>
-        <App />
+        <RegionBoundary region="aplicativo">
+          <App />
+        </RegionBoundary>
       </ThemeProvider>
     </StyleProvider>
   </StrictMode>
