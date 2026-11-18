@@ -3,6 +3,7 @@ import {
   ArrowRight,
   Bug,
   FileText,
+  Folder,
   Inbox,
   NotebookText,
   Play,
@@ -12,7 +13,7 @@ import {
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { PageSearchResult, Task } from '@shared/types'
+import type { PageSearchResult, Project, Task } from '@shared/types'
 import { useThemeSettings } from '@renderer/theme/themeSettings'
 import { useTimerStore } from '@renderer/stores/timerStore'
 import {
@@ -28,6 +29,7 @@ const SHORTCUT_CODE = 'KeyK'
 const SEARCH_DEBOUNCE_MS = 150
 const TASK_LIMIT = 8
 const PAGE_LIMIT = 5
+const PROJECT_LIMIT = 5
 
 interface PaletteItem {
   id: string
@@ -50,6 +52,7 @@ export function CommandPalette(): React.JSX.Element {
   const [active, setActive] = useState(0)
   const [tasks, setTasks] = useState<Task[]>([])
   const [pages, setPages] = useState<PageSearchResult[]>([])
+  const [projects, setProjects] = useState<Project[]>([])
   const activeRef = useRef<HTMLDivElement | null>(null)
 
   const show = useCallback(() => {
@@ -58,6 +61,10 @@ export function CommandPalette(): React.JSX.Element {
     setTasks([])
     setPages([])
     setOpen(true)
+    window.api
+      .listProjects()
+      .then(setProjects)
+      .catch((error) => console.error('Falha ao carregar projetos da paleta:', error))
   }, [])
 
   useEffect(() => onCommandPaletteRequest(show), [show])
@@ -188,6 +195,20 @@ export function CommandPalette(): React.JSX.Element {
       })
     }
 
+    if (term) {
+      const matching = projects.filter((project) => matchesQuery(project.name, term))
+      for (const project of matching.slice(0, PROJECT_LIMIT)) {
+        list.push({
+          id: `project-${project.id}`,
+          group: 'Projetos',
+          label: project.name,
+          hint: project.status === 'archived' ? 'Arquivado' : undefined,
+          icon: Folder,
+          run: go(`/project/${project.id}`)
+        })
+      }
+    }
+
     for (const page of pages) {
       list.push({
         id: `page-${page.id}`,
@@ -200,7 +221,7 @@ export function CommandPalette(): React.JSX.Element {
     }
 
     return list
-  }, [query, tasks, pages, density, setDensity, navigate, close, message, startTimer])
+  }, [query, tasks, projects, pages, density, setDensity, navigate, close, message, startTimer])
 
   const activeIndex = Math.min(active, Math.max(items.length - 1, 0))
 
@@ -241,7 +262,7 @@ export function CommandPalette(): React.JSX.Element {
           setActive(0)
         }}
         onKeyDown={handleKeyDown}
-        placeholder="Buscar tarefas, páginas ou comandos…"
+        placeholder="Buscar tarefas, projetos, páginas ou comandos…"
         aria-label="Buscar tarefas, páginas ou comandos"
         prefix={<Search size={18} strokeWidth={1.75} aria-hidden />}
       />

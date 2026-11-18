@@ -142,8 +142,9 @@ Grid de três zonas (`minmax(max-content, 1fr) · 200–520px · minmax(max-cont
 - **Esquerda:** botão de menu (só abaixo de `md`, abre o `Drawer`) e o título da tela (`screenTitle`).
 - **Centro:** `HeaderCapture`, o campo "Capturar para o Inbox…": Enter grava pelo mesmo
   `quickCapture` da janela de captura rápida e confirma com `message`. Some abaixo de `sm`.
-- **Direita:** `RunningTimersPill` (a partir de `md`): o tempo do timer iniciado por último e, com
-  mais de um, o número; o popover lista todos, com link para a tarefa e botão de pausar. Substitui
+- **Direita:** `RunningTimersPill`: o tempo do timer iniciado por último e, com mais de um, o
+  número; abaixo de `md` fica compacta (ponto ao vivo e tempo, sem o número). O popover lista
+  todos, com link para a tarefa e botão de pausar. Substitui
   o antigo `FloatingTimer`. Depois, **Buscar** (abre a paleta; mostra "Ctrl K" a partir de `xxl`),
   **Aparência** (por enquanto só a densidade; o tema entra com a
   seção de Configurações) e **Nova tarefa** (só ícone abaixo de `lg`). Fora de `/`, Nova tarefa
@@ -172,6 +173,8 @@ atalho é do shell. Um `Modal` com campo de busca e lista navegável por setas e
 - **Ir para:** uma entrada por tela da sidebar.
 - **Tarefas:** `listTasks({ search, limit: 8 })`, com botão para iniciar o timer de quem não está
   rodando.
+- **Projetos:** `listProjects` ao abrir a paleta, filtrado pelo nome (sem acento e caixa), até 5,
+  abrindo `/project/<id>`; arquivado leva a dica "Arquivado".
 - **Páginas:** `searchPages`, até 5, abrindo `/notebooks?page=<id>`.
 
 A busca espera 150 ms sem digitar e descarta respostas atrasadas. A filtragem de comandos ignora
