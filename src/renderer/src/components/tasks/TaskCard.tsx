@@ -14,7 +14,7 @@ import { useThemeSettings } from '@renderer/theme/themeSettings'
 import { ContextsCell } from './ContextsCell'
 import { ProjectLabel } from './ProjectLabel'
 import { TaskActions } from './TaskActions'
-import { dueTone, formatDueShort, formatShortDuration } from './taskTableFormat'
+import { blockedLabel, dueTone, formatDueShort, formatShortDuration } from './taskTableFormat'
 
 const INTERACTIVE = 'button, a, input, label, [role="checkbox"], [data-row-click="ignore"]'
 
@@ -103,12 +103,12 @@ export function TaskCard({
                     #{task.id}
                   </Typography.Text>
                   {task.is_blocked && (
-                    <Tooltip title="Bloqueada por dependências">
+                    <Tooltip title={blockedLabel(task.blocked_by)}>
                       <Lock
                         size={13}
                         strokeWidth={1.75}
                         role="img"
-                        aria-label="Bloqueada por dependências"
+                        aria-label={blockedLabel(task.blocked_by)}
                         style={{ color: CATEGORY_COLORS.prioridade[mode].fg }}
                       />
                     </Tooltip>

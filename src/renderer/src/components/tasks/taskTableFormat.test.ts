@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dueTone, formatDueShort, formatShortDuration } from './taskTableFormat'
+import { blockedLabel, dueTone, formatDueShort, formatShortDuration } from './taskTableFormat'
 
 describe('formatShortDuration', () => {
   it('mostra traço sem tempo', () => {
@@ -32,5 +32,18 @@ describe('dueTone', () => {
     expect(dueTone('2026-11-18', now)).toBe('warning')
     expect(dueTone('2026-11-19', now)).toBeUndefined()
     expect(dueTone(null, now)).toBeUndefined()
+  })
+})
+
+describe('blockedLabel', () => {
+  it('cita de quem a tarefa depende', () => {
+    expect(blockedLabel([702])).toBe('Bloqueada: depende de #702')
+    expect(blockedLabel([702, 705])).toBe('Bloqueada: depende de #702 e #705')
+    expect(blockedLabel([1, 2, 3])).toBe('Bloqueada: depende de #1, #2 e #3')
+  })
+
+  it('cai no texto genérico sem ids', () => {
+    expect(blockedLabel([])).toBe('Bloqueada por dependências')
+    expect(blockedLabel(undefined)).toBe('Bloqueada por dependências')
   })
 })

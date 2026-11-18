@@ -924,20 +924,23 @@ function enrichTasks(rows: (Task & { project_name?: string })[]): Task[] {
     subtaskStats.set(stat.owner_task_id, { total: stat.total, completed: stat.completed })
   }
 
-  const blockedIds = new Set(
-    (
-      db
-        .prepare(
-          `
-    SELECT DISTINCT d.task_id as owner_task_id
+  const blockedBy = new Map<number, number[]>()
+  const blockerRows = db
+    .prepare(
+      `
+    SELECT d.task_id as owner_task_id, d.depends_on_task_id as blocker_id
     FROM task_dependencies d
     JOIN tasks dep ON dep.id = d.depends_on_task_id
     WHERE d.task_id IN (${placeholders}) AND dep.status != 'finalizada'
+    ORDER BY d.depends_on_task_id ASC
   `
-        )
-        .all(...ids) as { owner_task_id: number }[]
-    ).map((row) => row.owner_task_id)
-  )
+    )
+    .all(...ids) as { owner_task_id: number; blocker_id: number }[]
+  for (const { owner_task_id, blocker_id } of blockerRows) {
+    const list = blockedBy.get(owner_task_id)
+    if (list) list.push(blocker_id)
+    else blockedBy.set(owner_task_id, [blocker_id])
+  }
 
   return rows.map((row) => {
     const stats = subtaskStats.get(row.id)
@@ -950,7 +953,8 @@ function enrichTasks(rows: (Task & { project_name?: string })[]): Task[] {
       contexts: contextsByTask.get(row.id) ?? [],
       subtask_count: stats?.total ?? 0,
       completed_subtask_count: stats?.completed ?? 0,
-      is_blocked: blockedIds.has(row.id)
+      is_blocked: blockedBy.has(row.id),
+      blocked_by: blockedBy.get(row.id) ?? []
     }
   })
 }

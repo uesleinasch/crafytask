@@ -23,3 +23,10 @@ export function dueTone(date: string | null | undefined, now: Date): DueTone {
   if (date === today) return 'warning'
   return undefined
 }
+
+export function blockedLabel(blockerIds: readonly number[] | undefined): string {
+  const refs = (blockerIds ?? []).map((id) => `#${id}`)
+  if (refs.length === 0) return 'Bloqueada por dependências'
+  const list = refs.length === 1 ? refs[0] : `${refs.slice(0, -1).join(', ')} e ${refs.at(-1)}`
+  return `Bloqueada: depende de ${list}`
+}

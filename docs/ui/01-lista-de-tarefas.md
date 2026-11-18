@@ -185,7 +185,7 @@ Toda linha tem uma linha de texto só: nada de descrição, barra ou contador em
 
 A célula **Tarefa**, da esquerda para a direita: botão de expandir subtarefas (`ChevronRight`/
 `ChevronDown`; a quantidade fica no rótulo acessível e no tooltip, e o espaço é mantido quando não
-há subtarefas), `Lock` se bloqueada, ponto pulsante (`LiveDot`) se rodando, o nome (500, reticências,
+há subtarefas), `Lock` se bloqueada (tooltip e rótulo "Bloqueada: depende de #702 e #705", de `blocked_by`), ponto pulsante (`LiveDot`) se rodando, o nome (500, reticências,
 riscado se finalizada; é um link `#/task/<id>`, então recebe foco pelo Tab), `Clock` com o horário
 agendado no tooltip e no rótulo acessível, `Copy` com "Também em …" ao agrupar por contexto e
 `JiraTaskControls` em task do Jira (ver abaixo; a forma do Jira na tabela é a F2-i).
@@ -243,7 +243,7 @@ Grade `repeat(auto-fill, minmax(min(100%, 260px), 1fr))` com 16px de espaço. Ca
 `Card size="small" hoverable` do antd, com a mesma escala de time leak da tabela no fundo e a borda
 na cor primária quando selecionado:
 
-1. **Topo, à esquerda:** checkbox de seleção, `#id` em mono e cadeado se bloqueada; abaixo, ponto
+1. **Topo, à esquerda:** checkbox de seleção, `#id` em mono e cadeado se bloqueada (mesmo texto da tabela); abaixo, ponto
    pulsante se rodando e o nome (link `#/task/<id>`, riscado se finalizada); abaixo, se houver
    subtarefas, um botão com `Progress` fino e `feitas/total` que abre a lista delas.
 2. **Topo, à direita:** `TaskActions` com Hoje e `⋯` (o mesmo menu da tabela).

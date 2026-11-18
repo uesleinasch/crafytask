@@ -180,6 +180,7 @@ export interface Task {
   subtask_count?: number // computed
   completed_subtask_count?: number // computed
   is_blocked?: boolean // computed from dependencies
+  blocked_by?: number[]
   // FASE 4.2: Energy Tracking
   energy_level?: EnergyLevel
   // FASE 5: Notas ricas (JSON serializado — ProseMirror/Tiptap; legado Editor.js)
