@@ -1,5 +1,5 @@
+import { Button, Tooltip } from 'antd'
 import { SquareTerminal } from 'lucide-react'
-import { cn } from '@renderer/lib/utils'
 import { useTerminalStore } from '@renderer/stores/terminalStore'
 import { TERMINAL_SHORTCUT_LABEL } from './terminalKeys'
 
@@ -28,22 +28,21 @@ export function TerminalTaskButton({
   }
 
   return (
-    <button
-      onClick={() => void handleClick()}
+    <Tooltip
       title={
         workingDir
           ? `Terminal em ${workingDir} (${TERMINAL_SHORTCUT_LABEL})`
           : 'Escolher o diretório de trabalho e abrir o terminal'
       }
-      className={cn(
-        'flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium border transition-colors',
-        isShowingTask
-          ? 'bg-orange-500 text-white border-orange-500 hover:bg-orange-600'
-          : 'bg-white text-orange-600 border-orange-300 hover:bg-orange-50 hover:border-orange-400'
-      )}
     >
-      <SquareTerminal size={14} />
-      Terminal
-    </button>
+      <Button
+        type={isShowingTask ? 'primary' : 'text'}
+        ghost={isShowingTask}
+        aria-label="Terminal"
+        aria-pressed={isShowingTask}
+        icon={<SquareTerminal size={16} strokeWidth={1.75} aria-hidden />}
+        onClick={() => void handleClick()}
+      />
+    </Tooltip>
   )
 }
