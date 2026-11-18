@@ -66,10 +66,14 @@ sistema uma única vez (até zerar o tempo ou trocar de tarefa).
 Cartão com as abas **Notas | Desenho**, as ações da nota (só na aba Notas) e o botão **Modo foco**
 (`Expand`, "Modo foco (Esc sai)").
 
-- **Salvar local** (`NotesActions`) — na primeira vez abre o seletor de arquivo e grava a nota como
-  Markdown com frontmatter YAML + imagens copiadas; depois cada auto-save (de nota ou desenho)
-  reexporta.
-- **Salvar e sincronizar** — força o save e empurra a nota para o Notion. Além disso, a cada **60
+As duas ações (`NotesActions`) são botões `text` com tooltip, também na barra do modo foco:
+
+- **Salvar em arquivo local** (`Save`) — na primeira vez abre o seletor de arquivo e grava a nota
+  como Markdown com frontmatter YAML + imagens copiadas; depois cada auto-save (de nota ou desenho)
+  reexporta. Com arquivo escolhido, o nome aparece em mono ao lado do ícone a partir de `lg`, e o
+  tooltip mostra o caminho; clicar de novo escolhe outro arquivo.
+- **Salvar e sincronizar com o Notion** (`RefreshCw`, gira enquanto sincroniza) — força o save e
+  empurra a nota para o Notion. Além disso, a cada **60
   segundos** a página sincroniza sozinha se houver alteração pendente e o Notion estiver configurado.
 
 ### Modo foco — `FocusOverlay`

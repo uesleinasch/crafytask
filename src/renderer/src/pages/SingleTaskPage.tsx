@@ -345,6 +345,7 @@ export function SingleTaskPage(): React.JSX.Element {
           onExportLocal={handleExportLocalChoose}
           syncingNotes={syncingNotes}
           onSaveAndSync={handleSaveAndSync}
+          showFile={!!screens.lg}
         />
       }
       displaySeconds={displaySeconds}
