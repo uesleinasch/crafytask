@@ -22,7 +22,6 @@ import { PROJECT_STATUS_LABELS, PROJECT_STATUS_COLORS } from '@shared/types'
 import {
   FolderKanban,
   Plus,
-  ArrowLeft,
   Target,
   CheckCircle2,
   Clock,
@@ -98,14 +97,6 @@ export function ProjectsPage(): React.JSX.Element {
       {/* Header */}
       <header className="shrink-0 px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/')}
-            className="pl-0 text-slate-500 hover:text-slate-900 hover:bg-transparent"
-          >
-            <ArrowLeft size={18} className="mr-2" /> Voltar
-          </Button>
-          <div className="h-6 w-px bg-slate-200" />
           <FolderKanban size={20} className="text-slate-700" />
           <h1 className="text-lg font-bold text-slate-900">Projetos</h1>
         </div>

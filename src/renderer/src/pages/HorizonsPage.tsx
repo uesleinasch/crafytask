@@ -24,7 +24,6 @@ import { useAreas, useGoals } from '@renderer/hooks/useHorizons'
 import { useProjects } from '@renderer/hooks/useProjects'
 import type { Area, Goal, GoalHorizon, CreateAreaInput, CreateGoalInput, Task } from '@shared/types'
 import {
-  ArrowLeft,
   Plus,
   Target,
   Mountain,
@@ -368,14 +367,6 @@ export function HorizonsPage(): React.JSX.Element {
       {/* Header */}
       <header className="shrink-0 px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/')}
-            className="h-8 px-2 text-slate-500 hover:text-slate-700"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
           <div className="flex items-center gap-2">
             <Mountain className="h-5 w-5 text-indigo-600" />
             <div>

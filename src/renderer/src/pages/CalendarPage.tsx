@@ -24,7 +24,6 @@ import { useCalendarWeek, useCalendarMonth } from '@renderer/hooks/useCalendar'
 import { useTimerStore } from '@renderer/stores/timerStore'
 import type { Task, TaskListItem, TimeBlock, CreateTimeBlockInput } from '@shared/types'
 import {
-  ArrowLeft,
   ChevronLeft,
   ChevronRight,
   Calendar,
@@ -744,14 +743,6 @@ export function CalendarPage(): React.JSX.Element {
       {/* Header */}
       <header className="shrink-0 px-4 py-3 bg-white border-b border-slate-200 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/')}
-            className="h-8 px-2 text-slate-500"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
           <div className="flex items-center gap-1.5">
             <Calendar className="h-5 w-5 text-blue-600" />
             <h1 className="text-base font-semibold text-slate-900">Calendário</h1>

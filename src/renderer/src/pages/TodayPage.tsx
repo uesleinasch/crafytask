@@ -24,7 +24,6 @@ import { StatusBadge } from '@renderer/components/StatusBadge'
 import { formatTime } from '@renderer/lib/utils'
 import type { Task } from '../../../shared/types'
 import {
-  ArrowLeft,
   CalendarDays,
   GripVertical,
   Clock,
@@ -278,14 +277,6 @@ export function TodayPage(): React.JSX.Element {
     <div className="flex flex-col h-full overflow-hidden bg-slate-50">
       {/* Header — mesmo padrão de SingleTaskPage */}
       <header className="shrink-0 px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between">
-        <button
-          onClick={() => navigate('/')}
-          className="flex items-center gap-1 text-slate-500 hover:text-slate-900 text-sm font-medium transition-colors"
-        >
-          <ArrowLeft size={18} className="mr-1" />
-          Voltar
-        </button>
-
         <div className="flex items-center gap-3">
           <CalendarDays size={20} className="text-blue-600" />
           <div>

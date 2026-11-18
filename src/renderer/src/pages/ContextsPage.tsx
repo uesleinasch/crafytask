@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Typography } from 'antd'
 import { ScrollArea } from '@renderer/components/ui/scroll-area'
 import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
@@ -13,7 +13,7 @@ import {
 } from '@renderer/components/ui/dialog'
 import { DeleteConfirmDialog } from '@renderer/components/DeleteConfirmDialog'
 import { useContexts } from '@renderer/hooks/useContexts'
-import { ArrowLeft, Plus, MapPin, Pencil, Trash2 } from 'lucide-react'
+import { Plus, MapPin, Pencil, Trash2 } from 'lucide-react'
 import { toast } from '@renderer/components/ui/sonner'
 
 const CONTEXT_COLORS = [
@@ -28,7 +28,6 @@ const CONTEXT_ICONS = [
 ]
 
 export function ContextsPage(): React.JSX.Element {
-  const navigate = useNavigate()
   const { contexts, loading, createContext, updateContext, deleteContext } = useContexts()
 
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -89,16 +88,9 @@ export function ContextsPage(): React.JSX.Element {
       {/* Header */}
       <header className="shrink-0 px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/')}
-            className="pl-0 text-slate-500 hover:text-slate-900 hover:bg-transparent"
-          >
-            <ArrowLeft size={18} className="mr-2" /> Voltar
-          </Button>
-          <div className="h-6 w-px bg-slate-200" />
           <MapPin size={20} className="text-slate-700" />
           <h1 className="text-lg font-bold text-slate-900">Contextos</h1>
+          <Typography.Link href="#/tags">Ver tags</Typography.Link>
         </div>
         <Button
           size="sm"

@@ -25,7 +25,7 @@ import { applyGroupOrder, moveGroupKey } from '@renderer/lib/groupOrder'
 import { buildTaskGroups, JIRA_GROUP_MODES, type GroupBy } from '@renderer/lib/taskGrouping'
 import { TaskKanban } from '@renderer/components/TaskKanban'
 import { TaskMenuChangedContext } from '@renderer/components/taskMenuContext'
-import { eventEmitter } from '@renderer/App'
+import { onNewTaskRequest } from '@renderer/lib/newTaskRequest'
 import { cn } from '@renderer/lib/utils'
 import {
   STATUS_LABELS,
@@ -331,12 +331,7 @@ export function TaskListPage(): React.JSX.Element {
     [refreshTasks, tasks]
   )
 
-  // Ouvir evento de nova tarefa do TitleBar
-  useEffect(() => {
-    const openDialog = (): void => setDialogOpen(true)
-    eventEmitter.on('open-new-task-dialog', openDialog)
-    return () => eventEmitter.off('open-new-task-dialog', openDialog)
-  }, [])
+  useEffect(() => onNewTaskRequest(() => setDialogOpen(true)), [])
 
   const handleCreateTask = useCallback(
     async (data: CreateTaskInput): Promise<void> => {

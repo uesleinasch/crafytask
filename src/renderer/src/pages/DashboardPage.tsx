@@ -1,9 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { Button } from '@renderer/components/ui/button'
 import { ScrollArea } from '@renderer/components/ui/scroll-area'
 import {
-  ArrowLeft,
   Clock,
   CheckCircle,
   Activity,
@@ -131,7 +129,6 @@ const FLOW_ORDER = ['inbox', 'proximas', 'executando', 'aguardando', 'finalizada
 const FLOW_COLORS = ['#94a3b8', '#3b82f6', '#22c55e', '#f59e0b', '#10b981', '#14b8a6']
 
 export function DashboardPage(): React.JSX.Element {
-  const navigate = useNavigate()
   const [weeklyStats, setWeeklyStats] = useState<DailyStats[]>([])
   const [taskTimeStats, setTaskTimeStats] = useState<TaskTimeStats[]>([])
   const [statusStats, setStatusStats] = useState<StatusStats[]>([])
@@ -321,13 +318,6 @@ export function DashboardPage(): React.JSX.Element {
       {/* Header */}
       <header className="shrink-0 px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/')}
-            className="pl-0 text-slate-500 hover:text-slate-900 hover:bg-transparent"
-          >
-            <ArrowLeft size={18} className="mr-2" /> Voltar
-          </Button>
           <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
             <TrendingUp size={24} className="text-emerald-600" />
             Dashboard Avançado

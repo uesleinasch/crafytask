@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Typography } from 'antd'
 import { ScrollArea } from '@renderer/components/ui/scroll-area'
 import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
@@ -16,7 +16,7 @@ import { ColorPicker } from '@renderer/components/ColorPicker'
 import { DeleteConfirmDialog } from '@renderer/components/DeleteConfirmDialog'
 import { useTags } from '@renderer/hooks/useTags'
 import { toast } from '@renderer/components/ui/sonner'
-import { ArrowLeft, Merge, Pencil, Plus, Tag as TagIcon, Trash2 } from 'lucide-react'
+import { Merge, Pencil, Plus, Tag as TagIcon, Trash2 } from 'lucide-react'
 import type { TagWithUsage } from '@shared/types'
 
 const DEFAULT_TAG_COLOR = '#6366f1'
@@ -27,7 +27,6 @@ function usageLabel(count: number): string {
 }
 
 export function TagsPage(): React.JSX.Element {
-  const navigate = useNavigate()
   const { tags, loading, createTag, updateTag, mergeTags, deleteTag } = useTags()
 
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -124,16 +123,9 @@ export function TagsPage(): React.JSX.Element {
     <div className="flex flex-col h-full overflow-hidden bg-slate-50">
       <header className="shrink-0 px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/')}
-            className="pl-0 text-slate-500 hover:text-slate-900 hover:bg-transparent"
-          >
-            <ArrowLeft size={18} className="mr-2" /> Voltar
-          </Button>
-          <div className="h-6 w-px bg-slate-200" />
           <TagIcon size={20} className="text-slate-700" />
           <h1 className="text-lg font-bold text-slate-900">Tags</h1>
+          <Typography.Link href="#/contexts">Ver contextos</Typography.Link>
         </div>
         <Button
           size="sm"

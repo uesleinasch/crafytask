@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import {
   DndContext,
   PointerSensor,
@@ -11,7 +11,7 @@ import {
   type DragEndEvent
 } from '@dnd-kit/core'
 import { arrayMove } from '@dnd-kit/sortable'
-import { ArrowLeft, Minimize2, NotebookTabs } from 'lucide-react'
+import { Minimize2, NotebookTabs } from 'lucide-react'
 import type { Notebook, NotebookPageSummary, NotebookSection } from '@shared/types'
 import {
   canPlaceUnder,
@@ -21,7 +21,6 @@ import {
   outdentPlacement,
   type PagePlacement
 } from '@shared/notebookTree'
-import { Button } from '@renderer/components/ui/button'
 import { toast } from '@renderer/components/ui/sonner'
 import { DeleteConfirmDialog } from '@renderer/components/DeleteConfirmDialog'
 import { NotebookList } from '@renderer/components/notebooks/NotebookList'
@@ -111,7 +110,6 @@ function useFallbackSelection<T extends { id: number }>(
 }
 
 export function NotebooksPage(): React.JSX.Element {
-  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const [notebookId, setNotebookId] = usePersistedState<number | null>(
     'ticktask.notebooks.notebook',
@@ -227,11 +225,6 @@ export function NotebooksPage(): React.JSX.Element {
     } finally {
       setSyncingNotebookId(null)
     }
-  }
-
-  const goBack = async (): Promise<void> => {
-    await leavePage()
-    navigate('/')
   }
 
   const createPage = (parentId: number | null): Promise<void> =>
@@ -357,14 +350,6 @@ export function NotebooksPage(): React.JSX.Element {
     <div className="flex flex-col h-full overflow-hidden bg-slate-50">
       {!focused && (
         <header className="shrink-0 px-6 py-4 bg-white border-b border-slate-200 flex items-center gap-3">
-          <Button
-            variant="ghost"
-            onClick={() => void goBack()}
-            className="pl-0 text-slate-500 hover:text-slate-900 hover:bg-transparent"
-          >
-            <ArrowLeft size={18} className="mr-2" /> Voltar
-          </Button>
-          <div className="h-6 w-px bg-slate-200" />
           <NotebookTabs size={20} className="text-slate-700" />
           <h1 className="text-lg font-bold text-slate-900">Cadernos</h1>
           <div className="ml-auto">
