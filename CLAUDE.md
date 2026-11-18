@@ -327,9 +327,10 @@ Defined in `electron.vite.config.ts` and the tsconfigs:
   the target.
   `ui-ux/TickTask - Design System & Guia de Estilo.md` is the original intent and is partly stale
   (it prescribes `rounded-xl` + shadows; the app moved to `rounded-sm` and dropped `shadow-sm`).
-  Two gotchas worth knowing: `--radius: 0.75rem` makes `rounded-sm` resolve to **8px**, not
-  Tailwind's 2px; and `--font-sans`/`--font-mono` point at `--font-geist-*` variables that are never
-  defined.
+  Gotcha: `--radius: 0.75rem` makes `rounded-sm` resolve to **8px**, not Tailwind's 2px.
+  Fonts are Geist and Geist Mono from `@fontsource-variable/*` (`--font-sans`/`--font-mono`).
+  `main.css` declares `@layer theme, base, antd, components, utilities` and `main.tsx` wraps the app
+  in `StyleProvider layer`, so antd styles sit in their own layer above Tailwind's preflight.
 - Status/category colors are declared in several places at once (`shared/types.ts`, `StatusBadge`,
   `CategoryBadge`, plus local copies in `DashboardPage` and `CalendarPage`) and they **disagree** —
   check `docs/ui/14-design-tokens.md` before assuming a single source of truth.

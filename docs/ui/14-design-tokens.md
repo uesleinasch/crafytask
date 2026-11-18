@@ -65,35 +65,18 @@ Cinco raios diferentes em circulação, sem regra explícita de qual usar quando
 
 ## 3. Tipografia
 
-```css
-font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-             Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans',
-             'Helvetica Neue', sans-serif;
-```
-
-Definido no `body`. Não há `@font-face` nem importação de webfont: se **Inter** não estiver instalada
-no sistema, o app cai na fonte de interface do SO.
-
-### Aviso sobre a fonte monoespaçada
-
-O `@theme inline` define:
+Geist (interface) e Geist Mono (números, tempo, ids), empacotadas por
+`@fontsource-variable/geist` e `@fontsource-variable/geist-mono` e importadas em `main.tsx`. O
+`@theme inline` aponta para elas:
 
 ```css
---font-sans: var(--font-geist-sans);
---font-mono: var(--font-geist-mono);
+--font-sans: 'Geist Variable', system-ui, sans-serif;
+--font-mono: 'Geist Mono Variable', ui-monospace, monospace;
 ```
 
-**`--font-geist-sans` e `--font-geist-mono` não são definidas em lugar nenhum do projeto.** Como as
-utilidades `font-sans` e `font-mono` do Tailwind resolvem esses tokens, é provável que `font-mono`
-não aplique nenhuma família monoespaçada e o texto herde a pilha do `body` (Inter). Isso afetaria
-todo cronômetro, tempo de sessão e valor numérico do app — inclusive o display gigante da tela de
-tarefa.
-
-> Vale confirmar visualmente no app antes de agir. Se confirmado, é um dos ajustes de maior impacto
-> visual pelo menor esforço: basta declarar uma pilha mono real.
-
-O `tabular-nums` continua funcionando independentemente disso — os números não "pulam" a cada
-segundo.
+O `body` usa `var(--font-sans)`. Até a F0-a da refatoração, esses tokens apontavam para variáveis
+que não existiam (`--font-geist-*`) e o `body` pedia Inter, que não era empacotada: `font-mono` não
+aplicava família monoespaçada nenhuma.
 
 ### Escala em uso
 

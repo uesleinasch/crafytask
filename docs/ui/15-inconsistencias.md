@@ -40,10 +40,9 @@ com texto branco. Ambos aparecem em listas do mesmo app.
 
 ### A6. Tokens de fonte apontam para variáveis inexistentes
 
-`--font-sans: var(--font-geist-sans)` e `--font-mono: var(--font-geist-mono)`, e nenhuma das duas
-é definida. É provável que a utilidade `font-mono` não aplique família monoespaçada nenhuma — o que
-afetaria o cronômetro de `text-8xl`, o elemento mais proeminente do app.
-**Requer confirmação visual no app rodando.**
+**Resolvida na F0-a.** `--font-sans: var(--font-geist-sans)` e `--font-mono: var(--font-geist-mono)`
+apontavam para variáveis que não existiam, e a utilidade `font-mono` não aplicava família
+monoespaçada nenhuma. Agora os tokens apontam para Geist e Geist Mono, empacotadas.
 
 ### A7. Tema escuro definido e desligado
 
