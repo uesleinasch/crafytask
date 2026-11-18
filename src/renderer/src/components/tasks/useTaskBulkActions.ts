@@ -24,11 +24,12 @@ export function useTaskBulkActions(onDone?: () => void): TaskBulkActions {
     try {
       await action()
       toast.success(success)
-      onChanged()
-      onDone?.()
     } catch (error) {
       console.error('[useTaskBulkActions]', error)
       toast.error(error instanceof Error ? error.message : 'Não foi possível concluir a ação')
+    } finally {
+      onChanged()
+      onDone?.()
     }
   }
 
@@ -69,7 +70,7 @@ export function useTaskBulkActions(onDone?: () => void): TaskBulkActions {
       modal.confirm({
         title: `Excluir ${plural(ids.length, 'tarefa', 'tarefas')}?`,
         content:
-          'Apaga também sessões, notas e desenho. No Notion e no Google também, se a sincronização estiver ligada.',
+          'Apaga também sessões, notas e desenho. No Notion e no Google também, se a sincronização estiver ligada. A issue no Jira continua.',
         okText: 'Excluir',
         okButtonProps: { danger: true },
         cancelText: 'Cancelar',

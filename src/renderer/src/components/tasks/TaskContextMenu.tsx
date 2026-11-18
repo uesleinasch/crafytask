@@ -3,9 +3,9 @@ import { Dropdown, type MenuProps } from 'antd'
 import {
   Archive,
   CalendarDays,
-  CheckCheck,
+  CircleCheck,
   Copy,
-  ExternalLink,
+  FileText,
   Flag,
   Folder,
   MapPin,
@@ -22,7 +22,7 @@ import { STATUS_ICONS } from '@renderer/components/chips/statusMeta'
 import { useTimerStore } from '@renderer/stores/timerStore'
 import { STATUS_COLORS } from '@renderer/theme/semantic'
 import { useThemeSettings } from '@renderer/theme/themeSettings'
-import { plural } from './bulkActionText'
+import { plural, todayToggle } from './bulkActionText'
 import { useTaskBulkActions } from './useTaskBulkActions'
 
 const STATUSES = Object.keys(STATUS_LABELS) as TaskStatus[]
@@ -55,7 +55,11 @@ export function TaskContextMenu({
   const ids = many ? selectedIds : [task.id]
   const targets = ids.map((id) => (id === task.id ? task : taskById(id)))
   const anyBlocked = targets.some((t) => t?.is_blocked)
-  const scheduledToday = task.scheduled_date === localDateString(new Date())
+  const todayItems = targets.map((t, index) => ({
+    id: ids[index],
+    scheduled_date: t?.scheduled_date
+  }))
+  const removesFromToday = todayToggle(todayItems, localDateString(new Date())).date === null
   const taskContextIds = (task.contexts ?? []).map((c) => c.id)
   const tag = (label: string): string => (many ? `${label} (${ids.length})` : label)
   const check = (on: boolean): string => (!many && on ? '✓ ' : '')
@@ -64,10 +68,11 @@ export function TaskContextMenu({
     try {
       await action()
       toast.success(success)
-      onChanged()
     } catch (error) {
       console.error('[TaskContextMenu]', error)
       toast.error(error instanceof Error ? error.message : 'Não foi possível concluir a ação')
+    } finally {
+      onChanged()
     }
   }
 
@@ -81,7 +86,7 @@ export function TaskContextMenu({
           }
         ]
       : [
-          { key: 'open', icon: <ExternalLink {...ICON} />, label: 'Abrir' },
+          { key: 'open', icon: <FileText {...ICON} />, label: 'Abrir' },
           task.is_running
             ? { key: 'stop', icon: <Pause {...ICON} />, label: 'Pausar timer' }
             : {
@@ -94,11 +99,11 @@ export function TaskContextMenu({
     {
       key: 'today',
       icon: <CalendarDays {...ICON} />,
-      label: tag(!many && scheduledToday ? 'Tirar do plano de hoje' : 'Planejar para hoje')
+      label: tag(removesFromToday ? 'Tirar do plano de hoje' : 'Planejar para hoje')
     },
     {
       key: 'status',
-      icon: <CheckCheck {...ICON} />,
+      icon: <CircleCheck {...ICON} />,
       label: tag('Marcar como'),
       children: STATUSES.map((status) => {
         const Icon = STATUS_ICONS[status]
@@ -161,10 +166,7 @@ export function TaskContextMenu({
     if (kind === 'start') void run(() => startTimer(task.id), 'Timer iniciado')
     if (kind === 'today') {
       if (!many && onScheduleForToday) onScheduleForToday(task.id)
-      else
-        void bulk.toggleToday(
-          targets.map((t, index) => ({ id: ids[index], scheduled_date: t?.scheduled_date }))
-        )
+      else void bulk.toggleToday(todayItems)
     }
     if (kind === 'status') void bulk.setStatus(ids, value as TaskStatus)
     if (kind === 'category') void bulk.setCategory(ids, value as TaskCategory)

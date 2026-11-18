@@ -13,6 +13,7 @@ interface BulkActionBarProps {
   taskById: (id: number) => Task | undefined
   projects: Project[]
   visibleCount: number
+  selectedVisibleCount: number
   onSelectAll: () => void
   onClear: () => void
 }
@@ -22,108 +23,115 @@ export function BulkActionBar({
   taskById,
   projects,
   visibleCount,
+  selectedVisibleCount,
   onSelectAll,
   onClear
 }: BulkActionBarProps): React.JSX.Element | null {
   const { token } = theme.useToken()
   const bulk = useTaskBulkActions()
   const count = selectedIds.length
-  if (count === 0) return null
   const anyBlocked = selectedIds.some((id) => taskById(id)?.is_blocked)
+  const status = (
+    <span className="sr-only" aria-live="polite">
+      {count > 0 ? plural(count, 'tarefa selecionada', 'tarefas selecionadas') : ''}
+    </span>
+  )
+  if (count === 0) return status
 
   return (
-    <div
-      role="region"
-      aria-label="Ações em massa"
-      style={{ position: 'sticky', bottom: 12, zIndex: 5, marginTop: 12 }}
-    >
-      <Flex
-        wrap="wrap"
-        align="center"
-        gap={8}
-        style={{
-          padding: '8px 12px',
-          borderRadius: token.borderRadiusLG,
-          background: token.colorBgElevated,
-          border: `1px solid ${token.colorBorder}`,
-          boxShadow: token.boxShadowSecondary
-        }}
+    <>
+      {status}
+      <div
+        role="region"
+        aria-label="Ações em massa"
+        style={{ position: 'sticky', bottom: 12, zIndex: 5, marginTop: 12 }}
       >
-        <Typography.Text strong aria-live="polite">
-          {plural(count, 'selecionada', 'selecionadas')}
-        </Typography.Text>
-        {count < visibleCount && (
-          <Button size="small" type="link" onClick={onSelectAll}>
-            Selecionar todas ({visibleCount})
-          </Button>
-        )}
-        <Button size="small" type="link" onClick={onClear}>
-          Limpar
-        </Button>
-        <div style={{ flex: 1 }} />
-        <Select<TaskStatus>
-          size="small"
-          placeholder="Marcar como…"
-          aria-label="Marcar como"
-          value={null}
-          style={{ width: 150 }}
-          options={STATUSES.map((status) => ({
-            value: status,
-            label: STATUS_LABELS[status],
-            disabled: status === 'executando' && anyBlocked
-          }))}
-          onChange={(status) => void bulk.setStatus(selectedIds, status)}
-        />
-        <Select<number>
-          size="small"
-          showSearch
-          optionFilterProp="label"
-          placeholder="Mover para projeto…"
-          aria-label="Mover para projeto"
-          value={null}
-          style={{ width: 180 }}
-          options={[
-            { value: NO_PROJECT, label: 'Sem projeto' },
-            ...projects
-              .filter((project) => project.status !== 'archived')
-              .map((project) => ({ value: project.id, label: project.name }))
-          ]}
-          onChange={(value) => {
-            const projectId = value === NO_PROJECT ? null : value
-            void bulk.moveToProject(
-              selectedIds,
-              projectId,
-              projects.find((p) => p.id === projectId)?.name
-            )
+        <Flex
+          wrap="wrap"
+          align="center"
+          gap={8}
+          style={{
+            padding: '8px 12px',
+            borderRadius: token.borderRadiusLG,
+            background: token.colorBgElevated,
+            border: `1px solid ${token.colorBorder}`,
+            boxShadow: token.boxShadowSecondary
           }}
-        />
-        <Button
-          size="small"
-          icon={<CalendarDays {...ICON} />}
-          onClick={() =>
-            void bulk.toggleToday(
-              selectedIds.map((id) => ({ id, scheduled_date: taskById(id)?.scheduled_date }))
-            )
-          }
         >
-          Hoje
-        </Button>
-        <Button
-          size="small"
-          icon={<Archive {...ICON} />}
-          onClick={() => void bulk.archive(selectedIds)}
-        >
-          Arquivar
-        </Button>
-        <Button
-          size="small"
-          danger
-          icon={<Trash2 {...ICON} />}
-          onClick={() => bulk.confirmDelete(selectedIds)}
-        >
-          Excluir
-        </Button>
-      </Flex>
-    </div>
+          <Typography.Text strong>{plural(count, 'selecionada', 'selecionadas')}</Typography.Text>
+          {selectedVisibleCount < visibleCount && (
+            <Button size="small" type="link" onClick={onSelectAll}>
+              Selecionar todas ({visibleCount})
+            </Button>
+          )}
+          <Button size="small" type="link" onClick={onClear}>
+            Limpar
+          </Button>
+          <div style={{ flex: 1 }} />
+          <Select<TaskStatus>
+            size="small"
+            placeholder="Marcar como…"
+            aria-label="Marcar como"
+            value={null}
+            style={{ width: 150 }}
+            options={STATUSES.map((status) => ({
+              value: status,
+              label: STATUS_LABELS[status],
+              disabled: status === 'executando' && anyBlocked
+            }))}
+            onChange={(status) => void bulk.setStatus(selectedIds, status)}
+          />
+          <Select<number>
+            size="small"
+            showSearch
+            optionFilterProp="label"
+            placeholder="Mover para projeto…"
+            aria-label="Mover para projeto"
+            value={null}
+            style={{ width: 180 }}
+            options={[
+              { value: NO_PROJECT, label: 'Sem projeto' },
+              ...projects
+                .filter((project) => project.status !== 'archived')
+                .map((project) => ({ value: project.id, label: project.name }))
+            ]}
+            onChange={(value) => {
+              const projectId = value === NO_PROJECT ? null : value
+              void bulk.moveToProject(
+                selectedIds,
+                projectId,
+                projects.find((p) => p.id === projectId)?.name
+              )
+            }}
+          />
+          <Button
+            size="small"
+            icon={<CalendarDays {...ICON} />}
+            onClick={() =>
+              void bulk.toggleToday(
+                selectedIds.map((id) => ({ id, scheduled_date: taskById(id)?.scheduled_date }))
+              )
+            }
+          >
+            Hoje
+          </Button>
+          <Button
+            size="small"
+            icon={<Archive {...ICON} />}
+            onClick={() => void bulk.archive(selectedIds)}
+          >
+            Arquivar
+          </Button>
+          <Button
+            size="small"
+            danger
+            icon={<Trash2 {...ICON} />}
+            onClick={() => bulk.confirmDelete(selectedIds)}
+          >
+            Excluir
+          </Button>
+        </Flex>
+      </div>
+    </>
   )
 }

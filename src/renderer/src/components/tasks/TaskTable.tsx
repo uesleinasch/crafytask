@@ -77,7 +77,7 @@ interface TaskTableProps {
   onToggleGroupSelection: (taskIds: number[], selected: boolean) => void
   onTaskClick: (taskId: number) => void
   onScheduleForToday?: (taskId: number) => void
-  onSubtaskIdsChange?: (ids: number[]) => void
+  onSubtasksChange?: (subtasks: Task[]) => void
   collapsedGroups: Set<string>
   onToggleGroup: (key: string) => void
 }
@@ -128,7 +128,7 @@ export function TaskTable({
   onToggleGroupSelection,
   onTaskClick,
   onScheduleForToday,
-  onSubtaskIdsChange,
+  onSubtasksChange,
   collapsedGroups,
   onToggleGroup
 }: TaskTableProps): React.JSX.Element {
@@ -166,8 +166,8 @@ export function TaskTable({
   }, [tasks, loadSubtasks])
 
   useEffect(() => {
-    onSubtaskIdsChange?.(Object.values(subtasks).flatMap((list) => list.map((t) => t.id)))
-  }, [subtasks, onSubtaskIdsChange])
+    onSubtasksChange?.(Object.values(subtasks).flat())
+  }, [subtasks, onSubtasksChange])
 
   const toggleExpand = (taskId: number): void => {
     const next = new Set(expanded)

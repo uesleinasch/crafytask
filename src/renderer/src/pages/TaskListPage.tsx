@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   Alert,
   Button,
@@ -33,6 +33,7 @@ import {
   type TaskMenuData
 } from '@renderer/components/taskMenuContext'
 import { BulkActionBar } from '@renderer/components/tasks/BulkActionBar'
+import { plural } from '@renderer/components/tasks/bulkActionText'
 import { onNewTaskRequest } from '@renderer/lib/newTaskRequest'
 import { StatusTabLabel } from '@renderer/components/tasks/StatusTabLabel'
 import { PageContainer } from '@renderer/components/shell/PageContainer'
@@ -56,6 +57,7 @@ import {
 import { TASK_STATUSES, type TaskStatusCounts } from '@shared/taskStatusCounts'
 import { localDateString } from '@shared/dueState'
 import {
+  type Task,
   type TaskStatus,
   type CreateTaskInput,
   type Tag,
@@ -126,7 +128,8 @@ export function TaskListPage(): React.JSX.Element {
       : listGroup
   const viewMode: 'cards' | 'table' = view === 'cards' ? 'cards' : 'table'
   const [selectedTaskIds, setSelectedTaskIds] = useState<number[]>([])
-  const [loadedSubtaskIds, setLoadedSubtaskIds] = useState<number[]>([])
+  const [loadedSubtasks, setLoadedSubtasks] = useState<Task[]>([])
+  const contentRef = useRef<HTMLDivElement>(null)
 
   const filters = useMemo<TaskListFilters>(
     () => ({
@@ -207,7 +210,11 @@ export function TaskListPage(): React.JSX.Element {
       return next
     })
   }, [])
-  const taskById = useCallback((id: number) => tasks.find((task) => task.id === id), [tasks])
+  const tasksById = useMemo(
+    () => new Map([...loadedSubtasks, ...tasks].map((task) => [task.id, task])),
+    [tasks, loadedSubtasks]
+  )
+  const taskById = useCallback((id: number) => tasksById.get(id), [tasksById])
   const menuData = useMemo<TaskMenuData>(
     () => ({
       projects: availableProjects,
@@ -247,11 +254,20 @@ export function TaskListPage(): React.JSX.Element {
 
   useEffect(() => {
     setSelectedTaskIds((current) => {
-      const allowedIds = new Set([...filteredTaskIds, ...loadedSubtaskIds])
+      const allowedIds = new Set([...filteredTaskIds, ...loadedSubtasks.map((t) => t.id)])
       const next = current.filter((id) => allowedIds.has(id))
       return next.length === current.length ? current : next
     })
-  }, [filteredTaskIds, loadedSubtaskIds])
+  }, [filteredTaskIds, loadedSubtasks])
+
+  const hadSelection = useRef(false)
+  useEffect(() => {
+    const hasSelection = selectedTaskIds.length > 0
+    if (hadSelection.current && !hasSelection && document.activeElement === document.body) {
+      contentRef.current?.focus()
+    }
+    hadSelection.current = hasSelection
+  }, [selectedTaskIds])
 
   const handleScheduleForToday = useCallback(
     async (taskId: number): Promise<void> => {
@@ -261,7 +277,7 @@ export function TaskListPage(): React.JSX.Element {
       try {
         await window.api.scheduleTaskForDate(taskId, isAlreadyToday ? null : today)
         await refreshTasks()
-        toast.success(isAlreadyToday ? 'Removido do plano de hoje' : 'Adicionado ao plano de hoje')
+        toast.success(isAlreadyToday ? 'Fora do plano de hoje' : 'No plano de hoje')
       } catch (err) {
         console.error('Erro ao programar tarefa:', err)
         toast.error('Erro ao atualizar agendamento')
@@ -420,7 +436,12 @@ export function TaskListPage(): React.JSX.Element {
 
         <TaskMenuChangedContext.Provider value={handleMenuChanged}>
           <TaskMenuDataContext.Provider value={menuData}>
-            <div style={{ paddingTop: 12 }}>
+            <div
+              ref={contentRef}
+              tabIndex={-1}
+              aria-label="Tarefas"
+              style={{ paddingTop: 12, outline: 'none' }}
+            >
               {!loading && statusFilter === 'inbox' && tasks.length > 0 && (
                 <Alert
                   showIcon
@@ -429,9 +450,7 @@ export function TaskListPage(): React.JSX.Element {
                   title={
                     <span>
                       <strong>
-                        {tasks.length === 1
-                          ? '1 item para processar.'
-                          : `${tasks.length} itens para processar.`}
+                        {plural(tasks.length, 'item para processar.', 'itens para processar.')}
                       </strong>{' '}
                       Para cada um: é acionável? Leva menos de 2 minutos? É de um projeto?
                     </span>
@@ -539,7 +558,7 @@ export function TaskListPage(): React.JSX.Element {
                     onToggleSelectAll={toggleSelectAllVisible}
                     onToggleGroupSelection={toggleGroupSelection}
                     onScheduleForToday={handleScheduleForToday}
-                    onSubtaskIdsChange={setLoadedSubtaskIds}
+                    onSubtasksChange={setLoadedSubtasks}
                     collapsedGroups={collapsedGroups}
                     onToggleGroup={toggleCollapsedGroup}
                   />
@@ -556,7 +575,10 @@ export function TaskListPage(): React.JSX.Element {
                 taskById={taskById}
                 projects={availableProjects}
                 visibleCount={tasks.length}
-                onSelectAll={() => toggleSelectAllVisible(true)}
+                selectedVisibleCount={tasks.filter((task) => selectedTaskIdSet.has(task.id)).length}
+                onSelectAll={() =>
+                  setSelectedTaskIds((current) => [...new Set([...current, ...filteredTaskIds])])
+                }
                 onClear={() => setSelectedTaskIds([])}
               />
             </div>
