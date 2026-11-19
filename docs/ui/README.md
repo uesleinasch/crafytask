@@ -17,7 +17,7 @@ qual uma refatoração de interface pode ser desenhada sem perder funcionalidade
 | [04-calendario.md](04-calendario.md) | Rota `/calendar` — grade semanal com blocos de tempo e calendário mensal com drag-and-drop |
 | [05-projetos.md](05-projetos.md) | Rotas `/projects` e `/project/:id` |
 | [06-horizontes.md](06-horizontes.md) | Rota `/horizons` — as 6 perspectivas GTD (H0–H5), áreas de foco e metas |
-| [07-revisao-semanal.md](07-revisao-semanal.md) | Rota `/review` — checklist de revisão e indicadores de saúde do sistema |
+| [07-revisao-semanal.md](07-revisao-semanal.md) | Rota `/review` — entrada, fluxo guiado de 10 passos e indicadores de saúde do sistema |
 | [08-dashboard.md](08-dashboard.md) | Rota `/dashboard` — métricas, gráficos e heatmap |
 | [09-contextos-e-tags.md](09-contextos-e-tags.md) | Rotas `/contexts` e `/tags` — as duas telas de taxonomia |
 | [10-arquivadas.md](10-arquivadas.md) | Rota `/archived` — o arquivo morto |

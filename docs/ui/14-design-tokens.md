@@ -244,7 +244,7 @@ Transições comuns: `transition-colors`, `transition-all duration-200`,
 | Captura rápida | `400 × 140` | quick capture |
 | Grade do calendário | 48px por hora (40 no compacto); 00:00–24:00 de `calendarPrefs()` | calendário |
 | Célula do mês | `min-h-[90px]` | calendário |
-| Larguras máximas de conteúdo | `max-w-2xl` (settings) · `max-w-3xl` (revisão em andamento, até a F5-c4; a entrada usa `PageContainer`) · `max-w-6xl` (dashboard) | — |
+| Larguras máximas de conteúdo | `max-w-2xl` (settings) · `max-w-6xl` (dashboard) | — |
 
 Cinco larguras máximas diferentes para conteúdo centralizado.
 

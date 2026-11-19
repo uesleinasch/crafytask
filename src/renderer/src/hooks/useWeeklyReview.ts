@@ -20,6 +20,7 @@ interface UseWeeklyReviewReturn {
   bumpCounter: (key: ReviewCounterKey, taskId?: number) => Promise<void>
   completeReview: (notes?: string) => Promise<void>
   refreshData: () => Promise<void>
+  refreshHealth: () => Promise<void>
 }
 
 export function useWeeklyReview(): UseWeeklyReviewReturn {
@@ -49,6 +50,10 @@ export function useWeeklyReview(): UseWeeklyReviewReturn {
   useEffect(() => {
     refreshData()
   }, [refreshData])
+
+  const refreshHealth = useCallback(async (): Promise<void> => {
+    setHealthIndicators(await window.api.getReviewHealthIndicators())
+  }, [])
 
   const startReview = useCallback(async (): Promise<WeeklyReview> => {
     const review = await window.api.createWeeklyReview()
@@ -121,6 +126,7 @@ export function useWeeklyReview(): UseWeeklyReviewReturn {
     discardReview,
     bumpCounter,
     completeReview,
-    refreshData
+    refreshData,
+    refreshHealth
   }
 }

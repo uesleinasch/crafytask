@@ -4,8 +4,9 @@
 
 ## Função
 
-Conduzir o ritual que, no GTD, mantém o sistema confiável: um checklist de 10 passos, com indicadores
-objetivos de saúde do sistema ao lado, registrado no histórico ao final.
+Conduzir o ritual que, no GTD, mantém o sistema confiável: um fluxo guiado de 10 passos em três
+fases, cada um com a lista que revisa e as ações para resolver ali mesmo, com os indicadores de saúde
+ao lado e o registro no histórico ao final.
 
 A tela tem **dois estados**: a entrada (sem revisão aberta, ou com uma pausada) e a revisão em
 andamento. Sem cabeçalho próprio: o título vem do Header do shell.
@@ -55,62 +56,74 @@ revisão sobre 8, `mind` e `past` não aparecem) e as notas.
 
 ---
 
-## Estado B — revisão em andamento
+## Estado B — revisão em andamento (fluxo guiado)
 
-Até a F5-c4 trocar este estado pelo fluxo guiado, ele mantém o checklist antigo. Entra-se por
-Começar revisão ou Retomar.
+`components/review/ReviewFlow.tsx` (estrutura) e `ReviewStepBody.tsx` (o conteúdo de cada passo),
+com textos e contas em `reviewFlowState.ts` (puro, testado). Entra-se por Começar revisão ou
+Retomar; a página guarda o id da revisão ativa em `sessionStorage` (`ticktask:review-active`), então
+sair por "Abrir a tela" ou pela sidebar e voltar cai de novo no fluxo, no passo em que estava
+(`current_step`). Pausar limpa essa marca e volta à entrada.
 
-### 1. Banner de progresso
+### 1. Cabeçalho
 
-`bg-emerald-50 border-emerald-200`:
+"Revisão da semana DD/MM", "Começou há N min · tudo fica salvo, pode sair e voltar", `Progress` com
+`N/10` passos marcados (feitos ou pulados) e **Pausar** (grava as notas e volta à entrada).
 
-- esquerda: "Revisão em andamento" + "Iniciada em {data por extenso}";
-- **Pausar** (grava as notas digitadas e volta à entrada, com o `Alert` de retomar);
-- direita: `{feitos}/{total}` em `text-lg font-bold` + "itens concluídos";
-- abaixo, barra de 8px `bg-emerald-500` com a fração concluída.
+### 2. Trilho
 
-### 2. Saúde do Sistema
+A partir de `lg`, à esquerda (260px, fixo ao rolar): um `Steps` vertical por fase (Clarear,
+Atualizar, Criar). Clicar num passo vai até ele (`review:setCurrentStep`); feito fica concluído,
+pulado mostra `CircleMinus` e "Pulado". Embaixo, **Fechar a revisão**. Abaixo de `lg`, um `Select`
+agrupado por fase (✓ feito, – pulado) mais a opção "Fechar a revisão".
 
-Os mesmos seis `HealthCard` da entrada, **sem título de seção**, entre o banner e o checklist.
+### 3. Card do passo
 
-### 3. Checklist
+Título com fase, "passo N de 10", ícone e nome; à direita, **Abrir a tela** (só o ícone abaixo de
+`md`), que grava as notas e leva à tela completa (Inbox, Próximas, Aguardando e Someday em Tarefas,
+Calendário, Projetos, Horizontes; Esvaziar a cabeça não tem). Semana que passou e Próximas duas
+semanas abrem o Calendário na semana atual ("Abre o Calendário") até a F4-e deixar abrir numa semana
+pela URL. Embaixo do título, a pergunta do passo;
+o conteúdo fica num `RegionBoundary` próprio. Rodapé: **Anterior**, **Pular** e **Concluir passo**
+(primário, `Ctrl+Enter`, escrito no tooltip; o atalho não age com um modal aberto por cima). Marcar um passo vai para o próximo pendente; sem
+pendentes, para o fechamento.
 
-Título "Checklist da Revisão". Rótulos de `REVIEW_STEP_LABELS`, os mesmos da entrada. Dez botões de largura total, cada um alternando entre feito e pendente:
+| Passo | Conteúdo | Ações (contador) |
+| --- | --- | --- |
+| Coletar | lugares para olhar (`Tag`) e o campo de captura | Enter cria tarefa no Inbox (coletados) |
+| Processar o Inbox | Inbox do mais antigo para o mais novo; vazio vira `Result` "Inbox zero" | Próxima, Aguardando, Someday, Feito (< 2 min), Excluir (processados) |
+| Esvaziar a cabeça | gatilhos e captura | Enter (coletados) |
+| Próximas ações | da mais parada para a menos; chip âmbar "parada há N dias" acima de 14 | Concluir; Someday e Excluir (tiradas das listas) |
+| Semana que passou | `review:pastWeek` por dia: sessões (`Timer`), concluídas (`CircleCheck`), blocos (`CalendarDays`, com a hora) e captura | Enter (coletados) |
+| Próximas duas semanas | tarefas abertas com prazo de hoje a 14 dias, por dia, com status e hora | Enter (coletados) |
+| Aguardando | da mais parada; `waiting_for` ou "sem responsável"; chip acima de 7 dias | Recebi (volta a Próximas), Cobrar (cria "Cobrar {quem}: {tarefa}" no Inbox; cobranças), Someday |
+| Projetos | ativos, `feitas/total` e a próxima ação ou o chip "Sem próxima ação" | `Select` define a próxima (`next_task_id`; próximas definidas); menu: someday ou concluído |
+| Someday | projetos e tarefas someday | Ativar; Excluir tarefa (tiradas das listas) |
+| Pensar adiante | texto livre, uma ideia por linha (rascunho só na tela) | Mandar para o Inbox (coletados), Rever áreas e metas |
 
-| # | id | Rótulo | Ícone | Descrição |
-| --- | --- | --- | --- | --- |
-| 1 | `collect` | Coletar itens soltos | `Inbox` | Reúna papéis, recibos, notas e pensamentos que ficaram fora do sistema. |
-| 2 | `inbox` | Processar o Inbox | `ClipboardCheck` | Alcance Inbox Zero — classifique cada item: ação, projeto, referência ou lixo. |
-| 3 | `mind` | Esvaziar a cabeça | `Cloud` | O que ainda está ocupando sua cabeça? Anote tudo o que aparecer. |
-| 4 | `next` | Revisar próximas ações | `Calendar` | As próximas ações ainda são relevantes? Alguma pode ser concluída ou removida? |
-| 5 | `past` | Olhar a semana que passou | `History` | Reuniões, sessões e entregas dos últimos 7 dias geraram alguma ação? |
-| 6 | `upcoming` | Olhar as próximas duas semanas | `Clock` | O que vem nas próximas duas semanas? Precisa preparar algo? |
-| 7 | `waiting` | Revisar aguardando | `Hourglass` | Alguém respondeu? Precisa fazer follow-up em algo pendente? |
-| 8 | `projects` | Revisar projetos | `FolderKanban` | Cada projeto ativo tem progresso? Existe próxima ação definida? |
-| 9 | `someday` | Revisar someday | `Lightbulb` | Algum item está pronto para ser ativado? Algum pode ser descartado? |
-| 10 | `creative` | Pensar adiante | `Sparkles` | Que mais precisa de atenção? Novos projetos ou ideias? |
+Nomes de tarefa e projeto são links (`#/task/:id`, `#/project/:id`), focáveis pelo teclado. Falha
+de IPC numa ação ou na carga de uma lista vai para o `RegionBoundary` do passo (`showBoundary`).
+O protótipo marca Esvaziar a cabeça e Semana que passou com uma tag "novo"; no app ela não existe,
+porque ficaria para sempre.
 
-Cada item:
-- `CheckCircle2` esmeralda quando marcado, `Circle` cinza quando não;
-- rótulo em `font-semibold`, **riscado e esmeralda** quando marcado;
-- descrição em `text-xs text-slate-500`;
-- o cartão inteiro ganha `border-emerald-200 bg-emerald-50/50` quando marcado.
+As ações das linhas mostram texto a partir de `lg` e só ícone com tooltip abaixo (Excluir sempre só
+ícone). Cada captura entra na lista "No Inbox nesta revisão" (`captured`), que vale para todos os
+passos com captura.
 
-O badge "Inbox Zero" do histórico vem de `inbox_cleared`, gravado ao concluir: verdadeiro quando o
-Inbox está vazio naquele momento.
+### 4. Lateral
 
-**Nenhum item leva à tela correspondente.** "Revisar Projetos" não abre `/projects`, "Revisar
-Calendário" não abre `/calendar`. O usuário navega por conta própria e volta — e, ao voltar, a
-revisão continua onde estava (o estado vive no banco).
+A partir de `xxl`, coluna de 300px ao lado do card; antes disso, embaixo dele.
 
-### 4. Notas e conclusão
+- **Sistema nesta revisão**: Inbox, projetos sem próxima ação, aguardando > 7 dias e próximas > 14
+  dias, cada um com o valor do começo (`start_health`) → agora, e `CircleCheck` quando chega a zero.
+  Os valores de agora são relidos depois de cada ação.
+- **Notas da revisão**, salvas sozinhas (600 ms depois de parar de digitar, e ao sair do campo).
 
-Cartão branco com:
-- título "Notas da Revisão";
-- `Textarea` de 3 linhas, placeholder "Observações, insights, próximos passos...";
-- botão de largura total `bg-emerald-600`, sempre habilitado: *"Concluir Revisão Semanal"* com
-  todos os passos feitos, *"Concluir com N passos pulados"* quando falta algum. Os passos pendentes
-  são gravados como pulados.
+### 5. Fechar a revisão
+
+Resumo (Inbox começo → agora, coletados, processados, projetos com próxima ação nova, cobranças,
+tiradas das listas), um `Alert` com os passos sem marcar e a duração. **Concluir revisão**: com
+passos sem marcar, confirma ("Eles ficam registrados como pulados. Tudo bem: uma revisão parcial
+vale mais que nenhuma."); depois volta à entrada com a revisão no histórico.
 
 ---
 
@@ -180,8 +193,7 @@ Tons (ícone num quadrado tingido, valor em Geist 20/600): **em dia** com as cor
 `CircleCheck` no lugar do ícone; **atenção** com as de Aguardando e o ícone do indicador; **erro**
 com as de Urgente, só para prazo vencido; **neutro** com as de Inbox, para Someday, que só informa.
 Em dia, o texto troca para a frase de em dia ("Inbox zero", "Nenhum prazo vencido"…). Com `onOpen`
-o cartão vira botão com a seta à direita. Na revisão, cada cartão abre o destino de
+o cartão vira botão com a seta à direita. Na entrada da revisão, cada cartão abre o destino de
 `HEALTH_TARGETS`: Inbox e Someday abrem a aba; Aguardando e Próximas abrem a aba só com as paradas
 (7 e 14 dias), da mais parada para a menos; Prazos vencidos abre Todas com "Só com prazo vencido";
-Projetos sem próxima ação abre Projetos com "Mostrar só esses". Antes de sair, as notas digitadas são
-gravadas na revisão em andamento, que continua de onde estava (checklist e notas) ao voltar.
+Projetos sem próxima ação abre Projetos com "Mostrar só esses".

@@ -1172,3 +1172,57 @@ button.ct-health:focus-visible {
   outline: 2px solid var(--ant-color-primary);
   outline-offset: 1px;
 }
+
+.ct-rvrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+.ct-rvrow:last-child {
+  border-bottom: 0;
+}
+
+.ct-rvempty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 0;
+  color: var(--ant-color-text-secondary);
+}
+
+.ct-rvrail {
+  position: sticky;
+  top: 0;
+  flex: none;
+  width: 260px;
+}
+
+.ct-rvtimeline {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+  gap: 12px;
+}
+
+.ct-rvday {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 12px;
+}
+
+.ct-rvsummary {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 16px;
+}
+
+.ct-ellipsis {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

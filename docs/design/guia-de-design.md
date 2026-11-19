@@ -710,7 +710,8 @@ as ações para resolver ali mesmo (E5).
   próxima ação nova, cobranças, tarefas tiradas das listas), duração e os passos sem marcar.
   Dá para concluir com passos pulados: a confirmação diz que eles ficam registrados como pulados
   ("uma revisão parcial vale mais que nenhuma"). O histórico guarda passos feitos e pulados.
-- **Retomar:** a revisão em andamento fica no banco. Pausada ou ao sair da tela, a entrada mostra um
+- **Retomar:** a revisão em andamento fica no banco. Sair da tela ("Abrir a tela" ou a sidebar) e
+  voltar cai de novo no passo em que estava. Pausada, ou ao abrir o app de novo, a entrada mostra um
   `Alert` "Revisão em andamento · N de 10 · próximo: …" com "Retomar" (primário) e "Descartar"
   (confirma, e avisa que o que mudou nas tarefas continua mudado).
 - **Lembrete:** o ponto âmbar no item da navegação aparece só depois de 7 dias sem revisão.

@@ -905,7 +905,7 @@ const TASK_LIST_COLUMNS = `
   t.recurrence_rule, t.parent_task_id, t.recurrence_source_id, t.day_order,
   t.energy_level, t.scheduled_time, t.scheduled_end_time, t.due_time,
   t.external_url, t.jira_key, t.jira_status, t.jira_space, t.jira_issue_type, t.jira_issue_kind,
-  t.jira_parent_key, t.jira_parent_summary, t.waiting_for, t.archived_at,
+  t.jira_parent_key, t.jira_parent_summary, t.waiting_for, t.archived_at, t.status_changed_at,
   p.name as project_name, p.color as project_color
 `
 
