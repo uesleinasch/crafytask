@@ -43,7 +43,8 @@ import { RegionBoundary } from '@renderer/components/shell/RegionBoundary'
 import { TaskFilters } from '@renderer/components/tasks/TaskFilters'
 import {
   EMPTY_TASK_FILTERS,
-  labelFilterFromSearch,
+  listIntentFromSearch,
+  type FilterStatus,
   activeFilterCount,
   type TaskFiltersValue
 } from '@renderer/components/tasks/taskFilterState'
@@ -70,8 +71,6 @@ import {
   type TaskListFilters
 } from '@shared/types'
 import { Copy, LayoutGrid, Plus, Search, Columns3, Table2 } from 'lucide-react'
-
-type FilterStatus = TaskStatus | 'all'
 
 const STATUS_TABS: FilterStatus[] = ['all', ...TASK_STATUSES]
 const SEARCH_DEBOUNCE_MS = 250
@@ -124,14 +123,14 @@ export function TaskListView({ project, onChanged }: TaskListViewProps): React.J
   const setStatusFilter = inProject ? setProjectStatus : setStoredStatus
   const { search } = useLocation()
   const [filterValue, setFilterValue] = useState<TaskFiltersValue>(
-    () => (inProject ? null : labelFilterFromSearch(search)) ?? EMPTY_TASK_FILTERS
+    () => (inProject ? null : listIntentFromSearch(search)?.filters) ?? EMPTY_TASK_FILTERS
   )
   useEffect(() => {
     if (inProject) return
-    const fromLabel = labelFilterFromSearch(search)
-    if (!fromLabel) return
-    setFilterValue(fromLabel)
-    setStoredStatus('all')
+    const intent = listIntentFromSearch(search)
+    if (!intent) return
+    setFilterValue(intent.filters)
+    setStoredStatus(intent.status)
   }, [search, setStoredStatus, inProject])
   const [newName, setNewName] = useState('')
   const {
@@ -140,8 +139,11 @@ export function TaskListView({ project, onChanged }: TaskListViewProps): React.J
     projectId: projectFilter,
     tagId: tagFilter,
     blockedOnly: blockedFilter,
+    overdue: overdueFilter,
+    staleDays: staleFilter,
     sort: sortMode
   } = filterValue
+  const today = localDateString(new Date())
   const [searchInput, setSearchInput] = useState('')
   const searchQuery = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS)
   const [availableTags, setAvailableTags] = useState<Tag[]>([])
@@ -191,9 +193,17 @@ export function TaskListView({ project, onChanged }: TaskListViewProps): React.J
       contextId: contextFilter,
       search: searchQuery,
       blockedOnly: blockedFilter,
+      ...(overdueFilter && {
+        overdueAt: { date: today, time: '00:00' },
+        excludeStatus: ['finalizada' as const]
+      }),
+      staleDays: staleFilter ?? undefined,
       sort: sortMode
     }),
     [
+      today,
+      overdueFilter,
+      staleFilter,
       projectId,
       statusFilter,
       categoryFilter,
