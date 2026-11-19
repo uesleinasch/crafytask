@@ -268,7 +268,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
   const {
     ConfigProvider, App: AntApp, theme, Layout, Menu, Button, Input, Tabs, Badge, Table, Tag, Segmented,
     Select, Space, Typography, Progress, Statistic, Card, Row, Col, Grid, Drawer, Modal, Result, Tooltip,
-    Popover, Popconfirm, Collapse, Steps, Descriptions, Checkbox, Divider, DatePicker, TimePicker, InputNumber, Empty, Alert, Flex, List, Avatar, Dropdown, Switch
+    Popover, Popconfirm, Collapse, Steps, Descriptions, Checkbox, Divider, DatePicker, TimePicker, InputNumber, Empty, Alert, Flex, List, Avatar, Dropdown, Switch, Form
   } = antd;
   const I = icons;
   const { Sider, Header, Content } = Layout;
@@ -1544,6 +1544,8 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const [groupByArea, setGroupByArea] = useState(false);
     const [onlyNoNext, setOnlyNoNext] = useState(false);
     const [collapsed, setCollapsed] = useState(() => new Set());
+    const NEW_DRAFT = { name: '', outcome: '', description: '', area: undefined, color: '#5B47EB' };
+    const [draft, setDraft] = useState(null);
     const stats = useMemo(() => Object.fromEntries(projects.map(p => [p.id, projectStats(p, TASKS)])), [projects]);
     const counts = useMemo(() => { const c = { all: projects.length }; projects.forEach(p => { c[p.status] = (c[p.status] || 0) + 1; }); return c; }, [projects]);
     const noNext = p => p.status === 'active' && stats[p.id].open > 0 && !stats[p.id].next;
@@ -1649,7 +1651,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       </span>` }));
 
     const body = rows.length === 0
-      ? html`<${Empty} image=${Empty.PRESENTED_IMAGE_SIMPLE} description=${q || onlyNoNext ? 'Nenhum projeto com esses filtros.' : 'Nenhum projeto aqui.'}>${q || onlyNoNext ? html`<${Button} onClick=${() => { setQ(''); setOnlyNoNext(false); }}>Limpar filtros<//>` : html`<${Button} type="primary" icon=${html`<${I.PlusOutlined} />`}>Criar projeto<//>`}<//>`
+      ? html`<${Empty} image=${Empty.PRESENTED_IMAGE_SIMPLE} description=${q || onlyNoNext ? 'Nenhum projeto com esses filtros.' : 'Nenhum projeto aqui.'}>${q || onlyNoNext ? html`<${Button} onClick=${() => { setQ(''); setOnlyNoNext(false); }}>Limpar filtros<//>` : html`<${Button} type="primary" icon=${html`<${I.PlusOutlined} />`} onClick=${() => setDraft(NEW_DRAFT)}>Criar projeto<//>`}<//>`
       : effectiveView === 'tabela'
         ? html`<${Table} rowKey="id" size=${screens.xxl ? 'middle' : 'small'} columns=${columns} dataSource=${data} pagination=${false} scroll=${{ x: 'max-content' }}
             components=${{ body: { row: MenuRow } }} onRow=${r => r.isGroup ? {} : { record: r, menu: menuFor(r) }}
@@ -1668,12 +1670,23 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         <div style=${{ flex: 1 }}></div>
         ${isMobile ? null : html`<${Segmented} value=${effectiveView} onChange=${setView} options=${[{ value: 'cards', icon: html`<${I.AppstoreOutlined} />`, label: screens.lg ? 'Cards' : null, title: 'Cards' }, { value: 'tabela', icon: html`<${I.TableOutlined} />`, label: screens.lg ? 'Tabela' : null, title: 'Tabela' }]} />`}
         <${Select} value=${groupByArea ? 'area' : 'none'} onChange=${v => setGroupByArea(v === 'area')} style=${{ width: 170 }} aria-label="Agrupar" options=${[{ value: 'none', label: 'Sem agrupamento' }, { value: 'area', label: 'Agrupar por área' }]} />
-        <${Button} type="primary" icon=${html`<${I.PlusOutlined} />`}>${screens.sm ? 'Novo projeto' : null}<//>
+        <${Button} type="primary" icon=${html`<${I.PlusOutlined} />`} onClick=${() => setDraft(NEW_DRAFT)}>${screens.sm ? 'Novo projeto' : null}<//>
       <//>
       ${activeNoNext.length && (status === 'active' || status === 'all') ? html`<${Alert} showIcon type="warning" style=${{ marginBottom: 12 }}
         message=${html`<span><b>${activeNoNext.length === 1 ? '1 projeto ativo está' : activeNoNext.length + ' projetos ativos estão'} sem próxima ação.</b> Projeto sem próxima ação fica parado: defina o próximo passo concreto.</span>`}
         action=${html`<${Button} size="small" type=${onlyNoNext ? 'primary' : 'default'} onClick=${() => setOnlyNoNext(!onlyNoNext)}>${onlyNoNext ? 'Mostrar todos' : 'Mostrar só esses'}<//>`} />` : null}
       ${body}
+      <${Modal} open=${!!draft} title="Novo projeto" okText="Criar projeto" cancelText="Cancelar" onCancel=${() => setDraft(null)} okButtonProps=${{ disabled: !draft || !draft.name.trim() }}
+        onOk=${() => { const id = Date.now(); setProjects(ps => ps.concat([{ id, name: draft.name.trim(), outcome: draft.outcome.trim(), description: draft.description.trim(), area: draft.area || null, color: draft.color, status: 'active', due: null, updated: TODAY }])); setDraft(null); message.success('Projeto criado: abre o detalhe'); }}>
+        ${draft ? html`<${Form} layout="vertical" requiredMark=${false}>
+          <${Form.Item} label="Nome" required><${Input} autoFocus value=${draft.name} onChange=${e => setDraft({ ...draft, name: e.target.value })} placeholder="Ex.: Redesenhar o módulo de autenticação" /><//>
+          <${Form.Item} label="Resultado desejado" extra="Como fica o mundo quando o projeto estiver pronto?"><${Input.TextArea} autoSize=${{ minRows: 2, maxRows: 4 }} value=${draft.outcome} onChange=${e => setDraft({ ...draft, outcome: e.target.value })} /><//>
+          <${Form.Item} label="Descrição"><${Input.TextArea} autoSize=${{ minRows: 2, maxRows: 4 }} value=${draft.description} onChange=${e => setDraft({ ...draft, description: e.target.value })} /><//>
+          <${Form.Item} label="Área de foco"><${Select} allowClear placeholder="Sem área" value=${draft.area} onChange=${v => setDraft({ ...draft, area: v })} options=${AREAS.map(a => ({ value: a, label: a }))} /><//>
+          <${Form.Item} label="Cor" style=${{ marginBottom: 0 }}><${Flex} gap=${8} wrap="wrap" role="radiogroup" aria-label="Cor">${['#E5484D', '#A84803', '#A15C00', '#0B7A50', '#0F6E7A', '#2A62D6', '#5B47EB', '#7647B0', '#B8327A', '#5D6B82'].map(c => html`<button key=${c} type="button" role="radio" aria-checked=${draft.color === c} aria-label=${'Cor ' + c} onClick=${() => setDraft({ ...draft, color: c })}
+            style=${{ width: 26, height: 26, borderRadius: '50%', background: c, border: 'none', cursor: 'pointer', boxShadow: draft.color === c ? '0 0 0 2px var(--ct-surface), 0 0 0 4px var(--ct-text)' : 'none' }}></button>`)}<//><//>
+        <//>` : null}
+      <//>
     </div>`;
   }
 

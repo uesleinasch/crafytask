@@ -452,6 +452,9 @@ giram em torno disso.
   mesma regra de altura constante da tabela de tarefas.
 - Menu de contexto (botão direito e `⋯`): Abrir · Marcar como ▸ · Área de foco ▸ · Excluir… (avisa
   que as tarefas ficam sem projeto).
+- **Novo projeto:** `Modal` com Nome, Resultado desejado (com a pergunta "Como fica o mundo quando o
+  projeto estiver pronto?"), Descrição, Área de foco e Cor (as dez de `USER_COLORS`). Criar abre o
+  detalhe. Já na criação o projeto ganha área, ligando a lista aos Horizontes.
 
 **Detalhe (`/project/:id`)** usa o mesmo esqueleto do detalhe da task, com as tarefas no lugar das
 notas:
