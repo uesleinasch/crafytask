@@ -90,7 +90,7 @@ export function registerTerminalIpc(getWindow: () => BrowserWindow | null): void
         return {
           ok: false,
           reason: 'not-found',
-          error: owner.kind === 'project' ? 'Projeto não encontrado.' : 'Task não encontrada.'
+          error: owner?.kind === 'project' ? 'Projeto não encontrado.' : 'Task não encontrada.'
         }
       }
       const { cwd, name, startCommand } = target

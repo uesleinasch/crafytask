@@ -14,11 +14,7 @@ export function TerminalProjectButton({
   const owner = { kind: 'project' as const, id: projectId }
   const showing = useTerminalStore(
     (s) =>
-      s.open &&
-      sameOwner(s.sessions.find((session) => session.id === s.activeId)?.owner, {
-        kind: 'project',
-        id: projectId
-      })
+      s.open && sameOwner(s.sessions.find((session) => session.id === s.activeId)?.owner, owner)
   )
 
   return (

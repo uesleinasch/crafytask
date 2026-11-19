@@ -19,8 +19,8 @@ sessão leva o tipo (`t12-1`, `p3-1`). Ao excluir, as sessões do dono morrem: `
 
 ## Onde aparece
 
-- **Detalhe da tarefa** — botão laranja **Terminal** ao lado de **Notas** e o campo
-  **Diretório de trabalho** na coluna esquerda (ver [02-detalhe-da-tarefa.md](02-detalhe-da-tarefa.md)).
+- **Detalhe da tarefa** — botão **Terminal** (`TerminalTaskButton`) nas ações do cabeçalho e o
+  campo **Diretório de trabalho** (ver [02-detalhe-da-tarefa.md](02-detalhe-da-tarefa.md)).
 - **Detalhe do projeto** — botão `SquareTerminal` no cabeçalho, ao lado do `⋯`, só quando o projeto
   tem diretório (tooltip "Terminal em {diretório}"). Abre ou foca a sessão do projeto; com ela já em
   foco, esconde o painel (`TerminalProjectButton`, `aria-pressed`).
@@ -55,10 +55,10 @@ main) são puras, em `stores/terminalPanes.ts` (testadas).
   **Restaurar nome** no mesmo menu também. O nome padrão é o da task ou do projeto; várias sessões do mesmo dono
   ganham `(n)`. O nome vive na sessão, no main (`terminal:customize`, até 60 caracteres), sobrevive à
   navegação e ao **Reiniciar**, e morre com a sessão.
-- Botões do cabeçalho: `+` abre outro terminal da task focada num **grupo novo**; **Dividir**
+- Botões do cabeçalho: `+` abre outro terminal do dono focado (task ou projeto) num **grupo novo**; **Dividir**
   (`Columns2`) abre um terminal novo **no grupo focado**, à direita do focado; `×` encerra o
   terminal focado — pede confirmação se há processo rodando. Encerrar **não** desvincula o diretório
-  da task.
+  do dono.
 - **Lista à direita** (só com 2+ terminais): um item por terminal, na ordem dos grupos; terminais
   do mesmo grupo ficam ligados por `┌ ├ └`. O focado tem fundo `slate-800`, os outros do grupo
   visível um fundo mais leve. Clicar foca (e mostra o grupo); `×` aparece no hover; duplo clique
@@ -89,7 +89,7 @@ main) são puras, em `stores/terminalPanes.ts` (testadas).
 
 - As sessões vivem no **main** (`src/main/terminal.ts` + `terminalSessions.ts`) e sobrevivem à
   navegação e ao fechar a janela (que só esconde para o tray). Morrem ao **Sair** do app e quando
-  a task é apagada (inclusive pelo MCP).
+  a task ou o projeto dono é apagado (inclusive pelo MCP).
 - **Shift + Enter** envia `ESC + CR` (o "Alt+Enter" dos terminais) em vez do CR puro que o xterm
   manda nas duas teclas. Claude Code e outras TUIs entendem como nova linha sem enviar; no zsh é o
   `self-insert-unmeta` (quebra a linha no buffer). Regra pura em `terminalKeys.ts` (testada).

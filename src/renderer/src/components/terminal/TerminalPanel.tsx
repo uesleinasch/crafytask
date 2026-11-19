@@ -284,7 +284,11 @@ export function TerminalPanel(): React.JSX.Element | null {
         )}
         <button
           type="button"
-          title="Novo terminal para esta task"
+          title={
+            active.owner.kind === 'project'
+              ? 'Novo terminal para este projeto'
+              : 'Novo terminal para esta task'
+          }
           onClick={() => void useTerminalStore.getState().createSession(active.owner)}
           className={iconButton}
         >
@@ -451,7 +455,7 @@ export function TerminalPanel(): React.JSX.Element | null {
           setPendingClose(null)
         }}
         title="Encerrar terminal?"
-        description="Há um processo rodando neste terminal. Encerrar mata o processo; o diretório de trabalho continua vinculado à task."
+        description={`Há um processo rodando neste terminal. Encerrar mata o processo; o diretório de trabalho continua vinculado ${pendingClose?.owner.kind === 'project' ? 'ao projeto' : 'à task'}.`}
         confirmLabel="Encerrar"
       />
     </section>
