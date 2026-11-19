@@ -176,6 +176,7 @@ export interface Task {
   is_running: boolean
   is_archived: boolean
   archived_at?: string | null
+  status_changed_at?: string | null
   project_id?: number
   project_name?: string
   project_color?: string

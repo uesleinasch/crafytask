@@ -228,6 +228,9 @@ não abre os projetos parados.
 
 ### E5. A revisão semanal não conduz à revisão
 
+**Resolvida na F5-c4:** cada passo do fluxo guiado traz a lista que revisa, as ações para resolver
+ali mesmo e "Abrir a tela" para a tela completa.
+
 Nenhum dos 8 itens do checklist abre a tela correspondente. "Revisar Projetos" é apenas um texto com
 uma caixa de marcar.
 
