@@ -5,7 +5,7 @@ import { Textarea } from '@renderer/components/ui/textarea'
 import { useWeeklyReview } from '@renderer/hooks/useWeeklyReview'
 import {
   ClipboardCheck,
-  Play,
+  CirclePause,
   CheckCircle2,
   Circle,
   Inbox,
@@ -18,7 +18,9 @@ import {
   Sparkles,
   Cloud
 } from 'lucide-react'
-import { toast } from '@renderer/components/ui/sonner'
+import { App, Button as AntButton, Flex, Spin } from 'antd'
+import { PageContainer } from '@renderer/components/shell/PageContainer'
+import { ReviewEntry } from '@renderer/components/review/ReviewEntry'
 import { cn } from '@renderer/lib/utils'
 import { HealthCard, HealthGrid } from '@renderer/components/health/HealthCard'
 import { useNavigate } from 'react-router-dom'
@@ -107,8 +109,11 @@ export function WeeklyReviewPage(): React.JSX.Element {
     startReview,
     saveNotes,
     setStep,
+    discardReview,
     completeReview
   } = useWeeklyReview()
+  const { message } = App.useApp()
+  const [resumedId, setResumedId] = useState<number | null>(null)
 
   const [notes, setNotes] = useState('')
   const reviewId = currentReview?.id
@@ -135,9 +140,20 @@ export function WeeklyReviewPage(): React.JSX.Element {
   const allCompleted = pendingCount <= 0
 
   const handleStartReview = useCallback(async (): Promise<void> => {
-    await startReview()
-    toast.success('Revisão semanal iniciada!')
-  }, [startReview])
+    const review = await startReview()
+    setResumedId(review.id)
+    message.success('Revisão semanal iniciada')
+  }, [startReview, message])
+
+  const handlePause = useCallback(async (): Promise<void> => {
+    if (notes !== savedNotes) await saveNotes(notes)
+    setResumedId(null)
+  }, [notes, savedNotes, saveNotes])
+
+  const handleDiscardReview = useCallback(async (): Promise<void> => {
+    await discardReview()
+    message.success('Revisão descartada')
+  }, [discardReview, message])
 
   const toggleChecklistItem = useCallback(
     async (itemId: ReviewStepKey): Promise<void> => {
@@ -149,8 +165,8 @@ export function WeeklyReviewPage(): React.JSX.Element {
   const handleCompleteReview = useCallback(async (): Promise<void> => {
     await completeReview(notes || undefined)
     setNotes('')
-    toast.success('Revisão semanal concluída!')
-  }, [completeReview, notes])
+    message.success('Revisão semanal concluída')
+  }, [completeReview, notes, message])
 
   const formatDate = (dateStr: string): string => {
     return parseSqlTime(dateStr).toLocaleDateString('pt-BR', {
@@ -163,45 +179,54 @@ export function WeeklyReviewPage(): React.JSX.Element {
     })
   }
 
+  if (loading) {
+    return (
+      <Flex justify="center" align="center" className="h-full">
+        <Spin />
+      </Flex>
+    )
+  }
+
+  if (!currentReview || resumedId !== currentReview.id) {
+    return (
+      <div className="h-full overflow-y-auto">
+        <PageContainer>
+          <ReviewEntry
+            openReview={currentReview}
+            reviews={reviews}
+            health={healthIndicators}
+            onStart={() => void handleStartReview()}
+            onResume={() => currentReview && setResumedId(currentReview.id)}
+            onDiscard={handleDiscardReview}
+            onOpenHealth={(route) => void navigate(route)}
+          />
+        </PageContainer>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col h-full overflow-hidden bg-slate-50">
-      {/* Header */}
-      <header className="shrink-0 px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <ClipboardCheck size={20} className="text-slate-700" />
-          <h1 className="text-lg font-bold text-slate-900">Revisão Semanal</h1>
-        </div>
-        {!currentReview && (
-          <Button
-            size="sm"
-            onClick={handleStartReview}
-            className="bg-emerald-600 text-white hover:bg-emerald-700"
-          >
-            <Play className="mr-2 h-4 w-4" />
-            Iniciar Revisão
-          </Button>
-        )}
-      </header>
-
       <ScrollArea className="flex-1 h-0">
         <div className="max-w-3xl mx-auto p-6 space-y-6 pb-24">
-          {loading ? (
-            <div className="flex items-center justify-center py-12 text-slate-400">
-              <p>Carregando...</p>
-            </div>
-          ) : currentReview ? (
-            <>
-              {/* Active Review */}
-              <div className="bg-emerald-50 border border-emerald-200 rounded-sm p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-emerald-800">
-                      Revisão em andamento
-                    </p>
-                    <p className="text-xs text-emerald-600">
-                      Iniciada em {formatDate(currentReview.started_at)}
-                    </p>
-                  </div>
+          <>
+            {/* Active Review */}
+            <div className="bg-emerald-50 border border-emerald-200 rounded-sm p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-emerald-800">Revisão em andamento</p>
+                  <p className="text-xs text-emerald-600">
+                    Iniciada em {formatDate(currentReview.started_at)}
+                  </p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <AntButton
+                    size="small"
+                    icon={<CirclePause size={14} strokeWidth={1.75} aria-hidden />}
+                    onClick={() => void handlePause()}
+                  >
+                    Pausar
+                  </AntButton>
                   <div className="text-right">
                     <p className="text-lg font-bold text-emerald-800">
                       {completedCount}/{totalItems}
@@ -209,179 +234,99 @@ export function WeeklyReviewPage(): React.JSX.Element {
                     <p className="text-xs text-emerald-600">itens concluídos</p>
                   </div>
                 </div>
-                {/* Progress Bar */}
-                <div className="mt-3 h-2 bg-emerald-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-emerald-500 rounded-full transition-all"
-                    style={{ width: `${(completedCount / totalItems) * 100}%` }}
-                  />
-                </div>
               </div>
-
-              {/* Health Indicators */}
-              {healthIndicators && (
-                <HealthGrid>
-                  {healthItems(healthIndicators, REVIEW_HEALTH).map((item) => (
-                    <HealthCard
-                      key={item.key}
-                      item={item}
-                      openLabel={HEALTH_TARGETS[item.key].cta}
-                      onOpen={() => void openHealthTarget(HEALTH_TARGETS[item.key].route)}
-                    />
-                  ))}
-                </HealthGrid>
-              )}
-
-              {/* Checklist */}
-              <div className="space-y-2">
-                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">
-                  Checklist da Revisão
-                </h3>
-                {CHECKLIST_ITEMS.map((item) => {
-                  const checked = steps[item.id] === 'done'
-                  const Icon = item.icon
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => toggleChecklistItem(item.id)}
-                      className={cn(
-                        'w-full flex items-start gap-4 bg-white border rounded-sm p-4 text-left transition-all',
-                        checked
-                          ? 'border-emerald-200 bg-emerald-50/50'
-                          : 'border-slate-200 hover:border-slate-300'
-                      )}
-                    >
-                      <div className="mt-0.5">
-                        {checked ? (
-                          <CheckCircle2 size={20} className="text-emerald-500" />
-                        ) : (
-                          <Circle size={20} className="text-slate-300" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Icon
-                            size={14}
-                            className={checked ? 'text-emerald-600' : 'text-slate-500'}
-                          />
-                          <p
-                            className={cn(
-                              'text-sm font-semibold',
-                              checked ? 'text-emerald-800 line-through' : 'text-slate-900'
-                            )}
-                          >
-                            {item.label}
-                          </p>
-                        </div>
-                        <p className="text-xs text-slate-500">{item.description}</p>
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
-
-              {/* Notes & Complete */}
-              <div className="bg-white border border-slate-200 rounded-sm p-4 space-y-3">
-                <h4 className="text-sm font-semibold text-slate-900">Notas da Revisão</h4>
-                <Textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Observações, insights, próximos passos..."
-                  rows={3}
-                  className="border-slate-200 resize-none"
+              {/* Progress Bar */}
+              <div className="mt-3 h-2 bg-emerald-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-emerald-500 rounded-full transition-all"
+                  style={{ width: `${(completedCount / totalItems) * 100}%` }}
                 />
-                <Button
-                  onClick={handleCompleteReview}
-                  className="w-full bg-emerald-600 text-white hover:bg-emerald-700"
-                >
-                  <CheckCircle2 className="mr-2 h-4 w-4" />
-                  {allCompleted
-                    ? 'Concluir Revisão Semanal'
-                    : `Concluir com ${pendingCount} ${pendingCount === 1 ? 'passo pulado' : 'passos pulados'}`}
-                </Button>
               </div>
-            </>
-          ) : (
-            <>
-              {/* No active review - show info and history */}
-              <div className="bg-blue-50 border border-blue-200 rounded-sm p-6 text-center">
-                <ClipboardCheck size={48} className="mx-auto text-blue-500 mb-3" />
-                <h2 className="text-lg font-bold text-blue-900 mb-2">Revisão Semanal GTD</h2>
-                <p className="text-sm text-blue-700 mb-4 max-w-md mx-auto">
-                  A Revisão Semanal é o hábito que mantém o sistema GTD confiável.
-                  Reserve um tempo para revisar suas listas, projetos e compromissos.
-                </p>
-                <Button
-                  onClick={handleStartReview}
-                  className="bg-blue-600 text-white hover:bg-blue-700"
-                >
-                  <Play className="mr-2 h-4 w-4" />
-                  Iniciar Revisão Semanal
-                </Button>
-              </div>
+            </div>
 
-              {/* Health Indicators */}
-              {healthIndicators && (
-                <div>
-                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">
-                    Saúde do Sistema
-                  </h3>
-                  <HealthGrid>
-                    {healthItems(healthIndicators, REVIEW_HEALTH).map((item) => (
-                      <HealthCard
-                        key={item.key}
-                        item={item}
-                        openLabel={HEALTH_TARGETS[item.key].cta}
-                        onOpen={() => void openHealthTarget(HEALTH_TARGETS[item.key].route)}
-                      />
-                    ))}
-                  </HealthGrid>
-                </div>
-              )}
+            {/* Health Indicators */}
+            {healthIndicators && (
+              <HealthGrid>
+                {healthItems(healthIndicators, REVIEW_HEALTH).map((item) => (
+                  <HealthCard
+                    key={item.key}
+                    item={item}
+                    openLabel={HEALTH_TARGETS[item.key].cta}
+                    onOpen={() => void openHealthTarget(HEALTH_TARGETS[item.key].route)}
+                  />
+                ))}
+              </HealthGrid>
+            )}
 
-              {/* Review History */}
-              {reviews.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <History size={14} /> Histórico de Revisões
-                  </h3>
-                  <div className="space-y-2">
-                    {reviews
-                      .filter((r) => r.completed_at)
-                      .map((review) => (
-                        <div
-                          key={review.id}
-                          className="bg-white border border-slate-200 rounded-lg px-4 py-3 flex items-center justify-between"
+            {/* Checklist */}
+            <div className="space-y-2">
+              <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">
+                Checklist da Revisão
+              </h3>
+              {CHECKLIST_ITEMS.map((item) => {
+                const checked = steps[item.id] === 'done'
+                const Icon = item.icon
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => toggleChecklistItem(item.id)}
+                    className={cn(
+                      'w-full flex items-start gap-4 bg-white border rounded-sm p-4 text-left transition-all',
+                      checked
+                        ? 'border-emerald-200 bg-emerald-50/50'
+                        : 'border-slate-200 hover:border-slate-300'
+                    )}
+                  >
+                    <div className="mt-0.5">
+                      {checked ? (
+                        <CheckCircle2 size={20} className="text-emerald-500" />
+                      ) : (
+                        <Circle size={20} className="text-slate-300" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Icon
+                          size={14}
+                          className={checked ? 'text-emerald-600' : 'text-slate-500'}
+                        />
+                        <p
+                          className={cn(
+                            'text-sm font-semibold',
+                            checked ? 'text-emerald-800 line-through' : 'text-slate-900'
+                          )}
                         >
-                          <div>
-                            <p className="text-sm font-medium text-slate-900">
-                              {formatDate(review.started_at)}
-                            </p>
-                            {review.notes && (
-                              <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">
-                                {review.notes}
-                              </p>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-slate-500 font-mono tabular-nums">
-                              {reviewStepsWith(review.steps, 'done').length}/{review.step_total}{' '}
-                              passos
-                            </span>
-                            {review.inbox_cleared && (
-                              <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
-                                Inbox Zero
-                              </span>
-                            )}
-                            <CheckCircle2 size={16} className="text-emerald-500" />
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              )}
-            </>
-          )}
+                          {item.label}
+                        </p>
+                      </div>
+                      <p className="text-xs text-slate-500">{item.description}</p>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Notes & Complete */}
+            <div className="bg-white border border-slate-200 rounded-sm p-4 space-y-3">
+              <h4 className="text-sm font-semibold text-slate-900">Notas da Revisão</h4>
+              <Textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Observações, insights, próximos passos..."
+                rows={3}
+                className="border-slate-200 resize-none"
+              />
+              <Button
+                onClick={handleCompleteReview}
+                className="w-full bg-emerald-600 text-white hover:bg-emerald-700"
+              >
+                <CheckCircle2 className="mr-2 h-4 w-4" />
+                {allCompleted
+                  ? 'Concluir Revisão Semanal'
+                  : `Concluir com ${pendingCount} ${pendingCount === 1 ? 'passo pulado' : 'passos pulados'}`}
+              </Button>
+            </div>
+          </>
         </div>
       </ScrollArea>
     </div>
