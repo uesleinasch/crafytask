@@ -161,7 +161,7 @@ submenu leva `✓`.
 Se a linha faz parte de uma seleção maior, o menu age sobre a seleção toda: título "N tarefas
 selecionadas", rótulos com "(N)" e sem Abrir, timer, Jira, Contextos e Copiar. Projetos, contextos, ids
 selecionados e a busca de tarefa por id chegam pelo `TaskMenuDataContext`
-(`components/taskMenuContext.ts`), que a `TaskListPage` fornece junto com o
+(`components/taskMenuContext.ts`), que o `TaskListView` fornece junto com o
 `TaskMenuChangedContext` (recarregar a lista).
 
 ### Modo tabela (`components/tasks/TaskTable.tsx`) — padrão
