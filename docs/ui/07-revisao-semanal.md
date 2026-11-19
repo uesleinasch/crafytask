@@ -36,8 +36,8 @@ cabeçalho, azul no cartão.
 
 ### 2. Saúde do Sistema
 
-Título de seção `text-sm font-bold uppercase tracking-wider text-slate-400`, seguido de uma grade
-`grid-cols-2 md:grid-cols-3 gap-3` com cinco `HealthCard`.
+Título de seção `text-sm font-bold uppercase tracking-wider text-slate-400`, seguido da grade
+`HealthGrid` com os seis `HealthCard` da revisão (ver abaixo).
 
 ### 3. Histórico de Revisões
 
@@ -64,7 +64,7 @@ Não há paginação nem filtro — o histórico cresce indefinidamente.
 
 ### 2. Saúde do Sistema
 
-Os mesmos cinco `HealthCard` do estado A, agora **sem título de seção** — aparecem soltos entre o
+Os mesmos seis `HealthCard` do estado A, agora **sem título de seção** — aparecem soltos entre o
 banner e o checklist.
 
 ### 3. Checklist
@@ -108,20 +108,31 @@ Cartão branco com:
 
 ## `HealthCard` — indicadores de saúde
 
-Cinco métricas calculadas no banco (`review:healthIndicators`). Cada uma é um cartão
-`flex items-center gap-3` com um quadrado de 32px à esquerda e número + rótulo à direita.
+`components/health/`: `HealthCard` e `HealthGrid` (`HealthCard.tsx`) e os textos e tons em
+`healthItems.ts` (puro, testado). É o mesmo cartão do dashboard (F7-b2): os dois leem uma consulta
+só, `review:healthIndicators` (`src/main/healthQueries.ts`, testada), com os limiares em
+`shared/healthLimits.ts`.
 
-| Rótulo | Métrica | Ícone | Alerta quando |
-| --- | --- | --- | --- |
-| Inbox | tarefas com status `inbox` | `Inbox` | > 0 |
-| Projetos sem ação | projetos ativos sem tarefa `proximas` | `FolderKanban` | > 0 |
-| Aguardando >7d | tarefas `aguardando` paradas há mais de 7 dias | `Hourglass` | > 0 |
-| Próximas >14d | tarefas `proximas` paradas há mais de 14 dias | `Calendar` | > 0 |
-| Someday/Maybe | tarefas `someday` | `Lightbulb` | nunca |
+A consulta traz oito indicadores; a revisão mostra seis (`REVIEW_HEALTH`) e o dashboard outros seis
+(`DASHBOARD_HEALTH`):
 
-Em alerta, o cartão fica `bg-amber-50 border-amber-200`, o número vira `text-amber-700` e **o ícone
-próprio é substituído por `AlertTriangle`** — ou seja, um cartão em alerta perde a identidade visual
-da métrica que representa.
+| Indicador | Conta | Ícone | Revisão | Dashboard |
+| --- | --- | --- | --- | --- |
+| Inbox para processar | tarefas `inbox`; o texto diz há quanto tempo chegou a mais antiga | `Inbox` | ✓ | ✓ |
+| Projetos sem próxima ação | ativos, com tarefa aberta e sem próxima ação (mesma regra da lista de projetos) | `CircleArrowRight` | ✓ | ✓ |
+| Projetos parados | ativos, criados há mais de 7 dias, sem sessão nem tarefa concluída nos últimos 7 | `CirclePause` | | ✓ |
+| Aguardando sem resposta | `aguardando` há mais de 7 dias | `Hourglass` | ✓ | ✓ |
+| Próximas paradas | `proximas` há mais de 14 dias | `Clock` | ✓ | |
+| Prazos vencidos | abertas com prazo antes de hoje | `CalendarX` | ✓ | ✓ |
+| Someday | tarefas `someday` | `Lightbulb` | ✓ | |
+| Revisão semanal | dias desde a última revisão concluída | `ClipboardCheck` | | ✓ |
 
-O card "Someday/Maybe" nunca alerta, o que é correto conceitualmente mas o deixa visualmente idêntico
-a um indicador saudável de outra natureza.
+"Há mais de N dias em tal status" conta da **última mudança de status**, não da última edição:
+`tasks.status_changed_at`, mantida por dois gatilhos do SQLite (`ensureStatusChangedAt`), então vale
+para tudo que grava status (telas, MCP, Jira). Em bancos antigos a coluna nasce com `updated_at`.
+
+Tons (ícone num quadrado tingido, valor em Geist 20/600): **em dia** com as cores de Executando e
+`CircleCheck` no lugar do ícone; **atenção** com as de Aguardando e o ícone do indicador; **erro**
+com as de Urgente, só para prazo vencido; **neutro** com as de Inbox, para Someday, que só informa.
+Em dia, o texto troca para a frase de em dia ("Inbox zero", "Nenhum prazo vencido"…). Com `onOpen`
+o cartão vira botão com a seta à direita; na revisão ainda não leva a lugar nenhum (F5-c3).
