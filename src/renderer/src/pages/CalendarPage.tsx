@@ -224,7 +224,7 @@ export function CalendarPage(): React.JSX.Element {
         window.api.updateTask(task.id, {
           ...(patch.date ? { scheduled_date: patch.date } : {}),
           scheduled_time: patch.start_time,
-          scheduled_end_time: patch.end_time
+          scheduled_end_time: kind === 'move' && !task.scheduled_end_time ? null : patch.end_time
         })
       ).then((result) => {
         if (!result || kind === 'edit') return

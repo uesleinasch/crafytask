@@ -637,8 +637,10 @@ o que de fato aconteceu (sessões do timer) na mesma grade.
   timer, tracejada enquanto roda. Planejado × feito lado a lado, sem julgamento.
 - **Editar direto na grade** (novo): arrastar o bloco ou a tarefa com horário move (inclusive para
   outro dia), a alça de baixo muda o fim, clique abre um `Popover` com tarefa, projeto, status,
-  `TimePicker.RangePicker`, duração, "Iniciar timer", "Abrir" e excluir. Botão direito: abrir, iniciar timer, repetir no dia
-  seguinte, excluir. Teclado: Enter abre, Delete exclui. Exclusão mostra "Desfazer" na mensagem.
+  `TimePicker.RangePicker`, duração, "Iniciar timer", "Abrir" e excluir. Botão direito: abrir,
+  iniciar timer, repetir no dia seguinte, excluir. Teclado: Enter abre, Delete exclui. Exclusão
+  mostra "Desfazer" na mensagem. Excluir, repetir e o botão direito são só do bloco: a tarefa com
+  horário é compromisso, e tirar o horário é na própria tarefa.
 - **Criar:** clicar num espaço vazio abre o `Modal` "Novo bloco de tempo" já com dia e hora (1h),
   com busca da tarefa e duração calculada.
 - **Mês:** semana começando na segunda (configuração "início da semana"), número do dia como botão
