@@ -936,3 +936,154 @@ body.float-window #root {
   padding: 4px 0 8px;
   border-bottom: 1px solid var(--ant-color-border-secondary);
 }
+
+.ct-hzchip {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  min-width: 30px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.ct-hzsection {
+  scroll-margin-top: 12px;
+}
+
+.ct-hzrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.ct-hzrow:hover {
+  background: var(--ant-color-bg-layout);
+}
+
+.ct-hzareas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.ct-hzarea {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 4px 6px 4px 4px;
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 12px;
+  background: var(--ant-color-bg-container);
+}
+
+.ct-hzarea:hover {
+  border-color: var(--ant-color-border);
+}
+
+.ct-hzarea.on {
+  border-color: var(--ant-color-primary);
+  box-shadow: 0 0 0 1px var(--ant-color-primary);
+}
+
+.ct-hzarea-main {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ct-hzgoal {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+.ct-hzgoal:last-child {
+  border-bottom: 0;
+}
+
+.ct-hzrail {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 2px;
+  width: 184px;
+}
+
+.ct-hzrail button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ant-color-text-secondary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ct-hzrail button:hover {
+  background: var(--ant-color-bg-layout);
+  color: var(--ant-color-text);
+}
+
+.ct-emoji-box {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: var(--ant-color-bg-layout);
+  font-size: 20px;
+}
+
+.ct-emoji-opt {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 8px;
+  background: var(--ant-color-bg-container);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.ct-emoji-opt.on {
+  border-color: var(--ant-color-primary);
+  background: var(--ant-color-primary-bg);
+}
+
+.ct-linkbutton {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}

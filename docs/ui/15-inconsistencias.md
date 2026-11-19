@@ -87,13 +87,14 @@ janela), os onze botões ocupam praticamente toda a barra.
 | maioria | `<Button variant="ghost">` com "← Voltar" | `/` |
 | detalhe do projeto | `Button` `text` do antd com "← Projetos" (F5-e) | `/projects` |
 | detalhe da tarefa | `<button>` cru com "← Voltar" | `navigate(-1)` (histórico) |
-| calendário / horizontes | `<Button size="sm">` só com o ícone | `/` |
+| calendário / horizontes | sem voltar (F4-b2 e F5-b): a sidebar navega | — |
 
 ### B3. Ação primária em quatro cores
 
 `bg-slate-900` (maioria) · `bg-blue-600` (botão "+ Bloco" no calendário, "Salvar Alterações" e
 "Iniciar Revisão" do cartão azul) · `bg-emerald-600` ("Iniciar Revisão" do cabeçalho, "Sincronizar
-Todas as Tarefas") · `bg-indigo-600` ("Novo Objetivo" nos horizontes).
+Todas as Tarefas") · `bg-indigo-600` ("Novo Objetivo" nos horizontes; na F5-b virou o primário do
+tema, "Nova meta").
 
 Na revisão semanal, **o mesmo comando aparece duas vezes na mesma tela em duas cores diferentes**.
 
@@ -231,9 +232,15 @@ uma caixa de marcar.
 
 ### E6. Áreas e metas se excluem sem confirmação
 
+**Resolvida na F5-b:** excluir área ou meta em Horizontes confirma e diz o que acontece com projetos
+e metas.
+
 Tarefas, projetos, contextos e tags pedem confirmação. Áreas e metas somem no clique.
 
 ### E7. Blocos de tempo não se arrastam nem se redimensionam
+
+**Resolvida na F4-b3:** a grade do calendário move, estica e edita blocos (e tarefas com horário)
+direto, com Desfazer.
 
 Mover um bloco de 09:00 para 10:00 exige abrir o diálogo e digitar os dois horários.
 
