@@ -909,7 +909,8 @@
       "titulo": "Calendário: arrastar de A agendar, mover e redimensionar bloco, sessões e legenda conferidos",
       "check": {
         "tipo": "manual"
-      }
+      },
+      "validado": "2026-11-19"
     },
     {
       "id": "F4.3",
@@ -917,7 +918,8 @@
       "titulo": "Hoje e calendário conferidos",
       "check": {
         "tipo": "manual"
-      }
+      },
+      "validado": "2026-11-19"
     },
     {
       "id": "F5.1",
