@@ -2210,10 +2210,11 @@ export function getTasksForDate(date: string): Task[] {
     FROM tasks t
     LEFT JOIN projects p ON t.project_id = p.id
     WHERE t.scheduled_date = ? AND t.is_archived = 0 AND t.parent_task_id IS NULL
-    ORDER BY t.scheduled_time IS NULL, t.scheduled_time, COALESCE(t.day_order, 999999),
-      t.created_at ASC
+    ORDER BY t.scheduled_time IS NULL, t.scheduled_time,
+      (t.due_date = ? AND t.due_time IS NOT NULL) DESC, CASE WHEN t.due_date = ? THEN t.due_time END,
+      COALESCE(t.day_order, 999999), t.created_at ASC
   `)
-  const rows = stmt.all(date) as (Task & { project_name?: string })[]
+  const rows = stmt.all(date, date, date) as (Task & { project_name?: string })[]
   return enrichTasks(rows)
 }
 

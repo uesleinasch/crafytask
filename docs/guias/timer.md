@@ -20,8 +20,7 @@ Tarefa **bloqueada** (com dependência não finalizada) não pode iniciar o time
 
 Em **Limite de tempo**, no detalhe da tarefa, defina quanto você pretende gastar. Aparece uma
 barra de progresso: verde até 80%, âmbar até 100% e vermelha depois. Ao cruzar o limite pela
-primeira vez o sistema mostra uma notificação. A soma dos limites das tarefas de hoje alimenta o
-indicador de carga do [plano do dia](plano-do-dia.md) (jornada fixa de 8 h).
+primeira vez o sistema mostra uma notificação.
 
 ## Ajustar o tempo à mão
 

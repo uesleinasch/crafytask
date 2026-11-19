@@ -184,6 +184,8 @@ urgente é vermelho. A legenda também cita só duas das quatro cores de categor
 
 ### D5. Dica com emoji que não existe na interface
 
+**Resolvida na F4-a:** o vazio diz "Nada planejado para hoje.", explica o botão **Hoje** e leva às Tarefas.
+
 O estado vazio de `/today` diz *"Use o botão 📅 nas tarefas para programá-las para hoje."* O botão
 real é textual ("Hoje") com um ícone `CalendarDays`, não um emoji.
 
@@ -261,6 +263,8 @@ Uma tarefa com três contextos aparece nos três grupos; a soma dos contadores d
 real. É o comportamento correto para o caso de uso, mas precisa ser comunicado.
 
 ### F5. A ordem do plano do dia grava uma chamada por tarefa
+
+**Resolvida na F4-a:** o plano do dia não tem mais ordem manual; a ordem é automática, no SQL.
 
 Reordenar uma lista de 40 itens dispara 40 chamadas IPC em paralelo.
 

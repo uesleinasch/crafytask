@@ -348,8 +348,6 @@ const api = {
     ipcRenderer.invoke('schedule:getForDate', date),
   getWeeklySchedule: (startDate: string): Promise<{ date: string; tasks: Task[] }[]> =>
     ipcRenderer.invoke('schedule:getWeekly', startDate),
-  updateDayOrder: (taskId: number, order: number): Promise<void> =>
-    ipcRenderer.invoke('schedule:updateDayOrder', taskId, order),
   scheduleTaskForDate: (taskId: number, date: string | null): Promise<void> =>
     ipcRenderer.invoke('task:scheduleForDate', taskId, date),
 
