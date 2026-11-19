@@ -18,7 +18,11 @@ import { ChevronDown, ChevronLeft, ChevronRight, ListTodo, PanelLeftOpen, Plus }
 import type { CreateTimeBlockInput, TimeBlock } from '@shared/types'
 import { addDays, calendarPrefs } from '@shared/calendarPrefs'
 import { localDateString } from '@shared/dueState'
-import { CalendarGrid, type GridBlockActions } from '@renderer/components/calendar/CalendarGrid'
+import {
+  CalendarGrid,
+  type BlockPatch,
+  type GridBlockActions
+} from '@renderer/components/calendar/CalendarGrid'
 import { CalendarShowMenu } from '@renderer/components/calendar/CalendarShowMenu'
 import { MonthlyCalendar } from '@renderer/components/calendar/LegacyMonthView'
 import { NewBlockModal, type NewBlockDraft } from '@renderer/components/calendar/NewBlockModal'
@@ -56,6 +60,12 @@ function shortDay(date: string): string {
   return new Intl.DateTimeFormat('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })
     .format(new Date(`${date}T12:00:00`))
     .replace('.', '')
+}
+
+function movedText(name: string, date: string, patch: BlockPatch, kind: 'move' | 'resize'): string {
+  return kind === 'resize'
+    ? `${name}: até ${patch.end_time}`
+    : `Movido para ${shortDay(patch.date ?? date)}, ${patch.start_time}`
 }
 
 type GridSectionProps = Omit<React.ComponentProps<typeof CalendarGrid>, 'data'> & {
@@ -209,22 +219,29 @@ export function CalendarPage(): React.JSX.Element {
         .then(() => message.success(`Timer iniciado: ${name}`))
         .catch((error) => message.error(errorMessage(error)))
     },
-    onEventChange: (task, times) => {
+    onEventChange: (task, patch, kind) => {
       void run(() =>
         window.api.updateTask(task.id, {
-          scheduled_time: times.start_time,
-          scheduled_end_time: times.end_time
+          ...(patch.date ? { scheduled_date: patch.date } : {}),
+          scheduled_time: patch.start_time,
+          scheduled_end_time: patch.end_time
         })
-      )
+      ).then((result) => {
+        if (!result || kind === 'edit') return
+        undoable(movedText(task.name, task.scheduled_date ?? '', patch, kind), () =>
+          window.api.updateTask(task.id, {
+            scheduled_date: task.scheduled_date ?? null,
+            scheduled_time: task.scheduled_time ?? null,
+            scheduled_end_time: task.scheduled_end_time ?? null
+          })
+        )
+      })
     },
     onMove: (block, patch, kind) => {
       void run(() => window.api.updateTimeBlock(block.id, patch)).then((result) => {
         if (!result || kind === 'edit') return
         const before = result.value
-        const text =
-          kind === 'resize'
-            ? `${block.task_name}: até ${patch.end_time}`
-            : `Movido para ${shortDay(patch.date ?? block.date)}, ${patch.start_time}`
+        const text = movedText(block.task_name ?? '', block.date, patch, kind)
         undoable(text, () =>
           window.api.updateTimeBlock(block.id, {
             date: before.date,

@@ -63,11 +63,16 @@ export interface GridBlockActions {
   onMove: (block: TimeBlock, patch: BlockPatch, kind: 'move' | 'resize' | 'edit') => void
   onDuplicate: (block: TimeBlock) => void
   onDelete: (block: TimeBlock) => void
-  onEventChange: (task: Task, times: { start_time: string; end_time: string }) => void
+  onEventChange: (task: Task, patch: BlockPatch, kind: 'move' | 'resize' | 'edit') => void
 }
 
 interface DragState {
-  block: TimeBlock
+  key: string
+  date: string
+  start: string
+  end: string
+  block?: TimeBlock
+  task?: Task
   kind: 'move' | 'resize'
   x: number
   y: number
@@ -162,18 +167,19 @@ export function CalendarGrid({
       if (moved || d.kind === 'resize') suppressClick.current = true
       if (!moved) return
       const deltaMin = d.dy / pxPerMin
-      const { block } = d
+      const commit = (patch: BlockPatch, kind: DragState['kind']): void => {
+        if (d.block) actionsRef.current.onMove(d.block, patch, kind)
+        else if (d.task) actionsRef.current.onEventChange(d.task, patch, kind)
+      }
       if (d.kind === 'resize') {
-        const end_time = resizedEnd(block.start_time, block.end_time, deltaMin, h1)
-        if (end_time !== block.end_time) {
-          actionsRef.current.onMove(block, { start_time: block.start_time, end_time }, 'resize')
-        }
+        const end_time = resizedEnd(d.start, d.end, deltaMin, h1)
+        if (end_time !== d.end) commit({ start_time: d.start, end_time }, 'resize')
         return
       }
-      const target = shiftedDay(days, block.date, d.dx / d.dayWidth)
-      const times = movedTimes(block.start_time, block.end_time, deltaMin, h0, h1)
-      if (target === block.date && times.start_time === block.start_time) return
-      actionsRef.current.onMove(block, { date: target, ...times }, 'move')
+      const target = shiftedDay(days, d.date, d.dx / d.dayWidth)
+      const times = movedTimes(d.start, d.end, deltaMin, h0, h1)
+      if (target === d.date && times.start_time === d.start) return
+      commit({ date: target, ...times }, 'move')
     }
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', up)
@@ -195,17 +201,35 @@ export function CalendarGrid({
       : task.scheduled_date === date
   }
 
-  function startDrag(e: React.PointerEvent, block: TimeBlock, kind: DragState['kind']): void {
+  function startDrag(
+    e: React.PointerEvent,
+    item: PlacedItem,
+    date: string,
+    kind: DragState['kind']
+  ): void {
     if (e.button !== 0) return
     e.stopPropagation()
     suppressClick.current = false
     const column = gridRef.current?.querySelector('.ct-calcol')
     const dayWidth = column ? column.getBoundingClientRect().width : 120
-    setDrag({ block, kind, x: e.clientX, y: e.clientY, dx: 0, dy: 0, dayWidth })
+    setDrag({
+      key: item.key,
+      date,
+      start: item.start,
+      end: item.end,
+      block: item.block,
+      task: item.task ?? tasksById.get(item.taskId),
+      kind,
+      x: e.clientX,
+      y: e.clientY,
+      dx: 0,
+      dy: 0,
+      dayWidth
+    })
   }
 
   function preview(item: PlacedItem): { start: string; end: string; shift: number } {
-    if (!drag || !item.block || drag.block.id !== item.block.id) {
+    if (!drag || drag.key !== item.key) {
       return { start: item.start, end: item.end, shift: 0 }
     }
     const deltaMin = drag.dy / pxPerMin
@@ -213,8 +237,8 @@ export function CalendarGrid({
       return { start: item.start, end: resizedEnd(item.start, item.end, deltaMin, h1), shift: 0 }
     }
     const moved = movedTimes(item.start, item.end, deltaMin, h0, h1)
-    const target = shiftedDay(days, item.block.date, drag.dx / drag.dayWidth)
-    const shift = (days.indexOf(target) - days.indexOf(item.block.date)) * drag.dayWidth
+    const target = shiftedDay(days, drag.date, drag.dx / drag.dayWidth)
+    const shift = (days.indexOf(target) - days.indexOf(drag.date)) * drag.dayWidth
     return { start: moved.start_time, end: moved.end_time, shift }
   }
 
@@ -288,7 +312,7 @@ export function CalendarGrid({
     const height = Math.max(18, geometry.length * pxPerMin - 2)
     const width = 100 / item.cols
     const short = height < 34
-    const isDragging = !!block && drag?.block.id === block.id
+    const isDragging = drag?.key === item.key
     const isOpen = openKey === item.key
     const subject: PopoverSubject = {
       kind: item.kind,
@@ -317,7 +341,7 @@ export function CalendarGrid({
         }}
         onChange={(times) => {
           if (block) blockActions.onMove(block, times, 'edit')
-          else if (task) blockActions.onEventChange(task, times)
+          else if (task) blockActions.onEventChange(task, times, 'edit')
         }}
         onDelete={
           block
@@ -387,7 +411,7 @@ export function CalendarGrid({
           aria-label={`${name}, ${shown.start} a ${shown.end}, ${event ? 'tarefa com horário' : 'bloco de tempo'}`}
           aria-haspopup="dialog"
           aria-expanded={isOpen}
-          onPointerDown={block ? (e) => startDrag(e, block, 'move') : undefined}
+          onPointerDown={(e) => startDrag(e, item, date, 'move')}
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -432,13 +456,11 @@ export function CalendarGrid({
               )}
             </div>
           )}
-          {block && (
-            <span
-              className="ct-calblock-resize"
-              aria-hidden
-              onPointerDown={(e) => startDrag(e, block, 'resize')}
-            />
-          )}
+          <span
+            className="ct-calblock-resize"
+            aria-hidden
+            onPointerDown={(e) => startDrag(e, item, date, 'resize')}
+          />
         </div>
       )
     }

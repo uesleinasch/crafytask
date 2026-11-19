@@ -635,9 +635,9 @@ o que de fato aconteceu (sessões do timer) na mesma grade.
 - **Sobreposição:** blocos que se cruzam dividem a largura da coluna lado a lado.
 - **Sessões registradas** (novo): uma faixa de 4px na borda direita da coluna para cada sessão do
   timer, tracejada enquanto roda. Planejado × feito lado a lado, sem julgamento.
-- **Editar direto na grade** (novo): arrastar o bloco move (inclusive para outro dia), a alça de
-  baixo muda o fim, clique abre um `Popover` com tarefa, projeto, status, `TimePicker.RangePicker`,
-  duração, "Iniciar timer", "Abrir" e excluir. Botão direito: abrir, iniciar timer, repetir no dia
+- **Editar direto na grade** (novo): arrastar o bloco ou a tarefa com horário move (inclusive para
+  outro dia), a alça de baixo muda o fim, clique abre um `Popover` com tarefa, projeto, status,
+  `TimePicker.RangePicker`, duração, "Iniciar timer", "Abrir" e excluir. Botão direito: abrir, iniciar timer, repetir no dia
   seguinte, excluir. Teclado: Enter abre, Delete exclui. Exclusão mostra "Desfazer" na mensagem.
 - **Criar:** clicar num espaço vazio abre o `Modal` "Novo bloco de tempo" já com dia e hora (1h),
   com busca da tarefa e duração calculada.
