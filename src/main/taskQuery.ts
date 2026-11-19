@@ -5,7 +5,8 @@ const ORDER_BY: Record<TaskSort, string> = {
   due_date: 't.due_date IS NULL, t.due_date ASC',
   archived: 't.archived_at IS NULL, t.archived_at DESC, t.id DESC',
   name: 't.name COLLATE NOCASE ASC, t.id ASC',
-  total_time: 't.total_seconds DESC, t.id DESC'
+  total_time: 't.total_seconds DESC, t.id DESC',
+  status_changed: 'julianday(COALESCE(t.status_changed_at, t.updated_at)) ASC, t.id ASC'
 }
 
 export function escapeLike(value: string): string {
@@ -104,6 +105,11 @@ export function buildTaskListWhere(filters: TaskListFilters): {
   if (filters.excludeStatus && filters.excludeStatus.length > 0) {
     conditions.push(`t.status NOT IN (${filters.excludeStatus.map(() => '?').join(', ')})`)
     params.push(...filters.excludeStatus)
+  }
+
+  if (typeof filters.staleDays === 'number' && filters.staleDays > 0) {
+    conditions.push("julianday(COALESCE(t.status_changed_at, t.updated_at)) < julianday('now', ?)")
+    params.push(`-${Math.floor(filters.staleDays)} days`)
   }
 
   return { clause: conditions.join(' AND '), params }

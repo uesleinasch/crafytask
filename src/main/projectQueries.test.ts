@@ -15,14 +15,18 @@ beforeEach(() => {
     );
     CREATE TABLE tasks (
       id INTEGER PRIMARY KEY, name TEXT, status TEXT, project_id INTEGER,
-      total_seconds INTEGER DEFAULT 0, updated_at TEXT, is_archived INTEGER DEFAULT 0
+      total_seconds INTEGER DEFAULT 0, updated_at TEXT, is_archived INTEGER DEFAULT 0,
+      status_changed_at TEXT
     );
+    CREATE TABLE time_entries (id INTEGER PRIMARY KEY, task_id INTEGER, start_time TEXT, end_time TEXT);
+    INSERT INTO time_entries (task_id, start_time, end_time) VALUES
+      (11, '2026-11-06T10:00:00.000Z', '2026-11-06T11:00:00.000Z');
     INSERT INTO areas VALUES (1, 'Carreira');
     INSERT INTO projects VALUES
       (1, 'Site', 'active', '#2A62D6', 1, '2026-11-01', '2026-11-10', NULL),
       (2, 'Viagem', 'someday', '#0B7A50', NULL, '2026-11-01', '2026-11-12', NULL),
       (3, 'Vazio', 'active', '#5D6B82', NULL, '2026-11-01', '2026-11-05', NULL);
-    INSERT INTO tasks VALUES
+    INSERT INTO tasks (id, name, status, project_id, total_seconds, updated_at, is_archived) VALUES
       (10, 'Rascunho', 'finalizada', 1, 3600, '2026-11-02', 0),
       (11, 'Layout', 'proximas', 1, 600, '2026-11-03', 0),
       (12, 'Deploy', 'proximas', 1, 0, '2026-11-08', 0),
@@ -52,6 +56,12 @@ describe('listProjectsQuery', () => {
     expect(viagem).toMatchObject({ task_count: 1, open_task_count: 1, total_seconds: 120 })
     expect(viagem.next_action).toBeUndefined()
     expect(vazio).toMatchObject({ task_count: 0, completed_task_count: 0, total_seconds: 0 })
+  })
+
+  it('última atividade: sessão, tarefa concluída ou criação, o que for mais recente', () => {
+    const byName = Object.fromEntries(listProjectsQuery(db).map((p) => [p.name, p]))
+    expect(byName.Site.last_activity_at).toBe('2026-11-06 11:00:00')
+    expect(byName.Vazio.last_activity_at).toBe('2026-11-01 00:00:00')
   })
 
   it('filtra por status e lê um projeto só', () => {

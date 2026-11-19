@@ -2,6 +2,7 @@ import type { ReviewHealthIndicators } from '@shared/types'
 import { HEALTH_LIMITS, calendarDaysSince } from '@shared/healthLimits'
 import { localDateString } from '@shared/dueState'
 import type { SqliteLike, SqliteParam } from './tagQueries'
+import { PROJECT_ACTIVITY_JULIAN } from './projectQueries'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
@@ -39,16 +40,16 @@ function count(db: SqliteLike, sql: string, ...params: SqliteParam[]): number {
 }
 
 const OPEN = "status <> 'finalizada' AND COALESCE(is_archived, 0) = 0"
+const TOP = 'parent_task_id IS NULL'
 const CHANGED = 'julianday(COALESCE(status_changed_at, updated_at))'
 
 export function healthIndicatorsQuery(db: SqliteLike, now: Date): ReviewHealthIndicators {
   const cutoff = (days: number): string => sqlUtc(new Date(now.getTime() - days * DAY_MS))
-  const stalledCutoff = cutoff(HEALTH_LIMITS.stalledProjectDays)
 
   const inbox = db
     .prepare(
       `SELECT COUNT(*) AS n, MIN(COALESCE(status_changed_at, created_at)) AS oldest FROM tasks
-       WHERE status = 'inbox' AND COALESCE(is_archived, 0) = 0`
+       WHERE status = 'inbox' AND COALESCE(is_archived, 0) = 0 AND parent_task_id IS NULL`
     )
     .get() as { n: number; oldest: string | null }
 
@@ -78,41 +79,30 @@ export function healthIndicatorsQuery(db: SqliteLike, now: Date): ReviewHealthIn
     stalledProjects: count(
       db,
       `SELECT COUNT(*) AS n FROM projects p
-       WHERE p.status = 'active'
-         AND julianday(p.created_at) < julianday(?)
-         AND NOT EXISTS (
-           SELECT 1 FROM time_entries e JOIN tasks t ON t.id = e.task_id
-           WHERE t.project_id = p.id
-             AND (e.end_time IS NULL OR julianday(e.end_time) > julianday(?))
-         )
-         AND NOT EXISTS (
-           SELECT 1 FROM tasks t WHERE t.project_id = p.id AND t.status = 'finalizada'
-             AND julianday(COALESCE(t.status_changed_at, t.updated_at)) > julianday(?)
-         )`,
-      stalledCutoff,
-      stalledCutoff,
-      stalledCutoff
+       WHERE p.status = 'active' AND ${PROJECT_ACTIVITY_JULIAN} < julianday(?)`,
+      cutoff(HEALTH_LIMITS.stalledProjectDays)
     ),
     staleWaitingTasks: count(
       db,
-      `SELECT COUNT(*) AS n FROM tasks WHERE status = 'aguardando'
+      `SELECT COUNT(*) AS n FROM tasks WHERE status = 'aguardando' AND ${TOP}
        AND COALESCE(is_archived, 0) = 0 AND ${CHANGED} < julianday(?)`,
       cutoff(HEALTH_LIMITS.waitingDays)
     ),
     staleNextTasks: count(
       db,
-      `SELECT COUNT(*) AS n FROM tasks WHERE status = 'proximas'
+      `SELECT COUNT(*) AS n FROM tasks WHERE status = 'proximas' AND ${TOP}
        AND COALESCE(is_archived, 0) = 0 AND ${CHANGED} < julianday(?)`,
       cutoff(HEALTH_LIMITS.nextDays)
     ),
     overdueTasks: count(
       db,
-      `SELECT COUNT(*) AS n FROM tasks WHERE ${OPEN} AND due_date IS NOT NULL AND due_date < ?`,
+      `SELECT COUNT(*) AS n FROM tasks
+       WHERE ${OPEN} AND ${TOP} AND due_date IS NOT NULL AND due_date < ?`,
       localDateString(now)
     ),
     somedayCount: count(
       db,
-      "SELECT COUNT(*) AS n FROM tasks WHERE status = 'someday' AND COALESCE(is_archived, 0) = 0"
+      "SELECT COUNT(*) AS n FROM tasks WHERE status = 'someday' AND COALESCE(is_archived, 0) = 0 AND parent_task_id IS NULL"
     ),
     daysSinceLastReview: lastReview ? calendarDaysSince(lastReview.completed_at, now) : null
   }
