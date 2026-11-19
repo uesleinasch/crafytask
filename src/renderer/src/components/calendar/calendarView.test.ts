@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import type { Task, TimeBlock, TimeEntrySpan } from '@shared/types'
 import {
+  DRAG_TYPE,
+  agendaDays,
   allDayOf,
+  chipAlreadyOn,
+  itemName,
+  monthCells,
+  readDropPayload,
+  timedItemsOfDay,
   clampToGrid,
   defaultView,
   dropStart,
@@ -193,5 +200,65 @@ describe('troca de dia ao arrastar', () => {
     expect(shiftedDay(days, '2026-11-17', 4)).toBe('2026-11-18')
     expect(shiftedDay(days, '2026-11-17', -3)).toBe('2026-11-16')
     expect(shiftedDay(['2026-11-17'], '2026-11-17', 2)).toBe('2026-11-17')
+  })
+})
+
+describe('mês e agenda', () => {
+  it('mês começa na segunda e corta a sexta semana quando ela é do mês seguinte', () => {
+    const nov = monthCells('2026-11-19', 'monday')
+    expect([nov[0], nov.length, nov[nov.length - 1]]).toEqual(['2026-10-26', 42, '2026-12-06'])
+    const feb = monthCells('2026-02-10', 'monday')
+    expect([feb[0], feb.length, feb[feb.length - 1]]).toEqual(['2026-01-26', 35, '2026-03-01'])
+    expect(monthCells('2026-11-19', 'sunday')[0]).toBe('2026-11-01')
+  })
+
+  it('agenda são 14 dias a partir do cursor e anda de 14 em 14', () => {
+    const days = agendaDays('2026-11-19')
+    expect([days.length, days[0], days[13]]).toEqual([14, '2026-11-19', '2026-12-02'])
+    expect(stepCursor('agenda', '2026-11-19', 1)).toBe('2026-12-03')
+    expect(periodLabel('agenda', '2026-11-19', days)).toBe('19 nov – 2 dez 2026')
+  })
+
+  it('itens com hora do dia: blocos e tarefas com horário em ordem, conforme Mostrar', () => {
+    const data = {
+      blocks: [
+        {
+          id: 7,
+          task_id: 9,
+          task_name: 'Bloco',
+          date: '2026-11-18',
+          start_time: '15:00',
+          end_time: '16:00'
+        }
+      ] as TimeBlock[],
+      tasks: [
+        { id: 1, name: 'Reunião', scheduled_date: '2026-11-18', scheduled_time: '09:00' }
+      ] as Task[]
+    }
+    const all = timedItemsOfDay(data, '2026-11-18', new Set<ShowKey>(['block', 'event']))
+    expect(all.map((i) => [itemName(i), i.start])).toEqual([
+      ['Reunião', '09:00'],
+      ['Bloco', '15:00']
+    ])
+    expect(timedItemsOfDay(data, '2026-11-18', new Set<ShowKey>(['block'])).map(itemName)).toEqual([
+      'Bloco'
+    ])
+  })
+
+  it('lê o que foi arrastado e ignora soltar no mesmo dia', () => {
+    const payload = (raw: string): Pick<DataTransfer, 'getData'> => ({
+      getData: (type) => (type === DRAG_TYPE ? raw : '')
+    })
+    expect(readDropPayload(payload('{"taskId":3,"chip":"due"}'))).toEqual({
+      taskId: 3,
+      chip: 'due'
+    })
+    expect(readDropPayload(payload('lixo'))).toBeNull()
+    expect(readDropPayload(payload('{"taskId":"3"}'))).toBeNull()
+    const task = { id: 3, scheduled_date: '2026-11-18', due_date: '2026-11-20 00:00:00' } as Task
+    expect(chipAlreadyOn(task, 'scheduled', '2026-11-18')).toBe(true)
+    expect(chipAlreadyOn(task, 'due', '2026-11-20')).toBe(true)
+    expect(chipAlreadyOn(task, 'due', '2026-11-18')).toBe(false)
+    expect(chipAlreadyOn(undefined, 'due', '2026-11-18')).toBe(false)
   })
 })

@@ -306,7 +306,7 @@ busca o que precisa através de hooks que chamam `window.api.*` (IPC para o proc
 | `useProjects()` / `useProjectDetail(id)` | Projetos |
 | `useLabels()` | Contextos e tags com uso e abertas |
 | `useHorizons()` → `useAreas()` / `useGoals()` | Áreas e metas |
-| `useCalendarWeek(inicio)` / `useCalendarMonth(ano-mês)` | Agenda e blocos de tempo |
+| `useCalendarRange(de, até)` | Blocos, tarefas e sessões do intervalo do Calendário |
 | `useWeeklyReview()` | Revisão corrente, histórico, indicadores de saúde |
 | `useTimer()` / `timerStore` | Cronômetros ativos |
 | `useNotification()` | Notificações do SO |

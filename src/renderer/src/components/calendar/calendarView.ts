@@ -2,8 +2,8 @@ import type { Task, TimeBlock, TimeEntrySpan } from '@shared/types'
 import { addDays, weekStartOf, type WeekStart } from '@shared/calendarPrefs'
 import { localDateString } from '@shared/dueState'
 
-export type CalendarView = 'day' | '3days' | 'week' | 'month'
-export type GridView = Exclude<CalendarView, 'month'>
+export type CalendarView = 'day' | '3days' | 'week' | 'month' | 'agenda'
+export type GridView = Exclude<CalendarView, 'month' | 'agenda'>
 
 export const DRAG_TYPE = 'application/x-crafytask-calendar'
 
@@ -14,8 +14,11 @@ export const VIEW_OPTIONS: { value: CalendarView; label: string }[] = [
   { value: 'day', label: 'Dia' },
   { value: '3days', label: '3 dias' },
   { value: 'week', label: 'Semana' },
-  { value: 'month', label: 'Mês' }
+  { value: 'month', label: 'Mês' },
+  { value: 'agenda', label: 'Agenda' }
 ]
+
+export const AGENDA_DAYS = 14
 
 export function toMin(time: string): number {
   const [h, m] = time.split(':').map(Number)
@@ -57,8 +60,42 @@ export function stepCursor(view: CalendarView, cursor: string, direction: 1 | -1
     const [y, m] = cursor.split('-').map(Number)
     return localDateString(new Date(y, m - 1 + direction, 1))
   }
-  const days = view === 'week' ? 7 : view === '3days' ? 3 : 1
+  const days = { week: 7, '3days': 3, day: 1, agenda: AGENDA_DAYS }[view]
   return addDays(cursor, days * direction)
+}
+
+export function monthCells(cursor: string, weekStart: WeekStart): string[] {
+  const [y, m] = cursor.split('-').map(Number)
+  const first = weekStartOf(new Date(y, m - 1, 1), weekStart)
+  const cells = Array.from({ length: 42 }, (_, i) => addDays(first, i))
+  return cells[35].slice(0, 7) === cursor.slice(0, 7) ? cells : cells.slice(0, 35)
+}
+
+export function agendaDays(cursor: string): string[] {
+  return Array.from({ length: AGENDA_DAYS }, (_, i) => addDays(cursor, i))
+}
+
+export interface DropPayload {
+  taskId: number
+  chip?: 'scheduled' | 'due'
+}
+
+export function readDropPayload(data: Pick<DataTransfer, 'getData'>): DropPayload | null {
+  try {
+    const payload = JSON.parse(data.getData(DRAG_TYPE)) as DropPayload
+    return typeof payload.taskId === 'number' ? payload : null
+  } catch {
+    return null
+  }
+}
+
+export function chipAlreadyOn(
+  task: Task | undefined,
+  chip: DropPayload['chip'],
+  date: string
+): boolean {
+  if (!task) return false
+  return chip === 'due' ? task.due_date?.slice(0, 10) === date : task.scheduled_date === date
 }
 
 const fmt = (date: string, options: Intl.DateTimeFormatOptions): string =>
@@ -152,6 +189,21 @@ export function plannedMinutes(blocks: TimeBlock[], date: string): number {
   return blocks
     .filter((b) => b.date === date)
     .reduce((sum, b) => sum + Math.max(0, toMin(b.end_time) - toMin(b.start_time)), 0)
+}
+
+export function itemName(item: GridItem): string {
+  return item.block?.task_name ?? item.task?.name ?? 'Tarefa'
+}
+
+export function timedItemsOfDay(
+  data: { blocks: TimeBlock[]; tasks: Task[] },
+  date: string,
+  show: Set<ShowKey>
+): GridItem[] {
+  return [
+    ...(show.has('block') ? blocksOfDay(data.blocks, date) : []),
+    ...(show.has('event') ? eventsOfDay(data.tasks, date) : [])
+  ].sort((a, b) => toMin(a.start) - toMin(b.start))
 }
 
 export interface AllDayItem {
