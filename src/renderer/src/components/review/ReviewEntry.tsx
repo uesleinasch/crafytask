@@ -31,6 +31,8 @@ import type { ReviewHealthIndicators, WeeklyReview } from '@shared/types'
 import { calendarPrefs } from '@shared/calendarPrefs'
 import { CHART_COLORS, STATUS_COLORS } from '@renderer/theme/semantic'
 import { useThemeSettings } from '@renderer/theme/themeSettings'
+import { PALETTE } from '@renderer/theme/tokens'
+import { localDateString } from '@shared/dueState'
 import { chipStyle } from '@renderer/components/chips/chipStyle'
 import { Section } from '@renderer/components/shell/SectionHeader'
 import { HealthCard, HealthGrid } from '@renderer/components/health/HealthCard'
@@ -77,6 +79,10 @@ function timeLabel(date: Date): string {
 function shortDay(date: string): string {
   const [, m, d] = date.split('-')
   return `${d}/${m}`
+}
+
+function fullDate(date: Date): string {
+  return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
 function Eyebrow({ children }: { children: React.ReactNode }): React.JSX.Element {
@@ -171,7 +177,7 @@ export function ReviewEntry({
     {
       title: 'Passos',
       key: 'steps',
-      width: 140,
+      width: 120,
       render: (_, review) => {
         const count = reviewStepCount(review)
         return (
@@ -196,7 +202,7 @@ export function ReviewEntry({
           {
             title: 'Inbox',
             key: 'inbox',
-            width: 120,
+            width: 110,
             render: (_: unknown, review: WeeklyReview) =>
               review.inbox_cleared ? (
                 <InboxZeroChip />
@@ -260,7 +266,7 @@ export function ReviewEntry({
                   <div key={phase.key} className="ct-rvphase">
                     <span
                       className="ct-hzchip font-mono"
-                      style={{ background: token.colorPrimaryBg, color: token.colorPrimary }}
+                      style={{ background: PALETTE[mode].primarySoft, color: token.colorPrimary }}
                     >
                       {index + 1}
                     </span>
@@ -313,10 +319,10 @@ export function ReviewEntry({
                 {weeks.map((week) => {
                   const minutes = week.review ? reviewMinutes(week.review) : null
                   const label = week.review
-                    ? `Semana de ${shortDay(week.start)} · revisão em ${dayLabel(reviewStartedAt(week.review))}, ${minutes} min`
+                    ? `Semana de ${shortDay(week.start)} · revisão em ${shortDay(localDateString(reviewStartedAt(week.review)))}, ${minutes} min`
                     : `Semana de ${shortDay(week.start)} · sem revisão`
                   return (
-                    <Tooltip key={week.start} title={label}>
+                    <Tooltip key={week.start} title={label} trigger={['hover', 'focus']}>
                       <span
                         role="listitem"
                         tabIndex={0}
@@ -388,6 +394,7 @@ export function ReviewEntry({
                 }
               },
               tabIndex: 0,
+              'aria-label': `Abrir revisão de ${fullDate(reviewStartedAt(review))}`,
               style: { cursor: 'pointer' }
             })}
           />
@@ -398,7 +405,7 @@ export function ReviewEntry({
         open={!!shown}
         onClose={() => setShown(null)}
         size={screens.md ? 420 : '100%'}
-        title={shown ? `Revisão de ${dayLabel(reviewStartedAt(shown))}` : ''}
+        title={shown ? `Revisão de ${fullDate(reviewStartedAt(shown))}` : ''}
       >
         {shown && (
           <Flex vertical gap={16}>

@@ -24,8 +24,8 @@ visita (ao entrar na tela, ao pausar).
   N de 10 passos · próximo: …", com **Retomar** (primário) e **Descartar** (texto; `modal.confirm`
   avisa que os passos se perdem e o que mudou nas tarefas continua mudado; `review:discard`).
 - Sobrescrito "Revisão semanal" e o título pelos dias desde a última concluída
-  (`daysSinceLastReview`): "Nenhuma revisão ainda", "Em dia: a última foi há N dias" (até 7) ou "A
-  última foi há N dias", e aí o texto avisa que passou de uma semana. Sempre "Leva uns 45 minutos e
+  (`daysSinceLastReview`): "Nenhuma revisão ainda", "Em dia: a última foi hoje", "Em dia: a última
+  foi há N dias" (até 7) ou "A última foi há N dias", e aí o texto avisa que passou de uma semana. Sempre "Leva uns 45 minutos e
   dá para pausar no meio."
 - As três fases (`REVIEW_PHASES`: Clarear, Atualizar, Criar) em `.ct-rvphases`, com número, nome,
   resumo e quantos passos.
@@ -36,7 +36,7 @@ visita (ao entrar na tela, ao pausar).
 
 As 12 últimas semanas (início pela preferência do calendário, segunda por padrão) em quadrados
 `.ct-rvweek`: com revisão concluída, tom 4 da escala sequencial de gráfico e um `Check`; sem, tom 0.
-Cada quadrado é focável, com tooltip e rótulo acessível (semana, data e duração). Embaixo, "N de 12
+Cada quadrado é focável, com tooltip e rótulo acessível (semana, data e duração; o tooltip abre também no foco). Embaixo, "N de 12
 semanas com revisão" e a média de minutos das últimas 8. Sem sequência e sem vermelho por semana
 perdida.
 
@@ -49,7 +49,7 @@ perdida.
 `Section` com "N revisões" e uma `Table` paginada (6 por página) só com as concluídas: data e hora
 de início (`parseSqlTime`, no fuso local), duração, passos `feitos/total` (· N pulados, com tooltip
 dos pulados), Inbox zero (chip com as cores de Executando, a partir de `md`) e notas (a partir de
-`lg`). A linha, por clique ou Enter, abre um `Drawer` (420px, tela cheia abaixo de `md`) com início,
+`lg`). A linha (focável, rótulo "Abrir revisão de …"), por clique, Enter ou Espaço, abre um `Drawer` (420px, tela cheia abaixo de `md`) com início,
 duração, Inbox, os passos de cada fase (`CircleCheck` feito, `CircleMinus` pulado; numa
 revisão sobre 8, `mind` e `past` não aparecem) e as notas.
 
@@ -75,20 +75,20 @@ Os mesmos seis `HealthCard` da entrada, **sem título de seção**, entre o bann
 
 ### 3. Checklist
 
-Título "Checklist da Revisão". Dez botões de largura total, cada um alternando entre feito e pendente:
+Título "Checklist da Revisão". Rótulos de `REVIEW_STEP_LABELS`, os mesmos da entrada. Dez botões de largura total, cada um alternando entre feito e pendente:
 
 | # | id | Rótulo | Ícone | Descrição |
 | --- | --- | --- | --- | --- |
 | 1 | `collect` | Coletar itens soltos | `Inbox` | Reúna papéis, recibos, notas e pensamentos que ficaram fora do sistema. |
-| 2 | `inbox` | Processar Inbox | `ClipboardCheck` | Alcance Inbox Zero — classifique cada item: ação, projeto, referência ou lixo. |
+| 2 | `inbox` | Processar o Inbox | `ClipboardCheck` | Alcance Inbox Zero — classifique cada item: ação, projeto, referência ou lixo. |
 | 3 | `mind` | Esvaziar a cabeça | `Cloud` | O que ainda está ocupando sua cabeça? Anote tudo o que aparecer. |
-| 4 | `next` | Revisar Próximas Ações | `Calendar` | As próximas ações ainda são relevantes? Alguma pode ser concluída ou removida? |
+| 4 | `next` | Revisar próximas ações | `Calendar` | As próximas ações ainda são relevantes? Alguma pode ser concluída ou removida? |
 | 5 | `past` | Olhar a semana que passou | `History` | Reuniões, sessões e entregas dos últimos 7 dias geraram alguma ação? |
-| 6 | `upcoming` | Revisar Calendário | `Clock` | O que vem nas próximas duas semanas? Precisa preparar algo? |
-| 7 | `waiting` | Revisar Aguardando | `Hourglass` | Alguém respondeu? Precisa fazer follow-up em algo pendente? |
-| 8 | `projects` | Revisar Projetos | `FolderKanban` | Cada projeto ativo tem progresso? Existe próxima ação definida? |
-| 9 | `someday` | Revisar Someday/Maybe | `Lightbulb` | Algum item está pronto para ser ativado? Algum pode ser descartado? |
-| 10 | `creative` | Pensamento Criativo | `Sparkles` | Que mais precisa de atenção? Novos projetos ou ideias? |
+| 6 | `upcoming` | Olhar as próximas duas semanas | `Clock` | O que vem nas próximas duas semanas? Precisa preparar algo? |
+| 7 | `waiting` | Revisar aguardando | `Hourglass` | Alguém respondeu? Precisa fazer follow-up em algo pendente? |
+| 8 | `projects` | Revisar projetos | `FolderKanban` | Cada projeto ativo tem progresso? Existe próxima ação definida? |
+| 9 | `someday` | Revisar someday | `Lightbulb` | Algum item está pronto para ser ativado? Algum pode ser descartado? |
+| 10 | `creative` | Pensar adiante | `Sparkles` | Que mais precisa de atenção? Novos projetos ou ideias? |
 
 Cada item:
 - `CheckCircle2` esmeralda quando marcado, `Circle` cinza quando não;

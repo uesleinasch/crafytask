@@ -21,6 +21,7 @@ import {
 import { App, Button as AntButton, Flex, Spin } from 'antd'
 import { PageContainer } from '@renderer/components/shell/PageContainer'
 import { ReviewEntry } from '@renderer/components/review/ReviewEntry'
+import { REVIEW_STEP_LABELS } from '@renderer/components/review/reviewEntryState'
 import { cn } from '@renderer/lib/utils'
 import { HealthCard, HealthGrid } from '@renderer/components/health/HealthCard'
 import { useNavigate } from 'react-router-dom'
@@ -39,61 +40,61 @@ interface ChecklistItem {
 const CHECKLIST_ITEMS: ChecklistItem[] = [
   {
     id: 'collect',
-    label: 'Coletar itens soltos',
+    label: REVIEW_STEP_LABELS.collect,
     description: 'Reúna papéis, recibos, notas e pensamentos que ficaram fora do sistema.',
     icon: Inbox
   },
   {
     id: 'inbox',
-    label: 'Processar Inbox',
+    label: REVIEW_STEP_LABELS.inbox,
     description: 'Alcance Inbox Zero — classifique cada item: ação, projeto, referência ou lixo.',
     icon: ClipboardCheck
   },
   {
     id: 'mind',
-    label: 'Esvaziar a cabeça',
+    label: REVIEW_STEP_LABELS.mind,
     description: 'O que ainda está ocupando sua cabeça? Anote tudo o que aparecer.',
     icon: Cloud
   },
   {
     id: 'next',
-    label: 'Revisar Próximas Ações',
+    label: REVIEW_STEP_LABELS.next,
     description: 'As próximas ações ainda são relevantes? Alguma pode ser concluída ou removida?',
     icon: Calendar
   },
   {
     id: 'past',
-    label: 'Olhar a semana que passou',
+    label: REVIEW_STEP_LABELS.past,
     description: 'Reuniões, sessões e entregas dos últimos 7 dias geraram alguma ação?',
     icon: History
   },
   {
     id: 'upcoming',
-    label: 'Revisar Calendário',
+    label: REVIEW_STEP_LABELS.upcoming,
     description: 'O que vem nas próximas duas semanas? Precisa preparar algo?',
     icon: Clock
   },
   {
     id: 'waiting',
-    label: 'Revisar Aguardando',
+    label: REVIEW_STEP_LABELS.waiting,
     description: 'Alguém respondeu? Precisa fazer follow-up em algo pendente?',
     icon: Hourglass
   },
   {
     id: 'projects',
-    label: 'Revisar Projetos',
+    label: REVIEW_STEP_LABELS.projects,
     description: 'Cada projeto ativo tem progresso? Existe próxima ação definida?',
     icon: FolderKanban
   },
   {
     id: 'someday',
-    label: 'Revisar Someday/Maybe',
+    label: REVIEW_STEP_LABELS.someday,
     description: 'Algum item está pronto para ser ativado? Algum pode ser descartado?',
     icon: Lightbulb
   },
   {
     id: 'creative',
-    label: 'Pensamento Criativo',
+    label: REVIEW_STEP_LABELS.creative,
     description: 'Que mais precisa de atenção? Novos projetos ou ideias?',
     icon: Sparkles
   }
@@ -209,124 +210,119 @@ export function WeeklyReviewPage(): React.JSX.Element {
     <div className="flex flex-col h-full overflow-hidden bg-slate-50">
       <ScrollArea className="flex-1 h-0">
         <div className="max-w-3xl mx-auto p-6 space-y-6 pb-24">
-          <>
-            {/* Active Review */}
-            <div className="bg-emerald-50 border border-emerald-200 rounded-sm p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-emerald-800">Revisão em andamento</p>
-                  <p className="text-xs text-emerald-600">
-                    Iniciada em {formatDate(currentReview.started_at)}
+          {/* Active Review */}
+          <div className="bg-emerald-50 border border-emerald-200 rounded-sm p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-emerald-800">Revisão em andamento</p>
+                <p className="text-xs text-emerald-600">
+                  Iniciada em {formatDate(currentReview.started_at)}
+                </p>
+              </div>
+              <div className="flex items-center gap-4">
+                <AntButton
+                  size="small"
+                  icon={<CirclePause size={14} strokeWidth={1.75} aria-hidden />}
+                  onClick={() => void handlePause()}
+                >
+                  Pausar
+                </AntButton>
+                <div className="text-right">
+                  <p className="text-lg font-bold text-emerald-800">
+                    {completedCount}/{totalItems}
                   </p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <AntButton
-                    size="small"
-                    icon={<CirclePause size={14} strokeWidth={1.75} aria-hidden />}
-                    onClick={() => void handlePause()}
-                  >
-                    Pausar
-                  </AntButton>
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-emerald-800">
-                      {completedCount}/{totalItems}
-                    </p>
-                    <p className="text-xs text-emerald-600">itens concluídos</p>
-                  </div>
+                  <p className="text-xs text-emerald-600">itens concluídos</p>
                 </div>
               </div>
-              {/* Progress Bar */}
-              <div className="mt-3 h-2 bg-emerald-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-emerald-500 rounded-full transition-all"
-                  style={{ width: `${(completedCount / totalItems) * 100}%` }}
-                />
-              </div>
             </div>
-
-            {/* Health Indicators */}
-            {healthIndicators && (
-              <HealthGrid>
-                {healthItems(healthIndicators, REVIEW_HEALTH).map((item) => (
-                  <HealthCard
-                    key={item.key}
-                    item={item}
-                    openLabel={HEALTH_TARGETS[item.key].cta}
-                    onOpen={() => void openHealthTarget(HEALTH_TARGETS[item.key].route)}
-                  />
-                ))}
-              </HealthGrid>
-            )}
-
-            {/* Checklist */}
-            <div className="space-y-2">
-              <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">
-                Checklist da Revisão
-              </h3>
-              {CHECKLIST_ITEMS.map((item) => {
-                const checked = steps[item.id] === 'done'
-                const Icon = item.icon
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => toggleChecklistItem(item.id)}
-                    className={cn(
-                      'w-full flex items-start gap-4 bg-white border rounded-sm p-4 text-left transition-all',
-                      checked
-                        ? 'border-emerald-200 bg-emerald-50/50'
-                        : 'border-slate-200 hover:border-slate-300'
-                    )}
-                  >
-                    <div className="mt-0.5">
-                      {checked ? (
-                        <CheckCircle2 size={20} className="text-emerald-500" />
-                      ) : (
-                        <Circle size={20} className="text-slate-300" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Icon
-                          size={14}
-                          className={checked ? 'text-emerald-600' : 'text-slate-500'}
-                        />
-                        <p
-                          className={cn(
-                            'text-sm font-semibold',
-                            checked ? 'text-emerald-800 line-through' : 'text-slate-900'
-                          )}
-                        >
-                          {item.label}
-                        </p>
-                      </div>
-                      <p className="text-xs text-slate-500">{item.description}</p>
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-
-            {/* Notes & Complete */}
-            <div className="bg-white border border-slate-200 rounded-sm p-4 space-y-3">
-              <h4 className="text-sm font-semibold text-slate-900">Notas da Revisão</h4>
-              <Textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Observações, insights, próximos passos..."
-                rows={3}
-                className="border-slate-200 resize-none"
+            {/* Progress Bar */}
+            <div className="mt-3 h-2 bg-emerald-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-emerald-500 rounded-full transition-all"
+                style={{ width: `${(completedCount / totalItems) * 100}%` }}
               />
-              <Button
-                onClick={handleCompleteReview}
-                className="w-full bg-emerald-600 text-white hover:bg-emerald-700"
-              >
-                <CheckCircle2 className="mr-2 h-4 w-4" />
-                {allCompleted
-                  ? 'Concluir Revisão Semanal'
-                  : `Concluir com ${pendingCount} ${pendingCount === 1 ? 'passo pulado' : 'passos pulados'}`}
-              </Button>
             </div>
-          </>
+          </div>
+
+          {/* Health Indicators */}
+          {healthIndicators && (
+            <HealthGrid>
+              {healthItems(healthIndicators, REVIEW_HEALTH).map((item) => (
+                <HealthCard
+                  key={item.key}
+                  item={item}
+                  openLabel={HEALTH_TARGETS[item.key].cta}
+                  onOpen={() => void openHealthTarget(HEALTH_TARGETS[item.key].route)}
+                />
+              ))}
+            </HealthGrid>
+          )}
+
+          {/* Checklist */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">
+              Checklist da Revisão
+            </h3>
+            {CHECKLIST_ITEMS.map((item) => {
+              const checked = steps[item.id] === 'done'
+              const Icon = item.icon
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => toggleChecklistItem(item.id)}
+                  className={cn(
+                    'w-full flex items-start gap-4 bg-white border rounded-sm p-4 text-left transition-all',
+                    checked
+                      ? 'border-emerald-200 bg-emerald-50/50'
+                      : 'border-slate-200 hover:border-slate-300'
+                  )}
+                >
+                  <div className="mt-0.5">
+                    {checked ? (
+                      <CheckCircle2 size={20} className="text-emerald-500" />
+                    ) : (
+                      <Circle size={20} className="text-slate-300" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Icon size={14} className={checked ? 'text-emerald-600' : 'text-slate-500'} />
+                      <p
+                        className={cn(
+                          'text-sm font-semibold',
+                          checked ? 'text-emerald-800 line-through' : 'text-slate-900'
+                        )}
+                      >
+                        {item.label}
+                      </p>
+                    </div>
+                    <p className="text-xs text-slate-500">{item.description}</p>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Notes & Complete */}
+          <div className="bg-white border border-slate-200 rounded-sm p-4 space-y-3">
+            <h4 className="text-sm font-semibold text-slate-900">Notas da Revisão</h4>
+            <Textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Observações, insights, próximos passos..."
+              rows={3}
+              className="border-slate-200 resize-none"
+            />
+            <Button
+              onClick={handleCompleteReview}
+              className="w-full bg-emerald-600 text-white hover:bg-emerald-700"
+            >
+              <CheckCircle2 className="mr-2 h-4 w-4" />
+              {allCompleted
+                ? 'Concluir Revisão Semanal'
+                : `Concluir com ${pendingCount} ${pendingCount === 1 ? 'passo pulado' : 'passos pulados'}`}
+            </Button>
+          </div>
         </div>
       </ScrollArea>
     </div>

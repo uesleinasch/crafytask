@@ -96,7 +96,8 @@ janela), os onze botões ocupam praticamente toda a barra.
 Todas as Tarefas") · `bg-indigo-600` ("Novo Objetivo" nos horizontes; na F5-b virou o primário do
 tema, "Nova meta").
 
-Na revisão semanal, **o mesmo comando aparece duas vezes na mesma tela em duas cores diferentes**.
+Na revisão semanal, **o mesmo comando aparecia duas vezes na mesma tela em duas cores diferentes**.
+**Resolvida na revisão pela F5-c3:** a entrada tem um só "Começar revisão", o primário do tema.
 
 ### B4. Configurações escondidas atrás de um ícone sem rótulo
 
