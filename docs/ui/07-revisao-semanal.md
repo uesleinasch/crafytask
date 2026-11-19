@@ -138,5 +138,5 @@ Em dia, o texto troca para a frase de em dia ("Inbox zero", "Nenhum prazo vencid
 o cartão vira botão com a seta à direita. Na revisão, cada cartão abre o destino de
 `HEALTH_TARGETS`: Inbox e Someday abrem a aba; Aguardando e Próximas abrem a aba só com as paradas
 (7 e 14 dias), da mais parada para a menos; Prazos vencidos abre Todas com "Só com prazo vencido";
-Projetos sem próxima ação abre Projetos com "Mostrar só esses". A revisão em andamento continua de
-onde estava ao voltar.
+Projetos sem próxima ação abre Projetos com "Mostrar só esses". Antes de sair, as notas digitadas são
+gravadas na revisão em andamento, que continua de onde estava (checklist e notas) ao voltar.

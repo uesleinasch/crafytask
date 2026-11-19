@@ -95,7 +95,7 @@ de baixo). Campos, em `Select` do antd com busca onde a lista é longa:
 | Projeto | Inclui **"Sem projeto"** (`-1` → `'none'`) |
 | Tag | nome da tag |
 | Ordenar | por atualização (padrão), por prazo ou pela mais parada (mudança de status mais antiga primeiro) |
-| Parada há | mais de 7, 14 ou 30 dias no status atual (`tasks.status_changed_at`, filtro `staleDays` em SQL) |
+| Parada há | mais de 7, 14 ou 30 dias no status atual (`tasks.status_changed_at`, filtro `staleDays` em SQL); tira as finalizadas |
 | Só com prazo vencido | `Checkbox`; abertas com prazo antes de hoje (`overdueAt` + `excludeStatus: ['finalizada']`) |
 | Só bloqueadas | `Checkbox` |
 
