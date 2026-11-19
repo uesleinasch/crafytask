@@ -1494,13 +1494,15 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           <${Card} title="Plano de terça, 17 de novembro" extra=${html`<${Flex} align="center" gap=${8}>
               <${Progress} percent=${Math.min(100, Math.round(planned / journey * 100))} showInfo=${false} size="small" strokeColor=${over ? warn : undefined} style=${{ width: 96, margin: 0 }} aria-label=${'Carga planejada: ' + fmtH(planned) + ' de ' + journey + 'h'} />
               <${Text} type="secondary" className="ct-mono" style=${over ? { color: warn } : null}>${fmtH(planned)} de ${journey}h${over ? ' · passa da jornada' : ''}<//>
-            <//>`}>
-            ${items.length ? html`<${List} dataSource=${items} renderItem=${t => html`<${List.Item} actions=${[html`<span key="t" className="ct-mono">${t.dueTime || fmtShort(t.secs)}</span>`]}>
-              <${List.Item.Meta} avatar=${html`<span style=${{ display: 'inline-block', width: 80, textAlign: 'center', lineHeight: '22px' }}>${t.start
-                ? html`<${Tooltip} title="Horário fixo: fica no topo, fora da ordem manual"><span className="ct-mono" style=${{ fontSize: 12, color: 'var(--ct-text-2)' }}>${t.start}–${t.end}</span><//>`
+            <//>`} styles=${items.length ? { body: { paddingTop: 4, paddingBottom: 4 } } : undefined}>
+            ${items.length ? html`<${List} size="small" dataSource=${items} renderItem=${t => html`<${List.Item} actions=${[html`<span key="t" className="ct-mono">${t.dueTime || fmtShort(t.secs)}</span>`]}>
+              <${List.Item.Meta} avatar=${html`<span style=${{ display: 'inline-block', width: 16, textAlign: 'center', lineHeight: '22px' }}>${t.start
+                ? null
                 : html`<span style=${{ cursor: 'grab', color: 'var(--ct-text-3)' }} aria-label="Arrastar">⋮⋮</span>`}</span>`}
                 title=${html`<a onClick=${() => go('tarefa')} style=${{ color: 'var(--ct-text)' }}>${t.name}</a>`}
-                description=${html`<${Space} size=${6} wrap><${Chip} def=${STATUS[t.status]} mode=${mode} /><${ProjectLabel} id=${t.project} /><//>`} />
+                description=${html`<${Space} size=${6} wrap>
+                  ${t.start ? html`<${Tooltip} title="Horário fixo: fica no topo, fora da ordem manual"><span className="ct-mono" style=${{ fontSize: 12, color: 'var(--ct-text-2)' }}><${I.ClockCircleOutlined} /> ${t.start}–${t.end}</span><//>` : null}
+                  <${Chip} def=${STATUS[t.status]} mode=${mode} /><${ProjectLabel} id=${t.project} /><//>`} />
             <//>`} />`
             : html`<${Empty} image=${Empty.PRESENTED_IMAGE_SIMPLE} description=${html`<span>Nada planejado para hoje.<br /><${Text} type="secondary">Na lista de tarefas, use <b>Hoje</b> (botão da linha ou do menu ⋯) para trazer tarefas para cá.<//></span>`}>
                 <${Button} icon=${html`<${I.CheckSquareOutlined} />`} onClick=${() => go('tarefas')}>Ir para Tarefas<//>
