@@ -54,7 +54,9 @@ status, arquivar e excluir.
 Dê a cada ação o lugar certo. No **detalhe da tarefa** (clique no nome):
 
 - **Projeto** — agrupa as ações de um resultado. Na tela **Projetos** cada projeto tem descrição,
-  *resultado desejado*, cor, data limite e área de foco.
+  *resultado desejado*, cor, data limite e área de foco. A lista avisa quantos projetos ativos estão
+  **sem próxima ação** (e filtra só esses), busca, ordena, mostra em cards ou tabela e agrupa por
+  área; o botão direito num projeto muda o status, a área ou o exclui (as tarefas ficam sem projeto).
 - **Contextos** — onde ou com o que a ação pode ser feita. Gerencie em **Contextos**.
 - **Tags** — rótulos livres ("Fonte / Tag"), criados enquanto você digita.
 - **Programado para** e **Prazo** — datas (e horários opcionais) que alimentam o

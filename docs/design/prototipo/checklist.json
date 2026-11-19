@@ -1102,6 +1102,16 @@
       }
     },
     {
+      "id": "F5.20",
+      "fase": "F5",
+      "titulo": "Novo projeto em Modal com resultado desejado, área de foco e cor",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/components/projects/*.tsx",
+        "padroes": ["<Modal", "Novo projeto", "Resultado desejado", "Área de foco", "USER_COLORS"]
+      }
+    },
+    {
       "id": "F5.13",
       "fase": "F5",
       "titulo": "Revisão: cada passo resolve ali mesmo, resumo ao fechar e conclusão com pulados conferidos",

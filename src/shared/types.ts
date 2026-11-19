@@ -63,7 +63,10 @@ export interface Project {
   updated_at: string
   task_count?: number
   completed_task_count?: number
+  open_task_count?: number
+  total_seconds?: number
   next_action?: string
+  next_action_id?: number
   working_dir?: string | null
 }
 

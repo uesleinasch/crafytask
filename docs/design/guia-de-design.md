@@ -242,6 +242,7 @@ só porque roda de CDN; os nomes lucide de cada lugar estão nas tabelas acima e
 | Configurações         | Geral `Settings` · Aparência `Palette` · Fluxo de trabalho `Workflow` · Terminal `SquareTerminal` · Backup `DatabaseBackup` · Notion `BookOpen` · Google Calendar `Calendar` · Jira `Plug` · Servidor MCP `Cable` · Sobre `Info`               |
 | Passos da revisão     | `collect` `Download` · `inbox` `Inbox` · `mind` `Brain` · `next` `CircleArrowRight` · `past` `History` · `upcoming` `CalendarDays` · `waiting` `Hourglass` · `projects` `FolderKanban` · `someday` `Lightbulb` · `creative` `Rocket`           |
 | Menu da tarefa e ações em massa | Abrir `FileText` · timer `Play`/`Pause` · hoje `CalendarDays` · marcar como `CircleCheck` · categoria `Flag` · projeto `Folder` · contextos `MapPin` · copiar `Copy` · Jira `Plug` · abrir no Jira `ExternalLink` · campos do Jira `SlidersHorizontal` · arquivar `Archive` · excluir `Trash2` |
+| Projetos              | abas pelo status (`LayoutGrid` em Todos, `FolderOpen` ativo, `Lightbulb` someday, `CircleCheck` concluído, `Archive` arquivado) · busca `Search` · Cards `LayoutGrid` · Tabela `Table2` · novo `Plus` · mais `Ellipsis` · resultado desejado `Target` · próxima ação `CircleArrowRight` · sem próxima ação `TriangleAlert` · área `TrendingUp` · prazo `CalendarDays` · abrir `FolderOpen` · marcar como `CircleCheck` · excluir `Trash2` |
 | Contextos e tags      | abas `MapPin`/`Tags` · busca `Search` · Cards `LayoutGrid` · Tabela `Table2` · novo `Plus` · mais `Ellipsis` · Ver tarefas `ListTodo` · editar `Pencil` · mesclar `Merge` · excluir `Trash2` |
 | Arquivo               | busca `Search` · abrir `FileText` · desarquivar `ArchiveRestore` · excluir de vez `Trash2` · limpar o arquivo `Eraser` · mais `Ellipsis` · grupo por mês `CalendarDays` · grupo sem projeto `Folder` |
 | Legenda do calendário | urgente `Flame` · prioridade `Flag` · time leak `Clock` · no Google `CalendarSync`                                                                                                                                                             |
@@ -451,6 +452,9 @@ giram em torno disso.
   mesma regra de altura constante da tabela de tarefas.
 - Menu de contexto (botão direito e `⋯`): Abrir · Marcar como ▸ · Área de foco ▸ · Excluir… (avisa
   que as tarefas ficam sem projeto).
+- **Novo projeto:** `Modal` com Nome, Resultado desejado (com a pergunta "Como fica o mundo quando o
+  projeto estiver pronto?"), Descrição, Área de foco e Cor (as dez de `USER_COLORS`). Criar abre o
+  detalhe. Já na criação o projeto ganha área, ligando a lista aos Horizontes.
 
 **Detalhe (`/project/:id`)** usa o mesmo esqueleto do detalhe da task, com as tarefas no lugar das
 notas:

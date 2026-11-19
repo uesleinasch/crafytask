@@ -61,6 +61,7 @@ import {
   type ContextUsageRow
 } from './contextQueries'
 import { ensureNotebookSchema } from './notebookQueries'
+import { getProjectQuery, listProjectsQuery } from './projectQueries'
 import {
   TIME_BLOCK_SELECT,
   calendarTasksQuery,
@@ -731,52 +732,11 @@ export function createProject(data: CreateProjectInput): Project {
 }
 
 export function getProject(id: number): Project | undefined {
-  const stmt = db.prepare(`
-    SELECT p.*, a.name as area_name FROM projects p
-    LEFT JOIN areas a ON a.id = p.area_id
-    WHERE p.id = ?
-  `)
-  const row = stmt.get(id) as Project | undefined
-  if (!row) return undefined
-  return enrichProject(row)
+  return getProjectQuery(tagDb(), id)
 }
 
 export function listProjects(status?: ProjectStatus): Project[] {
-  if (status) {
-    const stmt = db.prepare(`
-      SELECT p.*, a.name as area_name FROM projects p
-      LEFT JOIN areas a ON a.id = p.area_id
-      WHERE p.status = ? ORDER BY p.updated_at DESC
-    `)
-    return (stmt.all(status) as Project[]).map(enrichProject)
-  }
-  const stmt = db.prepare(`
-    SELECT p.*, a.name as area_name FROM projects p
-    LEFT JOIN areas a ON a.id = p.area_id
-    ORDER BY p.updated_at DESC
-  `)
-  return (stmt.all() as Project[]).map(enrichProject)
-}
-
-function enrichProject(project: Project): Project {
-  const taskCountStmt = db.prepare('SELECT COUNT(*) as count FROM tasks WHERE project_id = ?')
-  const completedCountStmt = db.prepare(
-    "SELECT COUNT(*) as count FROM tasks WHERE project_id = ? AND status = 'finalizada'"
-  )
-  const nextActionStmt = db.prepare(
-    "SELECT name FROM tasks WHERE project_id = ? AND status = 'proximas' ORDER BY updated_at DESC LIMIT 1"
-  )
-
-  const taskCount = (taskCountStmt.get(project.id) as { count: number }).count
-  const completedCount = (completedCountStmt.get(project.id) as { count: number }).count
-  const nextAction = nextActionStmt.get(project.id) as { name: string } | undefined
-
-  return {
-    ...project,
-    task_count: taskCount,
-    completed_task_count: completedCount,
-    next_action: nextAction?.name
-  }
+  return listProjectsQuery(tagDb(), status)
 }
 
 export function updateProject(id: number, data: UpdateProjectInput): void {

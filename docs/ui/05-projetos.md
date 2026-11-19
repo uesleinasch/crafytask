@@ -10,74 +10,77 @@ opcionalmente, uma área de foco.
 
 # Lista de projetos — `/projects`
 
-## Cabeçalho
+`ProjectsPage.tsx` · `components/projects/` (`ProjectCard.tsx`, `ProjectTable.tsx`,
+`ProjectCells.tsx`, `NewProjectModal.tsx`, `useProjectMenu.tsx` e `projectList.ts`, puro e testado).
+Dados: `project:list` (todos os status de uma vez) e `area:list`; relê em `tasks:refresh`.
 
-Padrão de sub-página: `← Voltar` · divisor · `FolderKanban` · "Projetos" · botão **Novo Projeto**
-(`bg-slate-900`).
+## Abas e barra
 
-## Abas de status
+- **Abas de status** (`Tabs`; `Select` abaixo de `md`): Todos, Ativos (padrão), Someday, Concluídos e
+  Arquivados, cada uma com o ícone e a cor do status e o contador em mono (`ProjectTabLabel`).
+- **Barra:** busca em nome, resultado desejado, descrição e área; ordenar (prazo, sem prazo no fim;
+  progresso; mais recentes; nome); **Cards / Tabela** (`Segmented`, só a partir de `md`: abaixo
+  disso é sempre Cards); agrupar por área de foco; **Novo projeto** (primário).
+- Visão, ordem e agrupamento ficam em `localStorage` (`ticktask:projectListViewMode`, o valor antigo
+  `list` vira Tabela; `ticktask:projects-sort`; `ticktask:projects-by-area`).
+- Os projetos vêm todos de uma vez e a filtragem e a ordem são feitas no renderer
+  (`visibleProjects`): são poucos, e os contadores das abas precisam da lista inteira.
 
-Cinco pílulas com **contador embutido** (`text-xs opacity-70`) — recurso que a lista de tarefas não
-tem:
+## Aviso "sem próxima ação"
 
-| Aba | Contador |
-| --- | --- |
-| Todos | sem contador |
-| **Ativos** (padrão) | sim |
-| Someday | sim |
-| Concluídos | sim |
-| Arquivados | sim |
+Nas abas Ativos e Todos, um `Alert` âmbar: "N projetos ativos estão sem próxima ação. Projeto sem
+próxima ação fica parado: defina o próximo passo concreto.", com **Mostrar só esses** (filtro, vira
+**Mostrar todos**). Sem próxima ação = ativo, com tarefa aberta (não finalizada e não arquivada) e
+nenhuma tarefa em Próximas fora do arquivo (`lacksNextAction`).
 
-À direita das abas, o alternador **Cards** (`LayoutGrid`) / **Lista** (`List`), igual ao da lista
-de tarefas e persistido em `localStorage` (`ticktask:projectListViewMode`, padrão `cards`).
+## Card
 
-## Modo lista
+Grade automática (mínimo 260px). `Card` pequeno e clicável; o nome é o link (é ele que o teclado
+alcança): ponto da cor, nome,
+status (só na aba Todos) e `⋯`; resultado desejado com `Target`; progresso `feitas/total` com barra
+curta; próxima ação (`CircleArrowRight` na cor de Próximas) ou o chip âmbar "Sem próxima ação";
+área (ou "Sem área") e prazo com `CalendarDays`. A cor do projeto é só o ponto, nunca fundo nem
+borda.
 
-Um bloco branco com uma linha por projeto (`components/projects/ProjectListRow.tsx`), com a mesma
-borda esquerda de 4px na cor do projeto: nome e, abaixo, a próxima ação (ou o alerta "Sem próxima
-ação definida"), badge de status, progresso `{feitas}/{total}` com barra e a data limite. Clicar
-abre `/project/:id`.
+## Tabela
 
-## Cartão de projeto
+Uma linha por projeto: Projeto (ponto, nome como link e `Target` com o resultado no tooltip) ·
+Status (só em Todos) · Área (`lg+`, some ao agrupar) · Próxima ação · Progresso · Prazo (`md+`) ·
+Tempo (`xl+`, soma do tempo das tarefas) · `⋯`.
 
-Grade `grid-cols-1 md:grid-cols-2 gap-4`. Cada cartão é `bg-white border rounded-sm p-5` com
-**borda esquerda de 4px na cor do projeto** e hover `shadow-md -translate-y-0.5`.
+Prazo em mono `DD/MM` com tooltip ("Faltam 3 dias", "Vence hoje", "Venceu há 2 dias"); num projeto
+ativo fica âmbar a 7 dias ou menos e vermelho quando venceu.
 
-Conteúdo, de cima para baixo:
+## Agrupar por área
 
-1. **Linha superior:** badge de status (pílula colorida com texto branco — `bg-emerald-500` ativo,
-   `bg-teal-500` someday, `bg-purple-500` concluído, `bg-gray-500` arquivado) e, à direita, a data
-   limite com ícone `Clock`, se houver.
-2. **Título** — `font-semibold text-lg line-clamp-1`.
-3. **Descrição** — `line-clamp-2`, se houver.
-4. **Outcome** — bloco `bg-emerald-50` com ícone `Target` e o texto em `line-clamp-2`, se houver.
-5. **Progresso** — `{feitas} / {total} tarefas` à esquerda, porcentagem à direita, barra de 6px
-   esmeralda.
-6. **Próxima ação** — bloco `bg-blue-50` com `ArrowRight` e `Próxima: {nome}`.
-   Quando o projeto está **ativo, tem tarefas e não tem próxima ação**, no lugar aparece um alerta
-   `bg-amber-50`: **"Sem próxima ação definida"**. É o único aviso de saúde GTD inline em toda a
-   interface.
+Grupos na ordem das áreas de Horizontes, mais "Sem área" no fim (inclui área apagada), só os que
+têm projeto. Cabeçalho com recolher/expandir, `TrendingUp`, nome e contador; nos Cards é uma faixa
+acima da grade, na Tabela uma linha de grupo.
 
-Clicar em qualquer parte do cartão abre `/project/:id`.
+## Menu do projeto
 
-## Estado vazio
+Botão direito no card ou na linha, e o `⋯`: **Abrir** · **Marcar como ▸** (os quatro status, com ✓
+no atual) · **Área de foco ▸** (as áreas e "Sem área") · **Excluir…**, que pede confirmação e avisa
+que as tarefas não são apagadas: ficam sem projeto (`ON DELETE SET NULL`).
 
-`FolderKanban` num círculo cinza, "Nenhum projeto encontrado." e um botão "Criar primeiro projeto"
-que abre o diálogo.
+## Vazio
 
-## Diálogo "Novo Projeto"
+"Nenhum projeto aqui." com **Criar projeto**; com busca ou filtro, "Nenhum projeto com esses
+filtros." com **Limpar filtros**.
 
-Descrição do cabeçalho: *"Um projeto GTD requer mais de uma ação para ser concluído."*
+## Novo projeto
 
-| Campo | Controle |
-| --- | --- |
-| Nome * | `Input`, placeholder "Ex: Redesenhar módulo de autenticação" |
-| Descrição | `Textarea` 2 linhas |
-| Resultado Desejado (Outcome) | `Textarea` 2 linhas, placeholder "Como será quando este projeto estiver concluído?" |
-| Cor | `ColorPicker` — 12 círculos de 32px; o selecionado ganha `ring-2 ring-offset-2` e `scale-110`. Padrão: `#6366f1` (índigo) |
+`Modal` com Nome, Resultado desejado ("Como fica o mundo quando o projeto estiver pronto?"),
+Descrição, Área de foco (`Select`) e Cor (as dez cores de `USER_COLORS`, como rádio). Ao criar, abre
+`/project/:id`.
 
-O diálogo **não permite escolher status nem área** — ambos só existem no detalhe (status) ou não são
-editáveis pela UI (área). Ao criar, navega direto para `/project/:id`.
+## Dados
+
+`project:list` usa `listProjectsQuery` (`src/main/projectQueries.ts`, testado): uma consulta com a
+área, `task_count`, `completed_task_count`, `open_task_count` (sem as arquivadas), `total_seconds`
+(soma do tempo das tarefas) e a próxima ação (`next_action` e `next_action_id`: a tarefa em
+Próximas mais recente, fora do arquivo) — no lugar das três
+consultas por projeto de antes. `project:get` usa a mesma consulta.
 
 ---
 
@@ -135,8 +138,8 @@ existe.
 
 ## O que não é editável pela interface
 
-- **Área de foco** (`area_id`) — o campo existe no modelo e aparece como etiqueta nos cartões de
-  `/horizons`, mas nenhuma tela permite atribuí-lo: só o servidor MCP
-  (`manage_structure`) grava esse vínculo. Um projeto criado pela interface nunca terá área.
+- **Área de foco** (`area_id`) — na lista de projetos, pelo diálogo **Novo projeto** e pelo menu
+  (**Área de foco ▸**); o detalhe do projeto ainda não a edita (F5-e). O MCP (`manage_structure`)
+  também grava.
 - **Próxima ação** — é derivada, não escolhida: é o nome da tarefa com status `proximas` de
   `updated_at` mais recente naquele projeto.
