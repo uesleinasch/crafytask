@@ -1,140 +1,61 @@
 # Horizontes GTD — `/horizons`
 
-`src/renderer/src/pages/HorizonsPage.tsx` (~770 linhas)
+`src/renderer/src/pages/HorizonsPage.tsx` · `components/horizons/` (`HorizonChip.tsx`,
+`AreaModal.tsx`, `GoalModal.tsx`, `horizonDrafts.ts` e `horizonLevels.ts`, puro e testado).
 
 ## Função
 
-Reunir numa página só as **seis alturas de perspectiva** do GTD, da ação imediata ao propósito de
-vida. É a tela mais "conceitual" do app: não se opera nada aqui além de criar áreas e metas — o resto
-é leitura e navegação.
+Reunir numa página só as **seis alturas de perspectiva** do GTD, da ação de hoje ao propósito, e
+deixar navegar de um nível para outro. Aqui se criam e editam áreas de foco e metas; o resto leva
+para as telas de cada coisa.
 
-Subtítulo do cabeçalho: *"6 perspectivas para clareza total"*.
+## Barra
 
-## Cabeçalho
+- **Filtro por área** (`Select`, "Todas as áreas"): escolhida uma área, todos os níveis mostram só o
+  que é dela — ações de hoje dos projetos da área, projetos ativos da área, a própria área e as metas
+  dela. Metas sem área aparecem em todas. Ao lado, o texto explica o recorte ("Mostrando ações,
+  projetos e metas de Carreira. Metas sem área aparecem em todas.").
+- **Nova área** e **Nova meta** (primário; abre em H3 já com a área filtrada).
 
-`← ` (só ícone) · `Mountain` índigo · título "Visão de Horizonte GTD" + subtítulo · à direita, dois
-botões: **Nova Área** (contorno) e **Novo Objetivo** (`bg-indigo-600`, ícone `Star`).
+## Escala e trilho
 
-O botão primário aqui é índigo; em quase todo o resto do app é `bg-slate-900`.
+Cada nível tem o chip `H0`…`H5` (`HorizonChip`) na escala violeta de `HORIZON_COLORS`
+(`theme/semantic.ts`, contraste AA testado), mais clara na ação e mais escura no propósito. Os
+níveis são `Card` neutros. A partir de `lg`, um **trilho** à esquerda (fixo ao rolar) lista H0–H5;
+clicar rola até o nível com `scrollIntoView` (sem âncora de URL: o app roteia pelo hash).
 
-## Estrutura: seis seções empilhadas
+## Níveis
 
-Conteúdo em `max-w-4xl mx-auto` com `space-y-6`. Cada horizonte é um `<section>` com **borda de 2px**
-e fundo tingido pela cor do nível — o único lugar do app que usa `border-2` e fundos coloridos em
-blocos grandes.
+Cada `Card` mostra o chip, o nome, o contador em mono e o subtítulo; H2 a H5 têm **Adicionar**.
 
-```
-┌──────────────────────────────────────────────────────┐  ← border-2, bg-{cor}-50
-│ [▣ ícone]  H2 — Áreas de Foco               (4) [+] │
-│            Responsabilidades e papéis                │
-├──────────────────────────────────────────────────────┤
-│  conteúdo da seção                                   │
-└──────────────────────────────────────────────────────┘
-```
-
-Cabeçalho da seção: quadrado de 32px com a cor sólida e ícone branco · rótulo em `text-sm
-font-semibold` na cor do nível · sublabel em `text-xs text-slate-500` · badge de contagem · ação
-opcional.
-
-### Configuração dos seis níveis
-
-| Nível | Rótulo | Sublabel | Ícone | Cor | Origem dos dados |
-| --- | --- | --- | --- | --- | --- |
-| **H0** | Próximas Ações | Tarefas agendadas para hoje | `CalendarDays` | azul | tarefas de hoje **não finalizadas** |
-| **H1** | Projetos | Projetos em andamento | `FolderKanban` | esmeralda | projetos com status `active` |
-| **H2** | Áreas de Foco | Responsabilidades e papéis | `Layers` | violeta | tabela `areas` |
-| **H3** | Metas (1–2 anos) | Objetivos de curto prazo | `Target` | laranja | `goals` com `horizon = 3` |
-| **H4** | Visão (3–5 anos) | Onde você quer estar | `Compass` | rosa | `goals` com `horizon = 4` |
-| **H5** | Propósito | Princípios e razão de ser | `Telescope` | índigo | `goals` com `horizon = 5` |
-
-Metas também têm um emoji por horizonte: 🎯 (H3), 🔭 (H4), ✨ (H5).
-
-## Conteúdo de cada seção
-
-### H0 — Próximas Ações
-
-Lista de linhas brancas clicáveis (`hover:border-blue-300 hover:bg-blue-50`):
-
-```
-[○] Nome da tarefa            ● Projeto      🕐 28 ago
-```
-
-- círculo `CheckCircle2` cinza que fica azul no hover (decorativo — **não conclui a tarefa**);
-- nome em `text-sm font-medium`;
-- projeto com bolinha da cor, se houver;
-- prazo em laranja com `Clock`, se houver.
-
-Vazia: "Nenhuma tarefa agendada para hoje." + botão **"Ir para Plano do Dia"**.
-
-### H1 — Projetos
-
-Grade `grid-cols-1 sm:grid-cols-2 gap-3`. Cada projeto é um cartão com:
-- nome (fica esmeralda no hover) e, à direita, a **etiqueta da área** em `bg-slate-100`, se houver;
-- **próxima ação** prefixada por `→`, em `line-clamp-1`;
-- `{feitas}/{total} tarefas`, porcentagem e `Progress` de 6px.
-
-Vazia: botão **"Ir para Projetos"**.
-
-### H2 — Áreas de Foco
-
-Ação no cabeçalho: **+ Adicionar** (violeta).
-
-Lista de linhas com:
-- emoji de 24px numa caixa de 32px;
-- nome + badge violeta `N projetos` (contando só os `active` daquela área);
-- descrição em `line-clamp-1`;
-- **editar** (`Pencil`) e **excluir** (`Trash2`), revelados no hover.
-
-Excluir não pede confirmação: remove direto e mostra o toast "Área ... removida."
-
-### H3 / H4 / H5 — Metas, Visão, Propósito
-
-Três seções idênticas em estrutura, alimentadas pelo mesmo `goals` filtrado por horizonte. Cada meta
-é uma linha com:
-- emoji do horizonte;
-- nome + etiqueta da área em `bg-slate-100`;
-- descrição em `whitespace-pre-wrap` (preserva quebras de linha — é o único texto do app que faz
-  isso);
-- editar e excluir no hover, também sem confirmação.
-
-Cada seção tem seu próprio botão **+ Adicionar**, mas todos abrem o **mesmo diálogo com horizonte
-padrão H3** — adicionar a partir da seção H5 não pré-seleciona H5.
+- **H0 · Próximas ações** ("O que está planejado para hoje"): tarefas abertas de hoje
+  (`schedule:getForDate`). Nome (abre a tarefa), projeto, prazo em mono (âmbar hoje, vermelho
+  vencido) e o botão do timer (iniciar/pausar; desabilitado se bloqueada), com o ponto pulsante
+  quando roda. Vazio: "Nada planejado para hoje." com **Abrir o plano do dia**.
+- **H1 · Projetos** ("Resultados em andamento"): projetos ativos com ponto da cor, nome (abre o
+  projeto), etiqueta da área (sem filtro), próxima ação ou o chip "Sem próxima ação" e o progresso
+  `feitas/total`. Vazio com **Abrir projetos**.
+- **H2 · Áreas de foco** ("Responsabilidades e papéis"): cards com emoji, nome, descrição e "N
+  projetos · M metas" (projetos ativos). Clicar no card liga ou desliga o filtro (o card filtrado
+  ganha a borda da cor primária). Menu (`⋯` e botão direito): Ver só esta área nos horizontes · Ver
+  projetos · Editar · Excluir…, que confirma e diz quantos projetos e metas ficam sem área.
+- **H3 · Metas** (1 a 2 anos, 🎯), **H4 · Visão** (3 a 5 anos, 🔭), **H5 · Propósito** (princípios,
+  ✨): emoji do nível, nome, etiqueta da área ("todas as áreas" sem área; clicar filtra) e
+  descrição com as quebras de linha. Menu: Editar · Mover para ▸ (H3/H4/H5, com ✓ no atual) ·
+  Excluir… ("Só esta meta é apagada; áreas e projetos não mudam."). **Adicionar** abre o diálogo já
+  no nível da seção.
 
 ## Diálogos
 
-### Nova / Editar Área de Foco
+- **Nova / Editar área de foco:** grade de 12 emojis (rádio), nome e descrição.
+- **Nova meta, visão ou propósito / Editar:** `Segmented` H3/H4/H5, nome, área (`Select`, "Sem área
+  (vale para todas)") e descrição.
 
-`sm:max-w-md`. Descrição: "Preencha os dados da área de foco."
+Erro ao salvar aparece numa mensagem e o diálogo continua aberto.
 
-| Campo | Controle |
-| --- | --- |
-| Ícone | 12 emojis em botões de 36px: 🎯 💼 🏋️ 🧠 🏠 ❤️ 🌱 💰 🎨 📚 🤝 ⚡. Selecionado: `border-violet-500 bg-violet-50` |
-| Nome * | `Input` com `autoFocus`, placeholder "Ex: Carreira, Saúde, Família..." |
-| Descrição | `Textarea` 2 linhas |
+## Dados
 
-### Novo / Editar Objetivo
-
-`sm:max-w-md`. Descrição: "Preencha os dados do objetivo."
-
-| Campo | Controle |
-| --- | --- |
-| Horizonte * | `Select` com as três opções, cada uma com emoji: `🎯 H3 — Metas (1–2 anos)`, `🔭 H4 — Visão (3–5 anos)`, `✨ H5 — Propósito e princípios` |
-| Nome * | `Input` com `autoFocus`, placeholder "Ex: Tornar-me líder técnico sênior..." |
-| Área de Foco | `Select` com "Nenhuma área" + as áreas (`emoji nome`) |
-| Descrição | `Textarea` 3 linhas |
-
-## Carregamento
-
-Uma única mensagem, "Carregando horizontes...", enquanto **qualquer** das quatro fontes (áreas,
-metas, projetos, tarefas de hoje) ainda estiver carregando — mas as seções renderizam vazias por
-baixo dela, porque a mensagem não substitui o conteúdo, apenas precede.
-
-## Observações para o redesenho
-
-- **É a única tela que dá sentido vertical ao sistema.** Ela conecta a tarefa de hoje ao propósito,
-  mas não há navegação de volta: não se clica numa meta para ver os projetos que a servem, nem numa
-  área para filtrar tarefas.
-- **A escala de cores dos seis níveis** (azul → esmeralda → violeta → laranja → rosa → índigo) não
-  segue nenhuma progressão perceptual; são seis cores distintas em vez de uma escala.
-- **Áreas e metas não têm confirmação de exclusão**, ao contrário de tarefas, projetos, contextos e
-  tags.
+`area:list`, `goal:list`, `project:list` (com a próxima ação e as contagens, ver
+`05-projetos.md`) e `schedule:getForDate` de hoje, numa leitura só dentro do `RegionBoundary` da
+rota; relê em `tasks:refresh` e depois de cada gravação. O recorte por área é de `filterByArea`
+(`horizonLevels.ts`).

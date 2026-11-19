@@ -231,6 +231,9 @@ uma caixa de marcar.
 
 ### E6. Áreas e metas se excluem sem confirmação
 
+**Resolvida na F5-b:** excluir área ou meta em Horizontes confirma e diz o que acontece com projetos
+e metas.
+
 Tarefas, projetos, contextos e tags pedem confirmação. Áreas e metas somem no clique.
 
 ### E7. Blocos de tempo não se arrastam nem se redimensionam
