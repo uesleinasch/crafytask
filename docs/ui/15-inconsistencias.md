@@ -238,6 +238,9 @@ Tarefas, projetos, contextos e tags pedem confirmação. Áreas e metas somem no
 
 ### E7. Blocos de tempo não se arrastam nem se redimensionam
 
+**Resolvida na F4-b3:** a grade do calendário move, estica e edita blocos (e tarefas com horário)
+direto, com Desfazer.
+
 Mover um bloco de 09:00 para 10:00 exige abrir o diálogo e digitar os dois horários.
 
 ### E8. `/settings` não tem nenhuma preferência de aplicativo
