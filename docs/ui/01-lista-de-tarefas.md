@@ -94,11 +94,18 @@ de baixo). Campos, em `Select` do antd com busca onde a lista é longa:
 | Contexto | `ícone nome` |
 | Projeto | Inclui **"Sem projeto"** (`-1` → `'none'`) |
 | Tag | nome da tag |
-| Ordenar | por atualização (padrão) ou por prazo |
+| Ordenar | por atualização (padrão), por prazo ou pela mais parada (mudança de status mais antiga primeiro) |
+| Parada há | mais de 7, 14 ou 30 dias no status atual (`tasks.status_changed_at`, filtro `staleDays` em SQL) |
+| Só com prazo vencido | `Checkbox`; abertas com prazo antes de hoje (`overdueAt` + `excludeStatus: ['finalizada']`) |
 | Só bloqueadas | `Checkbox` |
 
 No pé: `Mostrando {tasks.length} de {totalTasks}` e **Limpar filtros** (não mexe na aba nem na
 busca). A contagem do botão soma os campos acima (`taskFilterState.ts`, testado).
+
+**Pela URL** (`listIntentFromSearch`): `?status=inbox|proximas|…`, `?context=<id>`, `?tag=<id>`,
+`?prazo=vencido`, `?parada=<dias>` e `?ordem=parada|prazo` abrem a lista já recortada e trocam a aba
+salva (sem `status`, vai para Todas). É assim que Contextos, Tags e os indicadores de saúde
+(`HEALTH_TARGETS`) levam à lista.
 
 ## ④ Barra de ações em massa (`components/tasks/BulkActionBar.tsx`)
 

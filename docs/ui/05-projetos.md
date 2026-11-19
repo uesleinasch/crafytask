@@ -20,7 +20,7 @@ Dados: `project:list` (todos os status de uma vez) e `area:list`; relê em `task
   Arquivados, cada uma com o ícone e a cor do status e o contador em mono (`ProjectTabLabel`).
 - **Barra:** busca em nome, resultado desejado, descrição e área (começa com `?q=` da URL, que
   Horizontes usa em "Ver projetos da área"); ordenar (prazo, sem prazo no fim;
-  progresso; mais recentes; nome); **Cards / Tabela** (`Segmented`, só a partir de `md`: abaixo
+  progresso; mais recentes; nome; mais parados primeiro, pela `last_activity_at`); **Cards / Tabela** (`Segmented`, só a partir de `md`: abaixo
   disso é sempre Cards); agrupar por área de foco; **Novo projeto** (primário).
 - Visão, ordem e agrupamento ficam em `localStorage` (`ticktask:projectListViewMode`, o valor antigo
   `list` vira Tabela; `ticktask:projects-sort`; `ticktask:projects-by-area`).
@@ -33,6 +33,19 @@ Nas abas Ativos e Todos, um `Alert` âmbar: "N projetos ativos estão sem próxi
 próxima ação fica parado: defina o próximo passo concreto.", com **Mostrar só esses** (filtro, vira
 **Mostrar todos**). Sem próxima ação = ativo, com tarefa aberta (não finalizada e não arquivada) e
 nenhuma tarefa em Próximas fora do arquivo (`lacksNextAction`).
+
+`?semProxima=1` abre a aba Ativos com **Mostrar só esses** ligado (indicador "Projetos sem próxima
+ação").
+
+## Projetos parados
+
+`project:list` traz `last_activity_at`: a mais recente entre a criação do projeto, a última sessão de
+tempo de uma tarefa dele (sessão rodando conta como agora) e a última tarefa concluída (pela data da
+mudança de status). Parado = ativo e sem atividade há mais de 7 dias (`isStalled`); o SQL da
+atividade (`PROJECT_ACTIVITY_JULIAN` em `projectQueries.ts`) é o mesmo do indicador de saúde.
+`?parados=1` abre Ativos, ordena por "Mais parados primeiro" e mostra só os parados, com um `Alert`
+informativo ("N projetos ativos estão parados. Sem sessão nem tarefa concluída há mais de 7 dias.")
+e **Mostrar todos**.
 
 ## Card
 

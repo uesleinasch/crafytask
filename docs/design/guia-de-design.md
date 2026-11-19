@@ -429,6 +429,11 @@ mais um badge (pesquisa: poucos elementos por linha; Hick e carga cognitiva).
   Arquivar · Excluir… (com confirmação). O item atual de cada submenu aparece marcado. Se a linha
   faz parte de uma seleção maior, o menu age sobre a seleção toda (título "N tarefas selecionadas",
   sem Abrir, timer, contextos e copiar), igual à barra de ações em massa.
+- **Filtros** (`Popover`, `Drawer` abaixo de `md`): categoria, contexto, projeto, tag, ordenar
+  (atualização, prazo ou "pela mais parada"), "Parada há mais de 7/14/30 dias" (conta da última
+  mudança de status), "Só com prazo vencido" (abertas com prazo antes de hoje) e "Só bloqueadas".
+  A URL abre a lista já recortada, para os indicadores de saúde e outras telas levarem a ela:
+  `?status=`, `?context=`, `?tag=`, `?prazo=vencido`, `?parada=N` e `?ordem=parada|prazo`.
 
 ### Projetos
 
@@ -445,6 +450,9 @@ giram em torno disso.
   projeto".
 - Aviso GTD: "N projetos ativos estão sem próxima ação", com "Mostrar só esses" (filtro). É o que a
   revisão semanal precisa achar rápido.
+- Projetos parados (ativos, sem sessão nem tarefa concluída há mais de 7 dias): ordenar por "Mais
+  parados primeiro" e, vindo do indicador de saúde (`?parados=1`), um aviso informativo com
+  "Mostrar todos". `?semProxima=1` abre com "Mostrar só esses" ligado.
 - **Card:** cor, nome, menu `⋯`; resultado desejado; progresso `feitas/total`; próxima ação (ou chip
   "Sem próxima ação"); área e prazo. Status só aparece na aba Todos.
 - **Tabela:** Projeto (cor + nome, resultado no tooltip do ícone de alvo) · Status (só em Todos) ·
@@ -729,7 +737,8 @@ tempo?** Toda métrica abre o que ela conta (E4). Base: NN/g (comprimento e posi
   a última). Ícone num quadrado tingido, com os tons do `HealthCard`: **em dia** usa as cores de
   Executando com `CircleCheck`; **atenção**, as de Aguardando com o ícone do indicador; **erro**, as
   de Urgente, **só** para prazo vencido; **neutro**, as de Inbox, para o que só informa (Someday).
-  Valor em 20/600. Cada cartão leva à lista já filtrada. Os limiares são os mesmos da revisão
+  Valor em 20/600. Cada cartão leva à lista já filtrada (rotas em `HEALTH_TARGETS`, ver Tabela de
+  tarefas e Projetos). Os limiares são os mesmos da revisão
   semanal e tudo vem de uma consulta só (`review:healthIndicators`), para as duas telas nunca
   discordarem. A consulta traz oito indicadores: Inbox, sem próxima ação, projetos parados (> 7
   dias), aguardando (> 7 dias), próximas paradas (> 14 dias), prazos vencidos, someday e dias desde

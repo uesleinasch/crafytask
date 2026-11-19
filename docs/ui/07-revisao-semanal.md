@@ -135,4 +135,8 @@ Tons (ícone num quadrado tingido, valor em Geist 20/600): **em dia** com as cor
 `CircleCheck` no lugar do ícone; **atenção** com as de Aguardando e o ícone do indicador; **erro**
 com as de Urgente, só para prazo vencido; **neutro** com as de Inbox, para Someday, que só informa.
 Em dia, o texto troca para a frase de em dia ("Inbox zero", "Nenhum prazo vencido"…). Com `onOpen`
-o cartão vira botão com a seta à direita; na revisão ainda não leva a lugar nenhum (F5-c3).
+o cartão vira botão com a seta à direita. Na revisão, cada cartão abre o destino de
+`HEALTH_TARGETS`: Inbox e Someday abrem a aba; Aguardando e Próximas abrem a aba só com as paradas
+(7 e 14 dias), da mais parada para a menos; Prazos vencidos abre Todas com "Só com prazo vencido";
+Projetos sem próxima ação abre Projetos com "Mostrar só esses". A revisão em andamento continua de
+onde estava ao voltar.

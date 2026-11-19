@@ -740,10 +740,19 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     return menu ? html`<${Dropdown} menu=${menu} trigger=${['contextMenu']}>${tr}<//>` : tr;
   }
 
+  let NAV_INTENT = null;
+  const goWith = (go, route, intent) => { NAV_INTENT = { route, ...intent }; go(route); };
+  const takeIntent = route => { const i = NAV_INTENT && NAV_INTENT.route === route ? NAV_INTENT : null; if (i) NAV_INTENT = null; return i; };
+
   function TasksPage({ mode, go, isMobile, screens, projectId, embedded }) {
     const { message, modal } = AntApp.useApp();
+    const [intent] = useState(() => projectId ? null : takeIntent('tarefas'));
+    const [fSort, setFSort] = useState(intent && intent.sort || 'updated');
+    const [fStale, setFStale] = useState(intent && intent.stale || null);
+    const [fOverdue, setFOverdue] = useState(!!(intent && intent.overdue));
+    const fCount = (fSort !== 'updated' ? 1 : 0) + (fStale ? 1 : 0) + (fOverdue ? 1 : 0);
     const [tasks, setTasks] = useState(() => TASKS.filter(t => !projectId || t.project === projectId).map(t => ({ ...t, subtasks: SUBTASKS[t.id] || [] })));
-    const [status, setStatus] = useState(projectId ? 'all' : 'inbox');
+    const [status, setStatus] = useState(projectId ? 'all' : intent && intent.status || 'inbox');
     const [newName, setNewName] = useState('');
     const addToProject = () => { if (!newName.trim()) return; setTasks(ts => [{ id: 900 + ts.length, name: newName.trim(), status: 'proximas', category: 'normal', project: projectId, contexts: [], due: null, secs: 0, energy: null, subtasks: [] }].concat(ts)); setNewName(''); message.success('Tarefa criada em ' + P[projectId].name); };
     const [view, setView] = useState('tabela');
@@ -754,7 +763,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const [collapsed, setCollapsed] = useState(() => new Set());
     const [today, setToday] = useState(() => new Set(TASKS.filter(t => t.today).map(t => t.id)));
     const counts = useMemo(() => { const c = { all: tasks.length }; tasks.forEach(t => { c[t.status] = (c[t.status] || 0) + 1; }); return c; }, [tasks]);
-    const rows = tasks.filter(t => (status === 'all' || t.status === status) && t.name.toLowerCase().includes(q.toLowerCase()));
+    const rows = tasks.filter(t => (status === 'all' || t.status === status) && t.name.toLowerCase().includes(q.toLowerCase()) && (!fOverdue || (t.due && t.due < TODAY && t.status !== 'finalizada')));
     const effectiveView = isMobile && view === 'tabela' ? 'cards' : view;
     useEffect(() => { setSel([]); if (status !== 'executando' && view === 'kanban') setView('tabela'); }, [status]);
     useEffect(() => { setSel([]); setCollapsed(new Set()); }, [groupBy]);
@@ -1000,10 +1009,13 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
             <${Select} placeholder="Contexto" allowClear options=${CONTEXTS.map(c => ({ value: c.name, label: c.emoji + ' ' + c.name }))} />
             <${Select} placeholder="Projeto" allowClear options=${[{ value: -1, label: 'Sem projeto' }].concat(PROJECTS.map(p => ({ value: p.id, label: p.name })))} />
             <${Select} placeholder="Tag" allowClear options=${[{ value: 'refactor', label: 'refactor' }]} />
+            <${Select} value=${fSort} onChange=${setFSort} aria-label="Ordenar" options=${[{ value: 'updated', label: 'Ordenar por atualização' }, { value: 'due', label: 'Ordenar por prazo' }, { value: 'stale', label: 'Ordenar pela mais parada' }]} />
+            <${Select} placeholder="Parada há…" allowClear value=${fStale} onChange=${v => setFStale(v || null)} aria-label="Parada há" options=${[7, 14, 30].map(d => ({ value: d, label: `Parada há mais de ${d} dias` }))} />
+            <${Checkbox} checked=${fOverdue} onChange=${e => setFOverdue(e.target.checked)}>Só com prazo vencido<//>
             <${Checkbox}>Só bloqueadas<//>
-            <${Button} type="link" style=${{ padding: 0, alignSelf: 'start' }}>Limpar filtros<//>
+            <${Button} type="link" style=${{ padding: 0, alignSelf: 'start' }} onClick=${() => { setFSort('updated'); setFStale(null); setFOverdue(false); }}>Limpar filtros<//>
           <//>`}>
-          <${Button} icon=${html`<${I.FilterOutlined} />`}>Filtros<//>
+          <${Button} icon=${html`<${I.FilterOutlined} />`}>Filtros${fCount ? html` <${Badge} count=${fCount} size="small" />` : null}<//>
         <//>
         <div style=${{ flex: 1 }}></div>
         <${Segmented} value=${effectiveView} onChange=${setView} options=${[
@@ -1540,9 +1552,11 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const [status, setStatus] = useState('active');
     const [view, setView] = useState('cards');
     const [q, setQ] = useState('');
-    const [sort, setSort] = useState('due');
+    const [intent] = useState(() => takeIntent('projetos'));
+    const [sort, setSort] = useState(intent && intent.stalled ? 'activity' : 'due');
     const [groupByArea, setGroupByArea] = useState(false);
-    const [onlyNoNext, setOnlyNoNext] = useState(false);
+    const [onlyNoNext, setOnlyNoNext] = useState(!!(intent && intent.noNext));
+    const [onlyStalled, setOnlyStalled] = useState(!!(intent && intent.stalled));
     const [collapsed, setCollapsed] = useState(() => new Set());
     const NEW_DRAFT = { name: '', outcome: '', description: '', area: undefined, color: '#5B47EB' };
     const [draft, setDraft] = useState(null);
@@ -1556,13 +1570,17 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       due: (a, b) => (a.due || '9999').localeCompare(b.due || '9999'),
       progress: (a, b) => (stats[b.id].total ? stats[b.id].done / stats[b.id].total : 0) - (stats[a.id].total ? stats[a.id].done / stats[a.id].total : 0),
       name: (a, b) => a.name.localeCompare(b.name),
-      updated: (a, b) => b.updated.localeCompare(a.updated)
+      updated: (a, b) => b.updated.localeCompare(a.updated),
+      activity: (a, b) => a.updated.localeCompare(b.updated)
     };
+    const isStalled = p => p.status === 'active' && dayjs(TODAY).diff(dayjs(p.updated), 'day') > 7;
+    const stalledCount = projects.filter(isStalled).length;
     const needle = q.trim().toLowerCase();
     const rows = projects
       .filter(p => status === 'all' || p.status === status)
       .filter(p => !needle || [p.name, p.outcome, p.description, p.area].join(' ').toLowerCase().includes(needle))
       .filter(p => !onlyNoNext || noNext(p))
+      .filter(p => !onlyStalled || isStalled(p))
       .sort(sorters[sort]);
     const groups = groupByArea
       ? AREAS.concat(['Sem área']).map(a => ({ key: a, name: a, items: rows.filter(p => (p.area || 'Sem área') === a) })).filter(g => g.items.length)
@@ -1651,7 +1669,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       </span>` }));
 
     const body = rows.length === 0
-      ? html`<${Empty} image=${Empty.PRESENTED_IMAGE_SIMPLE} description=${q || onlyNoNext ? 'Nenhum projeto com esses filtros.' : 'Nenhum projeto aqui.'}>${q || onlyNoNext ? html`<${Button} onClick=${() => { setQ(''); setOnlyNoNext(false); }}>Limpar filtros<//>` : html`<${Button} type="primary" icon=${html`<${I.PlusOutlined} />`} onClick=${() => setDraft(NEW_DRAFT)}>Criar projeto<//>`}<//>`
+      ? html`<${Empty} image=${Empty.PRESENTED_IMAGE_SIMPLE} description=${q || onlyNoNext || onlyStalled ? 'Nenhum projeto com esses filtros.' : 'Nenhum projeto aqui.'}>${q || onlyNoNext || onlyStalled ? html`<${Button} onClick=${() => { setQ(''); setOnlyNoNext(false); setOnlyStalled(false); }}>Limpar filtros<//>` : html`<${Button} type="primary" icon=${html`<${I.PlusOutlined} />`} onClick=${() => setDraft(NEW_DRAFT)}>Criar projeto<//>`}<//>`
       : effectiveView === 'tabela'
         ? html`<${Table} rowKey="id" size=${screens.xxl ? 'middle' : 'small'} columns=${columns} dataSource=${data} pagination=${false} scroll=${{ x: 'max-content' }}
             components=${{ body: { row: MenuRow } }} onRow=${r => r.isGroup ? {} : { record: r, menu: menuFor(r) }}
@@ -1666,7 +1684,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         : html`<${Tabs} activeKey=${status} onChange=${setStatus} items=${tabItems} style=${{ marginBottom: 4 }} />`}
       <${Flex} gap=${8} wrap="wrap" align="center" style=${{ marginBottom: 12 }}>
         <${Input} allowClear placeholder="Buscar em nome, resultado e área" prefix=${html`<${I.SearchOutlined} />`} value=${q} onChange=${e => setQ(e.target.value)} style=${{ flex: '1 1 220px', maxWidth: 360 }} aria-label="Buscar projetos" />
-        <${Select} value=${sort} onChange=${setSort} style=${{ width: 170 }} aria-label="Ordenar" options=${[{ value: 'due', label: 'Ordenar por prazo' }, { value: 'progress', label: 'Ordenar por progresso' }, { value: 'updated', label: 'Mais recentes' }, { value: 'name', label: 'Ordenar por nome' }]} />
+        <${Select} value=${sort} onChange=${setSort} style=${{ width: 170 }} aria-label="Ordenar" options=${[{ value: 'due', label: 'Ordenar por prazo' }, { value: 'progress', label: 'Ordenar por progresso' }, { value: 'updated', label: 'Mais recentes' }, { value: 'name', label: 'Ordenar por nome' }, { value: 'activity', label: 'Mais parados primeiro' }]} />
         <div style=${{ flex: 1 }}></div>
         ${isMobile ? null : html`<${Segmented} value=${effectiveView} onChange=${setView} options=${[{ value: 'cards', icon: html`<${I.AppstoreOutlined} />`, label: screens.lg ? 'Cards' : null, title: 'Cards' }, { value: 'tabela', icon: html`<${I.TableOutlined} />`, label: screens.lg ? 'Tabela' : null, title: 'Tabela' }]} />`}
         <${Select} value=${groupByArea ? 'area' : 'none'} onChange=${v => setGroupByArea(v === 'area')} style=${{ width: 170 }} aria-label="Agrupar" options=${[{ value: 'none', label: 'Sem agrupamento' }, { value: 'area', label: 'Agrupar por área' }]} />
@@ -1675,6 +1693,9 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       ${activeNoNext.length && (status === 'active' || status === 'all') ? html`<${Alert} showIcon type="warning" style=${{ marginBottom: 12 }}
         message=${html`<span><b>${activeNoNext.length === 1 ? '1 projeto ativo está' : activeNoNext.length + ' projetos ativos estão'} sem próxima ação.</b> Projeto sem próxima ação fica parado: defina o próximo passo concreto.</span>`}
         action=${html`<${Button} size="small" type=${onlyNoNext ? 'primary' : 'default'} onClick=${() => setOnlyNoNext(!onlyNoNext)}>${onlyNoNext ? 'Mostrar todos' : 'Mostrar só esses'}<//>`} />` : null}
+      ${onlyStalled ? html`<${Alert} showIcon type="info" icon=${html`<${I.PauseCircleOutlined} />`} style=${{ marginBottom: 12 }}
+        message=${html`<span><b>${stalledCount === 1 ? '1 projeto ativo está parado.' : stalledCount + ' projetos ativos estão parados.'}</b> Sem sessão nem tarefa concluída há mais de 7 dias.</span>`}
+        action=${html`<${Button} size="small" onClick=${() => setOnlyStalled(false)}>Mostrar todos<//>`} />` : null}
       ${body}
       <${Modal} open=${!!draft} title="Novo projeto" okText="Criar projeto" cancelText="Cancelar" onCancel=${() => setDraft(null)} okButtonProps=${{ disabled: !draft || !draft.name.trim() }}
         onOk=${() => { const id = Date.now(); setProjects(ps => ps.concat([{ id, name: draft.name.trim(), outcome: draft.outcome.trim(), description: draft.description.trim(), area: draft.area || null, color: draft.color, status: 'active', due: null, updated: TODAY }])); setDraft(null); message.success('Projeto criado: abre o detalhe'); }}>
@@ -2745,11 +2766,11 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const noNext = PROJECTS.filter(p => { const st = projectStats(p, TASKS); return p.status === 'active' && st.open > 0 && !st.next; }).length;
     const overdue = TASKS.filter(t => t.due && t.due < TODAY && t.status !== 'finalizada').length;
     const health = [
-      { key: 'inbox', icon: 'InboxOutlined', title: 'Inbox para processar', value: counts.inbox || 0, detail: 'O item mais antigo chegou há 4 dias · 82% processado nesta semana', okText: 'Inbox zero', cta: 'Abre a aba Inbox', onClick: () => toTasks('Abre Tarefas na aba Inbox') },
-      { key: 'nonext', icon: 'ForwardOutlined', title: 'Projetos sem próxima ação', value: noNext, detail: 'Ativos, com tarefas abertas e nenhuma em Próximas', okText: 'Todo projeto ativo tem um próximo passo', cta: 'Abre Projetos filtrado', onClick: () => { message.info('Abre Projetos com "Mostrar só esses" ligado'); go('projetos'); } },
-      { key: 'stalled', icon: 'PauseCircleOutlined', title: 'Projetos parados', value: 1, detail: 'Sem sessão nem tarefa concluída há mais de 7 dias', okText: 'Todos tiveram atividade na semana', cta: 'Abre Projetos', onClick: () => { message.info('Abre Projetos ordenado por atividade, mostrando os parados'); go('projetos'); } },
-      { key: 'waiting', icon: 'HourglassOutlined', title: 'Aguardando sem resposta', value: 2, detail: 'Há mais de 7 dias em Aguardando: hora de cobrar', okText: 'Nada esperando há mais de 7 dias', cta: 'Abre a aba Aguardando', onClick: () => toTasks('Abre Tarefas na aba Aguardando, só as paradas há mais de 7 dias') },
-      { key: 'overdue', icon: 'CalendarOutlined', title: 'Prazos vencidos', value: overdue, tone: overdue ? 'error' : 'ok', detail: 'Tarefas abertas com prazo antes de hoje', okText: 'Nenhum prazo vencido', cta: 'Abre a lista filtrada', onClick: () => toTasks('Abre Tarefas com o filtro "Prazo vencido"') },
+      { key: 'inbox', icon: 'InboxOutlined', title: 'Inbox para processar', value: counts.inbox || 0, detail: 'O item mais antigo chegou há 4 dias · 82% processado nesta semana', okText: 'Inbox zero', cta: 'Abre a aba Inbox', onClick: () => goWith(go, 'tarefas', { status: 'inbox' }) },
+      { key: 'nonext', icon: 'ForwardOutlined', title: 'Projetos sem próxima ação', value: noNext, detail: 'Ativos, com tarefas abertas e nenhuma em Próximas', okText: 'Todo projeto ativo tem um próximo passo', cta: 'Abre Projetos filtrado', onClick: () => goWith(go, 'projetos', { noNext: true }) },
+      { key: 'stalled', icon: 'PauseCircleOutlined', title: 'Projetos parados', value: 1, detail: 'Sem sessão nem tarefa concluída há mais de 7 dias', okText: 'Todos tiveram atividade na semana', cta: 'Abre Projetos', onClick: () => goWith(go, 'projetos', { stalled: true }) },
+      { key: 'waiting', icon: 'HourglassOutlined', title: 'Aguardando sem resposta', value: 2, detail: 'Há mais de 7 dias em Aguardando: hora de cobrar', okText: 'Nada esperando há mais de 7 dias', cta: 'Abre a aba Aguardando', onClick: () => goWith(go, 'tarefas', { status: 'aguardando', stale: 7, sort: 'stale' }) },
+      { key: 'overdue', icon: 'CalendarOutlined', title: 'Prazos vencidos', value: overdue, tone: overdue ? 'error' : 'ok', detail: 'Tarefas abertas com prazo antes de hoje', okText: 'Nenhum prazo vencido', cta: 'Abre a lista filtrada', onClick: () => goWith(go, 'tarefas', { status: 'all', overdue: true, sort: 'due' }) },
       { key: 'review', icon: 'AuditOutlined', title: 'Revisão semanal', value: 8, valueText: 'há 8 dias', detail: 'Passou de uma semana: as listas começam a ficar velhas', okText: 'Próxima até domingo, 23/11', cta: 'Abre a revisão semanal', onClick: () => go('revisao') }
     ];
     const statusRows = ['inbox', 'proximas', 'executando', 'aguardando', 'someday'].map(k => ({ key: k, name: STATUS[k].label, secs: counts[k] || 0 }));
@@ -3003,12 +3024,12 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       const weeks = Array.from({ length: 12 }, (_, i) => { const s = dayjs(TODAY).startOf('week').subtract(11 - i, 'week'); const r = history.find(h => !dayjs(h.date).isBefore(s) && dayjs(h.date).isBefore(s.add(7, 'day'))); return { s, r }; });
       const doneWeeks = weeks.filter(w => w.r).length;
       const hItems = [
-        { key: 'inbox', icon: 'InboxOutlined', title: 'Inbox', value: health.inbox, detail: 'Itens esperando decisão', okText: 'Inbox zero', cta: 'Abre a aba Inbox', onClick: () => { message.info('Abre Tarefas na aba Inbox'); go('tarefas'); } },
-        { key: 'nonext', icon: 'ForwardOutlined', title: 'Projetos sem próxima ação', value: health.noNext, detail: 'Ativos, com tarefas abertas e nenhuma em Próximas', okText: 'Todo projeto ativo tem um próximo passo', cta: 'Abre Projetos', onClick: () => go('projetos') },
-        { key: 'waiting', icon: 'HourglassOutlined', title: 'Aguardando sem resposta', value: health.waiting, detail: 'Há mais de 7 dias em Aguardando', okText: 'Nada esperando há mais de 7 dias', cta: 'Abre a aba Aguardando', onClick: () => { message.info('Abre Tarefas na aba Aguardando'); go('tarefas'); } },
-        { key: 'next', icon: 'ClockCircleOutlined', title: 'Próximas paradas', value: health.next, detail: 'Há mais de 14 dias sem mudar', okText: 'Nenhuma próxima ação parada', cta: 'Abre a aba Próximas', onClick: () => { message.info('Abre Tarefas na aba Próximas, ordenada pela mais parada'); go('tarefas'); } },
-        { key: 'overdue', icon: 'CalendarOutlined', title: 'Prazos vencidos', value: health.overdue, tone: health.overdue ? 'error' : 'ok', detail: 'Tarefas abertas com prazo antes de hoje', okText: 'Nenhum prazo vencido', cta: 'Abre a lista filtrada', onClick: () => go('tarefas') },
-        { key: 'someday', icon: 'BulbOutlined', title: 'Someday', value: health.someday, tone: 'neutral', detail: 'Ideias guardadas para depois', cta: 'Abre a aba Someday', onClick: () => go('tarefas') }
+        { key: 'inbox', icon: 'InboxOutlined', title: 'Inbox', value: health.inbox, detail: 'Itens esperando decisão', okText: 'Inbox zero', cta: 'Abre a aba Inbox', onClick: () => goWith(go, 'tarefas', { status: 'inbox' }) },
+        { key: 'nonext', icon: 'ForwardOutlined', title: 'Projetos sem próxima ação', value: health.noNext, detail: 'Ativos, com tarefas abertas e nenhuma em Próximas', okText: 'Todo projeto ativo tem um próximo passo', cta: 'Abre Projetos', onClick: () => goWith(go, 'projetos', { noNext: true }) },
+        { key: 'waiting', icon: 'HourglassOutlined', title: 'Aguardando sem resposta', value: health.waiting, detail: 'Há mais de 7 dias em Aguardando', okText: 'Nada esperando há mais de 7 dias', cta: 'Abre a aba Aguardando', onClick: () => goWith(go, 'tarefas', { status: 'aguardando', stale: 7, sort: 'stale' }) },
+        { key: 'next', icon: 'ClockCircleOutlined', title: 'Próximas paradas', value: health.next, detail: 'Há mais de 14 dias sem mudar', okText: 'Nenhuma próxima ação parada', cta: 'Abre a aba Próximas', onClick: () => goWith(go, 'tarefas', { status: 'proximas', stale: 14, sort: 'stale' }) },
+        { key: 'overdue', icon: 'CalendarOutlined', title: 'Prazos vencidos', value: health.overdue, tone: health.overdue ? 'error' : 'ok', detail: 'Tarefas abertas com prazo antes de hoje', okText: 'Nenhum prazo vencido', cta: 'Abre a lista filtrada', onClick: () => goWith(go, 'tarefas', { status: 'all', overdue: true, sort: 'due' }) },
+        { key: 'someday', icon: 'BulbOutlined', title: 'Someday', value: health.someday, tone: 'neutral', detail: 'Ideias guardadas para depois', cta: 'Abre a aba Someday', onClick: () => goWith(go, 'tarefas', { status: 'someday' }) }
       ];
       const histCols = [
         { title: 'Data', key: 'date', render: (_, r) => html`<span>${dayjs(r.date).format('ddd, DD/MM/YYYY')} <${Text} type="secondary" className="ct-mono">${r.start}<//></span>` },
