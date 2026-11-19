@@ -395,7 +395,7 @@
       "titulo": "Abas de status com Tabs do antd",
       "check": {
         "tipo": "contem",
-        "arquivos": "src/renderer/src/pages/TaskListPage.tsx",
+        "arquivos": "src/renderer/src/{pages/TaskListPage.tsx,components/tasks/TaskListView.tsx}",
         "padrao": "<Tabs"
       }
     },
@@ -435,7 +435,7 @@
       "titulo": "Visão vira cards abaixo de md",
       "check": {
         "tipo": "contem-todos",
-        "arquivos": "src/renderer/src/{pages/TaskListPage.tsx,lib/taskListView.test.ts}",
+        "arquivos": "src/renderer/src/{pages/TaskListPage.tsx,components/tasks/TaskListView.tsx,lib/taskListView.test.ts}",
         "padroes": ["effectiveListView\\([^)]*narrow", "abaixo de md a tabela vira cards"]
       }
     },
@@ -468,7 +468,7 @@
       "titulo": "Alerta de processamento do Inbox",
       "check": {
         "tipo": "contem",
-        "arquivos": "src/renderer/src/pages/TaskListPage.tsx",
+        "arquivos": "src/renderer/src/{pages/TaskListPage.tsx,components/tasks/TaskListView.tsx}",
         "padrao": "<Alert\\b"
       }
     },
@@ -545,7 +545,7 @@
       "titulo": "Estado vazio com Empty: Inbox zerado, nada aqui, nada com esses filtros",
       "check": {
         "tipo": "contem-todos",
-        "arquivos": "src/renderer/src/pages/TaskListPage.tsx",
+        "arquivos": "src/renderer/src/{pages/TaskListPage.tsx,components/tasks/TaskListView.tsx}",
         "padroes": ["<Empty", "Inbox zerado. Tudo processado.", "Limpar filtros"]
       }
     },
@@ -555,7 +555,7 @@
       "titulo": "Aviso de que agrupar por contexto repete tarefas",
       "check": {
         "tipo": "contem",
-        "arquivos": "src/renderer/src/pages/TaskListPage.tsx",
+        "arquivos": "src/renderer/src/{pages/TaskListPage.tsx,components/tasks/TaskListView.tsx}",
         "padrao": "a soma dos grupos passa do"
       }
     },
