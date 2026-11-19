@@ -24,16 +24,19 @@ import {
   type GridBlockActions
 } from '@renderer/components/calendar/CalendarGrid'
 import { CalendarShowMenu } from '@renderer/components/calendar/CalendarShowMenu'
-import { MonthlyCalendar } from '@renderer/components/calendar/LegacyMonthView'
+import { AgendaView } from '@renderer/components/calendar/AgendaView'
+import { MonthView } from '@renderer/components/calendar/MonthView'
 import { NewBlockModal, type NewBlockDraft } from '@renderer/components/calendar/NewBlockModal'
 import { UnscheduledPanel } from '@renderer/components/calendar/UnscheduledPanel'
 import {
   SHOW_KEYS,
   VIEW_OPTIONS,
+  agendaDays,
   defaultView,
   dropStart,
   fromMin,
   isWeekend,
+  monthCells,
   periodLabel,
   snapSlot,
   stepCursor,
@@ -46,7 +49,7 @@ import {
 import { errorMessage } from '@renderer/components/settings/settingsStatus'
 import { PageContainer } from '@renderer/components/shell/PageContainer'
 import { RegionBoundary } from '@renderer/components/shell/RegionBoundary'
-import { useCalendarMonth, useCalendarRange } from '@renderer/hooks/useCalendar'
+import { useCalendarRange, type CalendarRangeData } from '@renderer/hooks/useCalendar'
 import { usePersistedState } from '@renderer/hooks/usePersistedState'
 import { useTimerStore } from '@renderer/stores/timerStore'
 
@@ -68,13 +71,17 @@ function movedText(name: string, date: string, patch: BlockPatch, kind: 'move' |
     : `Movido para ${shortDay(patch.date ?? date)}, ${patch.start_time}`
 }
 
-type GridSectionProps = Omit<React.ComponentProps<typeof CalendarGrid>, 'data'> & {
+function RangeSection({
+  from,
+  to,
+  version,
+  children
+}: {
   from: string
   to: string
   version: number
-}
-
-function GridSection({ from, to, version, ...grid }: GridSectionProps): React.JSX.Element {
+  children: (data: CalendarRangeData) => React.ReactNode
+}): React.JSX.Element {
   const data = useCalendarRange(from, to, version)
   if (!data) {
     return (
@@ -83,36 +90,7 @@ function GridSection({ from, to, version, ...grid }: GridSectionProps): React.JS
       </Flex>
     )
   }
-  return <CalendarGrid {...grid} data={data} />
-}
-
-interface MonthSectionProps {
-  cursor: string
-  onTaskOpen: (id: number) => void
-  onDayClick: (date: string) => void
-}
-
-function MonthSection({ cursor, onTaskOpen, onDayClick }: MonthSectionProps): React.JSX.Element {
-  const { message } = App.useApp()
-  const month = useCalendarMonth(cursor.slice(0, 7))
-  return (
-    <div style={{ height: '100%', overflow: 'auto' }}>
-      <MonthlyCalendar
-        year={Number(cursor.slice(0, 4))}
-        month={Number(cursor.slice(5, 7)) - 1}
-        scheduledTasks={month.scheduledTasks}
-        timeBlocks={month.timeBlocks}
-        onTaskNavigate={onTaskOpen}
-        onDayClick={onDayClick}
-        onDragEnd={(taskId, date) =>
-          void month
-            .scheduleTask(taskId, date)
-            .then(() => message.success('Tarefa reagendada'))
-            .catch((error) => message.error(errorMessage(error)))
-        }
-      />
-    </div>
-  )
+  return <>{children(data)}</>
 }
 
 export function CalendarPage(): React.JSX.Element {
@@ -138,17 +116,25 @@ export function CalendarPage(): React.JSX.Element {
   }, [])
 
   const today = localDateString(now)
-  const gridView: GridView = view === 'month' ? 'week' : view
+  const gridView: GridView = view === 'month' || view === 'agenda' ? 'week' : view
   const allDays = useMemo(
     () => viewDays(gridView, cursor, prefs.weekStart),
     [gridView, cursor, prefs.weekStart]
   )
+  const cells = useMemo(() => monthCells(cursor, prefs.weekStart), [cursor, prefs.weekStart])
+  const nextDays = useMemo(() => agendaDays(cursor), [cursor])
   const days =
-    view === 'week' && !show.has('weekend') ? allDays.filter((d) => !isWeekend(d)) : allDays
+    view === 'agenda'
+      ? nextDays
+      : view === 'week' && !show.has('weekend')
+        ? allDays.filter((d) => !isWeekend(d))
+        : allDays
   const panelRange =
     view === 'month'
       ? { from: `${cursor.slice(0, 7)}-01`, to: addDays(`${stepCursor('month', cursor, 1)}`, -1) }
-      : { from: allDays[0], to: allDays[allDays.length - 1] }
+      : view === 'agenda'
+        ? { from: nextDays[0], to: nextDays[nextDays.length - 1] }
+        : { from: allDays[0], to: allDays[allDays.length - 1] }
 
   const openTask = useCallback((id: number) => navigate(`/task/${id}`), [navigate])
 
@@ -301,7 +287,11 @@ export function CalendarPage(): React.JSX.Element {
     }
   }
 
-  const label = periodLabel(view, cursor, view === 'month' ? [] : allDays)
+  const label = periodLabel(
+    view,
+    cursor,
+    view === 'month' ? [] : view === 'agenda' ? nextDays : allDays
+  )
   const viewControl = screens.md ? (
     <Segmented
       value={view}
@@ -406,29 +396,52 @@ export function CalendarPage(): React.JSX.Element {
         <div style={{ flex: 1, minWidth: 0, minHeight: 0 }}>
           <RegionBoundary region="grade do calendário" resetKeys={[view, cursor]}>
             {view === 'month' ? (
-              <MonthSection
-                key={version}
-                cursor={cursor}
-                onTaskOpen={openTask}
-                onDayClick={(date) => setDraft({ date, start: '09:00', end: '10:00' })}
-              />
+              <RangeSection from={cells[0]} to={cells[cells.length - 1]} version={version}>
+                {(data) => (
+                  <MonthView
+                    cursor={cursor}
+                    cells={cells}
+                    today={today}
+                    data={data}
+                    show={show}
+                    onOpenDay={openDay}
+                    onTaskOpen={openTask}
+                    onDropTask={(taskId, date) => reserve(taskId, date, 9 * 60)}
+                    onDropChip={dropChip}
+                  />
+                )}
+              </RangeSection>
+            ) : view === 'agenda' ? (
+              <RangeSection from={nextDays[0]} to={nextDays[nextDays.length - 1]} version={version}>
+                {(data) => (
+                  <AgendaView
+                    days={nextDays}
+                    today={today}
+                    data={data}
+                    show={show}
+                    onTaskOpen={openTask}
+                  />
+                )}
+              </RangeSection>
             ) : (
-              <GridSection
-                from={allDays[0]}
-                to={allDays[allDays.length - 1]}
-                version={version}
-                view={gridView}
-                days={days}
-                today={today}
-                now={now}
-                show={show}
-                onOpenDay={openDay}
-                onSlotClick={slotClick}
-                onTaskOpen={openTask}
-                blockActions={blockActions}
-                onDropTask={reserve}
-                onDropChip={dropChip}
-              />
+              <RangeSection from={allDays[0]} to={allDays[allDays.length - 1]} version={version}>
+                {(data) => (
+                  <CalendarGrid
+                    data={data}
+                    view={gridView}
+                    days={days}
+                    today={today}
+                    now={now}
+                    show={show}
+                    onOpenDay={openDay}
+                    onSlotClick={slotClick}
+                    onTaskOpen={openTask}
+                    blockActions={blockActions}
+                    onDropTask={reserve}
+                    onDropChip={dropChip}
+                  />
+                )}
+              </RangeSection>
             )}
           </RegionBoundary>
         </div>

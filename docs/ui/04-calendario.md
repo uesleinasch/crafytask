@@ -1,19 +1,19 @@
 # Calendário — `/calendar`
 
 `src/renderer/src/pages/CalendarPage.tsx` · `components/calendar/` (`CalendarGrid.tsx`,
-`BlockPopover.tsx`, `NewBlockModal.tsx`, `UnscheduledPanel.tsx`, `CalendarShowMenu.tsx`,
-`calendarView.ts` puro e testado; `LegacyMonthView.tsx` até a F4-b4) · dados em
-`hooks/useCalendar.ts` (`useCalendarRange`, `useCalendarMonth`)
+`MonthView.tsx`, `AgendaView.tsx`, `CalendarChip.tsx`, `BlockPopover.tsx`, `NewBlockModal.tsx`,
+`UnscheduledPanel.tsx`, `CalendarShowMenu.tsx`, `calendarView.ts` puro e testado) · dados em
+`hooks/useCalendar.ts` (`useCalendarRange`)
 
 ## Função
 
 O plano (blocos de tempo), o compromisso (tarefa com horário), o prazo e o que de fato aconteceu
-(sessões do timer) na mesma grade. Visões Dia, 3 dias e Semana (grade horária) e Mês (ainda a
-antiga, até a F4-b4).
+(sessões do timer) na mesma grade. Visões Dia, 3 dias e Semana (grade horária), Mês e Agenda
+(lista dos próximos 14 dias).
 
 ## Barra
 
-`PageContainer` de largura total. **Hoje**, `‹ ›` (anda 1 dia, 3 dias, 1 semana ou 1 mês), o período
+`PageContainer` de largura total. **Hoje**, `‹ ›` (anda 1 dia, 3 dias, 1 semana, 1 mês ou 14 dias), o período
 como `DatePicker` sem borda ("16–22 de novembro de 2026"), a visão (`Segmented`; `Select` abaixo de
 `md`), **Mostrar** e **Novo bloco** (primário). A visão inicial sai da largura da janela: Semana a
 partir de `lg`, 3 dias em `md`, Dia abaixo.
@@ -77,45 +77,45 @@ dias visíveis. Vazio: "Toda próxima ação tem tempo reservado."; rodapé "N j
 (ou "neste mês"), contando as Próximas e Executando com bloco no intervalo.
 
 A grade relê em `tasks:refresh` e `timer:stopped` e descarta resposta velha ao trocar de período
-rápido; o Mês relê ao salvar um bloco. A leitura acontece dentro do `RegionBoundary` "grade do
+rápido; vale também para o Mês e a Agenda, que usam a mesma leitura. A leitura acontece dentro do `RegionBoundary` "grade do
 calendário": falha ali não derruba a barra. Erro ao salvar ou excluir bloco aparece numa mensagem
 (sem o prefixo do Electron) e o diálogo continua aberto.
 
-## Visão mensal
+## Mês
 
-Grade `grid-cols-7`. Cabeçalho com `Dom … Sáb` em `bg-slate-50`. As células fora do mês (padding do
-início e do fim) ficam `bg-slate-50/50`.
+`MonthView`: card com 7 colunas, semana começando no dia de `calendarPrefs().weekStart` (segunda por
+padrão), 5 ou 6 semanas (a sexta só quando ainda tem dia do mês). Células fora do mês em
+`colorBgLayout`, número apagado. Fins de semana sempre aparecem.
 
-### Célula de dia (`DroppableDayCell`)
+- **Número do dia:** botão que abre a visão Dia; hoje só no círculo da cor primária, sem pintar a
+  célula (`aria-current="date"`).
+- **Blocos:** "N · Xh" em mono no canto (blocos e tarefas com horário, conforme **Mostrar**), com
+  tooltip listando "09:00–10:00 Nome". Substitui o selo laranja antigo.
+- **Chips:** agendadas sem horário e prazos (`CalendarChip`, o mesmo da faixa Dia, sem a hora do
+  prazo), até 2 por dia (3 a partir de `xl`) e `+N mais` abre um `Popover` com todos. Clicar abre a
+  tarefa; arrastar para outro dia reagenda ou move o prazo (soltar no mesmo dia não grava).
+- **Soltar uma tarefa de "A agendar"** num dia reserva 1h às 09:00.
 
-`min-h-[90px] p-1.5 border border-slate-200`, clicável (abre o diálogo de bloco já com a data).
+## Agenda
 
-- Número do dia em `w-6 h-6 rounded-full`; se for hoje, círculo azul preenchido e a célula inteira
-  ganha `bg-blue-50 border-blue-300`.
-- Badge `N⏱` em `bg-orange-100 text-orange-600` quando há blocos de tempo naquele dia.
-- Até **três** chips de tarefa (`DraggableTaskChip`) + `+N mais`.
-- Sendo alvo de um arraste: `bg-emerald-50 border-emerald-400 ring-1 ring-emerald-300`.
-
-### Chip de tarefa arrastável
-
-Pílula azul-clara com `GripVertical` e o nome truncado. `cursor-grab`, ativação após 5px de
-movimento (para não confundir com clique). Clicar navega para a tarefa; arrastar e soltar em outro
-dia **reagenda** (`scheduled_date`) e emite o toast "Tarefa reagendada!".
-
-Enquanto o arraste está ativo, uma etiqueta escura fixa aparece em `bottom-4 right-4`: **"Solte em um
-dia para reagendar"**.
+`AgendaView`: os 14 dias a partir do cursor (`‹ ›` anda 14 dias), só os que têm algo. Cada dia:
+número (hoje no círculo), dia da semana e mês; depois os chips de agendadas e prazos e os itens com
+hora em ordem ("09:00–10:00", amostra do bloco, da tarefa com horário ou do time leak, nome e
+projeto). Clicar abre a tarefa. Vazio: "Nada nas próximas duas semanas." É a visão acessível
+(lista, sem arraste) e a melhor no celular.
 
 ## Novo bloco de tempo
 
 `Modal` com Tarefa (`Select` com busca, de `listActiveTasksLight()`), Dia (`DatePicker`) e Horário
 (`TimePicker.RangePicker` em passos de 15 min) com a duração; **Reservar** fica desabilitado sem
-tarefa. Abre pelo **Novo bloco**, pelo clique na grade e pelo clique num dia do Mês. Erro do main
+tarefa. Abre pelo **Novo bloco** e pelo clique na grade. Erro do main
 (validação de data e horário) aparece numa mensagem e o modal continua aberto.
 
 ## Dados
 
-A grade usa `timeBlock:getForRange`, `schedule:getRange` e `timeEntry:listRange`; o Mês ainda usa
-`timeBlock:getForMonth` e `schedule:getWeekly`.
+Grade, Mês e Agenda usam `timeBlock:getForRange`, `schedule:getRange` e `timeEntry:listRange`
+sobre os dias da visão (no Mês, as 5 ou 6 semanas inteiras). Os canais antigos
+`timeBlock:getForMonth` e `schedule:getWeekly` saíram; o MCP chama as funções do banco direto.
 
 - `timeEntry:listRange(fromIso, toIso)` → `TimeEntrySpan[]`: sessões de tempo que cruzam o
   intervalo, com nome e categoria da tarefa e cor do projeto (`listTimeEntriesInRange` em

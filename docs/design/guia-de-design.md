@@ -644,8 +644,9 @@ o que de fato aconteceu (sessões do timer) na mesma grade.
 - **Criar:** clicar num espaço vazio abre o `Modal` "Novo bloco de tempo" já com dia e hora (1h),
   com busca da tarefa e duração calculada.
 - **Mês:** semana começando na segunda (configuração "início da semana"), número do dia como botão
-  que abre o Dia, "N blocos · Xh" em texto no lugar do selo laranja, chips de agendadas e prazos
-  arrastáveis, `+N mais`. Hoje só no círculo do número, sem pintar a célula.
+  que abre o Dia, "N · Xh" em mono (tooltip com os horários) no lugar do selo laranja, chips de
+  agendadas e prazos arrastáveis, `+N mais`. Hoje só no círculo do número, sem pintar a célula.
+  Soltar uma tarefa de "A agendar" num dia reserva 1h às 09:00, como o `+` do painel.
 - **Agenda:** lista dos próximos 14 dias com algo marcado, por dia: agendadas, prazos e blocos com
   horário. É a visão acessível e a melhor no celular.
 - **Vazio:** dias sem nada mostram uma dica sobre a grade ("clique ou arraste de A agendar").

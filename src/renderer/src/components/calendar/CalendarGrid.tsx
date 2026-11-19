@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Dropdown, Grid, Popover, Tooltip, theme } from 'antd'
-import { Calendar, CalendarSync, Check, Copy, FileText, Flag, Play, Trash2 } from 'lucide-react'
+import { Calendar, CalendarSync, Check, Copy, FileText, Play, Trash2 } from 'lucide-react'
 import type { Task, TaskCategory, TimeBlock } from '@shared/types'
 import { calendarPrefs } from '@shared/calendarPrefs'
 import { CATEGORY_ICONS } from '@renderer/components/chips/categoryMeta'
@@ -14,14 +14,16 @@ import {
 import { useThemeSettings } from '@renderer/theme/themeSettings'
 import type { CalendarRangeData } from '@renderer/hooks/useCalendar'
 import { BlockPopover, type PopoverSubject } from './BlockPopover'
+import { CalendarChip } from './CalendarChip'
 import {
   allDayOf,
   blocksOfDay,
+  chipAlreadyOn,
+  readDropPayload,
   clampToGrid,
   durationLabel,
   eventsOfDay,
   fromMin,
-  DRAG_TYPE,
   isWeekend,
   layoutDay,
   movedTimes,
@@ -79,20 +81,6 @@ interface DragState {
   dx: number
   dy: number
   dayWidth: number
-}
-
-interface DropPayload {
-  taskId: number
-  chip?: AllDayItem['kind']
-}
-
-function readDrop(event: React.DragEvent): DropPayload | null {
-  try {
-    const data = JSON.parse(event.dataTransfer.getData(DRAG_TYPE)) as DropPayload
-    return typeof data.taskId === 'number' ? data : null
-  } catch {
-    return null
-  }
 }
 
 const HOUR_LABEL_WIDTH = 52
@@ -192,14 +180,6 @@ export function CalendarGrid({
       window.removeEventListener('keydown', key)
     }
   }, [dragging, pxPerMin, h0, h1, view, days])
-
-  function sameDay(payload: DropPayload, date: string): boolean {
-    const task = tasksById.get(payload.taskId)
-    if (!task) return false
-    return payload.chip === 'due'
-      ? task.due_date?.slice(0, 10) === date
-      : task.scheduled_date === date
-  }
 
   function startDrag(
     e: React.PointerEvent,
@@ -467,52 +447,7 @@ export function CalendarGrid({
   }
 
   function chip(item: AllDayItem): React.ReactNode {
-    const { task } = item
-    const due = item.kind === 'due'
-    const dueDate = task.due_date?.slice(0, 10)
-    const tone =
-      due && dueDate && dueDate < today
-        ? token.colorError
-        : due && dueDate === today
-          ? token.colorWarning
-          : token.colorTextTertiary
-    return (
-      <button
-        key={item.key}
-        type="button"
-        className={due ? 'ct-calchip due' : 'ct-calchip'}
-        draggable
-        onDragStart={(e) =>
-          e.dataTransfer.setData(DRAG_TYPE, JSON.stringify({ taskId: task.id, chip: item.kind }))
-        }
-        onClick={() => onTaskOpen(task.id)}
-        title={`${due ? 'Prazo' : 'Agendada'}: ${task.name}${due && task.due_time ? ` às ${task.due_time}` : ''}`}
-        aria-label={`${due ? 'Prazo' : 'Agendada'}: ${task.name}${due && task.due_time ? ` às ${task.due_time}` : ''}`}
-      >
-        {due ? (
-          <Flag size={12} strokeWidth={2} aria-hidden style={{ flex: 'none', color: tone }} />
-        ) : task.project_color ? (
-          <span
-            aria-hidden
-            style={{
-              width: 6,
-              height: 6,
-              borderRadius: 999,
-              flex: 'none',
-              background: task.project_color
-            }}
-          />
-        ) : null}
-        <span className="ct-calblock-name" style={{ flex: 1 }}>
-          {task.name}
-        </span>
-        {due && task.due_time && (
-          <span style={{ fontFamily: token.fontFamilyCode, color: token.colorTextTertiary }}>
-            {task.due_time}
-          </span>
-        )}
-      </button>
-    )
+    return <CalendarChip key={item.key} item={item} today={today} onOpen={onTaskOpen} />
   }
 
   const empty = days.every(
@@ -586,8 +521,11 @@ export function CalendarGrid({
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={(e) => {
                     e.preventDefault()
-                    const payload = readDrop(e)
-                    if (payload?.chip && !sameDay(payload, d))
+                    const payload = readDropPayload(e.dataTransfer)
+                    if (
+                      payload?.chip &&
+                      !chipAlreadyOn(tasksById.get(payload.taskId), payload.chip, d)
+                    )
                       onDropChip(payload.chip, payload.taskId, d)
                   }}
                 >
@@ -651,10 +589,11 @@ export function CalendarGrid({
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
                   e.preventDefault()
-                  const payload = readDrop(e)
+                  const payload = readDropPayload(e.dataTransfer)
                   if (!payload) return
                   if (payload.chip) {
-                    if (!sameDay(payload, d)) onDropChip(payload.chip, payload.taskId, d)
+                    if (!chipAlreadyOn(tasksById.get(payload.taskId), payload.chip, d))
+                      onDropChip(payload.chip, payload.taskId, d)
                     return
                   }
                   const rect = e.currentTarget.getBoundingClientRect()

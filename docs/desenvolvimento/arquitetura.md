@@ -20,7 +20,7 @@ Aliases: `@shared/*` → `src/shared/*` (todos os contextos) e `@renderer/*` →
 
 ## IPC
 
-- Canais seguem `domínio:ação` — `task:create`, `project:getTasks`, `schedule:getWeekly`,
+- Canais seguem `domínio:ação` — `task:create`, `project:getTasks`, `schedule:getRange`,
   `notion:syncAllTasks`…
 - Renderer → main é pedido/resposta (`invoke`/`handle`). Main → renderer são **eventos**
   (`webContents.send`): `tasks:refresh`, `float:update`, `timer:stopped`, `task:unblocked`,

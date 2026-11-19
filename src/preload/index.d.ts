@@ -283,7 +283,6 @@ interface API {
 
   // FASE 2: Agendamento
   getTasksForDate: (date: string) => Promise<Task[]>
-  getWeeklySchedule: (startDate: string) => Promise<{ date: string; tasks: Task[] }[]>
   scheduleTaskForDate: (taskId: number, date: string | null) => Promise<void>
 
   // FASE 2: Eventos push
@@ -342,7 +341,6 @@ interface API {
   createTimeBlock: (data: CreateTimeBlockInput) => Promise<TimeBlock>
   getTimeBlocksForDate: (date: string) => Promise<TimeBlock[]>
   getTimeBlocksForWeek: (startDate: string) => Promise<TimeBlock[]>
-  getTimeBlocksForMonth: (yearMonth: string) => Promise<TimeBlock[]>
   updateTimeBlock: (id: number, data: UpdateTimeBlockInput) => Promise<TimeBlock>
   getTimeBlocksForRange: (from: string, to: string) => Promise<TimeBlock[]>
   getCalendarTasks: (from: string, to: string) => Promise<Task[]>

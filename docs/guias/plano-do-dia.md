@@ -33,7 +33,7 @@ Uma tarefa conta como **atrasada** quando o prazo é anterior a hoje, ou é hoje
 
 ## Calendário
 
-A tela **Calendário** tem as visões **Dia**, **3 dias**, **Semana** e **Mês**. Ela abre na Semana
+A tela **Calendário** tem as visões **Dia**, **3 dias**, **Semana**, **Mês** e **Agenda**. Ela abre na Semana
 em janela larga, em 3 dias numa média e no Dia numa estreita.
 
 - **Dia, 3 dias e Semana** — *time blocking*: uma grade do dia inteiro, de 00:00 a 24:00, que abre
@@ -48,8 +48,12 @@ em janela larga, em 3 dias numa média e no Dia numa estreita.
   Tarefas com horário aparecem como compromisso, e as sessões do timer como uma faixa fina na borda
   da coluna. Em **Mostrar** você escolhe o que aparece (blocos, tarefas com horário, agendadas,
   prazos, sessões, fins de semana) e vê a legenda.
-- **Mês** — panorama dos agendamentos. **Arraste** uma tarefa de um dia para outro para
-  reagendar.
+- **Mês** — panorama do mês, com a semana começando na segunda. Cada dia mostra quantos blocos tem e
+  quantas horas somam, as tarefas agendadas e os prazos. **Arraste** uma tarefa ou um prazo de um dia
+  para outro para reagendar, ou solte ali uma tarefa de **A agendar** para reservar 1 hora às 09:00.
+  Clique no número do dia para abrir o Dia.
+- **Agenda** — lista dos próximos 14 dias que têm algo marcado: agendadas, prazos e itens com
+  horário, em ordem. Boa para ler de relance e no celular.
 
 Blocos de tempo, datas agendadas e prazos podem ir para o Google Calendar, tarefa por tarefa —
 veja a [integração com o Google Calendar](../integracoes/google-calendar.md).
