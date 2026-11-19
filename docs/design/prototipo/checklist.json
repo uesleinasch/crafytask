@@ -874,6 +874,16 @@
       }
     },
     {
+      "id": "F4.12",
+      "fase": "F4",
+      "titulo": "Plano do dia: aviso de passar da jornada e vazio com atalho para Tarefas",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/{pages/TodayPage.tsx,components/today/**/*.tsx}",
+        "padroes": ["passa da jornada", "Nada planejado para hoje", "Ir para Tarefas"]
+      }
+    },
+    {
       "id": "F4.10",
       "fase": "F4",
       "titulo": "Calendário: A agendar em Drawer, visão em Select no estreito e teclado no bloco",
