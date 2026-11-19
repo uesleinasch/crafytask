@@ -62,6 +62,13 @@ import {
 } from './contextQueries'
 import { ensureNotebookSchema } from './notebookQueries'
 import {
+  TIME_BLOCK_SELECT,
+  calendarTasksQuery,
+  listTimeBlocksInRange,
+  unscheduledTasksQuery,
+  type UnscheduledFilters
+} from './calendarQueries'
+import {
   deleteTimeEntry as deleteTimeEntryQuery,
   listTimeEntriesInRange,
   updateTimeEntry as updateTimeEntryQuery,
@@ -2227,12 +2234,11 @@ export function getTasksForDate(date: string): Task[] {
 
 export function getWeeklySchedule(startDate: string): { date: string; tasks: Task[] }[] {
   const result: { date: string; tasks: Task[] }[] = []
-  const start = new Date(startDate)
 
   for (let i = 0; i < 7; i++) {
-    const d = new Date(start)
-    d.setDate(start.getDate() + i)
-    const dateStr = d.toISOString().split('T')[0]
+    const d = new Date(startDate + 'T12:00:00Z')
+    d.setUTCDate(d.getUTCDate() + i)
+    const dateStr = d.toISOString().slice(0, 10)
     result.push({ date: dateStr, tasks: getTasksForDate(dateStr) })
   }
 
@@ -2481,9 +2487,7 @@ export function createTimeBlock(data: CreateTimeBlockInput): TimeBlock {
 
 export function getTimeBlock(id: number): TimeBlock | undefined {
   const stmt = db.prepare(`
-    SELECT tb.*, t.name as task_name, t.category as task_category
-    FROM time_blocks tb
-    JOIN tasks t ON t.id = tb.task_id
+    ${TIME_BLOCK_SELECT}
     WHERE tb.id = ?
   `)
   return stmt.get(id) as TimeBlock | undefined
@@ -2491,9 +2495,7 @@ export function getTimeBlock(id: number): TimeBlock | undefined {
 
 export function getTimeBlocksForDate(date: string): TimeBlock[] {
   const stmt = db.prepare(`
-    SELECT tb.*, t.name as task_name, t.category as task_category
-    FROM time_blocks tb
-    JOIN tasks t ON t.id = tb.task_id
+    ${TIME_BLOCK_SELECT}
     WHERE tb.date = ?
     ORDER BY tb.start_time ASC
   `)
@@ -2506,21 +2508,35 @@ export function getTimeBlocksForWeek(startDate: string): TimeBlock[] {
   const endDate = end.toISOString().slice(0, 10)
 
   const stmt = db.prepare(`
-    SELECT tb.*, t.name as task_name, t.category as task_category
-    FROM time_blocks tb
-    JOIN tasks t ON t.id = tb.task_id
+    ${TIME_BLOCK_SELECT}
     WHERE tb.date >= ? AND tb.date <= ?
     ORDER BY tb.date ASC, tb.start_time ASC
   `)
   return stmt.all(startDate, endDate) as TimeBlock[]
 }
 
+export function getTimeBlocksForRange(from: string, to: string): TimeBlock[] {
+  return listTimeBlocksInRange(tagDb(), from, to)
+}
+
+export function listCalendarTasks(from: string, to: string): Task[] {
+  const { sql, params } = calendarTasksQuery(TASK_LIST_COLUMNS, from, to)
+  return enrichTasks(db.prepare(sql).all(...params) as (Task & { project_name?: string })[])
+}
+
+export function listUnscheduledTasks(
+  from: string,
+  to: string,
+  filters?: UnscheduledFilters
+): Task[] {
+  const { sql, params } = unscheduledTasksQuery(TASK_LIST_COLUMNS, from, to, filters)
+  return enrichTasks(db.prepare(sql).all(...params) as (Task & { project_name?: string })[])
+}
+
 export function getTimeBlocksForMonth(yearMonth: string): TimeBlock[] {
   // yearMonth: 'YYYY-MM'
   const stmt = db.prepare(`
-    SELECT tb.*, t.name as task_name, t.category as task_category
-    FROM time_blocks tb
-    JOIN tasks t ON t.id = tb.task_id
+    ${TIME_BLOCK_SELECT}
     WHERE strftime('%Y-%m', tb.date) = ?
     ORDER BY tb.date ASC, tb.start_time ASC
   `)

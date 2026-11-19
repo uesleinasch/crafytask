@@ -107,6 +107,9 @@ import {
   getTimeBlocksForDate,
   getTimeBlocksForWeek,
   getTimeBlocksForMonth,
+  getTimeBlocksForRange,
+  listCalendarTasks,
+  listUnscheduledTasks,
   updateTimeBlock,
   deleteTimeBlock,
   // FASE 4: Horizontes GTD
@@ -136,6 +139,7 @@ import {
   filterGcalSyncedIds,
   getNextRecurrenceIds
 } from './database'
+import { mergeTimeBlock, timeBlockError } from './calendarQueries'
 import {
   connectGcal,
   disconnectGcal,
@@ -225,7 +229,8 @@ import type {
   ProjectStatus,
   McpStatus,
   CreateTimeBlockInput,
-  UpdateTimeBlockInput
+  UpdateTimeBlockInput,
+  UnscheduledTaskFilters
 } from '../shared/types'
 
 // Protocolo custom para servir imagens locais das notas ao renderer.
@@ -1185,6 +1190,8 @@ function setupIpcHandlers(): void {
 
   // ===================== FASE 4.3: Blocos de Tempo =====================
   ipcMain.handle('timeBlock:create', (_, data: CreateTimeBlockInput) => {
+    const error = timeBlockError(data)
+    if (error) throw new Error(error)
     const block = createTimeBlock(data)
     autoSyncToGoogle(block.task_id)
     return block
@@ -1196,13 +1203,27 @@ function setupIpcHandlers(): void {
   )
   ipcMain.handle('timeBlock:update', (_, id: number, data: UpdateTimeBlockInput) => {
     const before = getTimeBlock(id)
+    if (!before) throw new Error('Bloco não encontrado.')
+    const error = timeBlockError(mergeTimeBlock(before, data))
+    if (error) throw new Error(error)
     updateTimeBlock(id, data)
-    if (before) autoSyncToGoogle(before.task_id, data.task_id ?? before.task_id)
+    autoSyncToGoogle(before.task_id, data.task_id ?? before.task_id)
+    return before
   })
+  ipcMain.handle('timeBlock:getForRange', (_, from: string, to: string) =>
+    getTimeBlocksForRange(from, to)
+  )
+  ipcMain.handle('schedule:getRange', (_, from: string, to: string) => listCalendarTasks(from, to))
+  ipcMain.handle(
+    'schedule:listUnscheduled',
+    (_, from: string, to: string, filters?: UnscheduledTaskFilters) =>
+      listUnscheduledTasks(from, to, filters)
+  )
   ipcMain.handle('timeBlock:delete', (_, id: number) => {
     const before = getTimeBlock(id)
     deleteTimeBlock(id)
     if (before) autoSyncToGoogle(before.task_id)
+    return before ?? null
   })
 
   // Jira
