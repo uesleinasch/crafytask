@@ -580,8 +580,10 @@ fazer hoje e em que ordem.
 - **Card "Plano de {dia da semana}, {data}"**: lista ordenável por arrasto (alça ⋮⋮), cada linha com
   nome (abre a tarefa), chip de status, projeto e, à direita, a hora do prazo ou o tempo em mono.
   Tarefa com horário (`scheduled_time`) fica no topo, pela hora, com a faixa `09:00–10:30` em mono no
-  lugar da alça (não arrasta). Reordenar grava a ordem inteira numa chamada só.
-  No cabeçalho do card, a carga planejada contra a jornada ("6,5h de 8h", `Progress` fino). A carga
+  lugar da alça (não arrasta). A alça e a faixa ocupam a mesma coluna de largura fixa, para os nomes
+  ficarem alinhados. Reordenar grava a ordem inteira numa chamada só.
+  No cabeçalho do card, a carga planejada contra a jornada: `Progress` fino e curto (~96px) seguido
+  de "6,5h de 8h"; a barra não ocupa uma linha própria no corpo. A carga
   é a soma dos blocos de tempo do dia, a mesma conta do calendário (`plannedMin`). Passou da
   jornada: âmbar e "passa da jornada", nunca vermelho (aviso, não alarme).
 - **Card "Semana"** ao lado (abaixo de `lg`, embaixo): um `Progress` por dia com as horas

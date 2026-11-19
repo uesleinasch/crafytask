@@ -1491,12 +1491,14 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       <//>
       <${Row} gutter=${[16, 16]}>
         <${Col} xs=${24} lg=${16}>
-          <${Card} title="Plano de terça, 17 de novembro" extra=${html`<${Text} type="secondary" className="ct-mono" style=${over ? { color: warn } : null}>${fmtH(planned)} de ${journey}h${over ? ' · passa da jornada' : ''}<//>`}>
-            <${Progress} percent=${Math.min(100, Math.round(planned / journey * 100))} showInfo=${false} size="small" strokeColor=${over ? warn : undefined} style=${{ marginBottom: 12 }} aria-label=${'Carga planejada: ' + fmtH(planned) + ' de ' + journey + 'h'} />
+          <${Card} title="Plano de terça, 17 de novembro" extra=${html`<${Flex} align="center" gap=${8}>
+              <${Progress} percent=${Math.min(100, Math.round(planned / journey * 100))} showInfo=${false} size="small" strokeColor=${over ? warn : undefined} style=${{ width: 96, margin: 0 }} aria-label=${'Carga planejada: ' + fmtH(planned) + ' de ' + journey + 'h'} />
+              <${Text} type="secondary" className="ct-mono" style=${over ? { color: warn } : null}>${fmtH(planned)} de ${journey}h${over ? ' · passa da jornada' : ''}<//>
+            <//>`}>
             ${items.length ? html`<${List} dataSource=${items} renderItem=${t => html`<${List.Item} actions=${[html`<span key="t" className="ct-mono">${t.dueTime || fmtShort(t.secs)}</span>`]}>
-              <${List.Item.Meta} avatar=${t.start
+              <${List.Item.Meta} avatar=${html`<span style=${{ display: 'inline-block', width: 80, textAlign: 'center', lineHeight: '22px' }}>${t.start
                 ? html`<${Tooltip} title="Horário fixo: fica no topo, fora da ordem manual"><span className="ct-mono" style=${{ fontSize: 12, color: 'var(--ct-text-2)' }}>${t.start}–${t.end}</span><//>`
-                : html`<span style=${{ cursor: 'grab', color: 'var(--ct-text-3)' }} aria-label="Arrastar">⋮⋮</span>`}
+                : html`<span style=${{ cursor: 'grab', color: 'var(--ct-text-3)' }} aria-label="Arrastar">⋮⋮</span>`}</span>`}
                 title=${html`<a onClick=${() => go('tarefa')} style=${{ color: 'var(--ct-text)' }}>${t.name}</a>`}
                 description=${html`<${Space} size=${6} wrap><${Chip} def=${STATUS[t.status]} mode=${mode} /><${ProjectLabel} id=${t.project} /><//>`} />
             <//>`} />`
