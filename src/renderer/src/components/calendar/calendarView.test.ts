@@ -4,6 +4,10 @@ import {
   allDayOf,
   clampToGrid,
   defaultView,
+  dropStart,
+  movedTimes,
+  resizedEnd,
+  shiftedDay,
   durationLabel,
   eventsOfDay,
   layoutDay,
@@ -151,5 +155,43 @@ describe('geometria', () => {
     expect(durationLabel(45)).toBe('45 min')
     expect(durationLabel(60)).toBe('1h')
     expect(durationLabel(150)).toBe('2h30')
+  })
+})
+
+describe('arrastar e redimensionar', () => {
+  it('move mantendo a duração, em passos de 15 min, dentro do dia', () => {
+    expect(movedTimes('09:00', '10:30', 37, 0, 24)).toEqual({
+      start_time: '09:30',
+      end_time: '11:00'
+    })
+    expect(movedTimes('23:00', '23:45', 120, 0, 24)).toEqual({
+      start_time: '23:00',
+      end_time: '23:45'
+    })
+    expect(movedTimes('00:30', '01:00', -90, 0, 24)).toEqual({
+      start_time: '00:00',
+      end_time: '00:30'
+    })
+  })
+
+  it('a alça muda só o fim, com no mínimo 15 min', () => {
+    expect(resizedEnd('09:00', '10:00', 22, 24)).toBe('10:15')
+    expect(resizedEnd('09:00', '10:00', -120, 24)).toBe('09:15')
+    expect(resizedEnd('22:00', '23:00', 300, 24)).toBe('23:59')
+  })
+
+  it('soltar da lista cria 1h a partir do ponto, sem passar do fim do dia', () => {
+    expect(dropStart(9 * 60 + 8, 0, 24)).toBe(9 * 60 + 15)
+    expect(dropStart(23 * 60 + 40, 0, 24)).toBe(22 * 60 + 45)
+  })
+})
+
+describe('troca de dia ao arrastar', () => {
+  const days = ['2026-11-16', '2026-11-17', '2026-11-18']
+  it('anda pelas colunas visíveis e para nas pontas', () => {
+    expect(shiftedDay(days, '2026-11-17', 0.6)).toBe('2026-11-18')
+    expect(shiftedDay(days, '2026-11-17', 4)).toBe('2026-11-18')
+    expect(shiftedDay(days, '2026-11-17', -3)).toBe('2026-11-16')
+    expect(shiftedDay(['2026-11-17'], '2026-11-17', 2)).toBe('2026-11-17')
   })
 })

@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef } from 'react'
-import { Popover, Tooltip, theme } from 'antd'
-import { Calendar, CalendarSync, Check, Flag } from 'lucide-react'
-import type { TaskCategory, TimeBlock } from '@shared/types'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Dropdown, Grid, Popover, Tooltip, theme } from 'antd'
+import { Calendar, CalendarSync, Check, Copy, FileText, Flag, Play, Trash2 } from 'lucide-react'
+import type { Task, TaskCategory, TimeBlock } from '@shared/types'
 import { calendarPrefs } from '@shared/calendarPrefs'
 import { CATEGORY_ICONS } from '@renderer/components/chips/categoryMeta'
 import { LiveDot } from '@renderer/components/chips/LiveDot'
@@ -13,6 +13,7 @@ import {
 } from '@renderer/theme/semantic'
 import { useThemeSettings } from '@renderer/theme/themeSettings'
 import type { CalendarRangeData } from '@renderer/hooks/useCalendar'
+import { BlockPopover, type PopoverSubject } from './BlockPopover'
 import {
   allDayOf,
   blocksOfDay,
@@ -20,8 +21,12 @@ import {
   durationLabel,
   eventsOfDay,
   fromMin,
+  DRAG_TYPE,
   isWeekend,
   layoutDay,
+  movedTimes,
+  resizedEnd,
+  shiftedDay,
   plannedMinutes,
   sessionsOfDay,
   toMin,
@@ -40,8 +45,49 @@ interface CalendarGridProps {
   show: Set<ShowKey>
   onOpenDay: (date: string) => void
   onSlotClick: (date: string, minutes: number) => void
-  onBlockClick: (block: TimeBlock) => void
   onTaskOpen: (taskId: number) => void
+  blockActions: GridBlockActions
+  onDropTask: (taskId: number, date: string, minutes: number) => void
+  onDropChip: (kind: AllDayItem['kind'], taskId: number, date: string) => void
+}
+
+export interface BlockPatch {
+  date?: string
+  start_time: string
+  end_time: string
+}
+
+export interface GridBlockActions {
+  onOpen: (taskId: number) => void
+  onStartTimer: (taskId: number, name: string) => void
+  onMove: (block: TimeBlock, patch: BlockPatch, kind: 'move' | 'resize' | 'edit') => void
+  onDuplicate: (block: TimeBlock) => void
+  onDelete: (block: TimeBlock) => void
+  onEventChange: (task: Task, times: { start_time: string; end_time: string }) => void
+}
+
+interface DragState {
+  block: TimeBlock
+  kind: 'move' | 'resize'
+  x: number
+  y: number
+  dx: number
+  dy: number
+  dayWidth: number
+}
+
+interface DropPayload {
+  taskId: number
+  chip?: AllDayItem['kind']
+}
+
+function readDrop(event: React.DragEvent): DropPayload | null {
+  try {
+    const data = JSON.parse(event.dataTransfer.getData(DRAG_TYPE)) as DropPayload
+    return typeof data.taskId === 'number' ? data : null
+  } catch {
+    return null
+  }
 }
 
 const HOUR_LABEL_WIDTH = 52
@@ -69,8 +115,10 @@ export function CalendarGrid({
   show,
   onOpenDay,
   onSlotClick,
-  onBlockClick,
-  onTaskOpen
+  onTaskOpen,
+  blockActions,
+  onDropTask,
+  onDropChip
 }: CalendarGridProps): React.JSX.Element {
   const { token } = theme.useToken()
   const { mode, density } = useThemeSettings()
@@ -84,6 +132,111 @@ export function CalendarGrid({
   const columns = `${HOUR_LABEL_WIDTH}px repeat(${days.length}, minmax(${minColumn}px, 1fr))`
   const gridMinWidth = HOUR_LABEL_WIDTH + days.length * minColumn
   const tasksById = useMemo(() => new Map(data.tasks.map((t) => [t.id, t])), [data.tasks])
+  const gridRef = useRef<HTMLDivElement>(null)
+  const screens = Grid.useBreakpoint()
+  const [openKey, setOpenKey] = useState<string | null>(null)
+  const [drag, setDrag] = useState<DragState | null>(null)
+  const dragging = drag !== null
+  const dragRef = useRef<DragState | null>(null)
+  dragRef.current = drag
+  const suppressClick = useRef(false)
+  const actionsRef = useRef(blockActions)
+  actionsRef.current = blockActions
+
+  useEffect(() => {
+    if (!dragging) return
+    const move = (e: PointerEvent): void =>
+      setDrag((d) => d && { ...d, dx: e.clientX - d.x, dy: e.clientY - d.y })
+    const cancel = (): void => {
+      suppressClick.current = true
+      setDrag(null)
+    }
+    const key = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') cancel()
+    }
+    const up = (): void => {
+      const d = dragRef.current
+      setDrag(null)
+      if (!d) return
+      const moved = Math.abs(d.dx) > 4 || Math.abs(d.dy) > 4
+      if (moved || d.kind === 'resize') suppressClick.current = true
+      if (!moved) return
+      const deltaMin = d.dy / pxPerMin
+      const { block } = d
+      if (d.kind === 'resize') {
+        const end_time = resizedEnd(block.start_time, block.end_time, deltaMin, h1)
+        if (end_time !== block.end_time) {
+          actionsRef.current.onMove(block, { start_time: block.start_time, end_time }, 'resize')
+        }
+        return
+      }
+      const target = shiftedDay(days, block.date, d.dx / d.dayWidth)
+      const times = movedTimes(block.start_time, block.end_time, deltaMin, h0, h1)
+      if (target === block.date && times.start_time === block.start_time) return
+      actionsRef.current.onMove(block, { date: target, ...times }, 'move')
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+    window.addEventListener('pointercancel', cancel)
+    window.addEventListener('keydown', key)
+    return () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+      window.removeEventListener('pointercancel', cancel)
+      window.removeEventListener('keydown', key)
+    }
+  }, [dragging, pxPerMin, h0, h1, view, days])
+
+  function sameDay(payload: DropPayload, date: string): boolean {
+    const task = tasksById.get(payload.taskId)
+    if (!task) return false
+    return payload.chip === 'due'
+      ? task.due_date?.slice(0, 10) === date
+      : task.scheduled_date === date
+  }
+
+  function startDrag(e: React.PointerEvent, block: TimeBlock, kind: DragState['kind']): void {
+    if (e.button !== 0) return
+    e.stopPropagation()
+    suppressClick.current = false
+    const column = gridRef.current?.querySelector('.ct-calcol')
+    const dayWidth = column ? column.getBoundingClientRect().width : 120
+    setDrag({ block, kind, x: e.clientX, y: e.clientY, dx: 0, dy: 0, dayWidth })
+  }
+
+  function preview(item: PlacedItem): { start: string; end: string; shift: number } {
+    if (!drag || !item.block || drag.block.id !== item.block.id) {
+      return { start: item.start, end: item.end, shift: 0 }
+    }
+    const deltaMin = drag.dy / pxPerMin
+    if (drag.kind === 'resize') {
+      return { start: item.start, end: resizedEnd(item.start, item.end, deltaMin, h1), shift: 0 }
+    }
+    const moved = movedTimes(item.start, item.end, deltaMin, h0, h1)
+    const target = shiftedDay(days, item.block.date, drag.dx / drag.dayWidth)
+    const shift = (days.indexOf(target) - days.indexOf(item.block.date)) * drag.dayWidth
+    return { start: moved.start_time, end: moved.end_time, shift }
+  }
+
+  function blockMenu(block: TimeBlock): React.ComponentProps<typeof Dropdown>['menu'] {
+    const icon = { size: 14, strokeWidth: 1.75 }
+    return {
+      items: [
+        { key: 'open', icon: <FileText {...icon} />, label: 'Abrir tarefa' },
+        { key: 'timer', icon: <Play {...icon} />, label: 'Iniciar timer' },
+        { key: 'dup', icon: <Copy {...icon} />, label: 'Repetir no dia seguinte' },
+        { type: 'divider' },
+        { key: 'del', icon: <Trash2 {...icon} />, label: 'Excluir bloco', danger: true }
+      ],
+      onClick: ({ key, domEvent }) => {
+        domEvent.stopPropagation()
+        if (key === 'open') blockActions.onOpen(block.task_id)
+        if (key === 'timer') blockActions.onStartTimer(block.task_id, block.task_name ?? '')
+        if (key === 'dup') blockActions.onDuplicate(block)
+        if (key === 'del') blockActions.onDelete(block)
+      }
+    }
+  }
 
   const scrollKey = `${view}:${days[0]}`
   useEffect(() => {
@@ -112,7 +265,8 @@ export function CalendarGrid({
   }
 
   function itemEl(item: PlacedItem, date: string): React.ReactNode {
-    const geometry = clampToGrid(toMin(item.start), toMin(item.end), h0, h1)
+    const shown = preview(item)
+    const geometry = clampToGrid(toMin(shown.start), toMin(shown.end), h0, h1)
     if (!geometry) return null
     const block = item.block
     const task = item.task ?? tasksById.get(item.taskId)
@@ -134,7 +288,65 @@ export function CalendarGrid({
     const height = Math.max(18, geometry.length * pxPerMin - 2)
     const width = 100 / item.cols
     const short = height < 34
-    const open = (): void => (block ? onBlockClick(block) : onTaskOpen(item.taskId))
+    const isDragging = !!block && drag?.block.id === block.id
+    const isOpen = openKey === item.key
+    const subject: PopoverSubject = {
+      kind: item.kind,
+      taskId: item.taskId,
+      name,
+      date,
+      start: item.start,
+      end: item.end,
+      status,
+      category,
+      projectName: block ? block.project_name : task?.project_name,
+      projectColor,
+      gcal
+    }
+    const close = (): void => setOpenKey(null)
+    const popover = (
+      <BlockPopover
+        subject={subject}
+        onOpen={() => {
+          close()
+          blockActions.onOpen(item.taskId)
+        }}
+        onStartTimer={() => {
+          close()
+          blockActions.onStartTimer(item.taskId, name)
+        }}
+        onChange={(times) => {
+          if (block) blockActions.onMove(block, times, 'edit')
+          else if (task) blockActions.onEventChange(task, times)
+        }}
+        onDelete={
+          block
+            ? () => {
+                close()
+                blockActions.onDelete(block)
+              }
+            : undefined
+        }
+      />
+    )
+    const wrapped = (
+      <Popover
+        open={isOpen}
+        onOpenChange={(open) => {
+          if (open && suppressClick.current) {
+            suppressClick.current = false
+            return
+          }
+          setOpenKey(open ? item.key : null)
+        }}
+        trigger="click"
+        placement={screens.md ? 'right' : 'bottom'}
+        destroyOnHidden
+        content={popover}
+      >
+        {body()}
+      </Popover>
+    )
 
     return (
       <div
@@ -145,9 +357,22 @@ export function CalendarGrid({
           height,
           left: `calc(${item.col * width}% + 2px)`,
           width: `calc(${width}% - 4px)`,
-          zIndex: 2
+          transform: shown.shift ? `translateX(${shown.shift}px)` : undefined,
+          zIndex: isDragging ? 5 : isOpen ? 4 : 2
         }}
       >
+        {block ? (
+          <Dropdown menu={blockMenu(block)} trigger={['contextMenu']}>
+            <div style={{ height: '100%' }}>{wrapped}</div>
+          </Dropdown>
+        ) : (
+          wrapped
+        )}
+      </div>
+    )
+
+    function body(): React.ReactNode {
+      return (
         <div
           role="button"
           tabIndex={0}
@@ -155,18 +380,23 @@ export function CalendarGrid({
             'ct-calblock',
             event ? 'event' : '',
             leak ? 'leak' : '',
-            done ? 'done' : ''
+            done ? 'done' : '',
+            isDragging ? 'dragging' : ''
           ].join(' ')}
           style={leak ? { background: timeLeakBackground(mode, leak) } : undefined}
-          aria-label={`${name}, ${item.start} a ${item.end}, ${event ? 'tarefa com horário' : 'bloco de tempo'}`}
-          onClick={(e) => {
-            e.stopPropagation()
-            open()
-          }}
+          aria-label={`${name}, ${shown.start} a ${shown.end}, ${event ? 'tarefa com horário' : 'bloco de tempo'}`}
+          aria-haspopup="dialog"
+          aria-expanded={isOpen}
+          onPointerDown={block ? (e) => startDrag(e, block, 'move') : undefined}
+          onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault()
-              open()
+              setOpenKey(item.key)
+            }
+            if (e.key === 'Delete' && block) {
+              e.preventDefault()
+              blockActions.onDelete(block)
             }
           }}
         >
@@ -191,7 +421,7 @@ export function CalendarGrid({
           </div>
           {!short && (
             <div className="ct-calblock-time">
-              {item.start}–{item.end}
+              {shown.start}–{shown.end}
               {gcal && (
                 <CalendarSync
                   size={10}
@@ -202,9 +432,16 @@ export function CalendarGrid({
               )}
             </div>
           )}
+          {block && (
+            <span
+              className="ct-calblock-resize"
+              aria-hidden
+              onPointerDown={(e) => startDrag(e, block, 'resize')}
+            />
+          )}
         </div>
-      </div>
-    )
+      )
+    }
   }
 
   function chip(item: AllDayItem): React.ReactNode {
@@ -222,6 +459,10 @@ export function CalendarGrid({
         key={item.key}
         type="button"
         className={due ? 'ct-calchip due' : 'ct-calchip'}
+        draggable
+        onDragStart={(e) =>
+          e.dataTransfer.setData(DRAG_TYPE, JSON.stringify({ taskId: task.id, chip: item.kind }))
+        }
         onClick={() => onTaskOpen(task.id)}
         title={`${due ? 'Prazo' : 'Agendada'}: ${task.name}${due && task.due_time ? ` às ${task.due_time}` : ''}`}
         aria-label={`${due ? 'Prazo' : 'Agendada'}: ${task.name}${due && task.due_time ? ` às ${task.due_time}` : ''}`}
@@ -317,7 +558,17 @@ export function CalendarGrid({
               const list = allDayOf(data.tasks, d, show)
               const max = view === 'day' ? 6 : 2
               return (
-                <div key={d} className="ct-calallday-cell">
+                <div
+                  key={d}
+                  className="ct-calallday-cell"
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault()
+                    const payload = readDrop(e)
+                    if (payload?.chip && !sameDay(payload, d))
+                      onDropChip(payload.chip, payload.taskId, d)
+                  }}
+                >
                   {list.slice(0, max).map(chip)}
                   {list.length > max && (
                     <Popover
@@ -346,6 +597,7 @@ export function CalendarGrid({
         </div>
         <div
           className="ct-calgrid"
+          ref={gridRef}
           style={{
             gridTemplateColumns: columns,
             minWidth: gridMinWidth,
@@ -373,6 +625,18 @@ export function CalendarGrid({
                   if (e.target !== e.currentTarget) return
                   const rect = e.currentTarget.getBoundingClientRect()
                   onSlotClick(d, h0 * 60 + (e.clientY - rect.top) / pxPerMin - 30)
+                }}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  const payload = readDrop(e)
+                  if (!payload) return
+                  if (payload.chip) {
+                    if (!sameDay(payload, d)) onDropChip(payload.chip, payload.taskId, d)
+                    return
+                  }
+                  const rect = e.currentTarget.getBoundingClientRect()
+                  onDropTask(payload.taskId, d, h0 * 60 + (e.clientY - rect.top) / pxPerMin)
                 }}
               >
                 {layoutDay(items).map((item) => itemEl(item, d))}
@@ -415,7 +679,9 @@ export function CalendarGrid({
       {empty && (
         <div className="ct-calempty">
           <Calendar size={14} strokeWidth={1.75} aria-hidden />
-          Nada nestes dias. Clique na grade para reservar tempo.
+          {
+            'Nada nestes dias. Clique na grade ou arraste uma tarefa de “A agendar” para reservar tempo.'
+          }
         </div>
       )}
     </div>

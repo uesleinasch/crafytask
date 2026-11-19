@@ -1,9 +1,9 @@
 # Calendário — `/calendar`
 
 `src/renderer/src/pages/CalendarPage.tsx` · `components/calendar/` (`CalendarGrid.tsx`,
-`CalendarShowMenu.tsx`, `calendarView.ts` puro e testado; `LegacyMonthView.tsx` e
-`TimeBlockDialog.tsx` até a F4-b4 e a F4-b3) · dados em `hooks/useCalendar.ts`
-(`useCalendarRange`, `useCalendarMonth`)
+`BlockPopover.tsx`, `NewBlockModal.tsx`, `UnscheduledPanel.tsx`, `CalendarShowMenu.tsx`,
+`calendarView.ts` puro e testado; `LegacyMonthView.tsx` até a F4-b4) · dados em
+`hooks/useCalendar.ts` (`useCalendarRange`, `useCalendarMonth`)
 
 ## Função
 
@@ -37,20 +37,43 @@ até a hora atual. Colunas de no mínimo 96px (Semana) ou 140px; em tela estreit
   borda tracejada; bandeira âmbar no dia, vermelha se venceu; hora do prazo em mono). Até 2 por dia
   (6 na visão Dia) e `+N` abre um `Popover` com todos. Clicar abre a tarefa.
 - **Horas:** faixa de `calendarPrefs()` (00–24: o dia inteiro, régua em 24 h com rótulos de 01:00 a 23:00, como o Google Calendar), 48px por hora (40 no compacto), linha a cada hora,
-  fim de semana em `colorBgLayout`. Clicar num espaço vazio abre o diálogo de bloco com o dia e 1h
-  centrada no clique (arredondada em 15 min).
+  fim de semana em `colorBgLayout`. Clicar num espaço vazio abre o `Modal` "Novo bloco de tempo"
+  com o dia e 1h centrada no clique (arredondada em 15 min).
 - **Bloco de tempo:** fundo `calBlock` com borda `calBlockBorder` (`CAL_BLOCK_COLORS`), ponto do
   projeto, ícone da categoria quando não é normal, nome, horário em mono e `CalendarSync` quando a
   tarefa vai ao Google. Time leak pinta o fundo pela escala de três níveis (`timeLeakLevel` com o
-  tempo total da tarefa). Concluída fica apagada e riscada; rodando agora, ponto pulsante. Clicar
-  ou Enter abre o diálogo de edição.
+  tempo total da tarefa). Concluída fica apagada e riscada; rodando agora, ponto pulsante.
 - **Tarefa com horário:** mesmo formato, fundo `colorBgContainer`, borda forte e ícone `Calendar`;
-  sem fim, dura 1h. Clicar abre a tarefa.
+  sem fim, dura 1h. Não arrasta; clique ou Enter abre o mesmo `Popover` com a etiqueta "Tarefa com
+  horário", onde o horário edita `scheduled_time`/`scheduled_end_time` (sem excluir).
 - **Sobreposição:** itens que se cruzam dividem a coluna lado a lado (`layoutDay`).
 - **Sessões registradas:** faixa de 4px na borda direita da coluna, na cor primária, tracejada
   enquanto roda; cortada na meia-noite e na faixa de horas; tooltip "Sessão 09:00–09:40 · tarefa".
 - **Agora:** linha de 2px na cor primária com um ponto, atualizada a cada minuto.
-- **Vazio:** "Nada nestes dias. Clique na grade para reservar tempo."
+- **Editar na grade:** arrastar o bloco move (também para outro dia da visão), em passos de 15 min
+  e dentro do dia; a alça de baixo muda o fim (mínimo 15 min). Clique ou Enter abre o `Popover`
+  (`BlockPopover`): tarefa (abre), projeto, status, categoria, `TimePicker.RangePicker` com a
+  duração, **Iniciar timer**, **Abrir** e excluir. Botão direito: Abrir tarefa, Iniciar timer,
+  Repetir no dia seguinte, Excluir bloco. Delete exclui. Esc ou cancelar o ponteiro solta o
+  arraste sem gravar; arrastar e voltar ao mesmo lugar não grava. O `Popover` abre à direita (embaixo
+  abaixo de `md`). Mensagens: "Movido para qua., 18/11, 10:00", "Nome: até 11:30" e "Bloco
+  excluído", todas com **Desfazer** (botão de link, alcançável pelo teclado): mover volta ao bloco
+  anterior que o `timeBlock:update` devolve; excluir recria o bloco, com outro id.
+- **Soltar na grade:** uma tarefa arrastada de "A agendar" vira um bloco de 1h no ponto em que
+  soltou. Um chip da faixa Dia solto em outro dia reagenda (agendada) ou move o prazo.
+- **Vazio:** "Nada nestes dias. Clique na grade ou arraste uma tarefa de “A agendar” para
+  reservar tempo."
+
+## Painel "A agendar"
+
+`UnscheduledPanel`, à esquerda: aberto por padrão a partir de `xl`, fechado com botão
+`PanelLeftOpen` em `lg` (e `PanelLeftClose` no painel para esconder, a partir de `lg`), `Drawer`
+(botão **A agendar**) abaixo de `lg`, com estado próprio: encolher a janela não abre a gaveta. Lista as Próximas e
+Executando sem bloco nem horário nos dias visíveis (no Mês, no mês todo), de
+`schedule:listUnscheduled`, com filtro por nome ou `#id` no SQL (debounce de 250 ms). Cada item:
+alça, nome, projeto, energia e prazo; arrasta para a grade, e o `+` reserva 1h às 09:00 num dos
+dias visíveis. Vazio: "Toda próxima ação tem tempo reservado."; rodapé "N já com bloco nestes dias"
+(ou "neste mês"), contando as Próximas e Executando com bloco no intervalo.
 
 A grade relê em `tasks:refresh` e `timer:stopped` e descarta resposta velha ao trocar de período
 rápido; o Mês relê ao salvar um bloco. A leitura acontece dentro do `RegionBoundary` "grade do
@@ -81,23 +104,12 @@ dia **reagenda** (`scheduled_date`) e emite o toast "Tarefa reagendada!".
 Enquanto o arraste está ativo, uma etiqueta escura fixa aparece em `bottom-4 right-4`: **"Solte em um
 dia para reagendar"**.
 
-## Diálogo de bloco de tempo
+## Novo bloco de tempo
 
-`sm:max-w-md`. Título "Novo bloco de tempo" ou "Editar bloco de tempo".
-
-| Campo | Controle |
-| --- | --- |
-| Tarefa * | `SearchableSelect`, alimentado por `listActiveTasksLight()` — só tarefas ativas, carregado ao abrir o diálogo |
-| Data * | `input[type=date]` |
-| Início * \| Fim * | dois `input[type=time]` lado a lado |
-
-Abaixo dos horários, a **duração calculada** em texto (`Duração: 1h 30min`). Validação: início
-precisa ser anterior ao fim, senão toast de erro.
-
-Rodapé: **Excluir** (vermelho, `mr-auto`, só em edição) · **Cancelar** · **Salvar** (desabilitado sem
-tarefa).
-
-Depois de salvar ou excluir, a grade e o mês são recarregados.
+`Modal` com Tarefa (`Select` com busca, de `listActiveTasksLight()`), Dia (`DatePicker`) e Horário
+(`TimePicker.RangePicker` em passos de 15 min) com a duração; **Reservar** fica desabilitado sem
+tarefa. Abre pelo **Novo bloco**, pelo clique na grade e pelo clique num dia do Mês. Erro do main
+(validação de data e horário) aparece numa mensagem e o modal continua aberto.
 
 ## Dados
 
