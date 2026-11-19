@@ -3511,8 +3511,8 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           </div>`; })}
       </div>
       </div>
-      <div className="ct-calgrid" ref=${gridRef} style=${{ gridTemplateColumns: `52px repeat(${visibleDays.length}, minmax(${view === 'week' ? 96 : 140}px, 1fr))`, height: (h1 - h0) * hourH }}>
-        <div style=${{ position: 'relative' }}>${Array.from({ length: h1 - h0 }, (_, i) => html`<span key=${i} className="ct-calhour" style=${{ top: i * hourH }}>${String(h0 + i).padStart(2, '0')}:00</span>`)}</div>
+      <div className="ct-calgrid" ref=${gridRef} style=${{ gridTemplateColumns: `52px repeat(${visibleDays.length}, minmax(${view === 'week' ? 96 : 140}px, 1fr))`, height: (h1 - h0) * hourH + 20, paddingBlock: 10 }}>
+        <div style=${{ position: 'relative' }}>${Array.from({ length: h1 - h0 + 1 }, (_, i) => html`<span key=${i} className="ct-calhour" style=${{ top: i * hourH }}>${String(h0 + i).padStart(2, '0')}:00</span>`)}</div>
         ${visibleDays.map(d => { const k = d.format('YYYY-MM-DD'); const weekend = d.day() === 0 || d.day() === 6;
           return html`<div key=${k} className=${'ct-calcol' + (weekend ? ' weekend' : '')} style=${{ backgroundSize: `100% ${hourH}px` }}
             onClick=${e => { if (e.target !== e.currentTarget) return; const r = e.currentTarget.getBoundingClientRect(); createAt(d, h0 * 60 + (e.clientY - r.top) / pxMin - 30); }}
