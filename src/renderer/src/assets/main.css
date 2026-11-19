@@ -930,3 +930,9 @@ body.float-window #root {
 .ct-calagenda-item:hover {
   background: var(--ant-color-bg-layout);
 }
+
+.ct-groupbar {
+  margin-bottom: 8px;
+  padding: 4px 0 8px;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
