@@ -1,3 +1,4 @@
+import type { TimeEntrySpan } from '@shared/types'
 import type { SqliteLike } from './tagQueries'
 
 interface EntryRow {
@@ -70,4 +71,34 @@ export function deleteTimeEntry(db: SqliteLike, id: number): TimeEntryChange {
     change = { taskId: row.task_id, worklogId: row.jira_worklog_id }
   })()
   return change
+}
+
+export function listTimeEntriesInRange(
+  db: SqliteLike,
+  fromIso: string,
+  toIso: string,
+  nowIso: string
+): TimeEntrySpan[] {
+  const from = Date.parse(fromIso)
+  const to = Date.parse(toIso)
+  if (!Number.isFinite(from) || !Number.isFinite(to) || !Number.isFinite(Date.parse(nowIso))) {
+    throw new Error('Intervalo inválido.')
+  }
+  if (to <= from) throw new Error('O fim do intervalo precisa ser depois do início.')
+  return db
+    .prepare(
+      `SELECT te.id, te.task_id,
+         strftime('%Y-%m-%dT%H:%M:%fZ', te.start_time) AS start_time,
+         strftime('%Y-%m-%dT%H:%M:%fZ', te.end_time) AS end_time,
+         te.duration_seconds,
+         t.name AS task_name, t.category AS task_category, p.color AS project_color
+       FROM time_entries te
+       JOIN tasks t ON t.id = te.task_id
+       LEFT JOIN projects p ON p.id = t.project_id
+       WHERE julianday(te.start_time) < julianday(?)
+         AND julianday(COALESCE(te.end_time, ?)) > julianday(?)
+         AND (te.end_time IS NULL OR julianday(te.end_time) > julianday(te.start_time))
+       ORDER BY julianday(te.start_time), te.id`
+    )
+    .all(new Date(to).toISOString(), nowIso, new Date(from).toISOString()) as TimeEntrySpan[]
 }

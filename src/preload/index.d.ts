@@ -17,6 +17,7 @@ import type {
   JiraUser,
   Task,
   TimeEntry,
+  TimeEntrySpan,
   CreateTaskInput,
   UpdateTaskInput,
   TaskStatus,
@@ -193,6 +194,7 @@ interface API {
   getTimeEntries: (taskId: number) => Promise<TimeEntry[]>
   updateTimeEntry: (id: number, startIso: string, endIso: string) => Promise<void>
   deleteTimeEntry: (id: number) => Promise<void>
+  listTimeEntriesRange: (fromIso: string, toIso: string) => Promise<TimeEntrySpan[]>
   getActiveTimeEntry: (taskId: number) => Promise<TimeEntry | undefined>
   showNotification: (title: string, body: string) => void
 

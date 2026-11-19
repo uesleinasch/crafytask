@@ -1,7 +1,12 @@
 import { DatabaseSync } from 'node:sqlite'
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { SqliteLike } from './tagQueries'
-import { deleteTimeEntry, sessionDuration, updateTimeEntry } from './timeEntryQueries'
+import {
+  deleteTimeEntry,
+  listTimeEntriesInRange,
+  sessionDuration,
+  updateTimeEntry
+} from './timeEntryQueries'
 
 // Mesmo adaptador de tagQueries.test.ts: o better-sqlite3 não carrega sob o Node do vitest.
 function adapt(raw: DatabaseSync): SqliteLike {
@@ -102,5 +107,75 @@ describe('deleteTimeEntry', () => {
 
   it('não apaga a sessão em andamento', () => {
     expect(() => deleteTimeEntry(db, 12)).toThrow('Pare o timer')
+  })
+})
+
+describe('listTimeEntriesInRange', () => {
+  beforeEach(() => {
+    raw.exec(`
+      ALTER TABLE tasks ADD COLUMN name TEXT;
+      ALTER TABLE tasks ADD COLUMN category TEXT;
+      ALTER TABLE tasks ADD COLUMN project_id INTEGER;
+      CREATE TABLE projects (id INTEGER PRIMARY KEY, color TEXT);
+      INSERT INTO projects VALUES (3, '#2A62D6');
+      UPDATE tasks SET name = 'Relatório', category = 'normal', project_id = 3 WHERE id = 1;
+      INSERT INTO time_entries VALUES
+        (13, 1, '2026-11-17T23:30:00.000Z', '2026-11-18T00:30:00.000Z', 3600, NULL),
+        (14, 1, '2026-11-18T18:00:00.000Z', '2026-11-18T18:00:00.000Z', 900, NULL),
+        (15, 1, '2026-11-18 19:00:00', '2026-11-18 19:20:00', 1200, NULL),
+        (16, 1, '2026-11-19T10:00:00.000Z', '2026-11-19T11:00:00.000Z', 3600, NULL);
+    `)
+  })
+
+  const ids = (from: string, to: string, now = '2026-11-18T17:00:00.000Z'): number[] =>
+    listTimeEntriesInRange(db, from, to, now).map((e) => e.id)
+
+  it('traz as sessões que cruzam o intervalo, com a tarefa e o projeto', () => {
+    const [first] = listTimeEntriesInRange(
+      db,
+      '2026-11-18T00:00:00.000Z',
+      '2026-11-19T00:00:00.000Z',
+      '2026-11-18T17:00:00.000Z'
+    )
+    expect(first).toMatchObject({
+      id: 13,
+      task_name: 'Relatório',
+      task_category: 'normal',
+      project_color: '#2A62D6'
+    })
+    expect(ids('2026-11-18T00:00:00.000Z', '2026-11-19T00:00:00.000Z')).toEqual([
+      13, 10, 11, 12, 15
+    ])
+  })
+
+  it('devolve as datas em ISO UTC, inclusive as gravadas no formato antigo', () => {
+    const spans = listTimeEntriesInRange(
+      db,
+      '2026-11-18T00:00:00.000Z',
+      '2026-11-19T00:00:00.000Z',
+      '2026-11-18T17:00:00.000Z'
+    )
+    const old = spans.find((e) => e.id === 15)
+    expect(old?.start_time).toBe('2026-11-18T19:00:00.000Z')
+    expect(old?.end_time).toBe('2026-11-18T19:20:00.000Z')
+    expect(spans.find((e) => e.id === 12)?.end_time).toBeNull()
+  })
+
+  it('a sessão em andamento vai até agora', () => {
+    expect(ids('2026-11-18T16:30:00.000Z', '2026-11-18T16:45:00.000Z')).toEqual([12])
+    expect(
+      ids('2026-11-18T16:30:00.000Z', '2026-11-18T16:45:00.000Z', '2026-11-18T16:10:00.000Z')
+    ).toEqual([])
+  })
+
+  it('ignora o ajuste manual sem duração na grade', () => {
+    expect(ids('2026-11-18T17:30:00.000Z', '2026-11-18T18:30:00.000Z')).not.toContain(14)
+  })
+
+  it('recusa intervalo inválido', () => {
+    expect(() => ids('x', '2026-11-19T00:00:00.000Z')).toThrow('Intervalo inválido')
+    expect(() => ids('2026-11-19T00:00:00.000Z', '2026-11-18T00:00:00.000Z')).toThrow(
+      'precisa ser depois'
+    )
   })
 })

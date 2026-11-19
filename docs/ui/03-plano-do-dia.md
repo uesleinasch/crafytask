@@ -13,7 +13,8 @@ calendário mensal.
 ## Dados
 
 - Tarefas de `schedule:getForDate(hoje)`, com a data local (`localDateString`), não a UTC.
-- Blocos de tempo da semana (segunda a domingo) de `timeBlock:getForWeek(segunda)`.
+- Blocos de tempo da semana de `timeBlock:getForWeek(início)`. Jornada e início da semana vêm de
+  `calendarPrefs()` (`src/shared/calendarPrefs.ts`): 8h e segunda, fixos até a F7-f.
 - A tela relê tudo a cada `tasks:refresh` e `timer:stopped`, e troca de dia sozinha à meia-noite;
   falha de leitura vai para o `RegionBoundary` da rota.
 
@@ -26,8 +27,8 @@ calendário mensal.
 Título como "Plano de terça, 17 de novembro" (`planTitle`, sem "-feira").
 
 **Carga** no `extra`: `Progress` fino de 96px e "6,5h de 8h" em mono. A carga (`plannedMin`) é a
-soma dos blocos de tempo de hoje, a mesma conta do calendário; a jornada é 8h (`JOURNEY_MIN`) até a
-F7-f torná-la configurável. Passou da jornada: barra em `colorWarning`, texto em
+soma dos blocos de tempo de hoje, a mesma conta do calendário; a jornada vem de
+`calendarPrefs()`, lida a cada render. Passou da jornada: barra em `colorWarning`, texto em
 `colorWarningText` com "· passa da jornada". Nunca vermelho. Abaixo de `sm`, a barra cai para
 48px e o aviso vira tooltip, para o título caber.
 

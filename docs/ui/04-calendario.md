@@ -160,3 +160,20 @@ Mais uma dica contextual, que muda com a visão: *"Clique na grade para criar bl
 
 A legenda cita só duas das quatro cores de bloco, e chama a cor laranja de "urgente" quando na
 verdade laranja é **prioridade** (urgente é vermelho).
+
+## Dados prontos para a nova grade (F4-b1)
+
+Ainda não usados pela tela; a F4-b2 os consome.
+
+- `timeEntry:listRange(fromIso, toIso)` → `TimeEntrySpan[]`: sessões de tempo que cruzam o
+  intervalo, com nome e categoria da tarefa e cor do projeto (`listTimeEntriesInRange` em
+  `timeEntryQueries.ts`, testado). A sessão em andamento vai até agora; ajustes manuais sem duração
+  (início = fim) ficam de fora. Filtra com `julianday` e devolve `start_time`/`end_time` sempre
+  em ISO UTC (`strftime`), inclusive as sessões gravadas no formato antigo do `CURRENT_TIMESTAMP`.
+  A sessão em andamento chega com `end_time` nulo (a grade usa o relógio), e a sessão vem
+  inteira: cortar na meia-noite e na faixa de horas é da grade. `localDaysToIsoRange` (`src/shared/calendarPrefs.ts`) converte dias
+  locais no intervalo.
+- `timeBlock:update` já aceita `date`, então mover um bloco para outro dia é o mesmo canal (e
+  ressincroniza o Google).
+- Jornada (8h), faixa de horas (07–22) e início da semana (segunda) vêm de `calendarPrefs()`,
+  fixos até a F7-f.

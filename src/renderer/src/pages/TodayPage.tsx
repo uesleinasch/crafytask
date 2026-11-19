@@ -19,6 +19,7 @@ import {
 } from 'antd'
 import { CheckSquare, Clock } from 'lucide-react'
 import type { Task, TimeBlock } from '@shared/types'
+import { calendarPrefs } from '@shared/calendarPrefs'
 import { localDateString } from '@shared/dueState'
 import { formatTimeRange } from '@shared/taskTime'
 import { StatusChip } from '@renderer/components/chips/StatusChip'
@@ -26,7 +27,6 @@ import { PageContainer } from '@renderer/components/shell/PageContainer'
 import { ProjectLabel } from '@renderer/components/tasks/ProjectLabel'
 import { formatShortDuration } from '@renderer/components/tasks/taskTableFormat'
 import {
-  JOURNEY_MIN,
   formatPlannedHours,
   loadPercent,
   planTitle,
@@ -132,10 +132,11 @@ export function TodayPage(): React.JSX.Element {
     return () => window.clearInterval(timer)
   }, [])
 
+  const journey = calendarPrefs().journeyMinutes
   const minutesByDate = useMemo(() => plannedMinByDate(blocks), [blocks])
   const plannedMin = minutesByDate.get(today) ?? 0
-  const over = plannedMin > JOURNEY_MIN
-  const loadLabel = `${formatPlannedHours(plannedMin)} de ${formatPlannedHours(JOURNEY_MIN)}`
+  const over = plannedMin > journey
+  const loadLabel = `${formatPlannedHours(plannedMin)} de ${formatPlannedHours(journey)}`
 
   if (tasks === null) {
     return (
@@ -155,7 +156,7 @@ export function TodayPage(): React.JSX.Element {
               extra={
                 <Flex align="center" gap={8}>
                   <Progress
-                    percent={loadPercent(plannedMin)}
+                    percent={loadPercent(plannedMin, journey)}
                     showInfo={false}
                     size="small"
                     strokeColor={over ? token.colorWarning : undefined}
@@ -218,14 +219,14 @@ export function TodayPage(): React.JSX.Element {
               <Flex vertical gap={10}>
                 {week.map((day) => {
                   const minutes = minutesByDate.get(day.date) ?? 0
-                  const dayOver = minutes > JOURNEY_MIN
+                  const dayOver = minutes > journey
                   return (
                     <Flex key={day.date} align="center" gap={10}>
                       <Typography.Text strong={day.date === today} style={{ width: 32 }}>
                         {day.label}
                       </Typography.Text>
                       <Progress
-                        percent={loadPercent(minutes)}
+                        percent={loadPercent(minutes, journey)}
                         showInfo={false}
                         size="small"
                         strokeColor={dayOver ? token.colorWarning : undefined}

@@ -1,7 +1,5 @@
 import type { TimeBlock } from '@shared/types'
-import { localDateString } from '@shared/dueState'
-
-export const JOURNEY_MIN = 8 * 60
+import { addDays, calendarPrefs, weekStartOf, type WeekStart } from '@shared/calendarPrefs'
 
 const WEEKDAY_SHORT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
@@ -29,12 +27,11 @@ export interface WeekDay {
   label: string
 }
 
-export function weekDays(today: Date): WeekDay[] {
-  const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-  monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7))
+export function weekDays(today: Date, weekStart: WeekStart = calendarPrefs().weekStart): WeekDay[] {
+  const first = weekStartOf(today, weekStart)
   return Array.from({ length: 7 }, (_, i) => {
-    const day = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i)
-    return { date: localDateString(day), label: WEEKDAY_SHORT[day.getDay()] }
+    const date = addDays(first, i)
+    return { date, label: WEEKDAY_SHORT[new Date(`${date}T12:00:00`).getDay()] }
   })
 }
 
@@ -43,7 +40,7 @@ export function formatPlannedHours(minutes: number): string {
   return `${String(hours).replace('.', ',')}h`
 }
 
-export function loadPercent(minutes: number, journey = JOURNEY_MIN): number {
+export function loadPercent(minutes: number, journey: number): number {
   return Math.min(100, Math.round((minutes / journey) * 100))
 }
 

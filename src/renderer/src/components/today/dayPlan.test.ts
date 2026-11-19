@@ -32,8 +32,8 @@ describe('carga planejada', () => {
   })
 
   it('limita a barra em 100%', () => {
-    expect(loadPercent(240)).toBe(50)
-    expect(loadPercent(570)).toBe(100)
+    expect(loadPercent(240, 480)).toBe(50)
+    expect(loadPercent(570, 480)).toBe(100)
   })
 })
 
@@ -43,6 +43,12 @@ describe('semana', () => {
     expect(days.map((d) => d.label)).toEqual(['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'])
     expect(days[0].date).toBe('2026-11-16')
     expect(days[6].date).toBe('2026-11-22')
+  })
+
+  it('começa no domingo quando a preferência pede', () => {
+    const days = weekDays(new Date(2026, 10, 17, 15), 'sunday')
+    expect(days.map((d) => d.label)).toEqual(['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'])
+    expect(days[0].date).toBe('2026-11-15')
   })
 
   it('domingo fecha a semana que começou na segunda', () => {
