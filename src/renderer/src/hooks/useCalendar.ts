@@ -1,89 +1,44 @@
-import { useState, useEffect, useCallback } from 'react'
-import type { Task, TimeBlock, CreateTimeBlockInput, UpdateTimeBlockInput } from '@shared/types'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { useErrorBoundary } from 'react-error-boundary'
+import type { Task, TimeBlock, TimeEntrySpan, CreateTimeBlockInput } from '@shared/types'
+import { localDaysToIsoRange } from '@shared/calendarPrefs'
 
-// ===================== CALENDAR DATA =====================
+// ===================== GRID DATA =====================
 
-interface UseCalendarDataReturn {
-  // Scheduled tasks per week
-  weekSchedule: { date: string; tasks: Task[] }[]
-  // Time blocks
-  timeBlocks: TimeBlock[]
-  loading: boolean
-  refresh: () => Promise<void>
-  scheduleTask: (taskId: number, date: string | null) => Promise<void>
-  createTimeBlock: (data: CreateTimeBlockInput) => Promise<TimeBlock>
-  updateTimeBlock: (id: number, data: UpdateTimeBlockInput) => Promise<void>
-  deleteTimeBlock: (id: number) => Promise<void>
+export interface CalendarRangeData {
+  blocks: TimeBlock[]
+  tasks: Task[]
+  sessions: TimeEntrySpan[]
 }
 
-export function useCalendarWeek(weekStartDate: string): UseCalendarDataReturn {
-  const [weekSchedule, setWeekSchedule] = useState<{ date: string; tasks: Task[] }[]>([])
-  const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([])
-  const [loading, setLoading] = useState(true)
+export function useCalendarRange(from: string, to: string, version = 0): CalendarRangeData | null {
+  const { showBoundary } = useErrorBoundary()
+  const [data, setData] = useState<CalendarRangeData | null>(null)
+  const latest = useRef(0)
 
   const refresh = useCallback(async () => {
-    setLoading(true)
-    try {
-      const [schedule, blocks] = await Promise.all([
-        window.api.getWeeklySchedule(weekStartDate),
-        window.api.getTimeBlocksForWeek(weekStartDate)
-      ])
-      setWeekSchedule(schedule)
-      setTimeBlocks(blocks)
-    } catch (error) {
-      console.error('Failed to load calendar data:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [weekStartDate])
+    const request = ++latest.current
+    const { fromIso, toIso } = localDaysToIsoRange(from, to)
+    const [blocks, tasks, sessions] = await Promise.all([
+      window.api.getTimeBlocksForRange(from, to),
+      window.api.getCalendarTasks(from, to),
+      window.api.listTimeEntriesRange(fromIso, toIso)
+    ])
+    if (request === latest.current) setData({ blocks, tasks, sessions })
+  }, [from, to])
 
   useEffect(() => {
-    refresh()
-  }, [refresh])
+    const reload = (): void => void refresh().catch(showBoundary)
+    reload()
+    const offRefresh = window.api.onTasksRefresh(reload)
+    const offStopped = window.api.onTimerStopped(reload)
+    return () => {
+      offRefresh()
+      offStopped()
+    }
+  }, [refresh, showBoundary, version])
 
-  const scheduleTask = useCallback(
-    async (taskId: number, date: string | null) => {
-      await window.api.scheduleTaskForDate(taskId, date)
-      await refresh()
-    },
-    [refresh]
-  )
-
-  const createTimeBlock = useCallback(
-    async (data: CreateTimeBlockInput): Promise<TimeBlock> => {
-      const block = await window.api.createTimeBlock(data)
-      await refresh()
-      return block
-    },
-    [refresh]
-  )
-
-  const updateTimeBlock = useCallback(
-    async (id: number, data: UpdateTimeBlockInput): Promise<void> => {
-      await window.api.updateTimeBlock(id, data)
-      await refresh()
-    },
-    [refresh]
-  )
-
-  const deleteTimeBlock = useCallback(
-    async (id: number): Promise<void> => {
-      await window.api.deleteTimeBlock(id)
-      await refresh()
-    },
-    [refresh]
-  )
-
-  return {
-    weekSchedule,
-    timeBlocks,
-    loading,
-    refresh,
-    scheduleTask,
-    createTimeBlock,
-    updateTimeBlock,
-    deleteTimeBlock
-  }
+  return data
 }
 
 // ===================== MONTH DATA =====================

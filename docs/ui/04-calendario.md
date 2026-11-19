@@ -1,105 +1,61 @@
 # Calendário — `/calendar`
 
-`src/renderer/src/pages/CalendarPage.tsx` (~890 linhas)
+`src/renderer/src/pages/CalendarPage.tsx` · `components/calendar/` (`CalendarGrid.tsx`,
+`CalendarShowMenu.tsx`, `calendarView.ts` puro e testado; `LegacyMonthView.tsx` e
+`TimeBlockDialog.tsx` até a F4-b4 e a F4-b3) · dados em `hooks/useCalendar.ts`
+(`useCalendarRange`, `useCalendarMonth`)
 
 ## Função
 
-Duas coisas que compartilham o mesmo cabeçalho mas resolvem problemas diferentes:
+O plano (blocos de tempo), o compromisso (tarefa com horário), o prazo e o que de fato aconteceu
+(sessões do timer) na mesma grade. Visões Dia, 3 dias e Semana (grade horária) e Mês (ainda a
+antiga, até a F4-b4).
 
-- **Visão semanal** — *time blocking*: reservar horas do dia para tarefas específicas, numa grade de
-  07:00 às 22:00.
-- **Visão mensal** — panorama de agendamentos, com **arraste para reagendar** tarefas entre dias.
+## Barra
 
-A visão semanal é o padrão ao abrir a tela.
+`PageContainer` de largura total. **Hoje**, `‹ ›` (anda 1 dia, 3 dias, 1 semana ou 1 mês), o período
+como `DatePicker` sem borda ("16–22 de novembro de 2026"), a visão (`Segmented`; `Select` abaixo de
+`md`), **Mostrar** e **Novo bloco** (primário). A visão inicial sai da largura da janela: Semana a
+partir de `lg`, 3 dias em `md`, Dia abaixo.
 
-## Cabeçalho
+**Mostrar** (`Popover` com `Checkbox`) é filtro e legenda: Blocos de tempo, Tarefas com horário,
+Agendadas sem horário, Prazos, Sessões registradas e Fins de semana, cada um com a amostra, e a chave
+dos ícones (`Flame` urgente, `Flag` prioridade, `Clock` time leak, `CalendarSync` no Google). A
+escolha fica em `localStorage` (`ticktask:calendar-show`). Sem fins de semana, a Semana mostra
+segunda a sexta.
 
-Mais compacto que o das outras sub-páginas (`px-4 py-3` em vez de `px-6 py-4`), dividido em três:
+## Grade (Dia, 3 dias, Semana)
 
-**Esquerda:** botão `←` só com ícone + `Calendar` azul + "Calendário" em `text-base font-semibold`.
+Um card que rola sozinho (`.ct-calscroll`), com cabeçalho e faixa Dia fixos no topo, e abre rolado
+até a hora atual. Colunas de no mínimo 96px (Semana) ou 140px; em tela estreita rola na horizontal.
 
-**Centro — navegação temporal:**
-- botão **Hoje** (contorno, 32px) — volta a semana e o mês para a data atual;
-- `‹` / `›` — avançam 7 dias ou 1 mês, conforme a visão;
-- rótulo do período entre as setas, com `min-w-[200px] text-center`:
-  - semana no mesmo mês: `4–10 Agosto 2026`
-  - semana virando o mês: `28 Julho – 3 Agosto 2026`
-  - mês: `Agosto 2026`
+- **Cabeçalho do dia:** dia da semana e número (hoje em círculo da cor primária) num botão que abre
+  a visão Dia; embaixo, um medidor de 4px das horas em blocos contra a jornada
+  (`calendarPrefs().journeyMinutes`), âmbar quando passa, com tooltip "Xh em blocos de 8h da jornada
+  · passa da jornada".
+- **Faixa Dia:** agendadas sem horário (chip com o ponto do projeto) e prazos abertos (bandeira,
+  borda tracejada; bandeira âmbar no dia, vermelha se venceu; hora do prazo em mono). Até 2 por dia
+  (6 na visão Dia) e `+N` abre um `Popover` com todos. Clicar abre a tarefa.
+- **Horas:** faixa de `calendarPrefs()` (07–22), 48px por hora (40 no compacto), linha a cada hora,
+  fim de semana em `colorBgLayout`. Clicar num espaço vazio abre o diálogo de bloco com o dia e 1h
+  centrada no clique (arredondada em 15 min).
+- **Bloco de tempo:** fundo `calBlock` com borda `calBlockBorder` (`CAL_BLOCK_COLORS`), ponto do
+  projeto, ícone da categoria quando não é normal, nome, horário em mono e `CalendarSync` quando a
+  tarefa vai ao Google. Time leak pinta o fundo pela escala de três níveis (`timeLeakLevel` com o
+  tempo total da tarefa). Concluída fica apagada e riscada; rodando agora, ponto pulsante. Clicar
+  ou Enter abre o diálogo de edição.
+- **Tarefa com horário:** mesmo formato, fundo `colorBgContainer`, borda forte e ícone `Calendar`;
+  sem fim, dura 1h. Clicar abre a tarefa.
+- **Sobreposição:** itens que se cruzam dividem a coluna lado a lado (`layoutDay`).
+- **Sessões registradas:** faixa de 4px na borda direita da coluna, na cor primária, tracejada
+  enquanto roda; cortada na meia-noite e na faixa de horas; tooltip "Sessão 09:00–09:40 · tarefa".
+- **Agora:** linha de 2px na cor primária com um ponto, atualizada a cada minuto.
+- **Vazio:** "Nada nestes dias. Clique na grade para reservar tempo."
 
-**Direita:**
-- alternador **Mês** | **Semana** num contêiner `rounded-lg border overflow-hidden` (o ativo fica
-  `bg-slate-900 text-white`);
-- botão **+ Bloco** em `bg-blue-600` — o único botão de ação azul do app; em todas as outras telas a
-  ação primária é `bg-slate-900`.
-
-## Visão semanal
-
-### Geometria da grade
-
-| Constante | Valor |
-| --- | --- |
-| Primeira hora | 07:00 |
-| Última hora | 22:00 |
-| Escala | 1,2 px por minuto → **1 hora = 72px** |
-| Altura total | 15h × 72px = **1080px** |
-| Coluna de horas | 56px (`w-14`) |
-
-Horários fora de 07:00–22:00 simplesmente não têm onde ser desenhados.
-
-### Linha "Dia" (all-day)
-
-Faixa fixa acima da grade, com fundo branco e borda inferior. A primeira célula (56px) só diz "Dia".
-Cada coluna de dia mostra:
-
-- dia da semana abreviado e o número do dia num círculo (azul preenchido se for hoje);
-- até **duas** tarefas agendadas, como botões azul-claro truncados;
-- `+N` quando há mais.
-
-Clicar numa tarefa navega para `/task/:id`.
-
-### Grade horária
-
-- **Linhas de hora** em `border-slate-100`; **linhas de meia hora** em `border-slate-50` — quase
-  invisíveis, servem só de guia para o snap.
-- Rótulos de hora à esquerda, alinhados à direita, em `text-xs text-slate-400`, deslocados 8px para
-  cima para ficarem sobre a linha.
-- **Linha do "agora"** — traço vermelho de 2px com uma bolinha de 12px à esquerda, desenhado só na
-  coluna de hoje e só se o horário atual estiver dentro da faixa. Ao montar, a tela faz
-  `scrollIntoView({ block: 'center' })` nessa linha.
-- A coluna de hoje tem fundo `bg-blue-50/30`; o cursor sobre a grade é `crosshair`.
-
-### Criar bloco pela grade
-
-Clicar em qualquer ponto vazio da coluna:
-
-1. converte a posição Y em minutos;
-2. arredonda para o múltiplo de **30 minutos** mais próximo;
-3. limita o início a no máximo 21:00 e propõe **1 hora** de duração;
-4. abre o diálogo já preenchido com data, início e fim.
-
-### Bloco de tempo (`TimeBlockCard`)
-
-Posicionado em absoluto dentro da coluna, `left-0.5 right-0.5`, com altura proporcional à duração
-(mínimo 20px). Cor de fundo **pela categoria da tarefa**:
-
-| Categoria | Classe |
-| --- | --- |
-| urgente | `bg-red-400 border-red-500` |
-| prioridade | `bg-orange-400 border-orange-500` |
-| normal | `bg-blue-400 border-blue-500` |
-| time_leak | `bg-yellow-400 border-yellow-500` |
-
-Conteúdo, revelado por faixas de altura:
-
-- **sempre:** nome da tarefa em `font-semibold truncate`;
-- **acima de 30px:** `07:00–08:30` e, para blocos de 1h ou mais, a duração entre parênteses;
-- **acima de 50px:** botão **Timer** (`Play`), revelado no hover, que inicia o cronômetro da tarefa
-  sem sair do calendário.
-
-Clicar no bloco abre o diálogo em modo edição.
-
-**Não há arraste nem redimensionamento de blocos** — mover ou reduzir um bloco exige abrir o diálogo
-e digitar os horários.
+A grade relê em `tasks:refresh` e `timer:stopped` e descarta resposta velha ao trocar de período
+rápido; o Mês relê ao salvar um bloco. A leitura acontece dentro do `RegionBoundary` "grade do
+calendário": falha ali não derruba a barra. Erro ao salvar ou excluir bloco aparece numa mensagem
+(sem o prefixo do Electron) e o diálogo continua aberto.
 
 ## Visão mensal
 
@@ -127,7 +83,7 @@ dia para reagendar"**.
 
 ## Diálogo de bloco de tempo
 
-`sm:max-w-md`. Título "Novo Bloco de Tempo" ou "Editar Bloco de Tempo".
+`sm:max-w-md`. Título "Novo bloco de tempo" ou "Editar bloco de tempo".
 
 | Campo | Controle |
 | --- | --- |
@@ -141,29 +97,12 @@ precisa ser anterior ao fim, senão toast de erro.
 Rodapé: **Excluir** (vermelho, `mr-auto`, só em edição) · **Cancelar** · **Salvar** (desabilitado sem
 tarefa).
 
-Depois de salvar ou excluir, **as duas visões são recarregadas** — criar um bloco na semana atualiza
-o contador `N⏱` no mês.
+Depois de salvar ou excluir, a grade e o mês são recarregados.
 
-## Legenda (rodapé fixo)
+## Dados
 
-Faixa branca com borda superior, em `text-xs text-slate-500`:
-
-| Amostra | Rótulo |
-| --- | --- |
-| quadrado azul-claro com borda | Agendado |
-| quadrado azul sólido | Bloco normal |
-| quadrado laranja | Bloco urgente |
-| traço vermelho | Agora |
-
-Mais uma dica contextual, que muda com a visão: *"Clique na grade para criar bloco"* (semana) ou
-*"Arraste tarefas entre dias"* (mês).
-
-A legenda cita só duas das quatro cores de bloco, e chama a cor laranja de "urgente" quando na
-verdade laranja é **prioridade** (urgente é vermelho).
-
-## Dados prontos para a nova grade (F4-b1 e F4-b1b)
-
-Ainda não usados pela tela; a F4-b2 os consome.
+A grade usa `timeBlock:getForRange`, `schedule:getRange` e `timeEntry:listRange`; o Mês ainda usa
+`timeBlock:getForMonth` e `schedule:getWeekly`.
 
 - `timeEntry:listRange(fromIso, toIso)` → `TimeEntrySpan[]`: sessões de tempo que cruzam o
   intervalo, com nome e categoria da tarefa e cor do projeto (`listTimeEntriesInRange` em
