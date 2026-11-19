@@ -118,7 +118,7 @@ A consulta traz oito indicadores; a revisão mostra seis (`REVIEW_HEALTH`) e o d
 
 | Indicador | Conta | Ícone | Revisão | Dashboard |
 | --- | --- | --- | --- | --- |
-| Inbox para processar | tarefas `inbox`; o texto diz há quanto tempo chegou a mais antiga | `Inbox` | ✓ | ✓ |
+| Inbox para processar | tarefas `inbox`; o texto diz há quanto tempo a mais antiga entrou no Inbox | `Inbox` | ✓ | ✓ |
 | Projetos sem próxima ação | ativos, com tarefa aberta e sem próxima ação (mesma regra da lista de projetos) | `CircleArrowRight` | ✓ | ✓ |
 | Projetos parados | ativos, criados há mais de 7 dias, sem sessão nem tarefa concluída nos últimos 7 | `CirclePause` | | ✓ |
 | Aguardando sem resposta | `aguardando` há mais de 7 dias | `Hourglass` | ✓ | ✓ |
