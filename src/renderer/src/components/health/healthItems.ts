@@ -40,6 +40,23 @@ export const REVIEW_HEALTH: readonly HealthKey[] = [
   'someday'
 ]
 
+export const HEALTH_TARGETS: Record<HealthKey, { route: string; cta: string }> = {
+  inbox: { route: '/?status=inbox', cta: 'Abre a aba Inbox' },
+  nonext: { route: '/projects?semProxima=1', cta: 'Abre Projetos com só esses' },
+  stalled: { route: '/projects?parados=1', cta: 'Abre Projetos com os parados' },
+  waiting: {
+    route: `/?status=aguardando&parada=${HEALTH_LIMITS.waitingDays}&ordem=parada`,
+    cta: 'Abre Aguardando com as paradas'
+  },
+  next: {
+    route: `/?status=proximas&parada=${HEALTH_LIMITS.nextDays}&ordem=parada`,
+    cta: 'Abre Próximas com as paradas'
+  },
+  overdue: { route: '/?prazo=vencido&ordem=prazo', cta: 'Abre a lista com prazo vencido' },
+  someday: { route: '/?status=someday', cta: 'Abre a aba Someday' },
+  review: { route: '/review', cta: 'Abre a revisão semanal' }
+}
+
 const days = (n: number): string => (n === 1 ? '1 dia' : `${n} dias`)
 
 function inboxText(h: ReviewHealthIndicators): string {

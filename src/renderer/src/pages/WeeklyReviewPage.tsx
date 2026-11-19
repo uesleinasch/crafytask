@@ -20,7 +20,8 @@ import {
 import { toast } from '@renderer/components/ui/sonner'
 import { cn } from '@renderer/lib/utils'
 import { HealthCard, HealthGrid } from '@renderer/components/health/HealthCard'
-import { REVIEW_HEALTH, healthItems } from '@renderer/components/health/healthItems'
+import { useNavigate } from 'react-router-dom'
+import { HEALTH_TARGETS, REVIEW_HEALTH, healthItems } from '@renderer/components/health/healthItems'
 
 interface ChecklistItem {
   id: string
@@ -81,6 +82,7 @@ const CHECKLIST_ITEMS: ChecklistItem[] = [
 ]
 
 export function WeeklyReviewPage(): React.JSX.Element {
+  const navigate = useNavigate()
   const {
     currentReview,
     reviews,
@@ -199,7 +201,12 @@ export function WeeklyReviewPage(): React.JSX.Element {
               {healthIndicators && (
                 <HealthGrid>
                   {healthItems(healthIndicators, REVIEW_HEALTH).map((item) => (
-                    <HealthCard key={item.key} item={item} />
+                    <HealthCard
+                      key={item.key}
+                      item={item}
+                      openLabel={HEALTH_TARGETS[item.key].cta}
+                      onOpen={() => void navigate(HEALTH_TARGETS[item.key].route)}
+                    />
                   ))}
                 </HealthGrid>
               )}
@@ -306,7 +313,12 @@ export function WeeklyReviewPage(): React.JSX.Element {
                   </h3>
                   <HealthGrid>
                     {healthItems(healthIndicators, REVIEW_HEALTH).map((item) => (
-                      <HealthCard key={item.key} item={item} />
+                      <HealthCard
+                        key={item.key}
+                        item={item}
+                        openLabel={HEALTH_TARGETS[item.key].cta}
+                        onOpen={() => void navigate(HEALTH_TARGETS[item.key].route)}
+                      />
                     ))}
                   </HealthGrid>
                 </div>
