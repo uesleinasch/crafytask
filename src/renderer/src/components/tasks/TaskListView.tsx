@@ -193,8 +193,8 @@ export function TaskListView({ project, onChanged }: TaskListViewProps): React.J
       contextId: contextFilter,
       search: searchQuery,
       blockedOnly: blockedFilter,
-      ...(overdueFilter && {
-        overdueAt: { date: today, time: '00:00' },
+      ...(overdueFilter && { overdueAt: { date: today, time: '00:00' } }),
+      ...((overdueFilter || staleFilter !== null) && {
         excludeStatus: ['finalizada' as const]
       }),
       staleDays: staleFilter ?? undefined,

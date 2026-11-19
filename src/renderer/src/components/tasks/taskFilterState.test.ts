@@ -41,6 +41,7 @@ describe('listIntentFromSearch', () => {
   it('ignora query vazia ou inválida', () => {
     expect(listIntentFromSearch('')).toBeNull()
     expect(listIntentFromSearch('?context=abc&tag=-1&status=xyz&parada=0')).toBeNull()
+    expect(listIntentFromSearch('?parada=10')).toBeNull()
   })
 
   it('conta prazo vencido e parada como filtros ativos', () => {

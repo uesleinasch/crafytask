@@ -94,6 +94,22 @@ export function WeeklyReviewPage(): React.JSX.Element {
   } = useWeeklyReview()
 
   const [notes, setNotes] = useState('')
+  const reviewId = currentReview?.id
+  const savedNotes = currentReview?.notes ?? ''
+
+  const [notesReviewId, setNotesReviewId] = useState<number | undefined>(undefined)
+  if (reviewId !== notesReviewId) {
+    setNotesReviewId(reviewId)
+    setNotes(savedNotes)
+  }
+
+  const openHealthTarget = useCallback(
+    async (route: string): Promise<void> => {
+      if (reviewId && notes !== savedNotes) await updateReview({ notes })
+      void navigate(route)
+    },
+    [reviewId, notes, savedNotes, updateReview, navigate]
+  )
 
   // Parse checklist state
   const checklistState = useMemo(() => {
@@ -205,7 +221,7 @@ export function WeeklyReviewPage(): React.JSX.Element {
                       key={item.key}
                       item={item}
                       openLabel={HEALTH_TARGETS[item.key].cta}
-                      onOpen={() => void navigate(HEALTH_TARGETS[item.key].route)}
+                      onOpen={() => void openHealthTarget(HEALTH_TARGETS[item.key].route)}
                     />
                   ))}
                 </HealthGrid>
@@ -317,7 +333,7 @@ export function WeeklyReviewPage(): React.JSX.Element {
                         key={item.key}
                         item={item}
                         openLabel={HEALTH_TARGETS[item.key].cta}
-                        onOpen={() => void navigate(HEALTH_TARGETS[item.key].route)}
+                        onOpen={() => void openHealthTarget(HEALTH_TARGETS[item.key].route)}
                       />
                     ))}
                   </HealthGrid>

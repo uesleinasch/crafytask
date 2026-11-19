@@ -17,6 +17,7 @@ import {
 import { CirclePause, LayoutGrid, Plus, Search, Table2, TriangleAlert } from 'lucide-react'
 import type { Area, Project } from '@shared/types'
 import { localDateString } from '@shared/dueState'
+import { HEALTH_LIMITS } from '@shared/healthLimits'
 import { NewProjectModal } from '@renderer/components/projects/NewProjectModal'
 import { ProjectCard } from '@renderer/components/projects/ProjectCard'
 import { ProjectGroupHeader, ProjectTabLabel } from '@renderer/components/projects/ProjectCells'
@@ -61,7 +62,11 @@ export function ProjectsPage(): React.JSX.Element {
     'ticktask:projectListViewMode',
     'cards'
   )
-  const [sort, setSort] = usePersistedState<ProjectSort>('ticktask:projects-sort', 'due')
+  const [storedSort, setSort] = usePersistedState<ProjectSort>('ticktask:projects-sort', 'due')
+  const [sortOverride, setSortOverride] = useState<ProjectSort | null>(() =>
+    params.get('parados') === '1' ? 'activity' : null
+  )
+  const sort = sortOverride ?? storedSort
   const [byArea, setByArea] = usePersistedState<boolean>('ticktask:projects-by-area', false)
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set())
   const [creating, setCreating] = useState(false)
@@ -75,8 +80,8 @@ export function ProjectsPage(): React.JSX.Element {
     setTab('active')
     setOnlyWithoutNext(withoutNextParam)
     setOnlyStalled(stalledParam)
-    if (stalledParam) setSort('activity')
-  }, [params, setSort])
+    setSortOverride(stalledParam ? 'activity' : null)
+  }, [params])
 
   const load = useCallback(() => {
     Promise.all([window.api.listProjects(), window.api.listAreas()])
@@ -229,7 +234,10 @@ export function ProjectsPage(): React.JSX.Element {
           />
           <Select
             value={sort}
-            onChange={setSort}
+            onChange={(value) => {
+              setSortOverride(null)
+              setSort(value)
+            }}
             options={SORT_OPTIONS}
             style={{ width: 170 }}
             aria-label="Ordenar"
@@ -307,7 +315,7 @@ export function ProjectsPage(): React.JSX.Element {
             title={
               <span>
                 <Typography.Text strong>{stalledNotice(stalled)}</Typography.Text> Sem sessão nem
-                tarefa concluída há mais de 7 dias.
+                tarefa concluída há mais de {HEALTH_LIMITS.stalledProjectDays} dias.
               </span>
             }
             action={

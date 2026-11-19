@@ -61,7 +61,8 @@ export function listIntentFromSearch(search: string): ListIntent | null {
   const statusParam = params.get('status')
   const status = TASK_STATUSES.find((s) => s === statusParam)
   const overdue = params.get('prazo') === 'vencido'
-  const staleDays = idParam(params, 'parada')
+  const staleParam = idParam(params, 'parada')
+  const staleDays = STALE_DAYS_OPTIONS.find((days) => days === staleParam) ?? null
   const sort = SORT_PARAMS[params.get('ordem') ?? '']
   if (contextId === null && tagId === null && !status && !overdue && staleDays === null && !sort) {
     return null
