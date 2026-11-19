@@ -17,7 +17,7 @@ beforeEach(() => {
     CREATE TABLE tasks (
       id INTEGER PRIMARY KEY, name TEXT, status TEXT, project_id INTEGER, due_date TEXT,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      is_archived INTEGER DEFAULT 0
+      is_archived INTEGER DEFAULT 0, parent_task_id INTEGER
     );
     CREATE TABLE time_entries (id INTEGER PRIMARY KEY, task_id INTEGER, start_time TEXT, end_time TEXT);
     CREATE TABLE weekly_reviews (id INTEGER PRIMARY KEY, started_at TEXT, completed_at TEXT);
@@ -106,6 +106,13 @@ describe('healthIndicatorsQuery', () => {
       somedayCount: 1,
       overdueTasks: 1
     })
+  })
+
+  it('conta só tarefas de topo, como a lista de tarefas', () => {
+    seed(`
+      INSERT INTO tasks (id, status, parent_task_id) VALUES (1, 'inbox', NULL), (2, 'inbox', 1);
+    `)
+    expect(healthIndicatorsQuery(db, NOW).inboxCount).toBe(1)
   })
 
   it('idade do Inbox conta de quando a tarefa voltou para ele', () => {

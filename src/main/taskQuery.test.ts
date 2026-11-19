@@ -148,6 +148,12 @@ describe('buildTaskListQuery', () => {
     expect(sql).toContain('ORDER BY t.due_date IS NULL, t.due_date ASC')
   })
 
+  it('ordena pela mais parada: mudança de status mais antiga primeiro', () => {
+    const { sql } = buildTaskListQuery(COLUMNS, { sort: 'status_changed' })
+
+    expect(sql).toContain('ORDER BY julianday(COALESCE(t.status_changed_at, t.updated_at)) ASC')
+  })
+
   it('cai no padrão quando o sort é desconhecido', () => {
     const { sql } = buildTaskListQuery(COLUMNS, {
       sort: 'drop table' as unknown as 'updated'
@@ -254,6 +260,13 @@ describe('buildTaskListWhere - prazo e energia', () => {
 
   it('ignora excludeStatus vazio', () => {
     expect(buildTaskListWhere({ excludeStatus: [] }).clause).not.toContain('NOT IN')
+  })
+
+  it('parada há mais de N dias conta da última mudança de status', () => {
+    const { clause, params } = buildTaskListWhere({ staleDays: 7 })
+    expect(clause).toContain('COALESCE(t.status_changed_at, t.updated_at)')
+    expect(params).toEqual([0, '-7 days'])
+    expect(buildTaskListWhere({ staleDays: 0 }).params).toEqual([0])
   })
 })
 

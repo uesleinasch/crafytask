@@ -67,6 +67,7 @@ export interface Project {
   total_seconds?: number
   next_action?: string
   next_action_id?: number
+  last_activity_at?: string
   next_task_id?: number | null
   working_dir?: string | null
 }
@@ -431,7 +432,13 @@ export interface TimeEntrySpan extends TimeEntry {
 
 // ===================== TASK LIST FILTERS =====================
 
-export type TaskSort = 'updated' | 'due_date' | 'archived' | 'name' | 'total_time'
+export type TaskSort =
+  | 'updated'
+  | 'due_date'
+  | 'archived'
+  | 'name'
+  | 'total_time'
+  | 'status_changed'
 
 export interface TaskListFilters {
   archived?: boolean
@@ -449,6 +456,7 @@ export interface TaskListFilters {
   overdueAt?: { date: string; time: string }
   energy?: EnergyLevel
   excludeStatus?: TaskStatus[]
+  staleDays?: number
   sort?: TaskSort
   limit?: number
   offset?: number

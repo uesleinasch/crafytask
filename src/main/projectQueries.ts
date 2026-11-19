@@ -1,6 +1,19 @@
 import type { Project, ProjectStatus } from '@shared/types'
 import type { SqliteLike } from './tagQueries'
 
+export const PROJECT_ACTIVITY_JULIAN = `MAX(
+    COALESCE(julianday(p.created_at), 0),
+    COALESCE((
+      SELECT MAX(CASE WHEN e.end_time IS NULL THEN julianday('now') ELSE julianday(e.end_time) END)
+      FROM time_entries e JOIN tasks te ON te.id = e.task_id
+      WHERE te.project_id = p.id
+    ), 0),
+    COALESCE((
+      SELECT MAX(julianday(COALESCE(tf.status_changed_at, tf.updated_at)))
+      FROM tasks tf WHERE tf.project_id = p.id AND tf.status = 'finalizada'
+    ), 0)
+  )`
+
 const PROJECT_SELECT = `
   SELECT p.*, a.name AS area_name,
     COALESCE(s.task_count, 0) AS task_count,
@@ -8,7 +21,8 @@ const PROJECT_SELECT = `
     COALESCE(s.open_task_count, 0) AS open_task_count,
     COALESCE(s.total_seconds, 0) AS total_seconds,
     COALESCE(c.id, d.id) AS next_action_id,
-    COALESCE(c.name, d.name) AS next_action
+    COALESCE(c.name, d.name) AS next_action,
+    datetime(${PROJECT_ACTIVITY_JULIAN}) AS last_activity_at
   FROM projects p
   LEFT JOIN areas a ON a.id = p.area_id
   LEFT JOIN (

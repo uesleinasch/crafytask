@@ -20,7 +20,8 @@ import {
 import { toast } from '@renderer/components/ui/sonner'
 import { cn } from '@renderer/lib/utils'
 import { HealthCard, HealthGrid } from '@renderer/components/health/HealthCard'
-import { REVIEW_HEALTH, healthItems } from '@renderer/components/health/healthItems'
+import { useNavigate } from 'react-router-dom'
+import { HEALTH_TARGETS, REVIEW_HEALTH, healthItems } from '@renderer/components/health/healthItems'
 
 interface ChecklistItem {
   id: string
@@ -81,6 +82,7 @@ const CHECKLIST_ITEMS: ChecklistItem[] = [
 ]
 
 export function WeeklyReviewPage(): React.JSX.Element {
+  const navigate = useNavigate()
   const {
     currentReview,
     reviews,
@@ -92,6 +94,22 @@ export function WeeklyReviewPage(): React.JSX.Element {
   } = useWeeklyReview()
 
   const [notes, setNotes] = useState('')
+  const reviewId = currentReview?.id
+  const savedNotes = currentReview?.notes ?? ''
+
+  const [notesReviewId, setNotesReviewId] = useState<number | undefined>(undefined)
+  if (reviewId !== notesReviewId) {
+    setNotesReviewId(reviewId)
+    setNotes(savedNotes)
+  }
+
+  const openHealthTarget = useCallback(
+    async (route: string): Promise<void> => {
+      if (reviewId && notes !== savedNotes) await updateReview({ notes })
+      void navigate(route)
+    },
+    [reviewId, notes, savedNotes, updateReview, navigate]
+  )
 
   // Parse checklist state
   const checklistState = useMemo(() => {
@@ -199,7 +217,12 @@ export function WeeklyReviewPage(): React.JSX.Element {
               {healthIndicators && (
                 <HealthGrid>
                   {healthItems(healthIndicators, REVIEW_HEALTH).map((item) => (
-                    <HealthCard key={item.key} item={item} />
+                    <HealthCard
+                      key={item.key}
+                      item={item}
+                      openLabel={HEALTH_TARGETS[item.key].cta}
+                      onOpen={() => void openHealthTarget(HEALTH_TARGETS[item.key].route)}
+                    />
                   ))}
                 </HealthGrid>
               )}
@@ -306,7 +329,12 @@ export function WeeklyReviewPage(): React.JSX.Element {
                   </h3>
                   <HealthGrid>
                     {healthItems(healthIndicators, REVIEW_HEALTH).map((item) => (
-                      <HealthCard key={item.key} item={item} />
+                      <HealthCard
+                        key={item.key}
+                        item={item}
+                        openLabel={HEALTH_TARGETS[item.key].cta}
+                        onOpen={() => void openHealthTarget(HEALTH_TARGETS[item.key].route)}
+                      />
                     ))}
                   </HealthGrid>
                 </div>

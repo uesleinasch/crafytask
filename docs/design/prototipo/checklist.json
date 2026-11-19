@@ -1112,6 +1112,16 @@
       }
     },
     {
+      "id": "F5.21",
+      "fase": "F5",
+      "titulo": "Indicadores de saúde abrem a lista filtrada (status, prazo vencido, parada há N dias, projetos parados)",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/components/{health/healthItems.ts,tasks/taskFilterState.ts,projects/projectList.ts}",
+        "padroes": ["semProxima=1", "parados=1", "prazo=vencido", "ordem=parada", "listIntentFromSearch", "isStalled"]
+      }
+    },
+    {
       "id": "F5.13",
       "fase": "F5",
       "titulo": "Revisão: cada passo resolve ali mesmo, resumo ao fechar e conclusão com pulados conferidos",

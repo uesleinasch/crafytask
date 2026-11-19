@@ -2,7 +2,12 @@ import { Badge, Button, Checkbox, Drawer, Flex, Grid, Popover, Select, Typograph
 import { ListFilter } from 'lucide-react'
 import { useState } from 'react'
 import type { Context, Project, Tag, TaskCategory } from '@shared/types'
-import { EMPTY_TASK_FILTERS, activeFilterCount, type TaskFiltersValue } from './taskFilterState'
+import {
+  EMPTY_TASK_FILTERS,
+  STALE_DAYS_OPTIONS,
+  activeFilterCount,
+  type TaskFiltersValue
+} from './taskFilterState'
 import { CATEGORY_CHIP_LABELS } from '@renderer/components/chips/categoryMeta'
 
 const NO_PROJECT = -1
@@ -89,9 +94,27 @@ export function TaskFilters({
         onChange={(sort) => onChange({ sort })}
         options={[
           { value: 'updated', label: 'Ordenar por atualização' },
-          { value: 'due_date', label: 'Ordenar por prazo' }
+          { value: 'due_date', label: 'Ordenar por prazo' },
+          { value: 'status_changed', label: 'Ordenar pela mais parada' }
         ]}
       />
+      <Select
+        aria-label="Parada há"
+        placeholder="Parada há…"
+        allowClear
+        value={value.staleDays ?? undefined}
+        onChange={(staleDays) => onChange({ staleDays: staleDays ?? null })}
+        options={STALE_DAYS_OPTIONS.map((days) => ({
+          value: days,
+          label: `Parada há mais de ${days} dias`
+        }))}
+      />
+      <Checkbox
+        checked={value.overdue}
+        onChange={(event) => onChange({ overdue: event.target.checked })}
+      >
+        Só com prazo vencido
+      </Checkbox>
       <Checkbox
         checked={value.blockedOnly}
         onChange={(event) => onChange({ blockedOnly: event.target.checked })}

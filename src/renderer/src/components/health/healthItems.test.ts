@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type { ReviewHealthIndicators } from '@shared/types'
-import { DASHBOARD_HEALTH, REVIEW_HEALTH, healthItem, healthItems } from './healthItems'
+import {
+  DASHBOARD_HEALTH,
+  HEALTH_TARGETS,
+  REVIEW_HEALTH,
+  healthItem,
+  healthItems
+} from './healthItems'
+import { listIntentFromSearch } from '@renderer/components/tasks/taskFilterState'
 
 const CLEAN: ReviewHealthIndicators = {
   inboxCount: 0,
@@ -54,5 +61,18 @@ describe('healthItems', () => {
       valueText: '—'
     })
     expect(healthItem({ ...CLEAN, daysSinceLastReview: 0 }, 'review').valueText).toBe('hoje')
+  })
+})
+
+describe('destinos dos indicadores', () => {
+  it('as rotas da lista de tarefas abrem o recorte que o indicador conta', () => {
+    const search = (route: string): string => route.slice(route.indexOf('?'))
+    expect(listIntentFromSearch(search(HEALTH_TARGETS.waiting.route))).toMatchObject({
+      status: 'aguardando',
+      filters: { staleDays: 7, sort: 'status_changed' }
+    })
+    expect(listIntentFromSearch(search(HEALTH_TARGETS.next.route))?.filters.staleDays).toBe(14)
+    expect(listIntentFromSearch(search(HEALTH_TARGETS.overdue.route))?.filters.overdue).toBe(true)
+    expect(listIntentFromSearch(search(HEALTH_TARGETS.inbox.route))?.status).toBe('inbox')
   })
 })

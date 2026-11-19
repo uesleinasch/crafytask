@@ -47,7 +47,7 @@ lista filtrada) ficam em `components/labels/labels.ts`, com teste.
 - Vazio: `Empty` com "Nenhum contexto ainda." / "Nenhuma tag ainda." ou "Nada com esses filtros.".
 
 **Ver tarefas** navega para `/?context=<id>` ou `/?tag=<id>`; a lista de tarefas lê a query
-(`labelFilterFromSearch`), aplica o filtro e muda a aba de status para **Todas**.
+(`listIntentFromSearch`), aplica o filtro e muda a aba de status para **Todas**.
 
 ## Criar e editar (`LabelEditModal`)
 
