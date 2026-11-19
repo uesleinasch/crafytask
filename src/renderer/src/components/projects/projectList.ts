@@ -22,7 +22,7 @@ export const SORT_OPTIONS: { value: ProjectSort; label: string }[] = [
 export const NO_AREA = 'Sem área'
 
 export function openTasks(project: Project): number {
-  return (project.task_count ?? 0) - (project.completed_task_count ?? 0)
+  return project.open_task_count ?? (project.task_count ?? 0) - (project.completed_task_count ?? 0)
 }
 
 export function lacksNextAction(project: Project): boolean {

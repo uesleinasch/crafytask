@@ -14,7 +14,7 @@ import {
   Tabs,
   Typography
 } from 'antd'
-import { LayoutGrid, Plus, Search, Table2 } from 'lucide-react'
+import { LayoutGrid, Plus, Search, Table2, TriangleAlert } from 'lucide-react'
 import type { Area, Project } from '@shared/types'
 import { localDateString } from '@shared/dueState'
 import { NewProjectModal } from '@renderer/components/projects/NewProjectModal'
@@ -214,7 +214,7 @@ export function ProjectsPage(): React.JSX.Element {
             value={sort}
             onChange={setSort}
             options={SORT_OPTIONS}
-            style={{ width: 190 }}
+            style={{ width: 170 }}
             aria-label="Ordenar"
           />
           <div style={{ flex: 1 }} />
@@ -262,6 +262,7 @@ export function ProjectsPage(): React.JSX.Element {
           <Alert
             showIcon
             type="warning"
+            icon={<TriangleAlert size={16} strokeWidth={1.75} aria-hidden />}
             style={{ marginBottom: 12 }}
             message={
               <span>

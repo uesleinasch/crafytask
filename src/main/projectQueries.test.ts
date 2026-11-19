@@ -15,7 +15,7 @@ beforeEach(() => {
     );
     CREATE TABLE tasks (
       id INTEGER PRIMARY KEY, name TEXT, status TEXT, project_id INTEGER,
-      total_seconds INTEGER DEFAULT 0, updated_at TEXT
+      total_seconds INTEGER DEFAULT 0, updated_at TEXT, is_archived INTEGER DEFAULT 0
     );
     INSERT INTO areas VALUES (1, 'Carreira');
     INSERT INTO projects VALUES
@@ -23,11 +23,12 @@ beforeEach(() => {
       (2, 'Viagem', 'someday', '#0B7A50', NULL, '2026-11-01', '2026-11-12'),
       (3, 'Vazio', 'active', '#5D6B82', NULL, '2026-11-01', '2026-11-05');
     INSERT INTO tasks VALUES
-      (10, 'Rascunho', 'finalizada', 1, 3600, '2026-11-02'),
-      (11, 'Layout', 'proximas', 1, 600, '2026-11-03'),
-      (12, 'Deploy', 'proximas', 1, 0, '2026-11-08'),
-      (13, 'Fotos', 'aguardando', 2, 120, '2026-11-04'),
-      (14, 'Solta', 'proximas', NULL, 999, '2026-11-09');
+      (10, 'Rascunho', 'finalizada', 1, 3600, '2026-11-02', 0),
+      (11, 'Layout', 'proximas', 1, 600, '2026-11-03', 0),
+      (12, 'Deploy', 'proximas', 1, 0, '2026-11-08', 0),
+      (13, 'Fotos', 'aguardando', 2, 120, '2026-11-04', 0),
+      (14, 'Solta', 'proximas', NULL, 999, '2026-11-09', 0),
+      (15, 'Velha', 'proximas', 1, 0, '2026-11-11', 1);
   `)
   db = {
     prepare: (sql) => raw.prepare(sql) as unknown as ReturnType<SqliteLike['prepare']>,
@@ -41,13 +42,14 @@ describe('listProjectsQuery', () => {
     expect(site).toMatchObject({
       name: 'Site',
       area_name: 'Carreira',
-      task_count: 3,
+      task_count: 4,
       completed_task_count: 1,
+      open_task_count: 2,
       total_seconds: 4200,
       next_action: 'Deploy',
       next_action_id: 12
     })
-    expect(viagem).toMatchObject({ task_count: 1, completed_task_count: 0, total_seconds: 120 })
+    expect(viagem).toMatchObject({ task_count: 1, open_task_count: 1, total_seconds: 120 })
     expect(viagem.next_action).toBeUndefined()
     expect(vazio).toMatchObject({ task_count: 0, completed_task_count: 0, total_seconds: 0 })
   })

@@ -30,12 +30,13 @@ Dados: `project:list` (todos os status de uma vez) e `area:list`; relê em `task
 
 Nas abas Ativos e Todos, um `Alert` âmbar: "N projetos ativos estão sem próxima ação. Projeto sem
 próxima ação fica parado: defina o próximo passo concreto.", com **Mostrar só esses** (filtro, vira
-**Mostrar todos**). Sem próxima ação = ativo, com tarefa aberta e nenhuma tarefa em Próximas
-(`lacksNextAction`).
+**Mostrar todos**). Sem próxima ação = ativo, com tarefa aberta (não finalizada e não arquivada) e
+nenhuma tarefa em Próximas fora do arquivo (`lacksNextAction`).
 
 ## Card
 
-Grade automática (mínimo 260px). `Card` pequeno e clicável (Enter também abre): ponto da cor, nome,
+Grade automática (mínimo 260px). `Card` pequeno e clicável; o nome é o link (é ele que o teclado
+alcança): ponto da cor, nome,
 status (só na aba Todos) e `⋯`; resultado desejado com `Target`; progresso `feitas/total` com barra
 curta; próxima ação (`CircleArrowRight` na cor de Próximas) ou o chip âmbar "Sem próxima ação";
 área (ou "Sem área") e prazo com `CalendarDays`. A cor do projeto é só o ponto, nunca fundo nem
@@ -76,8 +77,9 @@ Descrição, Área de foco (`Select`) e Cor (as dez cores de `USER_COLORS`, como
 ## Dados
 
 `project:list` usa `listProjectsQuery` (`src/main/projectQueries.ts`, testado): uma consulta com a
-área, `task_count`, `completed_task_count`, `total_seconds` (soma do tempo das tarefas) e a próxima
-ação (`next_action` e `next_action_id`: a tarefa em Próximas mais recente) — no lugar das três
+área, `task_count`, `completed_task_count`, `open_task_count` (sem as arquivadas), `total_seconds`
+(soma do tempo das tarefas) e a próxima ação (`next_action` e `next_action_id`: a tarefa em
+Próximas mais recente, fora do arquivo) — no lugar das três
 consultas por projeto de antes. `project:get` usa a mesma consulta.
 
 ---

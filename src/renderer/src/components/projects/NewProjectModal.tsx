@@ -52,7 +52,10 @@ export function NewProjectModal({
       okText="Criar projeto"
       cancelText="Cancelar"
       onOk={() => void submit()}
-      onCancel={onCancel}
+      onCancel={() => {
+        setDraft(EMPTY)
+        onCancel()
+      }}
       confirmLoading={saving}
       okButtonProps={{ disabled: !draft.name.trim() }}
       destroyOnHidden

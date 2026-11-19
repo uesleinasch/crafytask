@@ -61,10 +61,11 @@ export function NextActionCell({ project }: { project: Project }): React.JSX.Ele
       <Icon
         size={14}
         strokeWidth={1.75}
-        aria-label="Próxima ação"
+        aria-hidden
         style={{ flex: 'none', color: STATUS_COLORS.proximas[mode].fg }}
       />
       <Typography.Text ellipsis style={{ minWidth: 0 }}>
+        <span className="sr-only">Próxima ação: </span>
         {project.next_action}
       </Typography.Text>
     </Flex>

@@ -5,10 +5,13 @@ const PROJECT_SELECT = `
   SELECT p.*, a.name AS area_name,
     COALESCE(s.task_count, 0) AS task_count,
     COALESCE(s.completed_task_count, 0) AS completed_task_count,
+    COALESCE(s.open_task_count, 0) AS open_task_count,
     COALESCE(s.total_seconds, 0) AS total_seconds,
-    (SELECT n.id FROM tasks n WHERE n.project_id = p.id AND n.status = 'proximas'
+    (SELECT n.id FROM tasks n
+      WHERE n.project_id = p.id AND n.status = 'proximas' AND COALESCE(n.is_archived, 0) = 0
       ORDER BY n.updated_at DESC, n.id DESC LIMIT 1) AS next_action_id,
-    (SELECT n.name FROM tasks n WHERE n.project_id = p.id AND n.status = 'proximas'
+    (SELECT n.name FROM tasks n
+      WHERE n.project_id = p.id AND n.status = 'proximas' AND COALESCE(n.is_archived, 0) = 0
       ORDER BY n.updated_at DESC, n.id DESC LIMIT 1) AS next_action
   FROM projects p
   LEFT JOIN areas a ON a.id = p.area_id
@@ -16,6 +19,8 @@ const PROJECT_SELECT = `
     SELECT project_id,
       COUNT(*) AS task_count,
       SUM(CASE WHEN status = 'finalizada' THEN 1 ELSE 0 END) AS completed_task_count,
+      SUM(CASE WHEN status <> 'finalizada' AND COALESCE(is_archived, 0) = 0 THEN 1 ELSE 0 END)
+        AS open_task_count,
       SUM(COALESCE(total_seconds, 0)) AS total_seconds
     FROM tasks
     WHERE project_id IS NOT NULL

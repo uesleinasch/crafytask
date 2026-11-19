@@ -156,17 +156,17 @@ acento.
 
 ### Status do projeto
 
-Uma definição só, importada de `shared/types.ts` e usada em `ProjectsPage`:
+Rótulos em `PROJECT_STATUS_LABELS` (`shared/types.ts`); cores em `PROJECT_STATUS_COLORS`
+(`theme/semantic.ts`), que reaproveita os status de tarefa, e ícones em
+`components/chips/projectStatusMeta.ts`. `ProjectStatusChip` usa a mesma gramática do chip de status
+de tarefa (fundo claro, texto da cor, ícone).
 
-| Status | Rótulo | Cor |
-| --- | --- | --- |
-| `active` | Ativo | `bg-emerald-500` |
-| `someday` | Someday | `bg-teal-500` |
-| `done` | Concluído | `bg-purple-500` |
-| `archived` | Arquivado | `bg-gray-500` |
-
-São pílulas de **cor sólida com texto branco**, diferentes das pílulas de status de tarefa (fundo
-claro + texto escuro + borda). Duas gramáticas de badge no mesmo app.
+| Status | Rótulo | Cor (de) | Ícone |
+| --- | --- | --- | --- |
+| `active` | Ativo | Próximas | `FolderOpen` |
+| `someday` | Someday | Someday | `Lightbulb` |
+| `done` | Concluído | Finalizada | `CircleCheck` |
+| `archived` | Arquivado | Inbox | `Archive` |
 
 ### Nível de energia
 

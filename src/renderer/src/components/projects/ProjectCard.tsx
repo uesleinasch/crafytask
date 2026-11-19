@@ -25,18 +25,7 @@ export function ProjectCard({
   return (
     <Dropdown menu={menu} trigger={['contextMenu']}>
       <div style={{ height: '100%' }}>
-        <Card
-          hoverable
-          size="small"
-          role="link"
-          tabIndex={0}
-          aria-label={`Abrir projeto ${project.name}`}
-          onClick={onOpen}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && e.target === e.currentTarget) onOpen()
-          }}
-          style={{ height: '100%' }}
-        >
+        <Card hoverable size="small" onClick={onOpen} style={{ height: '100%' }}>
           <Flex vertical gap={10}>
             <Flex align="center" gap={8}>
               <span
@@ -49,9 +38,18 @@ export function ProjectCard({
                   background: project.color
                 }}
               />
-              <Typography.Text strong ellipsis style={{ flex: 1, minWidth: 0 }}>
+              <Typography.Link
+                href={`#/project/${project.id}`}
+                ellipsis
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  onOpen()
+                }}
+                style={{ flex: 1, minWidth: 0, color: token.colorText, fontWeight: 600 }}
+              >
                 {project.name}
-              </Typography.Text>
+              </Typography.Link>
               {showStatus && <ProjectStatusChip status={project.status} />}
               <Dropdown menu={menu} trigger={['click']} placement="bottomRight">
                 <Button
@@ -60,7 +58,6 @@ export function ProjectCard({
                   aria-label={`Mais ações de ${project.name}`}
                   icon={<Ellipsis {...icon} />}
                   onClick={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => e.stopPropagation()}
                 />
               </Dropdown>
             </Flex>
@@ -89,9 +86,10 @@ export function ProjectCard({
                   <CalendarDays
                     size={12}
                     strokeWidth={1.75}
-                    aria-label="Prazo"
+                    aria-hidden
                     style={{ color: token.colorTextTertiary }}
                   />
+                  <span className="sr-only">Prazo</span>
                   <ProjectDue project={project} today={today} />
                 </Flex>
               )}
