@@ -80,7 +80,9 @@ export function CalendarGrid({
   const pxPerMin = hourHeight / 60
   const scrollRef = useRef<HTMLDivElement>(null)
   const nowMin = now.getHours() * 60 + now.getMinutes()
-  const columns = `${HOUR_LABEL_WIDTH}px repeat(${days.length}, minmax(${view === 'week' ? 96 : 140}px, 1fr))`
+  const minColumn = view === 'week' ? 96 : 140
+  const columns = `${HOUR_LABEL_WIDTH}px repeat(${days.length}, minmax(${minColumn}px, 1fr))`
+  const gridMinWidth = HOUR_LABEL_WIDTH + days.length * minColumn
   const tasksById = useMemo(() => new Map(data.tasks.map((t) => [t.id, t])), [data.tasks])
 
   const scrollKey = `${view}:${days[0]}`
@@ -261,7 +263,7 @@ export function CalendarGrid({
   return (
     <div style={{ position: 'relative', height: '100%' }}>
       <div className="ct-calscroll" ref={scrollRef} style={cssVars}>
-        <div className="ct-calsticky">
+        <div className="ct-calsticky" style={{ minWidth: gridMinWidth }}>
           <div className="ct-calhead" style={{ gridTemplateColumns: columns }}>
             <span />
             {days.map((d) => {
@@ -344,7 +346,11 @@ export function CalendarGrid({
         </div>
         <div
           className="ct-calgrid"
-          style={{ gridTemplateColumns: columns, height: (h1 - h0) * hourHeight }}
+          style={{
+            gridTemplateColumns: columns,
+            minWidth: gridMinWidth,
+            height: (h1 - h0) * hourHeight
+          }}
         >
           <div style={{ position: 'relative' }}>
             {Array.from({ length: h1 - h0 - 1 }, (_, i) => i + 1).map((i) => (
