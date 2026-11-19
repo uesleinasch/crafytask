@@ -216,8 +216,11 @@ painel (`components/terminal/`, montado em `App.tsx`) usa `@xterm/xterm`; o PTY 
 main. `terminalSessions.ts` é puro e testado (sessões, ring buffer de ~200 KB, coalescência de
 output a cada 10 ms, `seq` por envio para o replay não duplicar); `terminal.ts` é o lado Electron e
 importa `node-pty` sob demanda, para um binário com ABI errada degradar só o painel. As sessões
-morrem no `before-quit` e quando a task é apagada: `task:delete`, `task:bulkDelete` e o
-`delete_tasks` do MCP (`afterTasksDeleted`) chamam `disposeTerminalsForTasks`. Shell e "timer no
+morrem no `before-quit` e quando o dono é apagado. A sessão tem um dono (`TerminalOwner`: task ou
+projeto; a de projeto abre em `projects.working_dir`, pelo botão no cabeçalho do projeto):
+`task:delete`, `task:bulkDelete` e o `delete_tasks` do MCP (`afterTasksDeleted`) chamam
+`disposeTerminalsForTasks`; `project:delete` e o `manage_structure` do MCP (`afterProjectDeleted`)
+chamam `disposeTerminalsForProjects`. Shell e "timer no
 primeiro comando" ficam em `localStorage`. Ver `docs/ui/16-terminal.md`.
 
 ## Notion sync (src/main/notion.ts)

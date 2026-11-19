@@ -1,6 +1,6 @@
 import { BrowserWindow, dialog, ipcMain } from 'electron'
 import { accessSync, constants, statSync } from 'fs'
-import type { TerminalCreateResult, TerminalTabCustomization } from '@shared/types'
+import type { TerminalCreateResult, TerminalOwner, TerminalTabCustomization } from '@shared/types'
 import { effectiveWorkingDir } from '@shared/workingDir'
 import { getProject, getTask, setTaskWorkspace, updateProject } from './database'
 import { TerminalManager, resolveShell, type SpawnPty } from './terminalSessions'
@@ -59,22 +59,49 @@ async function getManager(getWindow: () => BrowserWindow | null): Promise<Termin
   }
 }
 
+function resolveOwner(
+  owner: TerminalOwner
+): { cwd: string | null; name: string; startCommand: string | null } | null {
+  if (owner?.kind === 'project') {
+    const project = getProject(owner.id)
+    if (!project) return null
+    return { cwd: project.working_dir ?? null, name: project.name, startCommand: null }
+  }
+  if (owner?.kind !== 'task') return null
+  const task = getTask(owner.id)
+  if (!task) return null
+  return {
+    cwd: effectiveWorkingDir(task).dir,
+    name: task.name,
+    startCommand: task.start_command ?? null
+  }
+}
+
 export function registerTerminalIpc(getWindow: () => BrowserWindow | null): void {
   ipcMain.handle(
     'terminal:create',
     async (
       _,
-      taskId: number,
+      owner: TerminalOwner,
       options: { shell?: string | null; cols?: number; rows?: number }
     ): Promise<TerminalCreateResult> => {
-      const task = getTask(taskId)
-      if (!task) return { ok: false, reason: 'no-task', error: 'Task não encontrada.' }
-      const { dir: cwd } = effectiveWorkingDir(task)
+      const target = resolveOwner(owner)
+      if (!target) {
+        return {
+          ok: false,
+          reason: 'not-found',
+          error: owner?.kind === 'project' ? 'Projeto não encontrado.' : 'Task não encontrada.'
+        }
+      }
+      const { cwd, name, startCommand } = target
       if (!cwd) {
         return {
           ok: false,
           reason: 'no-dir',
-          error: 'Defina o diretório de trabalho da task ou do projeto.'
+          error:
+            owner.kind === 'project'
+              ? 'Defina o diretório de trabalho do projeto.'
+              : 'Defina o diretório de trabalho da task ou do projeto.'
         }
       }
       if (!isDirectory(cwd)) {
@@ -100,11 +127,11 @@ export function registerTerminalIpc(getWindow: () => BrowserWindow | null): void
       )
       try {
         const session = terminals.create({
-          taskId,
-          taskName: task.name,
+          owner: { kind: owner.kind, id: owner.id },
+          ownerName: name,
           cwd,
           shell,
-          startCommand: task.start_command,
+          startCommand,
           cols: options.cols,
           rows: options.rows
         })
@@ -168,7 +195,11 @@ export function registerTerminalIpc(getWindow: () => BrowserWindow | null): void
 }
 
 export function disposeTerminalsForTasks(taskIds: number[]): void {
-  manager?.disposeForTasks(taskIds)
+  manager?.disposeFor('task', taskIds)
+}
+
+export function disposeTerminalsForProjects(projectIds: number[]): void {
+  manager?.disposeFor('project', projectIds)
 }
 
 export function killAllTerminals(): void {

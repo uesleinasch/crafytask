@@ -4,6 +4,7 @@ import type {
   GcalStatus,
   TerminalBuffer,
   TerminalCreateResult,
+  TerminalOwner,
   TerminalSession,
   TerminalTabCustomization,
   JiraBoardSummary,
@@ -556,9 +557,9 @@ const api = {
   mcpRegenerateToken: (): Promise<McpStatus> => ipcRenderer.invoke('mcp:regenerateToken'),
 
   terminalCreate: (
-    taskId: number,
+    owner: TerminalOwner,
     options: { shell?: string | null; cols?: number; rows?: number }
-  ): Promise<TerminalCreateResult> => ipcRenderer.invoke('terminal:create', taskId, options),
+  ): Promise<TerminalCreateResult> => ipcRenderer.invoke('terminal:create', owner, options),
   terminalWrite: (id: string, data: string): Promise<void> =>
     ipcRenderer.invoke('terminal:write', id, data),
   terminalResize: (id: string, cols: number, rows: number): Promise<void> =>

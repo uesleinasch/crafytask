@@ -14,7 +14,7 @@ import { DeleteConfirmDialog } from '@renderer/components/DeleteConfirmDialog'
 import { usePersistedState } from '@renderer/hooks/usePersistedState'
 import { TERMINAL_HEIGHT_KEY } from '@renderer/lib/terminalPrefs'
 import { cn } from '@renderer/lib/utils'
-import { useTerminalStore } from '@renderer/stores/terminalStore'
+import { sameOwner, useTerminalStore } from '@renderer/stores/terminalStore'
 import { groupOf } from '@renderer/stores/terminalPanes'
 import { TAB_ICON_COMPONENTS } from './tabIcons'
 import { TerminalSessionMenu } from './TerminalSessionMenu'
@@ -32,12 +32,13 @@ function clampHeight(height: number): number {
 
 function defaultTabLabels(sessions: TerminalSession[]): Map<string, string> {
   const labels = new Map<string, string>()
-  const seen = new Map<number, number>()
+  const seen = new Map<string, number>()
   for (const session of sessions) {
-    const count = sessions.filter((s) => s.taskId === session.taskId).length
-    const index = (seen.get(session.taskId) ?? 0) + 1
-    seen.set(session.taskId, index)
-    labels.set(session.id, count > 1 ? `${session.taskName} (${index})` : session.taskName)
+    const key = `${session.owner.kind}:${session.owner.id}`
+    const count = sessions.filter((s) => sameOwner(s.owner, session.owner)).length
+    const index = (seen.get(key) ?? 0) + 1
+    seen.set(key, index)
+    labels.set(session.id, count > 1 ? `${session.ownerName} (${index})` : session.ownerName)
   }
   return labels
 }
@@ -157,7 +158,7 @@ export function TerminalPanel(): React.JSX.Element | null {
   const defaultLabels = useMemo(() => defaultTabLabels(sessions), [sessions])
   const byId = useMemo(() => new Map(sessions.map((s) => [s.id, s])), [sessions])
   const labelOf = (session: TerminalSession): string =>
-    session.title ?? defaultLabels.get(session.id) ?? session.taskName
+    session.title ?? defaultLabels.get(session.id) ?? session.ownerName
 
   const finishRename = (session: TerminalSession, value: string | null): void => {
     setEditingId(null)
@@ -283,8 +284,12 @@ export function TerminalPanel(): React.JSX.Element | null {
         )}
         <button
           type="button"
-          title="Novo terminal para esta task"
-          onClick={() => void useTerminalStore.getState().createSession(active.taskId)}
+          title={
+            active.owner.kind === 'project'
+              ? 'Novo terminal para este projeto'
+              : 'Novo terminal para esta task'
+          }
+          onClick={() => void useTerminalStore.getState().createSession(active.owner)}
           className={iconButton}
         >
           <Plus size={14} />
@@ -292,7 +297,7 @@ export function TerminalPanel(): React.JSX.Element | null {
         <button
           type="button"
           title="Dividir: novo terminal ao lado"
-          onClick={() => void useTerminalStore.getState().splitNew(active.taskId)}
+          onClick={() => void useTerminalStore.getState().splitNew(active.owner)}
           className={iconButton}
         >
           <Columns2 size={14} />
@@ -450,7 +455,7 @@ export function TerminalPanel(): React.JSX.Element | null {
           setPendingClose(null)
         }}
         title="Encerrar terminal?"
-        description="Há um processo rodando neste terminal. Encerrar mata o processo; o diretório de trabalho continua vinculado à task."
+        description={`Há um processo rodando neste terminal. Encerrar mata o processo; o diretório de trabalho continua vinculado ${pendingClose?.owner.kind === 'project' ? 'ao projeto' : 'à task'}.`}
         confirmLabel="Encerrar"
       />
     </section>

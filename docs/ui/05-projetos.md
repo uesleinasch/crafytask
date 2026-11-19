@@ -114,7 +114,9 @@ em `components/tasks/TaskListView.tsx`, o mesmo miolo da lista de tarefas. Dados
   e **descrição** (`TextArea` sem borda, grava ao sair).
 - **`⋯`:** Copiar nome · Arquivar / Reativar · Excluir projeto… (confirma e avisa que as tarefas
   ficam sem projeto; depois volta para `/projects`).
-- O botão de terminal do protótipo ainda não existe: o terminal é por tarefa (subtarefa à parte).
+- **Terminal** (`SquareTerminal`, à esquerda do `⋯`): só com diretório de trabalho; tooltip "Terminal
+  em {diretório}". Abre a sessão do projeto no painel do terminal, ou foca a que já existe; com ela em
+  foco, esconde o painel. Ver [16-terminal.md](16-terminal.md).
 
 ## Pílulas (`PropPill`, as mesmas do detalhe da tarefa)
 

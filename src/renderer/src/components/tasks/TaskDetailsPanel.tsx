@@ -14,7 +14,7 @@ import type { Task } from '@shared/types'
 import { effectiveWorkingDir } from '@shared/workingDir'
 import { JiraStatusSelect } from '@renderer/components/jira/JiraStatusSelect'
 import { Field, Section } from '@renderer/components/shell/SectionHeader'
-import { useTerminalStore } from '@renderer/stores/terminalStore'
+import { sameOwner, useTerminalStore } from '@renderer/stores/terminalStore'
 
 const ICON = { size: 14, strokeWidth: 1.75, 'aria-hidden': true } as const
 
@@ -208,10 +208,11 @@ function EnvironmentSection({ task, refreshTask }: TaskDetailsPanelProps): React
   const openTerminal = async (): Promise<void> => {
     if (!dir && !(await pick())) return
     const state = useTerminalStore.getState()
+    const owner = { kind: 'task' as const, id: task.id }
     const showing =
-      state.open && state.sessions.find((s) => s.id === state.activeId)?.taskId === task.id
+      state.open && sameOwner(state.sessions.find((s) => s.id === state.activeId)?.owner, owner)
     if (showing) return
-    await attempt(() => state.toggleForTask(task.id), 'Não foi possível abrir o terminal')
+    await attempt(() => state.toggleFor(owner), 'Não foi possível abrir o terminal')
   }
 
   return (

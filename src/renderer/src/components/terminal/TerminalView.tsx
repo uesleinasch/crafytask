@@ -41,15 +41,16 @@ function exitMessage(exitCode: number): string {
 function startTimerFromTerminal(session: TerminalSession): void {
   if (timerTriggered.has(session.id)) return
   timerTriggered.add(session.id)
-  if (!readTerminalAutoTimer()) return
+  if (!readTerminalAutoTimer() || session.owner.kind !== 'task') return
+  const taskId = session.owner.id
   const timers = useTimerStore.getState()
-  if (timers.timers[session.taskId]) return
-  void timers.startTimer(session.taskId).then(() => {
-    toast.success(`Timer iniciado: ${session.taskName}`, {
+  if (timers.timers[taskId]) return
+  void timers.startTimer(taskId).then(() => {
+    toast.success(`Timer iniciado: ${session.ownerName}`, {
       description: 'O primeiro comando no terminal começou a contar o tempo.',
       action: {
         label: 'Parar',
-        onClick: () => void useTimerStore.getState().stopTimer(session.taskId)
+        onClick: () => void useTimerStore.getState().stopTimer(taskId)
       }
     })
   })

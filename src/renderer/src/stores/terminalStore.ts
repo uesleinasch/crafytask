@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { TerminalSession, TerminalTabCustomization } from '@shared/types'
+import type { TerminalOwner, TerminalSession, TerminalTabCustomization } from '@shared/types'
 import { toast } from '@renderer/components/ui/sonner'
 import { readTerminalShell } from '@renderer/lib/terminalPrefs'
 import {
@@ -23,10 +23,10 @@ interface TerminalState extends PaneLayout {
   toggle: () => void
   toggleMaximized: () => void
   activate: (id: string) => void
-  splitNew: (taskId: number) => Promise<void>
+  splitNew: (owner: TerminalOwner) => Promise<void>
   detach: (id: string) => void
-  createSession: (taskId: number) => Promise<boolean>
-  toggleForTask: (taskId: number) => Promise<boolean>
+  createSession: (owner: TerminalOwner) => Promise<boolean>
+  toggleFor: (owner: TerminalOwner) => Promise<boolean>
   close: (id: string) => Promise<void>
   restart: (id: string) => Promise<void>
   customize: (id: string, patch: TerminalTabCustomization) => Promise<void>
@@ -34,8 +34,12 @@ interface TerminalState extends PaneLayout {
   forget: (id: string) => void
 }
 
-async function spawn(taskId: number): Promise<TerminalSession | null> {
-  const result = await window.api.terminalCreate(taskId, { shell: readTerminalShell() })
+export function sameOwner(a: TerminalOwner | undefined, b: TerminalOwner): boolean {
+  return a?.kind === b.kind && a.id === b.id
+}
+
+async function spawn(owner: TerminalOwner): Promise<TerminalSession | null> {
+  const result = await window.api.terminalCreate(owner, { shell: readTerminalShell() })
   if (!result.ok) {
     toast.error(result.error)
     return null
@@ -75,8 +79,8 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
 
   activate: (id) => set((state) => ({ ...activate(layoutOf(state), id), open: true })),
 
-  splitNew: async (taskId) => {
-    const session = await spawn(taskId)
+  splitNew: async (owner) => {
+    const session = await spawn(owner)
     if (!session) return
     set((state) => ({
       sessions: [...state.sessions, session],
@@ -87,8 +91,8 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
 
   detach: (id) => set((state) => detachSession(layoutOf(state), id)),
 
-  createSession: async (taskId) => {
-    const session = await spawn(taskId)
+  createSession: async (owner) => {
+    const session = await spawn(owner)
     if (!session) return false
     set((state) => ({
       sessions: [...state.sessions, session],
@@ -98,19 +102,19 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
     return true
   },
 
-  toggleForTask: async (taskId) => {
+  toggleFor: async (owner) => {
     const { sessions, activeId, open } = get()
     const active = sessions.find((s) => s.id === activeId)
-    if (open && active?.taskId === taskId) {
+    if (open && sameOwner(active?.owner, owner)) {
       set({ open: false, maximized: false })
       return true
     }
-    const existing = sessions.find((s) => s.taskId === taskId)
+    const existing = sessions.find((s) => sameOwner(s.owner, owner))
     if (existing) {
       get().activate(existing.id)
       return true
     }
-    return get().createSession(taskId)
+    return get().createSession(owner)
   },
 
   close: async (id) => {
@@ -121,7 +125,7 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
   restart: async (id) => {
     const old = get().sessions.find((s) => s.id === id)
     if (!old) return
-    const session = await spawn(old.taskId)
+    const session = await spawn(old.owner)
     if (!session) return
     set((state) => ({
       sessions: [...state.sessions.filter((s) => s.id !== id), session],

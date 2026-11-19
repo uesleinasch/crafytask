@@ -1122,6 +1122,16 @@
       }
     },
     {
+      "id": "F5.22",
+      "fase": "F5",
+      "titulo": "Terminal do projeto: botão no cabeçalho e sessão por projeto",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/{renderer/src/components/projects/ProjectHeader.tsx,renderer/src/components/terminal/TerminalProjectButton.tsx,main/terminal.ts}",
+        "padroes": ["TerminalProjectButton", "Terminal em ", "kind: 'project'", "disposeTerminalsForProjects"]
+      }
+    },
+    {
       "id": "F5.13",
       "fase": "F5",
       "titulo": "Revisão: cada passo resolve ali mesmo, resumo ao fechar e conclusão com pulados conferidos",

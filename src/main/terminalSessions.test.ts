@@ -68,7 +68,12 @@ function setup(): {
   return { manager, ptys, spawn, events }
 }
 
-const input = { taskId: 7, taskName: 'Deploy', cwd: '/repo', shell: '/bin/bash' }
+const input = {
+  owner: { kind: 'task' as const, id: 7 },
+  ownerName: 'Deploy',
+  cwd: '/repo',
+  shell: '/bin/bash'
+}
 
 describe('RingBuffer', () => {
   it('acumula e corta pelo início ao passar do teto', () => {
@@ -95,7 +100,12 @@ describe('TerminalManager', () => {
       expect.objectContaining({ cwd: '/repo', env: expect.objectContaining({ PATH: '/usr/bin' }) })
     )
     expect(ptys[0].written).toEqual(['npm run dev\r'])
-    expect(session).toMatchObject({ id: '7-1', taskId: 7, busy: false, exitCode: null })
+    expect(session).toMatchObject({
+      id: 't7-1',
+      owner: { kind: 'task', id: 7 },
+      busy: false,
+      exitCode: null
+    })
   })
 
   it('agrupa rajadas de output num único envio', () => {
@@ -180,13 +190,21 @@ describe('TerminalManager', () => {
     expect(ptys[0].resized).toEqual([])
   })
 
-  it('disposeForTasks só derruba as sessões das tasks informadas', () => {
+  it('disposeFor só derruba as sessões dos donos informados', () => {
     const { manager } = setup()
     manager.create(input)
     manager.create(input)
-    const other = manager.create({ ...input, taskId: 9 })
+    const other = manager.create({ ...input, owner: { kind: 'task', id: 9 } })
+    const project = manager.create({
+      ...input,
+      owner: { kind: 'project', id: 7 },
+      ownerName: 'Site'
+    })
+    expect(project.id).toBe('p7-4')
 
-    manager.disposeForTasks([7])
+    manager.disposeFor('task', [7])
+    expect(manager.list().map((s) => s.id)).toEqual([other.id, project.id])
+    manager.disposeFor('project', [7])
     expect(manager.list().map((s) => s.id)).toEqual([other.id])
   })
 
@@ -217,7 +235,7 @@ describe('TerminalManager', () => {
   it('killAll derruba tudo', () => {
     const { manager, ptys } = setup()
     manager.create(input)
-    manager.create({ ...input, taskId: 9 })
+    manager.create({ ...input, owner: { kind: 'task', id: 9 } })
     manager.killAll()
     expect(manager.list()).toEqual([])
     expect(ptys.every((pty) => pty.killed === 1)).toBe(true)

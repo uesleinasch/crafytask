@@ -3,6 +3,7 @@ import type {
   GcalStatus,
   TerminalBuffer,
   TerminalCreateResult,
+  TerminalOwner,
   TerminalSession,
   TerminalTabCustomization,
   JiraBoardSummary,
@@ -407,7 +408,7 @@ interface API {
 
   // Terminal embutido
   terminalCreate: (
-    taskId: number,
+    owner: TerminalOwner,
     options: { shell?: string | null; cols?: number; rows?: number }
   ) => Promise<TerminalCreateResult>
   terminalWrite: (id: string, data: string) => Promise<void>
