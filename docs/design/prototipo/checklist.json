@@ -1028,7 +1028,7 @@
       "titulo": "Revisão semanal como fluxo guiado (Steps, pular, retomar)",
       "check": {
         "tipo": "contem-todos",
-        "arquivos": "src/renderer/src/pages/WeeklyReviewPage.tsx",
+        "arquivos": "src/renderer/src/{pages/WeeklyReviewPage.tsx,components/review/**/*.tsx}",
         "padroes": ["<Steps", "skipped", "Retomar", "Pular"]
       }
     },
@@ -1047,7 +1047,7 @@
       "titulo": "Revisão: entrada com um primário, ritmo, HealthCard e histórico em Drawer",
       "check": {
         "tipo": "contem-todos",
-        "arquivos": "src/renderer/src/pages/WeeklyReviewPage.tsx",
+        "arquivos": "src/renderer/src/{pages/WeeklyReviewPage.tsx,components/review/**/*.tsx}",
         "padroes": ["Começar revisão", "Ritmo", "HealthCard", "<Drawer"]
       }
     },

@@ -7,83 +7,88 @@
 Conduzir o ritual que, no GTD, mantém o sistema confiável: um checklist de 10 passos, com indicadores
 objetivos de saúde do sistema ao lado, registrado no histórico ao final.
 
-A tela tem **dois estados mutuamente exclusivos**: com revisão em andamento e sem.
-
-## Cabeçalho
-
-`← Voltar` · divisor · `ClipboardCheck` · "Revisão Semanal". À direita, o botão **Iniciar Revisão**
-(`bg-emerald-600`, ícone `Play`) — que **desaparece** quando já existe revisão em andamento, deixando
-o lado direito vazio.
-
-Corpo em `max-w-3xl mx-auto`.
+A tela tem **dois estados**: a entrada (sem revisão aberta, ou com uma pausada) e a revisão em
+andamento. Sem cabeçalho próprio: o título vem do Header do shell.
 
 ---
 
-## Estado A — nenhuma revisão em andamento
+## Estado A — entrada
 
-### 1. Cartão de convite
+`components/review/ReviewEntry.tsx`, com os cálculos em `reviewEntryState.ts` (puro, testado), dentro de
+`PageContainer`. Aparece sem revisão aberta e também com uma aberta que não foi retomada nesta
+visita (ao entrar na tela, ao pausar).
 
-`bg-blue-50 border-blue-200`, centralizado:
+### 1. Cartão da revisão (`xl` 15/24)
 
-- `ClipboardCheck` de 48px em azul;
-- título "Revisão Semanal GTD";
-- parágrafo: *"A Revisão Semanal é o hábito que mantém o sistema GTD confiável. Reserve um tempo para
-  revisar suas listas, projetos e compromissos."*;
-- botão **Iniciar Revisão Semanal** (`bg-blue-600`).
+- `Alert` informativo (ícone `CirclePause`) quando há revisão aberta: "**Revisão em andamento** ·
+  N de 10 passos · próximo: …", com **Retomar** (primário) e **Descartar** (texto; `modal.confirm`
+  avisa que os passos se perdem e o que mudou nas tarefas continua mudado; `review:discard`).
+- Sobrescrito "Revisão semanal" e o título pelos dias desde a última concluída
+  (`daysSinceLastReview`): "Nenhuma revisão ainda", "Em dia: a última foi hoje", "Em dia: a última
+  foi há N dias" (até 7) ou "A última foi há N dias", e aí o texto avisa que passou de uma semana. Sempre "Leva uns 45 minutos e
+  dá para pausar no meio."
+- As três fases (`REVIEW_PHASES`: Clarear, Atualizar, Criar) em `.ct-rvphases`, com número, nome,
+  resumo e quantos passos.
+- **Começar revisão** (primário, grande, `CirclePlay`): o único botão de começar da tela. Some
+  quando há revisão aberta (aí o caminho é Retomar).
 
-Note que o mesmo comando aparece duas vezes na tela, em duas cores diferentes: esmeralda no
-cabeçalho, azul no cartão.
+### 2. Ritmo (`xl` 9/24)
 
-### 2. Saúde do Sistema
+As 12 últimas semanas (início pela preferência do calendário, segunda por padrão) em quadrados
+`.ct-rvweek`: com revisão concluída, tom 4 da escala sequencial de gráfico e um `Check`; sem, tom 0.
+Cada quadrado é focável, com tooltip e rótulo acessível (semana, data e duração; o tooltip abre também no foco). Embaixo, "N de 12
+semanas com revisão" e a média de minutos das últimas 8. Sem sequência e sem vermelho por semana
+perdida.
 
-Título de seção `text-sm font-bold uppercase tracking-wider text-slate-400`, seguido da grade
-`HealthGrid` com os seis `HealthCard` da revisão (ver abaixo).
+### 3. Como está o sistema
 
-### 3. Histórico de Revisões
+`Section` com os seis `HealthCard` da revisão (ver abaixo); cada cartão abre o destino filtrado.
 
-Título com ícone `History`. Lista só as revisões **concluídas**:
+### 4. Histórico
 
-- data e hora de início por extenso (`quinta-feira, 28 de agosto de 2026, 09:15`);
-- notas em `line-clamp-1`, se houver;
-- `{feitos}/{total} passos` (revisões anteriores à F5-c2 contam sobre 8);
-- badge verde **"Inbox Zero"** quando `inbox_cleared`;
-- `CheckCircle2` esmeralda à direita.
-
-Não há paginação nem filtro — o histórico cresce indefinidamente.
+`Section` com "N revisões" e uma `Table` paginada (6 por página) só com as concluídas: data e hora
+de início (`parseSqlTime`, no fuso local), duração, passos `feitos/total` (· N pulados, com tooltip
+dos pulados), Inbox zero (chip com as cores de Executando, a partir de `md`) e notas (a partir de
+`lg`). A linha (focável, rótulo "Abrir revisão de …"), por clique, Enter ou Espaço, abre um `Drawer` (420px, tela cheia abaixo de `md`) com início,
+duração, Inbox, os passos de cada fase (`CircleCheck` feito, `CircleMinus` pulado; numa
+revisão sobre 8, `mind` e `past` não aparecem) e as notas.
 
 ---
 
 ## Estado B — revisão em andamento
+
+Até a F5-c4 trocar este estado pelo fluxo guiado, ele mantém o checklist antigo. Entra-se por
+Começar revisão ou Retomar.
 
 ### 1. Banner de progresso
 
 `bg-emerald-50 border-emerald-200`:
 
 - esquerda: "Revisão em andamento" + "Iniciada em {data por extenso}";
+- **Pausar** (grava as notas digitadas e volta à entrada, com o `Alert` de retomar);
 - direita: `{feitos}/{total}` em `text-lg font-bold` + "itens concluídos";
 - abaixo, barra de 8px `bg-emerald-500` com a fração concluída.
 
 ### 2. Saúde do Sistema
 
-Os mesmos seis `HealthCard` do estado A, agora **sem título de seção** — aparecem soltos entre o
-banner e o checklist.
+Os mesmos seis `HealthCard` da entrada, **sem título de seção**, entre o banner e o checklist.
 
 ### 3. Checklist
 
-Título "Checklist da Revisão". Dez botões de largura total, cada um alternando entre feito e pendente:
+Título "Checklist da Revisão". Rótulos de `REVIEW_STEP_LABELS`, os mesmos da entrada. Dez botões de largura total, cada um alternando entre feito e pendente:
 
 | # | id | Rótulo | Ícone | Descrição |
 | --- | --- | --- | --- | --- |
 | 1 | `collect` | Coletar itens soltos | `Inbox` | Reúna papéis, recibos, notas e pensamentos que ficaram fora do sistema. |
-| 2 | `inbox` | Processar Inbox | `ClipboardCheck` | Alcance Inbox Zero — classifique cada item: ação, projeto, referência ou lixo. |
+| 2 | `inbox` | Processar o Inbox | `ClipboardCheck` | Alcance Inbox Zero — classifique cada item: ação, projeto, referência ou lixo. |
 | 3 | `mind` | Esvaziar a cabeça | `Cloud` | O que ainda está ocupando sua cabeça? Anote tudo o que aparecer. |
-| 4 | `next` | Revisar Próximas Ações | `Calendar` | As próximas ações ainda são relevantes? Alguma pode ser concluída ou removida? |
+| 4 | `next` | Revisar próximas ações | `Calendar` | As próximas ações ainda são relevantes? Alguma pode ser concluída ou removida? |
 | 5 | `past` | Olhar a semana que passou | `History` | Reuniões, sessões e entregas dos últimos 7 dias geraram alguma ação? |
-| 6 | `upcoming` | Revisar Calendário | `Clock` | O que vem nas próximas duas semanas? Precisa preparar algo? |
-| 7 | `waiting` | Revisar Aguardando | `Hourglass` | Alguém respondeu? Precisa fazer follow-up em algo pendente? |
-| 8 | `projects` | Revisar Projetos | `FolderKanban` | Cada projeto ativo tem progresso? Existe próxima ação definida? |
-| 9 | `someday` | Revisar Someday/Maybe | `Lightbulb` | Algum item está pronto para ser ativado? Algum pode ser descartado? |
-| 10 | `creative` | Pensamento Criativo | `Sparkles` | Que mais precisa de atenção? Novos projetos ou ideias? |
+| 6 | `upcoming` | Olhar as próximas duas semanas | `Clock` | O que vem nas próximas duas semanas? Precisa preparar algo? |
+| 7 | `waiting` | Revisar aguardando | `Hourglass` | Alguém respondeu? Precisa fazer follow-up em algo pendente? |
+| 8 | `projects` | Revisar projetos | `FolderKanban` | Cada projeto ativo tem progresso? Existe próxima ação definida? |
+| 9 | `someday` | Revisar someday | `Lightbulb` | Algum item está pronto para ser ativado? Algum pode ser descartado? |
+| 10 | `creative` | Pensar adiante | `Sparkles` | Que mais precisa de atenção? Novos projetos ou ideias? |
 
 Cada item:
 - `CheckCircle2` esmeralda quando marcado, `Circle` cinza quando não;
