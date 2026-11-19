@@ -649,10 +649,15 @@ export const DEFAULT_CONTEXTS = [
   { name: '@escritório', icon: '🏢', color: '#6366f1' }
 ]
 
+export interface TerminalOwner {
+  kind: 'task' | 'project'
+  id: number
+}
+
 export interface TerminalSession {
   id: string
-  taskId: number
-  taskName: string
+  owner: TerminalOwner
+  ownerName: string
   cwd: string
   shell: string
   title: string | null
@@ -675,7 +680,7 @@ export interface TerminalBuffer {
 
 export type TerminalCreateResult =
   | { ok: true; session: TerminalSession; shellFallback: boolean }
-  | { ok: false; error: string; reason: 'no-task' | 'no-dir' | 'bad-dir' | 'pty-unavailable' }
+  | { ok: false; error: string; reason: 'not-found' | 'no-dir' | 'bad-dir' | 'pty-unavailable' }
 
 // ===================== CADERNOS =====================
 

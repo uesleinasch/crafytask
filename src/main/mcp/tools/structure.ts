@@ -36,7 +36,7 @@ import {
   updateProject,
   updateTag
 } from '../../database'
-import { afterTagChange, broadcastRefresh } from '../effects'
+import { afterProjectDeleted, afterTagChange, broadcastRefresh } from '../effects'
 import { fail, ok } from '../reply'
 import { resolveByName } from '../resolve'
 import type { ToolContext } from '../toolContext'
@@ -567,6 +567,7 @@ export function registerStructureTools(server: McpServer, ctx: ToolContext): voi
       switch (args.entity) {
         case 'project':
           deleteProject(targetId)
+          afterProjectDeleted(targetId)
           break
         case 'context':
           deleteContext(targetId)

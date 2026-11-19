@@ -1,4 +1,9 @@
-import type { TerminalBuffer, TerminalSession, TerminalTabCustomization } from '@shared/types'
+import type {
+  TerminalBuffer,
+  TerminalOwner,
+  TerminalSession,
+  TerminalTabCustomization
+} from '@shared/types'
 import { normalizeTabColor, normalizeTabIcon } from '@shared/terminalTab'
 
 export interface PtyLike {
@@ -31,8 +36,8 @@ export interface TerminalManagerDeps {
 }
 
 export interface CreateSessionInput {
-  taskId: number
-  taskName: string
+  owner: TerminalOwner
+  ownerName: string
   cwd: string
   shell: string
   startCommand?: string | null
@@ -106,7 +111,7 @@ export class TerminalManager {
   }
 
   create(input: CreateSessionInput): TerminalSession {
-    const id = `${input.taskId}-${++this.counter}`
+    const id = `${input.owner.kind === 'task' ? 't' : 'p'}${input.owner.id}-${++this.counter}`
     const pty = this.deps.spawn(input.shell, [], {
       name: 'xterm-256color',
       cwd: input.cwd,
@@ -117,8 +122,8 @@ export class TerminalManager {
     const session: Session = {
       info: {
         id,
-        taskId: input.taskId,
-        taskName: input.taskName,
+        owner: { ...input.owner },
+        ownerName: input.ownerName,
         cwd: input.cwd,
         shell: input.shell,
         title: null,
@@ -195,10 +200,12 @@ export class TerminalManager {
     this.deps.events.removed(id)
   }
 
-  disposeForTasks(taskIds: number[]): void {
-    const ids = new Set(taskIds)
+  disposeFor(kind: TerminalOwner['kind'], ownerIds: number[]): void {
+    const ids = new Set(ownerIds)
     for (const session of [...this.sessions.values()]) {
-      if (ids.has(session.info.taskId)) this.dispose(session.info.id)
+      if (session.info.owner.kind === kind && ids.has(session.info.owner.id)) {
+        this.dispose(session.info.id)
+      }
     }
   }
 

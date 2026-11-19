@@ -222,7 +222,12 @@ import { readMcpConfig, writeMcpConfig } from './mcp/store'
 import { isMcpRunning, startMcpServer, stopMcpServer } from './mcp/transport'
 import { generateToken } from './mcp/config'
 import { registerWriteEffects } from './mcp/effects'
-import { disposeTerminalsForTasks, killAllTerminals, registerTerminalIpc } from './terminal'
+import {
+  disposeTerminalsForProjects,
+  disposeTerminalsForTasks,
+  killAllTerminals,
+  registerTerminalIpc
+} from './terminal'
 import { registerNotebookIpc } from './notebookIpc'
 import { resolveUserDataOverride } from './devUserData'
 import type {
@@ -1068,7 +1073,10 @@ function setupIpcHandlers(): void {
   ipcMain.handle('project:update', (_, id: number, data: UpdateProjectInput) =>
     updateProject(id, data)
   )
-  ipcMain.handle('project:delete', (_, id: number) => deleteProject(id))
+  ipcMain.handle('project:delete', (_, id: number) => {
+    deleteProject(id)
+    disposeTerminalsForProjects([id])
+  })
   ipcMain.handle('project:getTasks', (_, projectId: number) => getProjectTasks(projectId))
 
   // ===================== CONTEXTS =====================
@@ -1417,7 +1425,8 @@ app.whenReady().then(() => {
     autoSync: (id) => autoSyncTask(id),
     syncTagChange: (ids) => syncTasksAfterTagChange(ids),
     syncCalendar: (ids) => pushToGoogle(ids),
-    disposeTerminals: (ids) => disposeTerminalsForTasks(ids)
+    disposeTerminals: (ids) => disposeTerminalsForTasks(ids),
+    disposeProjectTerminals: (ids) => disposeTerminalsForProjects(ids)
   })
 
   // Nenhuma falha do MCP pode impedir createWindow(): esta promise não tem .catch.

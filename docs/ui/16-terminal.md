@@ -1,6 +1,6 @@
 # Terminal embutido
 
-Painel de terminal no rodapé da janela principal, por task, no estilo do VS Code. Cada task pode
+Painel de terminal no rodapé da janela principal, por task ou por projeto, no estilo do VS Code. Cada task pode
 ter um **diretório de trabalho** (`tasks.working_dir`) e um **comando inicial**
 (`tasks.start_command`); o terminal abre nessa pasta e digita o comando.
 
@@ -11,10 +11,19 @@ diretório, o botão `↶` limpa o da task e volta a herdar. A regra é `effecti
 (`shared/workingDir.ts`, testada), usada no renderer e no `terminal:create`. O comando inicial
 continua sendo só da task.
 
+Toda sessão tem um **dono** (`TerminalOwner = { kind: 'task' | 'project', id }`): `terminal:create`
+recebe o dono, e a sessão de projeto abre em `projects.working_dir`, sem comando inicial. O id da
+sessão leva o tipo (`t12-1`, `p3-1`). Ao excluir, as sessões do dono morrem: `task:delete`,
+`task:bulkDelete` e `delete_tasks` (`disposeTerminalsForTasks`), `project:delete` e o
+`manage_structure` do MCP (`disposeTerminalsForProjects`, via `afterProjectDeleted`).
+
 ## Onde aparece
 
 - **Detalhe da tarefa** — botão laranja **Terminal** ao lado de **Notas** e o campo
   **Diretório de trabalho** na coluna esquerda (ver [02-detalhe-da-tarefa.md](02-detalhe-da-tarefa.md)).
+- **Detalhe do projeto** — botão `SquareTerminal` no cabeçalho, ao lado do `⋯`, só quando o projeto
+  tem diretório (tooltip "Terminal em {diretório}"). Abre ou foca a sessão do projeto; com ela já em
+  foco, esconde o painel (`TerminalProjectButton`, `aria-pressed`).
 - **Sidebar** — item **Terminais** no rodapé, em todas as rotas, com o número de sessões abertas.
   Alterna o painel; fica desabilitado sem sessão.
 - **Atalho** `Ctrl + '` (a tecla à esquerda do 1; no teclado US é `` Ctrl + ` ``). É local do
@@ -43,7 +52,7 @@ main) são puras, em `stores/terminalPanes.ts` (testadas).
   70% da janela, guardada em `terminal.height`.
 - **Cabeçalho**: ícone, ponto de atividade e nome do terminal focado. **Duplo clique** no nome (ou
   botão direito → **Renomear**) troca o nome: Enter salva, Esc cancela, vazio volta ao padrão;
-  **Restaurar nome** no mesmo menu também. O nome padrão é o da task; várias sessões da mesma task
+  **Restaurar nome** no mesmo menu também. O nome padrão é o da task ou do projeto; várias sessões do mesmo dono
   ganham `(n)`. O nome vive na sessão, no main (`terminal:customize`, até 60 caracteres), sobrevive à
   navegação e ao **Reiniciar**, e morre com a sessão.
 - Botões do cabeçalho: `+` abre outro terminal da task focada num **grupo novo**; **Dividir**
@@ -84,7 +93,7 @@ main) são puras, em `stores/terminalPanes.ts` (testadas).
 - **Shift + Enter** envia `ESC + CR` (o "Alt+Enter" dos terminais) em vez do CR puro que o xterm
   manda nas duas teclas. Claude Code e outras TUIs entendem como nova linha sem enviar; no zsh é o
   `self-insert-unmeta` (quebra a linha no buffer). Regra pura em `terminalKeys.ts` (testada).
-- O primeiro Enter de cada sessão inicia o timer da task se ele não estiver rodando e o toggle
-  estiver ligado; o toast oferece **Parar**.
+- O primeiro Enter de cada sessão de task inicia o timer da task se ele não estiver rodando e o toggle
+  estiver ligado (sessão de projeto não tem timer); o toast oferece **Parar**.
 - Diretório que deixou de existir ou shell configurado inválido viram toast; o shell inválido cai
   no padrão do sistema.

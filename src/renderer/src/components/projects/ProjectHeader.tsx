@@ -23,6 +23,7 @@ import {
 } from '@shared/types'
 import { PROJECT_STATUS_ICONS } from '@renderer/components/chips/projectStatusMeta'
 import { PropPill } from '@renderer/components/tasks/TaskPropertyBar'
+import { TerminalProjectButton } from '@renderer/components/terminal/TerminalProjectButton'
 import { PROJECT_STATUS_COLORS, USER_COLORS } from '@renderer/theme/semantic'
 import { useThemeSettings } from '@renderer/theme/themeSettings'
 import { NO_AREA, daysUntil, deleteWarning, dueTone } from './projectList'
@@ -197,13 +198,18 @@ export function ProjectHeader({
             style={{ padding: 0, color: token.colorTextSecondary }}
           />
         </div>
-        <Dropdown menu={more} trigger={['click']} placement="bottomRight">
-          <Button
-            type="text"
-            aria-label="Mais ações"
-            icon={<Ellipsis size={16} strokeWidth={1.75} />}
-          />
-        </Dropdown>
+        <Flex align="center" gap={4} wrap="wrap" style={{ flex: 'none' }}>
+          {project.working_dir && (
+            <TerminalProjectButton projectId={project.id} workingDir={project.working_dir} />
+          )}
+          <Dropdown menu={more} trigger={['click']} placement="bottomRight">
+            <Button
+              type="text"
+              aria-label="Mais ações"
+              icon={<Ellipsis size={16} strokeWidth={1.75} />}
+            />
+          </Dropdown>
+        </Flex>
       </Flex>
       <Flex wrap="wrap" gap={6} style={{ marginTop: 10 }}>
         <PropPill
