@@ -148,6 +148,19 @@ describe('listTimeEntriesInRange', () => {
     ])
   })
 
+  it('devolve as datas em ISO UTC, inclusive as gravadas no formato antigo', () => {
+    const spans = listTimeEntriesInRange(
+      db,
+      '2026-11-18T00:00:00.000Z',
+      '2026-11-19T00:00:00.000Z',
+      '2026-11-18T17:00:00.000Z'
+    )
+    const old = spans.find((e) => e.id === 15)
+    expect(old?.start_time).toBe('2026-11-18T19:00:00.000Z')
+    expect(old?.end_time).toBe('2026-11-18T19:20:00.000Z')
+    expect(spans.find((e) => e.id === 12)?.end_time).toBeNull()
+  })
+
   it('a sessão em andamento vai até agora', () => {
     expect(ids('2026-11-18T16:30:00.000Z', '2026-11-18T16:45:00.000Z')).toEqual([12])
     expect(

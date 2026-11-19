@@ -1,8 +1,6 @@
 import type { TimeBlock } from '@shared/types'
 import { addDays, calendarPrefs, weekStartOf, type WeekStart } from '@shared/calendarPrefs'
 
-export const JOURNEY_MIN = calendarPrefs().journeyMinutes
-
 const WEEKDAY_SHORT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
 function minutesOf(time: string): number {
@@ -42,7 +40,7 @@ export function formatPlannedHours(minutes: number): string {
   return `${String(hours).replace('.', ',')}h`
 }
 
-export function loadPercent(minutes: number, journey = JOURNEY_MIN): number {
+export function loadPercent(minutes: number, journey: number): number {
   return Math.min(100, Math.round((minutes / journey) * 100))
 }
 

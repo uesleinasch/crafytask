@@ -87,7 +87,10 @@ export function listTimeEntriesInRange(
   if (to <= from) throw new Error('O fim do intervalo precisa ser depois do início.')
   return db
     .prepare(
-      `SELECT te.id, te.task_id, te.start_time, te.end_time, te.duration_seconds,
+      `SELECT te.id, te.task_id,
+         strftime('%Y-%m-%dT%H:%M:%fZ', te.start_time) AS start_time,
+         strftime('%Y-%m-%dT%H:%M:%fZ', te.end_time) AS end_time,
+         te.duration_seconds,
          t.name AS task_name, t.category AS task_category, p.color AS project_color
        FROM time_entries te
        JOIN tasks t ON t.id = te.task_id

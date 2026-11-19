@@ -27,8 +27,8 @@ calendário mensal.
 Título como "Plano de terça, 17 de novembro" (`planTitle`, sem "-feira").
 
 **Carga** no `extra`: `Progress` fino de 96px e "6,5h de 8h" em mono. A carga (`plannedMin`) é a
-soma dos blocos de tempo de hoje, a mesma conta do calendário; a jornada é `JOURNEY_MIN`
-(de `calendarPrefs`). Passou da jornada: barra em `colorWarning`, texto em
+soma dos blocos de tempo de hoje, a mesma conta do calendário; a jornada vem de
+`calendarPrefs()`, lida a cada render. Passou da jornada: barra em `colorWarning`, texto em
 `colorWarningText` com "· passa da jornada". Nunca vermelho. Abaixo de `sm`, a barra cai para
 48px e o aviso vira tooltip, para o título caber.
 

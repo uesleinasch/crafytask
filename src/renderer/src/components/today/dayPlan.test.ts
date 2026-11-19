@@ -32,8 +32,8 @@ describe('carga planejada', () => {
   })
 
   it('limita a barra em 100%', () => {
-    expect(loadPercent(240)).toBe(50)
-    expect(loadPercent(570)).toBe(100)
+    expect(loadPercent(240, 480)).toBe(50)
+    expect(loadPercent(570, 480)).toBe(100)
   })
 })
 
