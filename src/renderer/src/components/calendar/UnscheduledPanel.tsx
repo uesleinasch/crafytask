@@ -12,6 +12,7 @@ interface UnscheduledPanelProps {
   from: string
   to: string
   days: string[]
+  scope: 'days' | 'month'
   version: number
   inDrawer?: boolean
   onHide?: () => void
@@ -28,6 +29,7 @@ export function UnscheduledPanel({
   from,
   to,
   days,
+  scope,
   version,
   inDrawer,
   onHide,
@@ -38,6 +40,7 @@ export function UnscheduledPanel({
   const [search, setSearch] = useState('')
   const [query, setQuery] = useState('')
   const [tasks, setTasks] = useState<Task[] | null>(null)
+  const [planned, setPlanned] = useState(0)
 
   useEffect(() => {
     const timer = window.setTimeout(() => setQuery(search.trim()), 250)
@@ -47,9 +50,21 @@ export function UnscheduledPanel({
   useEffect(() => {
     let current = true
     const load = (): void => {
-      window.api
-        .getUnscheduledTasks(from, to, { search: query || undefined })
-        .then((list) => current && setTasks(list))
+      Promise.all([
+        window.api.getUnscheduledTasks(from, to, { search: query || undefined }),
+        window.api.getTimeBlocksForRange(from, to)
+      ])
+        .then(([list, blocks]) => {
+          if (!current) return
+          setTasks(list)
+          setPlanned(
+            new Set(
+              blocks
+                .filter((b) => b.task_status === 'proximas' || b.task_status === 'executando')
+                .map((b) => b.task_id)
+            ).size
+          )
+        })
         .catch(showBoundary)
     }
     load()
@@ -63,9 +78,17 @@ export function UnscheduledPanel({
   return (
     <div className={inDrawer ? 'ct-calside in-drawer' : 'ct-calside'}>
       <Flex align="center" justify="space-between">
-        <Typography.Text strong style={{ fontSize: 12, textTransform: 'uppercase' }}>
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: token.colorTextTertiary
+          }}
+        >
           A agendar{tasks ? ` · ${tasks.length}` : ''}
-        </Typography.Text>
+        </span>
         {onHide && (
           <Tooltip title="Esconder painel">
             <Button
@@ -79,7 +102,8 @@ export function UnscheduledPanel({
         )}
       </Flex>
       <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-        Próximas ações sem bloco nestes dias. Arraste para a grade para reservar tempo.
+        Próximas ações sem bloco {scope === 'month' ? 'neste mês' : 'nestes dias'}. Arraste para a
+        grade para reservar tempo.
       </Typography.Text>
       <Input
         size="small"
@@ -163,6 +187,11 @@ export function UnscheduledPanel({
           </Flex>
         )}
       </div>
+      {planned > 0 && (
+        <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+          {planned} já com bloco {scope === 'month' ? 'neste mês' : 'nestes dias'}.
+        </Typography.Text>
+      )}
     </div>
   )
 }

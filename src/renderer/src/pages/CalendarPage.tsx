@@ -119,6 +119,7 @@ export function CalendarPage(): React.JSX.Element {
   const [draft, setDraft] = useState<NewBlockDraft | null>(null)
   const [version, setVersion] = useState(0)
   const [panel, setPanel] = useState(() => window.innerWidth >= 1200)
+  const [drawer, setDrawer] = useState(false)
   const changed = useCallback(() => setVersion((v) => v + 1), [])
 
   useEffect(() => {
@@ -173,14 +174,17 @@ export function CalendarPage(): React.JSX.Element {
       content: (
         <span>
           {text} ·{' '}
-          <a
+          <Button
+            type="link"
+            size="small"
+            style={{ padding: 0, height: 'auto' }}
             onClick={() => {
               message.destroy(key)
               void run(undo)
             }}
           >
             Desfazer
-          </a>
+          </Button>
         </span>
       )
     })
@@ -200,20 +204,28 @@ export function CalendarPage(): React.JSX.Element {
 
   const blockActions: GridBlockActions = {
     onOpen: openTask,
-    onStartTimer: (block) => {
-      startTimer(block.task_id)
-        .then(() => message.success(`Timer iniciado: ${block.task_name}`))
+    onStartTimer: (taskId, name) => {
+      startTimer(taskId)
+        .then(() => message.success(`Timer iniciado: ${name}`))
         .catch((error) => message.error(errorMessage(error)))
     },
-    onChange: (block, patch) => {
-      void run(() => window.api.updateTimeBlock(block.id, patch))
+    onEventChange: (task, times) => {
+      void run(() =>
+        window.api.updateTask(task.id, {
+          scheduled_time: times.start_time,
+          scheduled_end_time: times.end_time
+        })
+      )
     },
-    onMove: (block, patch) => {
+    onMove: (block, patch, kind) => {
       void run(() => window.api.updateTimeBlock(block.id, patch)).then((result) => {
-        if (!result) return
+        if (!result || kind === 'edit') return
         const before = result.value
-        const where = patch.date && patch.date !== block.date ? `${shortDay(patch.date)}, ` : ''
-        undoable(`${block.task_name}: ${where}${patch.start_time}–${patch.end_time}`, () =>
+        const text =
+          kind === 'resize'
+            ? `${block.task_name}: até ${patch.end_time}`
+            : `Movido para ${shortDay(patch.date ?? block.date)}, ${patch.start_time}`
+        undoable(text, () =>
           window.api.updateTimeBlock(block.id, {
             date: before.date,
             start_time: before.start_time,
@@ -294,12 +306,13 @@ export function CalendarPage(): React.JSX.Element {
       <UnscheduledPanel
         from={panelRange.from}
         to={panelRange.to}
-        days={allDays}
+        days={days}
+        scope={view === 'month' ? 'month' : 'days'}
         version={version}
         inDrawer={inDrawer}
-        onHide={screens.xl && !inDrawer ? () => setPanel(false) : undefined}
+        onHide={inDrawer ? undefined : () => setPanel(false)}
         onReserve={(taskId, date) => {
-          if (inDrawer) setPanel(false)
+          if (inDrawer) setDrawer(false)
           reserve(taskId, date, 9 * 60)
         }}
       />
@@ -326,7 +339,7 @@ export function CalendarPage(): React.JSX.Element {
           <Button
             icon={<ListTodo size={16} strokeWidth={1.75} />}
             aria-label="A agendar"
-            onClick={() => setPanel(true)}
+            onClick={() => setDrawer(true)}
           >
             {screens.sm ? 'A agendar' : null}
           </Button>
@@ -405,8 +418,8 @@ export function CalendarPage(): React.JSX.Element {
       </div>
       {!screens.lg && (
         <Drawer
-          open={panel}
-          onClose={() => setPanel(false)}
+          open={drawer}
+          onClose={() => setDrawer(false)}
           placement="left"
           size={Math.min(340, window.innerWidth - 40)}
           title="A agendar"

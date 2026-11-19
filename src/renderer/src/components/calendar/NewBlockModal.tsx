@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { DatePicker, Flex, Modal, Select, TimePicker, Typography, theme } from 'antd'
+import { App, DatePicker, Flex, Modal, Select, TimePicker, Typography, theme } from 'antd'
 import dayjs from 'dayjs'
 import type { CreateTimeBlockInput, TaskListItem } from '@shared/types'
 import { Field } from '@renderer/components/shell/SectionHeader'
+import { errorMessage } from '@renderer/components/settings/settingsStatus'
 import { durationLabel, toMin } from './calendarView'
 
 export interface NewBlockDraft {
@@ -24,6 +25,7 @@ export function NewBlockModal({
   onCreate
 }: NewBlockModalProps): React.JSX.Element {
   const { token } = theme.useToken()
+  const { message } = App.useApp()
   const [value, setValue] = useState<NewBlockDraft | null>(draft)
   const [tasks, setTasks] = useState<TaskListItem[]>([])
   const [saving, setSaving] = useState(false)
@@ -34,8 +36,11 @@ export function NewBlockModal({
     window.api
       .listActiveTasksLight()
       .then(setTasks)
-      .catch(() => setTasks([]))
-  }, [draft])
+      .catch((error) => {
+        setTasks([])
+        message.error(errorMessage(error))
+      })
+  }, [draft, message])
 
   async function submit(): Promise<void> {
     if (!value?.taskId) return

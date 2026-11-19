@@ -44,7 +44,8 @@ até a hora atual. Colunas de no mínimo 96px (Semana) ou 140px; em tela estreit
   tarefa vai ao Google. Time leak pinta o fundo pela escala de três níveis (`timeLeakLevel` com o
   tempo total da tarefa). Concluída fica apagada e riscada; rodando agora, ponto pulsante.
 - **Tarefa com horário:** mesmo formato, fundo `colorBgContainer`, borda forte e ícone `Calendar`;
-  sem fim, dura 1h. Clicar abre a tarefa.
+  sem fim, dura 1h. Não arrasta; clique ou Enter abre o mesmo `Popover` com a etiqueta "Tarefa com
+  horário", onde o horário edita `scheduled_time`/`scheduled_end_time` (sem excluir).
 - **Sobreposição:** itens que se cruzam dividem a coluna lado a lado (`layoutDay`).
 - **Sessões registradas:** faixa de 4px na borda direita da coluna, na cor primária, tracejada
   enquanto roda; cortada na meia-noite e na faixa de horas; tooltip "Sessão 09:00–09:40 · tarefa".
@@ -53,9 +54,11 @@ até a hora atual. Colunas de no mínimo 96px (Semana) ou 140px; em tela estreit
   e dentro do dia; a alça de baixo muda o fim (mínimo 15 min). Clique ou Enter abre o `Popover`
   (`BlockPopover`): tarefa (abre), projeto, status, categoria, `TimePicker.RangePicker` com a
   duração, **Iniciar timer**, **Abrir** e excluir. Botão direito: Abrir tarefa, Iniciar timer,
-  Repetir no dia seguinte, Excluir bloco. Delete exclui. Mover e excluir mostram "Desfazer" na
-  mensagem (mover volta ao bloco anterior que o `timeBlock:update` devolve; excluir recria o bloco,
-  com outro id).
+  Repetir no dia seguinte, Excluir bloco. Delete exclui. Esc ou cancelar o ponteiro solta o
+  arraste sem gravar; arrastar e voltar ao mesmo lugar não grava. O `Popover` abre à direita (embaixo
+  abaixo de `md`). Mensagens: "Movido para qua., 18/11, 10:00", "Nome: até 11:30" e "Bloco
+  excluído", todas com **Desfazer** (botão de link, alcançável pelo teclado): mover volta ao bloco
+  anterior que o `timeBlock:update` devolve; excluir recria o bloco, com outro id.
 - **Soltar na grade:** uma tarefa arrastada de "A agendar" vira um bloco de 1h no ponto em que
   soltou. Um chip da faixa Dia solto em outro dia reagenda (agendada) ou move o prazo.
 - **Vazio:** "Nada nestes dias. Clique na grade ou arraste uma tarefa de “A agendar” para
@@ -64,11 +67,13 @@ até a hora atual. Colunas de no mínimo 96px (Semana) ou 140px; em tela estreit
 ## Painel "A agendar"
 
 `UnscheduledPanel`, à esquerda: aberto por padrão a partir de `xl`, fechado com botão
-`PanelLeftOpen` em `lg`, `Drawer` (botão **A agendar**) abaixo de `lg`. Lista as Próximas e
+`PanelLeftOpen` em `lg` (e `PanelLeftClose` no painel para esconder, a partir de `lg`), `Drawer`
+(botão **A agendar**) abaixo de `lg`, com estado próprio: encolher a janela não abre a gaveta. Lista as Próximas e
 Executando sem bloco nem horário nos dias visíveis (no Mês, no mês todo), de
 `schedule:listUnscheduled`, com filtro por nome ou `#id` no SQL (debounce de 250 ms). Cada item:
 alça, nome, projeto, energia e prazo; arrasta para a grade, e o `+` reserva 1h às 09:00 num dos
-dias da visão. Vazio: "Toda próxima ação tem tempo reservado."
+dias visíveis. Vazio: "Toda próxima ação tem tempo reservado."; rodapé "N já com bloco nestes dias"
+(ou "neste mês"), contando as Próximas e Executando com bloco no intervalo.
 
 A grade relê em `tasks:refresh` e `timer:stopped` e descarta resposta velha ao trocar de período
 rápido; o Mês relê ao salvar um bloco. A leitura acontece dentro do `RegionBoundary` "grade do

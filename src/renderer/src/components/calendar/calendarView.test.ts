@@ -7,6 +7,7 @@ import {
   dropStart,
   movedTimes,
   resizedEnd,
+  shiftedDay,
   durationLabel,
   eventsOfDay,
   layoutDay,
@@ -164,8 +165,8 @@ describe('arrastar e redimensionar', () => {
       end_time: '11:00'
     })
     expect(movedTimes('23:00', '23:45', 120, 0, 24)).toEqual({
-      start_time: '23:14',
-      end_time: '23:59'
+      start_time: '23:00',
+      end_time: '23:45'
     })
     expect(movedTimes('00:30', '01:00', -90, 0, 24)).toEqual({
       start_time: '00:00',
@@ -181,6 +182,16 @@ describe('arrastar e redimensionar', () => {
 
   it('soltar da lista cria 1h a partir do ponto, sem passar do fim do dia', () => {
     expect(dropStart(9 * 60 + 8, 0, 24)).toBe(9 * 60 + 15)
-    expect(dropStart(23 * 60 + 40, 0, 24)).toBe(22 * 60 + 59)
+    expect(dropStart(23 * 60 + 40, 0, 24)).toBe(22 * 60 + 45)
+  })
+})
+
+describe('troca de dia ao arrastar', () => {
+  const days = ['2026-11-16', '2026-11-17', '2026-11-18']
+  it('anda pelas colunas visíveis e para nas pontas', () => {
+    expect(shiftedDay(days, '2026-11-17', 0.6)).toBe('2026-11-18')
+    expect(shiftedDay(days, '2026-11-17', 4)).toBe('2026-11-18')
+    expect(shiftedDay(days, '2026-11-17', -3)).toBe('2026-11-16')
+    expect(shiftedDay(['2026-11-17'], '2026-11-17', 2)).toBe('2026-11-17')
   })
 })

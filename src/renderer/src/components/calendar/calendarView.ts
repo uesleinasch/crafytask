@@ -236,7 +236,8 @@ export function movedTimes(
 ): { start_time: string; end_time: string } {
   const length = toMin(end) - toMin(start)
   const last = Math.min(endHour * 60, LAST_MINUTE)
-  const from = Math.min(last - length, Math.max(startHour * 60, toMin(start) + snapDelta(deltaMin)))
+  const maxFrom = Math.floor((last - length) / 15) * 15
+  const from = Math.min(maxFrom, Math.max(startHour * 60, toMin(start) + snapDelta(deltaMin)))
   return { start_time: fromMin(from), end_time: fromMin(from + length) }
 }
 
@@ -246,8 +247,12 @@ export function resizedEnd(start: string, end: string, deltaMin: number, endHour
 }
 
 export function dropStart(minutes: number, startHour: number, endHour: number): number {
-  return Math.min(
-    Math.max(startHour * 60, snapDelta(minutes)),
-    Math.min(endHour * 60, LAST_MINUTE) - 60
-  )
+  const last = Math.min(endHour * 60, LAST_MINUTE)
+  return Math.min(Math.max(startHour * 60, snapDelta(minutes)), Math.floor((last - 60) / 15) * 15)
+}
+
+export function shiftedDay(days: string[], date: string, columns: number): string {
+  const index = days.indexOf(date)
+  if (index < 0) return date
+  return days[Math.min(days.length - 1, Math.max(0, index + Math.round(columns)))]
 }
