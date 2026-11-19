@@ -5,9 +5,11 @@ import {
   dueHint,
   dueTone,
   groupByArea,
+  isStalled,
   lacksNextAction,
   noNextActionNotice,
   progressPercent,
+  stalledNotice,
   statusCounts,
   visibleProjects,
   type ProjectFilters
@@ -120,5 +122,34 @@ describe('lista de projetos', () => {
     expect(deleteWarning(project({ task_count: 5 }))).toBe(
       'As 5 tarefas dele não são apagadas: ficam sem projeto.'
     )
+  })
+})
+
+describe('projetos parados', () => {
+  const now = new Date('2026-11-19T15:00:00.000Z')
+  const old = project({ id: 1, name: 'Velho', last_activity_at: '2026-11-05 10:00:00' })
+  const recent = project({ id: 2, name: 'Novo', last_activity_at: '2026-11-18 10:00:00' })
+  const paused = project({ id: 3, status: 'someday', last_activity_at: '2026-10-01 10:00:00' })
+
+  it('parado é ativo e sem atividade há mais de 7 dias', () => {
+    expect(isStalled(old, now)).toBe(true)
+    expect(isStalled(recent, now)).toBe(false)
+    expect(isStalled(paused, now)).toBe(false)
+    expect(isStalled(project({}), now)).toBe(false)
+  })
+
+  it('filtra só os parados e ordena pelo mais parado', () => {
+    const rows = visibleProjects([recent, old, paused], {
+      tab: 'all',
+      search: '',
+      onlyWithoutNext: false,
+      onlyStalled: true,
+      now,
+      sort: 'activity'
+    })
+    expect(rows.map((p) => p.name)).toEqual(['Velho'])
+    const sorted = visibleProjects([recent, old], { ...base, sort: 'activity' })
+    expect(sorted.map((p) => p.name)).toEqual(['Velho', 'Novo'])
+    expect(stalledNotice(2)).toBe('2 projetos ativos estão parados.')
   })
 })

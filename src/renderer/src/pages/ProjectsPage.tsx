@@ -14,7 +14,7 @@ import {
   Tabs,
   Typography
 } from 'antd'
-import { LayoutGrid, Plus, Search, Table2, TriangleAlert } from 'lucide-react'
+import { CirclePause, LayoutGrid, Plus, Search, Table2, TriangleAlert } from 'lucide-react'
 import type { Area, Project } from '@shared/types'
 import { localDateString } from '@shared/dueState'
 import { NewProjectModal } from '@renderer/components/projects/NewProjectModal'
@@ -25,8 +25,10 @@ import {
   PROJECT_TABS,
   SORT_OPTIONS,
   groupByArea,
+  isStalled,
   lacksNextAction,
   noNextActionNotice,
+  stalledNotice,
   statusCounts,
   visibleProjects,
   type ProjectSort,
@@ -53,7 +55,8 @@ export function ProjectsPage(): React.JSX.Element {
   const [tab, setTab] = useState<ProjectTab>('active')
   const [params] = useSearchParams()
   const [search, setSearch] = useState(() => params.get('q') ?? '')
-  const [onlyWithoutNext, setOnlyWithoutNext] = useState(false)
+  const [onlyWithoutNext, setOnlyWithoutNext] = useState(() => params.get('semProxima') === '1')
+  const [onlyStalled, setOnlyStalled] = useState(() => params.get('parados') === '1')
   const [storedView, setView] = usePersistedState<ProjectView | 'list'>(
     'ticktask:projectListViewMode',
     'cards'
@@ -64,6 +67,16 @@ export function ProjectsPage(): React.JSX.Element {
   const [creating, setCreating] = useState(false)
   const today = localDateString(new Date())
   const view: ProjectView = narrow ? 'cards' : storedView === 'cards' ? 'cards' : 'table'
+
+  useEffect(() => {
+    const withoutNextParam = params.get('semProxima') === '1'
+    const stalledParam = params.get('parados') === '1'
+    if (!withoutNextParam && !stalledParam) return
+    setTab('active')
+    setOnlyWithoutNext(withoutNextParam)
+    setOnlyStalled(stalledParam)
+    if (stalledParam) setSort('activity')
+  }, [params, setSort])
 
   const load = useCallback(() => {
     Promise.all([window.api.listProjects(), window.api.listAreas()])
@@ -83,7 +96,9 @@ export function ProjectsPage(): React.JSX.Element {
   const all = useMemo(() => projects ?? [], [projects])
   const counts = useMemo(() => statusCounts(all), [all])
   const withoutNext = all.filter(lacksNextAction).length
-  const rows = visibleProjects(all, { tab, search, onlyWithoutNext, sort })
+  const now = new Date()
+  const stalled = all.filter((p) => isStalled(p, now)).length
+  const rows = visibleProjects(all, { tab, search, onlyWithoutNext, onlyStalled, now, sort })
   const groups = byArea ? groupByArea(rows, areas) : null
   const open = (id: number): void => {
     void navigate(`/project/${id}`)
@@ -100,7 +115,7 @@ export function ProjectsPage(): React.JSX.Element {
     key,
     label: <ProjectTabLabel tab={key} label={label} count={counts[key]} />
   }))
-  const filtered = search.trim() !== '' || onlyWithoutNext
+  const filtered = search.trim() !== '' || onlyWithoutNext || onlyStalled
 
   const cards = (list: Project[]): React.ReactNode => (
     <div style={CARD_GRID}>
@@ -136,6 +151,7 @@ export function ProjectsPage(): React.JSX.Element {
             onClick={() => {
               setSearch('')
               setOnlyWithoutNext(false)
+              setOnlyStalled(false)
             }}
           >
             Limpar filtros
@@ -278,6 +294,25 @@ export function ProjectsPage(): React.JSX.Element {
                 onClick={() => setOnlyWithoutNext((v) => !v)}
               >
                 {onlyWithoutNext ? 'Mostrar todos' : 'Mostrar só esses'}
+              </Button>
+            }
+          />
+        )}
+        {onlyStalled && (
+          <Alert
+            showIcon
+            type="info"
+            icon={<CirclePause size={16} strokeWidth={1.75} aria-hidden />}
+            style={{ marginBottom: 12 }}
+            title={
+              <span>
+                <Typography.Text strong>{stalledNotice(stalled)}</Typography.Text> Sem sessão nem
+                tarefa concluída há mais de 7 dias.
+              </span>
+            }
+            action={
+              <Button size="small" onClick={() => setOnlyStalled(false)}>
+                Mostrar todos
               </Button>
             }
           />

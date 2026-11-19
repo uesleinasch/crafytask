@@ -1,7 +1,8 @@
 import type { Area, Project, ProjectStatus } from '@shared/types'
+import { HEALTH_LIMITS, parseSqlTime } from '@shared/healthLimits'
 
 export type ProjectTab = ProjectStatus | 'all'
-export type ProjectSort = 'due' | 'progress' | 'updated' | 'name'
+export type ProjectSort = 'due' | 'progress' | 'updated' | 'name' | 'activity'
 export type ProjectView = 'cards' | 'table'
 
 export const PROJECT_TABS: { key: ProjectTab; label: string }[] = [
@@ -16,7 +17,8 @@ export const SORT_OPTIONS: { value: ProjectSort; label: string }[] = [
   { value: 'due', label: 'Ordenar por prazo' },
   { value: 'progress', label: 'Ordenar por progresso' },
   { value: 'updated', label: 'Mais recentes' },
-  { value: 'name', label: 'Ordenar por nome' }
+  { value: 'name', label: 'Ordenar por nome' },
+  { value: 'activity', label: 'Mais parados primeiro' }
 ]
 
 export const NO_AREA = 'Sem área'
@@ -27,6 +29,12 @@ export function openTasks(project: Project): number {
 
 export function lacksNextAction(project: Project): boolean {
   return project.status === 'active' && openTasks(project) > 0 && !project.next_action
+}
+
+export function isStalled(project: Project, now: Date): boolean {
+  if (project.status !== 'active' || !project.last_activity_at) return false
+  const limit = now.getTime() - HEALTH_LIMITS.stalledProjectDays * 86_400_000
+  return parseSqlTime(project.last_activity_at).getTime() < limit
 }
 
 export function progressPercent(project: Project): number {
@@ -54,13 +62,16 @@ const SORTERS: Record<ProjectSort, (a: Project, b: Project) => number> = {
   due: (a, b) => (a.due_date || '9999').localeCompare(b.due_date || '9999'),
   progress: (a, b) => ratio(b) - ratio(a),
   updated: (a, b) => b.updated_at.localeCompare(a.updated_at),
-  name: (a, b) => a.name.localeCompare(b.name, 'pt-BR')
+  name: (a, b) => a.name.localeCompare(b.name, 'pt-BR'),
+  activity: (a, b) => (a.last_activity_at ?? '').localeCompare(b.last_activity_at ?? '')
 }
 
 export interface ProjectFilters {
   tab: ProjectTab
   search: string
   onlyWithoutNext: boolean
+  onlyStalled?: boolean
+  now?: Date
   sort: ProjectSort
 }
 
@@ -78,6 +89,7 @@ export function visibleProjects(projects: Project[], filters: ProjectFilters): P
           .includes(needle)
     )
     .filter((p) => !filters.onlyWithoutNext || lacksNextAction(p))
+    .filter((p) => !filters.onlyStalled || isStalled(p, filters.now ?? new Date()))
     .sort((a, b) => SORTERS[filters.sort](a, b) || a.id - b.id)
 }
 
@@ -134,4 +146,8 @@ export function noNextActionNotice(count: number): string {
   return count === 1
     ? '1 projeto ativo está sem próxima ação.'
     : `${count} projetos ativos estão sem próxima ação.`
+}
+
+export function stalledNotice(count: number): string {
+  return count === 1 ? '1 projeto ativo está parado.' : `${count} projetos ativos estão parados.`
 }
