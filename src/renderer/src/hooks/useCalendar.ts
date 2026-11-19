@@ -1,12 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useErrorBoundary } from 'react-error-boundary'
-import type {
-  Task,
-  TimeBlock,
-  TimeEntrySpan,
-  CreateTimeBlockInput,
-  UpdateTimeBlockInput
-} from '@shared/types'
+import type { Task, TimeBlock, TimeEntrySpan, CreateTimeBlockInput } from '@shared/types'
 import { localDaysToIsoRange } from '@shared/calendarPrefs'
 
 // ===================== GRID DATA =====================
@@ -17,26 +11,20 @@ export interface CalendarRangeData {
   sessions: TimeEntrySpan[]
 }
 
-interface UseCalendarRangeReturn {
-  data: CalendarRangeData | null
-  refresh: () => Promise<void>
-  createTimeBlock: (data: CreateTimeBlockInput) => Promise<TimeBlock>
-  updateTimeBlock: (id: number, data: UpdateTimeBlockInput) => Promise<TimeBlock>
-  deleteTimeBlock: (id: number) => Promise<TimeBlock | null>
-}
-
-export function useCalendarRange(from: string, to: string): UseCalendarRangeReturn {
+export function useCalendarRange(from: string, to: string, version = 0): CalendarRangeData | null {
   const { showBoundary } = useErrorBoundary()
   const [data, setData] = useState<CalendarRangeData | null>(null)
+  const latest = useRef(0)
 
   const refresh = useCallback(async () => {
+    const request = ++latest.current
     const { fromIso, toIso } = localDaysToIsoRange(from, to)
     const [blocks, tasks, sessions] = await Promise.all([
       window.api.getTimeBlocksForRange(from, to),
       window.api.getCalendarTasks(from, to),
       window.api.listTimeEntriesRange(fromIso, toIso)
     ])
-    setData({ blocks, tasks, sessions })
+    if (request === latest.current) setData({ blocks, tasks, sessions })
   }, [from, to])
 
   useEffect(() => {
@@ -48,36 +36,9 @@ export function useCalendarRange(from: string, to: string): UseCalendarRangeRetu
       offRefresh()
       offStopped()
     }
-  }, [refresh, showBoundary])
+  }, [refresh, showBoundary, version])
 
-  const createTimeBlock = useCallback(
-    async (input: CreateTimeBlockInput): Promise<TimeBlock> => {
-      const block = await window.api.createTimeBlock(input)
-      await refresh()
-      return block
-    },
-    [refresh]
-  )
-
-  const updateTimeBlock = useCallback(
-    async (id: number, patch: UpdateTimeBlockInput): Promise<TimeBlock> => {
-      const before = await window.api.updateTimeBlock(id, patch)
-      await refresh()
-      return before
-    },
-    [refresh]
-  )
-
-  const deleteTimeBlock = useCallback(
-    async (id: number): Promise<TimeBlock | null> => {
-      const removed = await window.api.deleteTimeBlock(id)
-      await refresh()
-      return removed
-    },
-    [refresh]
-  )
-
-  return { data, refresh, createTimeBlock, updateTimeBlock, deleteTimeBlock }
+  return data
 }
 
 // ===================== MONTH DATA =====================

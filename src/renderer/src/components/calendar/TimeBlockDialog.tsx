@@ -70,8 +70,12 @@ export function TimeBlockDialog({
         toast.error('Hora de início deve ser anterior ao fim.')
         return
       }
-      await onSave({ task_id: Number(taskId), date, start_time: startTime, end_time: endTime })
-      onClose()
+      try {
+        await onSave({ task_id: Number(taskId), date, start_time: startTime, end_time: endTime })
+        onClose()
+      } catch {
+        return
+      }
     },
     [taskId, date, startTime, endTime, onSave, onClose]
   )
@@ -138,8 +142,12 @@ export function TimeBlockDialog({
                 variant="ghost"
                 className="text-red-500 hover:text-red-600 hover:bg-red-50 mr-auto"
                 onClick={async () => {
-                  await onDelete()
-                  onClose()
+                  try {
+                    await onDelete()
+                    onClose()
+                  } catch {
+                    return
+                  }
                 }}
               >
                 <Trash2 className="h-4 w-4 mr-1" />

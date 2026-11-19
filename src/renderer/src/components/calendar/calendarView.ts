@@ -70,7 +70,8 @@ export function periodLabel(view: CalendarView, cursor: string, days: string[]):
   if (first.slice(0, 7) === last.slice(0, 7)) {
     return `${Number(first.slice(8))}–${fmt(last, { day: 'numeric', month: 'long', year: 'numeric' })}`
   }
-  const short = (d: string): string => fmt(d, { day: 'numeric', month: 'short' }).replace('.', '')
+  const short = (d: string): string =>
+    fmt(d, { day: 'numeric', month: 'short' }).replace(' de ', ' ').replace('.', '')
   return `${short(first)} – ${short(last)} ${last.slice(0, 4)}`
 }
 

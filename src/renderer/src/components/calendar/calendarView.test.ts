@@ -60,7 +60,7 @@ describe('dias da visão', () => {
     const week = viewDays('week', '2026-11-18', 'monday')
     expect(periodLabel('week', '2026-11-18', week)).toBe('16–22 de novembro de 2026')
     const cross = viewDays('week', '2026-12-01', 'monday')
-    expect(periodLabel('week', '2026-12-01', cross)).toBe('30 de nov – 6 de dez 2026')
+    expect(periodLabel('week', '2026-12-01', cross)).toBe('30 nov – 6 dez 2026')
     expect(periodLabel('day', '2026-11-18', ['2026-11-18'])).toBe('quarta-feira, 18 de novembro')
   })
 })

@@ -222,6 +222,7 @@ export function CalendarGrid({
         className={due ? 'ct-calchip due' : 'ct-calchip'}
         onClick={() => onTaskOpen(task.id)}
         title={`${due ? 'Prazo' : 'Agendada'}: ${task.name}${due && task.due_time ? ` às ${task.due_time}` : ''}`}
+        aria-label={`${due ? 'Prazo' : 'Agendada'}: ${task.name}${due && task.due_time ? ` às ${task.due_time}` : ''}`}
       >
         {due ? (
           <Flag size={12} strokeWidth={2} aria-hidden style={{ flex: 'none', color: tone }} />
@@ -253,139 +254,157 @@ export function CalendarGrid({
     (d) =>
       !(show.has('block') && blocksOfDay(data.blocks, d).length) &&
       !(show.has('event') && eventsOfDay(data.tasks, d).length) &&
-      !allDayOf(data.tasks, d, show).length
+      !allDayOf(data.tasks, d, show).length &&
+      !(show.has('sessions') && sessionsOfDay(data.sessions, d, now).length)
   )
 
   return (
-    <div className="ct-calscroll" ref={scrollRef} style={cssVars}>
-      <div className="ct-calsticky">
-        <div className="ct-calhead" style={{ gridTemplateColumns: columns }}>
-          <span />
-          {days.map((d) => {
-            const planned = plannedMinutes(data.blocks, d)
-            const over = planned > journeyMinutes
-            return (
-              <div key={d} className="ct-calhead-day">
-                <button
-                  type="button"
-                  className="ct-calhead-btn"
-                  onClick={() => onOpenDay(d)}
-                  aria-label={`Ver ${longDay(d)}`}
-                >
-                  <span style={{ fontSize: 12, color: token.colorTextTertiary }}>
-                    {weekdayShort(d)}
-                  </span>
-                  <span className={d === today ? 'ct-calnum today' : 'ct-calnum'}>
-                    {Number(d.slice(8))}
-                  </span>
-                </button>
-                <Tooltip
-                  title={
-                    planned
-                      ? `${durationLabel(planned)} em blocos de ${durationLabel(journeyMinutes)} da jornada${over ? ' · passa da jornada' : ''}`
-                      : 'Nenhum bloco'
-                  }
-                >
-                  <div className="ct-calload" aria-label={`${durationLabel(planned)} planejadas`}>
+    <div style={{ position: 'relative', height: '100%' }}>
+      <div className="ct-calscroll" ref={scrollRef} style={cssVars}>
+        <div className="ct-calsticky">
+          <div className="ct-calhead" style={{ gridTemplateColumns: columns }}>
+            <span />
+            {days.map((d) => {
+              const planned = plannedMinutes(data.blocks, d)
+              const over = planned > journeyMinutes
+              return (
+                <div key={d} className="ct-calhead-day">
+                  <button
+                    type="button"
+                    className="ct-calhead-btn"
+                    onClick={() => onOpenDay(d)}
+                    aria-label={`Ver ${longDay(d)}`}
+                  >
+                    <span style={{ fontSize: 12, color: token.colorTextTertiary }}>
+                      {weekdayShort(d)}
+                    </span>
                     <span
-                      style={{
-                        width: `${Math.min(100, (planned / journeyMinutes) * 100)}%`,
-                        background: over ? token.colorWarning : token.colorPrimary
-                      }}
-                    />
-                  </div>
-                </Tooltip>
-              </div>
-            )
-          })}
-        </div>
-        <div className="ct-calallday" style={{ gridTemplateColumns: columns }}>
-          <span className="ct-calhour">Dia</span>
-          {days.map((d) => {
-            const list = allDayOf(data.tasks, d, show)
-            const max = view === 'day' ? 6 : 2
-            return (
-              <div key={d} className="ct-calallday-cell">
-                {list.slice(0, max).map(chip)}
-                {list.length > max && (
-                  <Popover
-                    trigger="click"
-                    content={
-                      <div style={{ width: 240, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        {list.map(chip)}
-                      </div>
+                      className={d === today ? 'ct-calnum today' : 'ct-calnum'}
+                      aria-current={d === today ? 'date' : undefined}
+                    >
+                      {Number(d.slice(8))}
+                    </span>
+                  </button>
+                  <Tooltip
+                    title={
+                      planned
+                        ? `${durationLabel(planned)} em blocos de ${durationLabel(journeyMinutes)} da jornada${over ? ' · passa da jornada' : ''}`
+                        : 'Nenhum bloco'
                     }
                   >
-                    <button type="button" className="ct-calmore">
-                      +{list.length - max}
-                    </button>
-                  </Popover>
+                    <div
+                      className="ct-calload"
+                      role="img"
+                      aria-label={`${durationLabel(planned)} planejadas${over ? ', passa da jornada' : ''}`}
+                    >
+                      <span
+                        style={{
+                          width: `${Math.min(100, (planned / journeyMinutes) * 100)}%`,
+                          background: over ? token.colorWarning : token.colorPrimary
+                        }}
+                      />
+                    </div>
+                  </Tooltip>
+                </div>
+              )
+            })}
+          </div>
+          <div className="ct-calallday" style={{ gridTemplateColumns: columns }}>
+            <span className="ct-calhour">Dia</span>
+            {days.map((d) => {
+              const list = allDayOf(data.tasks, d, show)
+              const max = view === 'day' ? 6 : 2
+              return (
+                <div key={d} className="ct-calallday-cell">
+                  {list.slice(0, max).map(chip)}
+                  {list.length > max && (
+                    <Popover
+                      trigger="click"
+                      content={
+                        <div
+                          style={{ width: 240, display: 'flex', flexDirection: 'column', gap: 4 }}
+                        >
+                          {list.map(chip)}
+                        </div>
+                      }
+                    >
+                      <button
+                        type="button"
+                        className="ct-calmore"
+                        aria-label={`Mais ${list.length - max} em ${longDay(d)}`}
+                      >
+                        +{list.length - max}
+                      </button>
+                    </Popover>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+        <div
+          className="ct-calgrid"
+          style={{ gridTemplateColumns: columns, height: (h1 - h0) * hourHeight }}
+        >
+          <div style={{ position: 'relative' }}>
+            {Array.from({ length: h1 - h0 }, (_, i) => (
+              <span key={i} className="ct-calhour" style={{ top: i * hourHeight }}>
+                {String(h0 + i).padStart(2, '0')}:00
+              </span>
+            ))}
+          </div>
+          {days.map((d) => {
+            const items = [
+              ...(show.has('block') ? blocksOfDay(data.blocks, d) : []),
+              ...(show.has('event') ? eventsOfDay(data.tasks, d) : [])
+            ]
+            return (
+              <div
+                key={d}
+                className={isWeekend(d) ? 'ct-calcol weekend' : 'ct-calcol'}
+                style={{ backgroundSize: `100% ${hourHeight}px` }}
+                onClick={(e) => {
+                  if (e.target !== e.currentTarget) return
+                  const rect = e.currentTarget.getBoundingClientRect()
+                  onSlotClick(d, h0 * 60 + (e.clientY - rect.top) / pxPerMin - 30)
+                }}
+              >
+                {layoutDay(items).map((item) => itemEl(item, d))}
+                {show.has('sessions') &&
+                  sessionsOfDay(data.sessions, d, now).map((s) => {
+                    const geometry = clampToGrid(s.start, s.end, h0, h1)
+                    if (!geometry) return null
+                    const end = s.running ? 'agora' : formatClock(s.end)
+                    return (
+                      <Tooltip
+                        key={s.key}
+                        placement="right"
+                        title={`Sessão ${formatClock(s.start)}–${s.running ? 'agora' : formatClock(s.end)} · ${s.span.task_name}`}
+                      >
+                        <span
+                          className={s.running ? 'ct-calsession running' : 'ct-calsession'}
+                          role="img"
+                          aria-label={`Sessão até ${end}, ${s.span.task_name}`}
+                          style={{
+                            top: geometry.top * pxPerMin,
+                            height: Math.max(3, geometry.length * pxPerMin)
+                          }}
+                        />
+                      </Tooltip>
+                    )
+                  })}
+                {d === today && nowMin >= h0 * 60 && nowMin <= h1 * 60 && (
+                  <span
+                    className="ct-calnow"
+                    style={{ top: (nowMin - h0 * 60) * pxPerMin }}
+                    role="img"
+                    aria-label={`Agora, ${formatClock(nowMin)}`}
+                  />
                 )}
               </div>
             )
           })}
         </div>
-      </div>
-      <div
-        className="ct-calgrid"
-        style={{ gridTemplateColumns: columns, height: (h1 - h0) * hourHeight }}
-      >
-        <div style={{ position: 'relative' }}>
-          {Array.from({ length: h1 - h0 }, (_, i) => (
-            <span key={i} className="ct-calhour" style={{ top: i * hourHeight }}>
-              {String(h0 + i).padStart(2, '0')}:00
-            </span>
-          ))}
-        </div>
-        {days.map((d) => {
-          const items = [
-            ...(show.has('block') ? blocksOfDay(data.blocks, d) : []),
-            ...(show.has('event') ? eventsOfDay(data.tasks, d) : [])
-          ]
-          return (
-            <div
-              key={d}
-              className={isWeekend(d) ? 'ct-calcol weekend' : 'ct-calcol'}
-              style={{ backgroundSize: `100% ${hourHeight}px` }}
-              onClick={(e) => {
-                if (e.target !== e.currentTarget) return
-                const rect = e.currentTarget.getBoundingClientRect()
-                onSlotClick(d, h0 * 60 + (e.clientY - rect.top) / pxPerMin - 30)
-              }}
-            >
-              {layoutDay(items).map((item) => itemEl(item, d))}
-              {show.has('sessions') &&
-                sessionsOfDay(data.sessions, d, now).map((s) => {
-                  const geometry = clampToGrid(s.start, s.end, h0, h1)
-                  if (!geometry) return null
-                  const end = s.running ? 'agora' : formatClock(s.end)
-                  return (
-                    <Tooltip
-                      key={s.key}
-                      placement="right"
-                      title={`Sessão ${formatClock(s.start)}–${s.running ? 'agora' : formatClock(s.end)} · ${s.span.task_name}`}
-                    >
-                      <span
-                        className={s.running ? 'ct-calsession running' : 'ct-calsession'}
-                        aria-label={`Sessão até ${end}`}
-                        style={{
-                          top: geometry.top * pxPerMin,
-                          height: Math.max(3, geometry.length * pxPerMin)
-                        }}
-                      />
-                    </Tooltip>
-                  )
-                })}
-              {d === today && nowMin >= h0 * 60 && nowMin <= h1 * 60 && (
-                <span
-                  className="ct-calnow"
-                  style={{ top: (nowMin - h0 * 60) * pxPerMin }}
-                  aria-label={`Agora, ${formatClock(nowMin)}`}
-                />
-              )}
-            </div>
-          )
-        })}
       </div>
       {empty && (
         <div className="ct-calempty">

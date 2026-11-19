@@ -829,8 +829,8 @@
       "titulo": "Calendário com visões Dia, 3 dias, Semana, Mês e Agenda",
       "check": {
         "tipo": "contem-todos",
-        "arquivos": "src/renderer/src/pages/CalendarPage.tsx",
-        "padroes": ["Segmented", "3days|threeDays", "agenda"]
+        "arquivos": "src/renderer/src/{pages/CalendarPage.tsx,components/calendar/**/*.{ts,tsx}}",
+        "padroes": ["Segmented", "3days|threeDays", "value: 'agenda'"]
       }
     },
     {
@@ -839,7 +839,7 @@
       "titulo": "Calendário sem azul próprio nem vermelho na linha do agora",
       "check": {
         "tipo": "ausente",
-        "arquivos": "src/renderer/src/pages/CalendarPage.tsx",
+        "arquivos": "src/renderer/src/{pages/CalendarPage.tsx,components/calendar/**/*.tsx}",
         "padrao": "bg-blue-|bg-red-|bg-orange-|bg-yellow-|text-blue-"
       }
     },

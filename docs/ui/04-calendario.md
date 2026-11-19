@@ -37,8 +37,8 @@ até a hora atual. Colunas de no mínimo 96px (Semana) ou 140px; em tela estreit
   borda tracejada; bandeira âmbar no dia, vermelha se venceu; hora do prazo em mono). Até 2 por dia
   (6 na visão Dia) e `+N` abre um `Popover` com todos. Clicar abre a tarefa.
 - **Horas:** faixa de `calendarPrefs()` (07–22), 48px por hora (40 no compacto), linha a cada hora,
-  fim de semana em `colorBgLayout`. Clicar num espaço vazio abre o diálogo de bloco com o dia e 1h a
-  partir do clique (arredondado em 15 min).
+  fim de semana em `colorBgLayout`. Clicar num espaço vazio abre o diálogo de bloco com o dia e 1h
+  centrada no clique (arredondada em 15 min).
 - **Bloco de tempo:** fundo `calBlock` com borda `calBlockBorder` (`CAL_BLOCK_COLORS`), ponto do
   projeto, ícone da categoria quando não é normal, nome, horário em mono e `CalendarSync` quando a
   tarefa vai ao Google. Time leak pinta o fundo pela escala de três níveis (`timeLeakLevel` com o
@@ -52,8 +52,10 @@ até a hora atual. Colunas de no mínimo 96px (Semana) ou 140px; em tela estreit
 - **Agora:** linha de 2px na cor primária com um ponto, atualizada a cada minuto.
 - **Vazio:** "Nada nestes dias. Clique na grade para reservar tempo."
 
-A tela relê tudo em `tasks:refresh` e `timer:stopped`. Falha na grade cai no `RegionBoundary`
-"grade do calendário".
+A grade relê em `tasks:refresh` e `timer:stopped` e descarta resposta velha ao trocar de período
+rápido; o Mês relê ao salvar um bloco. A leitura acontece dentro do `RegionBoundary` "grade do
+calendário": falha ali não derruba a barra. Erro ao salvar ou excluir bloco aparece numa mensagem
+(sem o prefixo do Electron) e o diálogo continua aberto.
 
 ## Visão mensal
 
@@ -81,7 +83,7 @@ dia para reagendar"**.
 
 ## Diálogo de bloco de tempo
 
-`sm:max-w-md`. Título "Novo Bloco de Tempo" ou "Editar Bloco de Tempo".
+`sm:max-w-md`. Título "Novo bloco de tempo" ou "Editar bloco de tempo".
 
 | Campo | Controle |
 | --- | --- |

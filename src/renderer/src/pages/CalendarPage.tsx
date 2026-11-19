@@ -25,6 +25,7 @@ import {
   type ShowKey
 } from '@renderer/components/calendar/calendarView'
 import { RegionBoundary } from '@renderer/components/shell/RegionBoundary'
+import { errorMessage } from '@renderer/components/settings/settingsStatus'
 import { PageContainer } from '@renderer/components/shell/PageContainer'
 import { useCalendarMonth, useCalendarRange } from '@renderer/hooks/useCalendar'
 import { usePersistedState } from '@renderer/hooks/usePersistedState'
@@ -39,6 +40,53 @@ interface BlockDialogState {
 
 function initialView(): GridView {
   return defaultView({ lg: window.innerWidth >= 992, md: window.innerWidth >= 768 })
+}
+
+type GridSectionProps = Omit<React.ComponentProps<typeof CalendarGrid>, 'data'> & {
+  from: string
+  to: string
+  version: number
+}
+
+function GridSection({ from, to, version, ...grid }: GridSectionProps): React.JSX.Element {
+  const data = useCalendarRange(from, to, version)
+  if (!data) {
+    return (
+      <Flex justify="center" style={{ padding: 48 }}>
+        <Spin />
+      </Flex>
+    )
+  }
+  return <CalendarGrid {...grid} data={data} />
+}
+
+interface MonthSectionProps {
+  cursor: string
+  onTaskOpen: (id: number) => void
+  onDayClick: (date: string) => void
+}
+
+function MonthSection({ cursor, onTaskOpen, onDayClick }: MonthSectionProps): React.JSX.Element {
+  const { message } = App.useApp()
+  const month = useCalendarMonth(cursor.slice(0, 7))
+  return (
+    <div style={{ height: '100%', overflow: 'auto' }}>
+      <MonthlyCalendar
+        year={Number(cursor.slice(0, 4))}
+        month={Number(cursor.slice(5, 7)) - 1}
+        scheduledTasks={month.scheduledTasks}
+        timeBlocks={month.timeBlocks}
+        onTaskNavigate={onTaskOpen}
+        onDayClick={onDayClick}
+        onDragEnd={(taskId, date) =>
+          void month
+            .scheduleTask(taskId, date)
+            .then(() => message.success('Tarefa reagendada'))
+            .catch((error) => message.error(errorMessage(error)))
+        }
+      />
+    </div>
+  )
 }
 
 export function CalendarPage(): React.JSX.Element {
@@ -67,8 +115,8 @@ export function CalendarPage(): React.JSX.Element {
   )
   const days =
     view === 'week' && !show.has('weekend') ? allDays.filter((d) => !isWeekend(d)) : allDays
-  const range = useCalendarRange(allDays[0], allDays[allDays.length - 1])
-  const month = useCalendarMonth(cursor.slice(0, 7))
+  const [version, setVersion] = useState(0)
+  const changed = (): void => setVersion((v) => v + 1)
 
   useEffect(() => {
     if (!dialog.open) return
@@ -107,27 +155,27 @@ export function CalendarPage(): React.JSX.Element {
   }, [])
 
   async function saveBlock(input: CreateTimeBlockInput): Promise<void> {
-    if (dialog.block) {
-      await range.updateTimeBlock(dialog.block.id, input)
-      message.success('Bloco atualizado')
-    } else {
-      await range.createTimeBlock(input)
-      message.success('Bloco criado')
+    try {
+      if (dialog.block) await window.api.updateTimeBlock(dialog.block.id, input)
+      else await window.api.createTimeBlock(input)
+    } catch (error) {
+      message.error(errorMessage(error))
+      throw error
     }
-    await month.refresh()
+    message.success(dialog.block ? 'Bloco atualizado' : 'Bloco criado')
+    changed()
   }
 
   async function deleteBlock(): Promise<void> {
     if (!dialog.block) return
-    await range.deleteTimeBlock(dialog.block.id)
-    await month.refresh()
+    try {
+      await window.api.deleteTimeBlock(dialog.block.id)
+    } catch (error) {
+      message.error(errorMessage(error))
+      throw error
+    }
     message.success('Bloco removido')
-  }
-
-  async function rescheduleFromMonth(taskId: number, date: string): Promise<void> {
-    await month.scheduleTask(taskId, date)
-    await range.refresh()
-    message.success('Tarefa reagendada')
+    changed()
   }
 
   const label = periodLabel(view, cursor, view === 'month' ? [] : allDays)
@@ -180,7 +228,7 @@ export function CalendarPage(): React.JSX.Element {
           format={() => label}
           inputReadOnly
           suffixIcon={<ChevronDown size={12} strokeWidth={1.75} />}
-          style={{ fontWeight: 600, width: 'auto', minWidth: 200 }}
+          style={{ fontWeight: 600, fontSize: 15, width: 'auto', minWidth: 200 }}
           aria-label="Ir para a data"
         />
         <div style={{ flex: 1 }} />
@@ -189,6 +237,7 @@ export function CalendarPage(): React.JSX.Element {
         <Button
           type="primary"
           icon={<Plus size={14} strokeWidth={1.75} />}
+          aria-label="Novo bloco"
           onClick={() =>
             setDialog({
               open: true,
@@ -200,36 +249,29 @@ export function CalendarPage(): React.JSX.Element {
         </Button>
       </Flex>
       <div style={{ flex: 1, minHeight: 0 }}>
-        <RegionBoundary region="grade do calendário" resetKeys={[view]}>
+        <RegionBoundary region="grade do calendário" resetKeys={[view, cursor]}>
           {view === 'month' ? (
-            <div style={{ height: '100%', overflow: 'auto' }}>
-              <MonthlyCalendar
-                year={Number(cursor.slice(0, 4))}
-                month={Number(cursor.slice(5, 7)) - 1}
-                scheduledTasks={month.scheduledTasks}
-                timeBlocks={month.timeBlocks}
-                onTaskNavigate={openTask}
-                onDayClick={(date) => setDialog({ open: true, initial: { date } })}
-                onDragEnd={(taskId, date) => void rescheduleFromMonth(taskId, date)}
-              />
-            </div>
-          ) : range.data ? (
-            <CalendarGrid
+            <MonthSection
+              key={version}
+              cursor={cursor}
+              onTaskOpen={openTask}
+              onDayClick={(date) => setDialog({ open: true, initial: { date } })}
+            />
+          ) : (
+            <GridSection
+              from={allDays[0]}
+              to={allDays[allDays.length - 1]}
+              version={version}
               view={gridView}
               days={days}
               today={today}
               now={now}
-              data={range.data}
               show={show}
               onOpenDay={openDay}
               onSlotClick={slotClick}
               onBlockClick={blockClick}
               onTaskOpen={openTask}
             />
-          ) : (
-            <Flex justify="center" style={{ padding: 48 }}>
-              <Spin />
-            </Flex>
           )}
         </RegionBoundary>
       </div>
