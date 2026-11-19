@@ -819,7 +819,7 @@
       "titulo": "Calendário com tokens de categoria (legenda correta)",
       "check": {
         "tipo": "contem",
-        "arquivos": "src/renderer/src/pages/CalendarPage.tsx",
+        "arquivos": "src/renderer/src/{pages/CalendarPage.tsx,components/calendar/**/*.tsx}",
         "padrao": "theme/semantic"
       }
     },

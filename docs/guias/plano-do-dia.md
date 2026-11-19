@@ -33,12 +33,16 @@ Uma tarefa conta como **atrasada** quando o prazo é anterior a hoje, ou é hoje
 
 ## Calendário
 
-A tela **Calendário** tem duas visões:
+A tela **Calendário** tem as visões **Dia**, **3 dias**, **Semana** e **Mês**. Ela abre na Semana
+em janela larga, em 3 dias numa média e no Dia numa estreita.
 
-- **Semana** (padrão) — *time blocking*: uma grade das 07:00 às 22:00. Clique num espaço vazio
-  para criar um **bloco de tempo** (o app propõe 1 hora, arredondada a 30 minutos) e escolha a
-  tarefa. Para mover ou encurtar um bloco, abra-o e edite. A faixa **Dia**, acima da grade, mostra
-  as tarefas agendadas para cada dia.
+- **Dia, 3 dias e Semana** — *time blocking*: uma grade das 07:00 às 22:00. Clique num espaço vazio
+  para criar um **bloco de tempo** de 1 hora a partir dali e escolha a tarefa. Para mudar um bloco,
+  clique nele. Acima da grade, cada dia mostra quantas horas já estão em blocos contra a jornada de
+  8 h (âmbar quando passa) e a faixa **Dia** com as tarefas agendadas sem horário e os prazos.
+  Tarefas com horário aparecem como compromisso, e as sessões do timer como uma faixa fina na borda
+  da coluna. Em **Mostrar** você escolhe o que aparece (blocos, tarefas com horário, agendadas,
+  prazos, sessões, fins de semana) e vê a legenda.
 - **Mês** — panorama dos agendamentos. **Arraste** uma tarefa de um dia para outro para
   reagendar.
 

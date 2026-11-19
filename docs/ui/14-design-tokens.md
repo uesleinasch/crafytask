@@ -236,14 +236,13 @@ Transições comuns: `transition-colors`, `transition-all duration-200`,
 | --- | --- | --- |
 | Altura do TitleBar | `h-14` (56px) | shell |
 | Padding de sub-página | `px-6 py-4` (cabeçalho) / `p-6 pb-24` (conteúdo) | telas ainda não migradas; a lista de tarefas usa o `PageContainer` |
-| Cabeçalho do calendário | `px-4 py-3` | exceção |
 | Painel esquerdo da tarefa | `480px` fixo | `/task/:id` |
 | Painel de notas | `550px` padrão, mín. 360px, reserva 700px | `/task/:id` |
 | Coluna zen | `640px` padrão | `/task/:id` |
 | Coluna do Kanban | `300px` | lista |
 | Janela flutuante | `300px` × (44 × n + 60) | float |
 | Captura rápida | `400 × 140` | quick capture |
-| Grade do calendário | 1,2px/min → 1h = 72px; 07:00–22:00 | calendário |
+| Grade do calendário | 48px por hora (40 no compacto); 07:00–22:00 de `calendarPrefs()` | calendário |
 | Célula do mês | `min-h-[90px]` | calendário |
 | Larguras máximas de conteúdo | `max-w-2xl` (settings) · `max-w-3xl` (revisão, projeto) · `max-w-4xl` (horizontes) · `max-w-6xl` (dashboard) | — |
 

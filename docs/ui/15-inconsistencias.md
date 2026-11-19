@@ -179,6 +179,8 @@ personaliza o texto (e o faz muito bem, citando quantas tarefas serão afetadas)
 
 ### D4. Legenda do calendário está incorreta
 
+**Resolvida na F4-b2:** o rodapé saiu; "Mostrar" é filtro e legenda, com as amostras e os ícones de categoria.
+
 O rodapé chama o quadrado laranja de **"Bloco urgente"**, mas laranja é a cor de **prioridade** —
 urgente é vermelho. A legenda também cita só duas das quatro cores de categoria.
 
