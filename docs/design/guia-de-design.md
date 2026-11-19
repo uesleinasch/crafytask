@@ -585,8 +585,9 @@ fazer hoje e em que ordem.
   criação. Para mudar a ordem, dê horário à tarefa. Sem espaço extra no topo do card.
   No cabeçalho do card, a carga planejada contra a jornada: `Progress` fino e curto (~96px) seguido
   de "6,5h de 8h"; a barra não ocupa uma linha própria no corpo. Abaixo de `sm`, a barra encolhe e
-  "passa da jornada" vira tooltip, para o título caber. A carga é a soma dos blocos de tempo do dia, a mesma conta do calendário (`plannedMin`). Passou da
-  jornada: âmbar e "passa da jornada", nunca vermelho (aviso, não alarme).
+  "passa da jornada" vira tooltip, para o título caber. A carga é a soma dos blocos de tempo do
+  dia, a mesma conta do calendário (`plannedMin`). Passou da jornada: âmbar e "passa da jornada",
+  nunca vermelho (aviso, não alarme).
 - **Card "Semana"** ao lado (abaixo de `lg`, embaixo): um `Progress` por dia com as horas
   planejadas; hoje em negrito; dia acima da jornada em âmbar.
 - **Vazio:** "Nada planejado para hoje." e a dica "Na lista de tarefas, use **Hoje** (botão da linha

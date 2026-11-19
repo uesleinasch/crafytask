@@ -59,6 +59,7 @@ import {
   setTaskTotalTime,
   updateTimeEntry,
   deleteTimeEntry,
+  listTimeEntriesRange,
   getWeeklyStats,
   getTaskTimeStats,
   getStatusStats,
@@ -951,6 +952,9 @@ function setupIpcHandlers(): void {
     syncEditedTimeEntry(taskId, id, worklogId)
     autoSyncTask(taskId)
   })
+  ipcMain.handle('timeEntry:listRange', (_, fromIso: string, toIso: string) =>
+    listTimeEntriesRange(fromIso, toIso)
+  )
   ipcMain.handle('timeEntry:delete', (_, id: number) => {
     const { taskId, worklogId } = deleteTimeEntry(id)
     syncDeletedTimeEntry(taskId, worklogId)

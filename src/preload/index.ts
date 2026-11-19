@@ -18,6 +18,7 @@ import type {
   JiraUser,
   Task,
   TimeEntry,
+  TimeEntrySpan,
   CreateTaskInput,
   UpdateTaskInput,
   TaskStatus,
@@ -198,6 +199,8 @@ const api = {
   updateTimeEntry: (id: number, startIso: string, endIso: string): Promise<void> =>
     ipcRenderer.invoke('timeEntry:update', id, startIso, endIso),
   deleteTimeEntry: (id: number): Promise<void> => ipcRenderer.invoke('timeEntry:delete', id),
+  listTimeEntriesRange: (fromIso: string, toIso: string): Promise<TimeEntrySpan[]> =>
+    ipcRenderer.invoke('timeEntry:listRange', fromIso, toIso),
   getActiveTimeEntry: (taskId: number): Promise<TimeEntry | undefined> =>
     ipcRenderer.invoke('task:getActiveTimeEntry', taskId),
 

@@ -6,6 +6,7 @@ import { normalizeWaitingFor } from '@shared/waitingFor'
 import type {
   Task,
   TimeEntry,
+  TimeEntrySpan,
   CreateTaskInput,
   UpdateTaskInput,
   TaskStatus,
@@ -62,6 +63,7 @@ import {
 import { ensureNotebookSchema } from './notebookQueries'
 import {
   deleteTimeEntry as deleteTimeEntryQuery,
+  listTimeEntriesInRange,
   updateTimeEntry as updateTimeEntryQuery,
   type TimeEntryChange
 } from './timeEntryQueries'
@@ -1716,6 +1718,10 @@ export function updateTimeEntry(id: number, startIso: string, endIso: string): T
 
 export function deleteTimeEntry(id: number): TimeEntryChange {
   return deleteTimeEntryQuery(tagDb(), id)
+}
+
+export function listTimeEntriesRange(fromIso: string, toIso: string): TimeEntrySpan[] {
+  return listTimeEntriesInRange(tagDb(), fromIso, toIso, new Date().toISOString())
 }
 
 export function setTaskTotalTime(taskId: number, totalSeconds: number): void {

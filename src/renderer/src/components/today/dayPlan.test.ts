@@ -45,6 +45,12 @@ describe('semana', () => {
     expect(days[6].date).toBe('2026-11-22')
   })
 
+  it('começa no domingo quando a preferência pede', () => {
+    const days = weekDays(new Date(2026, 10, 17, 15), 'sunday')
+    expect(days.map((d) => d.label)).toEqual(['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'])
+    expect(days[0].date).toBe('2026-11-15')
+  })
+
   it('domingo fecha a semana que começou na segunda', () => {
     const days = weekDays(new Date(2026, 10, 22, 9))
     expect(days[0].date).toBe('2026-11-16')

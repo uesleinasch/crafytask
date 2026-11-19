@@ -160,3 +160,18 @@ Mais uma dica contextual, que muda com a visão: *"Clique na grade para criar bl
 
 A legenda cita só duas das quatro cores de bloco, e chama a cor laranja de "urgente" quando na
 verdade laranja é **prioridade** (urgente é vermelho).
+
+## Dados prontos para a nova grade (F4-b1)
+
+Ainda não usados pela tela; a F4-b2 os consome.
+
+- `timeEntry:listRange(fromIso, toIso)` → `TimeEntrySpan[]`: sessões de tempo que cruzam o
+  intervalo, com nome e categoria da tarefa e cor do projeto (`listTimeEntriesInRange` em
+  `timeEntryQueries.ts`, testado). A sessão em andamento vai até agora; ajustes manuais sem duração
+  (início = fim) ficam de fora. Compara com `julianday`, que aceita o ISO do app e o
+  `CURRENT_TIMESTAMP` antigo. `localDaysToIsoRange` (`src/shared/calendarPrefs.ts`) converte dias
+  locais no intervalo.
+- `timeBlock:update` já aceita `date`, então mover um bloco para outro dia é o mesmo canal (e
+  ressincroniza o Google).
+- Jornada (8h), faixa de horas (07–22) e início da semana (segunda) vêm de `calendarPrefs()`,
+  fixos até a F7-f.

@@ -418,6 +418,12 @@ export interface TimeEntry {
   duration_seconds: number | null
 }
 
+export interface TimeEntrySpan extends TimeEntry {
+  task_name: string
+  task_category: TaskCategory
+  project_color: string | null
+}
+
 // ===================== TASK LIST FILTERS =====================
 
 export type TaskSort = 'updated' | 'due_date' | 'archived' | 'name' | 'total_time'
