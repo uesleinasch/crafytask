@@ -161,7 +161,7 @@ Mais uma dica contextual, que muda com a visão: *"Clique na grade para criar bl
 A legenda cita só duas das quatro cores de bloco, e chama a cor laranja de "urgente" quando na
 verdade laranja é **prioridade** (urgente é vermelho).
 
-## Dados prontos para a nova grade (F4-b1)
+## Dados prontos para a nova grade (F4-b1 e F4-b1b)
 
 Ainda não usados pela tela; a F4-b2 os consome.
 
@@ -173,7 +173,17 @@ Ainda não usados pela tela; a F4-b2 os consome.
   A sessão em andamento chega com `end_time` nulo (a grade usa o relógio), e a sessão vem
   inteira: cortar na meia-noite e na faixa de horas é da grade. `localDaysToIsoRange` (`src/shared/calendarPrefs.ts`) converte dias
   locais no intervalo.
-- `timeBlock:update` já aceita `date`, então mover um bloco para outro dia é o mesmo canal (e
-  ressincroniza o Google).
+- `timeBlock:getForRange(from, to)`: blocos de qualquer intervalo de dias (3 dias, semana, Agenda).
+  Todo bloco (também nas consultas por dia, semana e mês) traz `task_status`, `task_running`,
+  `task_gcal_sync` e `project_color`, além de nome e categoria (`TIME_BLOCK_SELECT` em
+  `calendarQueries.ts`).
+- `schedule:getRange(from, to)`: tarefas agendadas **ou** com prazo no intervalo, numa consulta só
+  (prazo antigo gravado com hora também entra), ordenadas por dia e hora. Para a faixa Dia, a
+  tarefa com horário e a Agenda de 14 dias.
+- `schedule:listUnscheduled(from, to)`: "A agendar" — Próximas e Executando sem bloco nos dias
+  visíveis, executando primeiro, depois pelo prazo; até 100.
+- `timeBlock:create` e `timeBlock:update` validam data (`AAAA-MM-DD`), horas (`HH:MM`) e fim
+  depois do início; `timeBlock:update` aceita trocar o dia (ressincroniza o Google) e devolve o
+  bloco **anterior**, para o Desfazer.
 - Jornada (8h), faixa de horas (07–22) e início da semana (segunda) vêm de `calendarPrefs()`,
   fixos até a F7-f.

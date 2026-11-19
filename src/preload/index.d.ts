@@ -342,7 +342,10 @@ interface API {
   getTimeBlocksForDate: (date: string) => Promise<TimeBlock[]>
   getTimeBlocksForWeek: (startDate: string) => Promise<TimeBlock[]>
   getTimeBlocksForMonth: (yearMonth: string) => Promise<TimeBlock[]>
-  updateTimeBlock: (id: number, data: UpdateTimeBlockInput) => Promise<void>
+  updateTimeBlock: (id: number, data: UpdateTimeBlockInput) => Promise<TimeBlock>
+  getTimeBlocksForRange: (from: string, to: string) => Promise<TimeBlock[]>
+  getCalendarTasks: (from: string, to: string) => Promise<Task[]>
+  getUnscheduledTasks: (from: string, to: string) => Promise<Task[]>
   deleteTimeBlock: (id: number) => Promise<void>
 
   // FASE 4: Áreas de Foco

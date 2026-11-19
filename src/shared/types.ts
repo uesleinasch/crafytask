@@ -477,6 +477,10 @@ export interface TimeBlock {
   task_id: number
   task_name?: string
   task_category?: TaskCategory
+  task_status?: TaskStatus
+  task_running?: number
+  task_gcal_sync?: number
+  project_color?: string | null
   date: string // 'YYYY-MM-DD'
   start_time: string // 'HH:MM'
   end_time: string // 'HH:MM'
