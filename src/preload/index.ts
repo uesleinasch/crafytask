@@ -40,6 +40,7 @@ import type {
   TimeBlock,
   CreateTimeBlockInput,
   UpdateTimeBlockInput,
+  UnscheduledTaskFilters,
   TaskListFilters,
   TaskListItem,
   TagWithUsage,
@@ -470,9 +471,13 @@ const api = {
     ipcRenderer.invoke('timeBlock:getForRange', from, to),
   getCalendarTasks: (from: string, to: string): Promise<Task[]> =>
     ipcRenderer.invoke('schedule:getRange', from, to),
-  getUnscheduledTasks: (from: string, to: string): Promise<Task[]> =>
-    ipcRenderer.invoke('schedule:listUnscheduled', from, to),
-  deleteTimeBlock: (id: number): Promise<void> => ipcRenderer.invoke('timeBlock:delete', id),
+  getUnscheduledTasks: (
+    from: string,
+    to: string,
+    filters?: UnscheduledTaskFilters
+  ): Promise<Task[]> => ipcRenderer.invoke('schedule:listUnscheduled', from, to, filters),
+  deleteTimeBlock: (id: number): Promise<TimeBlock | null> =>
+    ipcRenderer.invoke('timeBlock:delete', id),
 
   // ===================== FASE 4: Áreas de Foco =====================
   createArea: (data: CreateAreaInput): Promise<Area> => ipcRenderer.invoke('area:create', data),

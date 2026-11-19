@@ -175,15 +175,22 @@ Ainda não usados pela tela; a F4-b2 os consome.
   locais no intervalo.
 - `timeBlock:getForRange(from, to)`: blocos de qualquer intervalo de dias (3 dias, semana, Agenda).
   Todo bloco (também nas consultas por dia, semana e mês) traz `task_status`, `task_running`,
-  `task_gcal_sync` e `project_color`, além de nome e categoria (`TIME_BLOCK_SELECT` em
-  `calendarQueries.ts`).
+  `task_gcal_sync` (a tarefa vai ao Google; não diz se a conta está conectada),
+  `task_total_seconds` (para o nível de time leak), `project_name` e `project_color`, além de nome
+  e categoria (`TIME_BLOCK_SELECT` em `calendarQueries.ts`).
 - `schedule:getRange(from, to)`: tarefas agendadas **ou** com prazo no intervalo, numa consulta só
-  (prazo antigo gravado com hora também entra), ordenadas por dia e hora. Para a faixa Dia, a
-  tarefa com horário e a Agenda de 14 dias.
-- `schedule:listUnscheduled(from, to)`: "A agendar" — Próximas e Executando sem bloco nos dias
-  visíveis, executando primeiro, depois pelo prazo; até 100.
+  (prazo antigo gravado com hora também entra), ordenadas pela data que cai no intervalo e pela
+  hora. Cada tarefa vem uma vez, com `scheduled_date` e `due_date`: a tela a põe no dia agendado
+  e, com prazo, também no dia do prazo. Para a faixa Dia, a tarefa com horário e a Agenda de 14
+  dias.
+- `schedule:listUnscheduled(from, to, { search, projectId, limit })`: "A agendar" — Próximas e
+  Executando sem bloco nos dias visíveis e sem horário neles (essas já estão na grade), executando
+  primeiro, depois pelo prazo. Busca por nome ou `#id` e projeto (`null` = sem projeto) no SQL;
+  até 100 por padrão.
 - `timeBlock:create` e `timeBlock:update` validam data (`AAAA-MM-DD`), horas (`HH:MM`) e fim
-  depois do início; `timeBlock:update` aceita trocar o dia (ressincroniza o Google) e devolve o
-  bloco **anterior**, para o Desfazer.
+  depois do início (data real: `2026-02-31` é recusada); `timeBlock:update` aceita trocar o dia
+  (ressincroniza o Google) e devolve o bloco **anterior**, e `timeBlock:delete` devolve o bloco
+  apagado, para o Desfazer. O erro chega ao renderer com o prefixo do Electron ("Error invoking
+  remote method…"), que a tela precisa tirar antes de mostrar.
 - Jornada (8h), faixa de horas (07–22) e início da semana (segunda) vêm de `calendarPrefs()`,
   fixos até a F7-f.

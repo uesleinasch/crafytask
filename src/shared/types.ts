@@ -480,6 +480,8 @@ export interface TimeBlock {
   task_status?: TaskStatus
   task_running?: number
   task_gcal_sync?: number
+  task_total_seconds?: number
+  project_name?: string | null
   project_color?: string | null
   date: string // 'YYYY-MM-DD'
   start_time: string // 'HH:MM'
@@ -492,6 +494,12 @@ export interface CreateTimeBlockInput {
   date: string
   start_time: string
   end_time: string
+}
+
+export interface UnscheduledTaskFilters {
+  search?: string
+  projectId?: number | null
+  limit?: number
 }
 
 export interface UpdateTimeBlockInput {

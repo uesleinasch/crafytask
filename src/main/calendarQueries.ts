@@ -1,11 +1,12 @@
-import type { TimeBlock, UpdateTimeBlockInput } from '@shared/types'
+import type { TimeBlock, UnscheduledTaskFilters, UpdateTimeBlockInput } from '@shared/types'
 import { isIsoDate } from '@shared/archiveAge'
 import { TIME_PATTERN } from '@shared/taskTime'
 import type { SqliteLike } from './tagQueries'
 
 export const TIME_BLOCK_SELECT = `
   SELECT tb.*, t.name AS task_name, t.category AS task_category, t.status AS task_status,
-    t.is_running AS task_running, t.gcal_sync AS task_gcal_sync, p.color AS project_color
+    t.is_running AS task_running, t.gcal_sync AS task_gcal_sync,
+    t.total_seconds AS task_total_seconds, p.name AS project_name, p.color AS project_color
   FROM time_blocks tb
   JOIN tasks t ON t.id = tb.task_id
   LEFT JOIN projects p ON p.id = t.project_id`
@@ -15,15 +16,24 @@ export interface DayRangeQuery {
   params: (string | number)[]
 }
 
+export function isCalendarDate(value: unknown): value is string {
+  if (!isIsoDate(value)) return false
+  const [y, m, d] = value.split('-').map(Number)
+  const date = new Date(Date.UTC(y, m - 1, d))
+  return date.getUTCMonth() === m - 1 && date.getUTCDate() === d
+}
+
 export function assertDayRange(from: string, to: string): void {
-  if (!isIsoDate(from) || !isIsoDate(to)) throw new Error('Data inválida: use AAAA-MM-DD.')
+  if (!isCalendarDate(from) || !isCalendarDate(to)) {
+    throw new Error('Data inválida: use AAAA-MM-DD.')
+  }
   if (to < from) throw new Error('O fim do intervalo precisa ser igual ou depois do início.')
 }
 
 type BlockTimes = Pick<TimeBlock, 'date' | 'start_time' | 'end_time'>
 
 export function timeBlockError(block: BlockTimes): string | null {
-  if (!isIsoDate(block.date)) return 'Data inválida: use AAAA-MM-DD.'
+  if (!isCalendarDate(block.date)) return 'Data inválida: use AAAA-MM-DD.'
   if (!TIME_PATTERN.test(block.start_time) || !TIME_PATTERN.test(block.end_time)) {
     return 'Horário inválido: use HH:MM.'
   }
@@ -61,20 +71,41 @@ export function calendarTasksQuery(columns: string, from: string, to: string): D
       WHERE ${LISTABLE}
         AND ((t.scheduled_date >= ? AND t.scheduled_date <= ?)
           OR (substr(t.due_date, 1, 10) >= ? AND substr(t.due_date, 1, 10) <= ?))
-      ORDER BY COALESCE(t.scheduled_date, substr(t.due_date, 1, 10)),
+      ORDER BY CASE WHEN t.scheduled_date >= ? AND t.scheduled_date <= ? THEN t.scheduled_date
+          ELSE substr(t.due_date, 1, 10) END,
         t.scheduled_time IS NULL, t.scheduled_time, t.due_time IS NULL, t.due_time,
         COALESCE(t.day_order, 999999), t.created_at, t.id`,
-    params: [from, to, from, to]
+    params: [from, to, from, to, from, to]
   }
 }
+
+export type UnscheduledFilters = UnscheduledTaskFilters
 
 export function unscheduledTasksQuery(
   columns: string,
   from: string,
   to: string,
-  limit = 100
+  filters: UnscheduledFilters = {}
 ): DayRangeQuery {
   assertDayRange(from, to)
+  const extra: string[] = []
+  const extraParams: (string | number)[] = []
+  const search = filters.search?.trim()
+  if (search) {
+    const id = /^#?(\d+)$/.exec(search)
+    if (id) {
+      extra.push('AND (t.id = ? OR t.name LIKE ?)')
+      extraParams.push(Number(id[1]), `%${search}%`)
+    } else {
+      extra.push('AND t.name LIKE ?')
+      extraParams.push(`%${search}%`)
+    }
+  }
+  if (filters.projectId === null) extra.push('AND t.project_id IS NULL')
+  else if (filters.projectId !== undefined) {
+    extra.push('AND t.project_id = ?')
+    extraParams.push(filters.projectId)
+  }
   return {
     sql: `SELECT ${columns}
       FROM tasks t
@@ -85,9 +116,11 @@ export function unscheduledTasksQuery(
           SELECT 1 FROM time_blocks tb
           WHERE tb.task_id = t.id AND tb.date >= ? AND tb.date <= ?
         )
+        AND NOT (t.scheduled_time IS NOT NULL AND t.scheduled_date >= ? AND t.scheduled_date <= ?)
+        ${extra.join('\n        ')}
       ORDER BY t.status = 'executando' DESC, t.due_date IS NULL, substr(t.due_date, 1, 10),
         t.updated_at DESC, t.id
       LIMIT ?`,
-    params: [from, to, limit]
+    params: [from, to, from, to, ...extraParams, filters.limit ?? 100]
   }
 }

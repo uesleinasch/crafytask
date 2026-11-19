@@ -229,7 +229,8 @@ import type {
   ProjectStatus,
   McpStatus,
   CreateTimeBlockInput,
-  UpdateTimeBlockInput
+  UpdateTimeBlockInput,
+  UnscheduledTaskFilters
 } from '../shared/types'
 
 // Protocolo custom para servir imagens locais das notas ao renderer.
@@ -1213,13 +1214,16 @@ function setupIpcHandlers(): void {
     getTimeBlocksForRange(from, to)
   )
   ipcMain.handle('schedule:getRange', (_, from: string, to: string) => listCalendarTasks(from, to))
-  ipcMain.handle('schedule:listUnscheduled', (_, from: string, to: string) =>
-    listUnscheduledTasks(from, to)
+  ipcMain.handle(
+    'schedule:listUnscheduled',
+    (_, from: string, to: string, filters?: UnscheduledTaskFilters) =>
+      listUnscheduledTasks(from, to, filters)
   )
   ipcMain.handle('timeBlock:delete', (_, id: number) => {
     const before = getTimeBlock(id)
     deleteTimeBlock(id)
     if (before) autoSyncToGoogle(before.task_id)
+    return before ?? null
   })
 
   // Jira

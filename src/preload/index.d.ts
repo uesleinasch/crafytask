@@ -39,6 +39,7 @@ import type {
   TimeBlock,
   CreateTimeBlockInput,
   UpdateTimeBlockInput,
+  UnscheduledTaskFilters,
   GtdMetrics,
   EnergyStats,
   TaskListFilters,
@@ -345,8 +346,12 @@ interface API {
   updateTimeBlock: (id: number, data: UpdateTimeBlockInput) => Promise<TimeBlock>
   getTimeBlocksForRange: (from: string, to: string) => Promise<TimeBlock[]>
   getCalendarTasks: (from: string, to: string) => Promise<Task[]>
-  getUnscheduledTasks: (from: string, to: string) => Promise<Task[]>
-  deleteTimeBlock: (id: number) => Promise<void>
+  getUnscheduledTasks: (
+    from: string,
+    to: string,
+    filters?: UnscheduledTaskFilters
+  ) => Promise<Task[]>
+  deleteTimeBlock: (id: number) => Promise<TimeBlock | null>
 
   // FASE 4: Áreas de Foco
   createArea: (data: CreateAreaInput) => Promise<Area>

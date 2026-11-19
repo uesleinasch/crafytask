@@ -15,10 +15,10 @@ let db: SqliteLike
 beforeEach(() => {
   raw = new DatabaseSync(':memory:')
   raw.exec(`
-    CREATE TABLE projects (id INTEGER PRIMARY KEY, color TEXT);
+    CREATE TABLE projects (id INTEGER PRIMARY KEY, name TEXT, color TEXT);
     CREATE TABLE tasks (
       id INTEGER PRIMARY KEY, name TEXT, category TEXT, status TEXT, is_running INTEGER DEFAULT 0,
-      gcal_sync INTEGER DEFAULT 0, project_id INTEGER, is_archived INTEGER DEFAULT 0,
+      gcal_sync INTEGER DEFAULT 0, total_seconds INTEGER DEFAULT 0, project_id INTEGER, is_archived INTEGER DEFAULT 0,
       parent_task_id INTEGER, scheduled_date TEXT, scheduled_time TEXT, due_date TEXT,
       due_time TEXT, day_order INTEGER, created_at TEXT, updated_at TEXT
     );
@@ -26,7 +26,7 @@ beforeEach(() => {
       id INTEGER PRIMARY KEY, task_id INTEGER, date TEXT, start_time TEXT, end_time TEXT,
       created_at TEXT
     );
-    INSERT INTO projects VALUES (3, '#2A62D6');
+    INSERT INTO projects VALUES (3, 'Casa', '#2A62D6');
     INSERT INTO tasks (id, name, category, status, is_running, gcal_sync, project_id,
       scheduled_date, scheduled_time, due_date, due_time, created_at, updated_at) VALUES
       (1, 'Relatório', 'normal', 'executando', 1, 1, 3, '2026-11-17', '09:00', NULL, NULL, 'a', '2026-11-10'),
@@ -60,6 +60,7 @@ describe('listTimeBlocksInRange', () => {
       task_status: 'executando',
       task_running: 1,
       task_gcal_sync: 1,
+      project_name: 'Casa',
       project_color: '#2A62D6'
     })
     expect(blocks[1].project_color).toBeNull()
@@ -76,6 +77,11 @@ describe('calendarTasksQuery', () => {
     expect(run(calendarTasksQuery('t.id', '2026-11-16', '2026-11-22'))).toEqual([1, 5, 2, 3])
   })
 
+  it('ordena pela data que cai no intervalo', () => {
+    raw.exec("UPDATE tasks SET scheduled_date = '2026-11-30', due_date = '2026-11-17' WHERE id = 4")
+    expect(run(calendarTasksQuery('t.id', '2026-11-16', '2026-11-22'))).toEqual([1, 4, 5, 2, 3])
+  })
+
   it('serve para 3 dias e para a agenda de 14 dias', () => {
     expect(run(calendarTasksQuery('t.id', '2026-11-18', '2026-11-20'))).toEqual([2, 3])
     expect(run(calendarTasksQuery('t.id', '2026-11-17', '2026-11-30'))).toEqual([1, 5, 2, 3, 4])
@@ -89,7 +95,25 @@ describe('unscheduledTasksQuery', () => {
   })
 
   it('respeita o limite', () => {
-    expect(run(unscheduledTasksQuery('t.id', '2026-11-23', '2026-11-29', 2))).toEqual([1, 2])
+    expect(run(unscheduledTasksQuery('t.id', '2026-11-23', '2026-11-29', { limit: 2 }))).toEqual([
+      1, 2
+    ])
+  })
+})
+
+describe('filtros do A agendar', () => {
+  it('busca por nome ou #id e filtra por projeto', () => {
+    const week = ['t.id', '2026-11-23', '2026-11-29'] as const
+    expect(run(unscheduledTasksQuery(...week, { search: 'prazo' }))).toEqual([2, 3])
+    expect(run(unscheduledTasksQuery(...week, { search: '#4' }))).toEqual([4])
+    expect(run(unscheduledTasksQuery(...week, { projectId: 3 }))).toEqual([1])
+    expect(run(unscheduledTasksQuery(...week, { projectId: null }))).toEqual([2, 3, 4])
+  })
+
+  it('deixa de fora a tarefa com horário nos dias visíveis, que já está na grade', () => {
+    raw.exec('DELETE FROM time_blocks WHERE id = 10')
+    expect(run(unscheduledTasksQuery('t.id', '2026-11-16', '2026-11-22'))).not.toContain(1)
+    expect(run(unscheduledTasksQuery('t.id', '2026-11-23', '2026-11-29'))).toContain(1)
   })
 })
 
@@ -101,6 +125,7 @@ describe('regras do bloco', () => {
     expect(timeBlockError({ ...block, end_time: '09:00' })).toMatch('depois do início')
     expect(timeBlockError({ ...block, start_time: '9h' })).toMatch('Horário inválido')
     expect(timeBlockError({ ...block, date: '2026-13' })).toMatch('Data inválida')
+    expect(timeBlockError({ ...block, date: '2026-02-31' })).toMatch('Data inválida')
   })
 
   it('mescla a mudança sobre o bloco atual, inclusive trocar o dia', () => {

@@ -65,7 +65,8 @@ import {
   TIME_BLOCK_SELECT,
   calendarTasksQuery,
   listTimeBlocksInRange,
-  unscheduledTasksQuery
+  unscheduledTasksQuery,
+  type UnscheduledFilters
 } from './calendarQueries'
 import {
   deleteTimeEntry as deleteTimeEntryQuery,
@@ -2523,8 +2524,12 @@ export function listCalendarTasks(from: string, to: string): Task[] {
   return enrichTasks(db.prepare(sql).all(...params) as (Task & { project_name?: string })[])
 }
 
-export function listUnscheduledTasks(from: string, to: string): Task[] {
-  const { sql, params } = unscheduledTasksQuery(TASK_LIST_COLUMNS, from, to)
+export function listUnscheduledTasks(
+  from: string,
+  to: string,
+  filters?: UnscheduledFilters
+): Task[] {
+  const { sql, params } = unscheduledTasksQuery(TASK_LIST_COLUMNS, from, to, filters)
   return enrichTasks(db.prepare(sql).all(...params) as (Task & { project_name?: string })[])
 }
 
