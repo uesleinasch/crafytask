@@ -23,7 +23,7 @@ import {
   Clock,
   Ellipsis,
   Flag,
-  Folder,
+  FolderKanban,
   Hourglass,
   Inbox,
   Lightbulb,
@@ -44,7 +44,9 @@ import type {
   Task,
   TaskStatus
 } from '@shared/types'
+import { PROJECT_STATUS_LABELS } from '@shared/types'
 import { HEALTH_LIMITS } from '@shared/healthLimits'
+import { useErrorBoundary } from 'react-error-boundary'
 import { localDateString } from '@shared/dueState'
 import { addDays } from '@shared/calendarPrefs'
 import { STATUS_COLORS } from '@renderer/theme/semantic'
@@ -204,7 +206,6 @@ function ReviewRow({
   meta?: React.ReactNode
   children: React.ReactNode
 }): React.JSX.Element {
-  const navigate = useNavigate()
   const { token } = theme.useToken()
   return (
     <div className="ct-rvrow">
@@ -220,7 +221,7 @@ function ReviewRow({
         <Typography.Link
           className="ct-ellipsis"
           style={{ color: token.colorText, fontWeight: 500 }}
-          onClick={() => navigate(`/task/${task.id}`)}
+          href={`#/task/${task.id}`}
         >
           {task.name}
         </Typography.Link>
@@ -251,25 +252,28 @@ function CaptureBox({
   const { mode } = useThemeSettings()
   const [value, setValue] = useState('')
   const [names, setNames] = useState<Record<number, string>>({})
+  const { showBoundary } = useErrorBoundary()
 
   useEffect(() => {
     const missing = captured.filter((id) => names[id] === undefined)
     if (missing.length === 0) return
     let alive = true
-    void Promise.all(missing.map((id) => window.api.getTask(id))).then((tasks) => {
-      if (!alive) return
-      setNames((current) => {
-        const next = { ...current }
-        missing.forEach((id, i) => {
-          next[id] = tasks[i]?.name ?? ''
+    void Promise.all(missing.map((id) => window.api.getTask(id)))
+      .then((tasks) => {
+        if (!alive) return
+        setNames((current) => {
+          const next = { ...current }
+          missing.forEach((id, i) => {
+            next[id] = tasks[i]?.name ?? ''
+          })
+          return next
         })
-        return next
       })
-    })
+      .catch(showBoundary)
     return () => {
       alive = false
     }
-  }, [captured, names])
+  }, [captured, names, showBoundary])
 
   const add = (): void => {
     const name = value.trim()
@@ -310,15 +314,18 @@ function CaptureBox({
 function useStepData<T, A>(load: (arg: A) => Promise<T>, arg: A): [T | null, () => void] {
   const [data, setData] = useState<T | null>(null)
   const [version, setVersion] = useState(0)
+  const { showBoundary } = useErrorBoundary()
   useEffect(() => {
     let alive = true
-    void load(arg).then((value) => {
-      if (alive) setData(value)
-    })
+    void load(arg)
+      .then((value) => {
+        if (alive) setData(value)
+      })
+      .catch(showBoundary)
     return () => {
       alive = false
     }
-  }, [load, arg, version])
+  }, [load, arg, version, showBoundary])
   return [data, useCallback(() => setVersion((v) => v + 1), [])]
 }
 
@@ -421,6 +428,7 @@ function useTaskActions(
   remove: (task: Task, counter?: ReviewCounterKey) => void
 } {
   const { message } = App.useApp()
+  const { showBoundary } = useErrorBoundary()
   const after = (counter?: ReviewCounterKey): void => {
     if (counter) void actions.bump(counter)
     reload()
@@ -428,16 +436,22 @@ function useTaskActions(
   }
   return {
     move: (task, status, text, counter) => {
-      void window.api.updateTask(task.id, { status }).then(() => {
-        message.success(text ?? `${task.name} → ${STATUS_CHIP_LABELS[status]}`)
-        after(counter)
-      })
+      void window.api
+        .updateTask(task.id, { status })
+        .then(() => {
+          message.success(text ?? `${task.name} → ${STATUS_CHIP_LABELS[status]}`)
+          after(counter)
+        })
+        .catch(showBoundary)
     },
     remove: (task, counter) => {
-      void window.api.deleteTask(task.id).then(() => {
-        message.success(`Excluída: ${task.name}`)
-        after(counter)
-      })
+      void window.api
+        .deleteTask(task.id)
+        .then(() => {
+          message.success(`Excluída: ${task.name}`)
+          after(counter)
+        })
+        .catch(showBoundary)
     }
   }
 }
@@ -448,6 +462,7 @@ function TaskListStep(props: ReviewStepBodyProps): React.JSX.Element {
   const wide = !!screens.lg
   const { mode } = useThemeSettings()
   const { message } = App.useApp()
+  const { showBoundary } = useErrorBoundary()
   const [tasks, reload] = useStepData(loadStatusList, status)
   const { move, remove } = useTaskActions(props, reload)
   const now = new Date()
@@ -483,7 +498,7 @@ function TaskListStep(props: ReviewStepBodyProps): React.JSX.Element {
             meta={
               task.due_date ? (
                 <Typography.Text type="secondary">
-                  prazo {task.due_date.split('-').reverse().join('/')}
+                  prazo {task.due_date.slice(8, 10)}/{task.due_date.slice(5, 7)}
                 </Typography.Text>
               ) : null
             }
@@ -590,10 +605,11 @@ function TaskListStep(props: ReviewStepBodyProps): React.JSX.Element {
             icon={Megaphone}
             label="Cobrar"
             onClick={() => {
-              void props.capture(chaseText(task)).then(() => {
-                void props.bump('chased')
-                message.success('Ação "Cobrar" criada no Inbox')
-              })
+              void props
+                .capture(chaseText(task))
+                .then(() => props.bump('chased'))
+                .then(() => message.success('Ação "Cobrar" criada no Inbox'))
+                .catch(showBoundary)
             }}
           />
           <Act
@@ -670,7 +686,6 @@ function PastStep(props: ReviewStepBodyProps): React.JSX.Element {
 }
 
 function UpcomingStep(props: ReviewStepBodyProps): React.JSX.Element {
-  const navigate = useNavigate()
   const { token } = theme.useToken()
   const today = localDateString(new Date())
   const [tasks] = useStepData(loadUpcoming, today)
@@ -698,7 +713,7 @@ function UpcomingStep(props: ReviewStepBodyProps): React.JSX.Element {
                     <Typography.Link
                       className="ct-ellipsis"
                       style={{ flex: 1, color: token.colorText }}
-                      onClick={() => navigate(`/task/${task.id}`)}
+                      href={`#/task/${task.id}`}
                     >
                       {task.name}
                     </Typography.Link>
@@ -735,10 +750,10 @@ function ProjectRow({
   actions: ReviewStepActions
   reload: () => void
 }): React.JSX.Element {
-  const navigate = useNavigate()
   const { token } = theme.useToken()
   const { mode } = useThemeSettings()
   const { message } = App.useApp()
+  const { showBoundary } = useErrorBoundary()
   const [open, setOpen] = useState<Task[] | null>(null)
   const lacksNext = !project.next_action
 
@@ -749,6 +764,7 @@ function ProjectRow({
       .then((tasks) =>
         setOpen(tasks.filter((task) => task.status !== 'finalizada' && !task.is_archived))
       )
+      .catch(showBoundary)
   }
 
   const update = (
@@ -756,12 +772,15 @@ function ProjectRow({
     text: string,
     counter?: ReviewCounterKey
   ): void => {
-    void window.api.updateProject(project.id, data).then(() => {
-      message.success(text)
-      if (counter) void actions.bump(counter)
-      reload()
-      actions.changed()
-    })
+    void window.api
+      .updateProject(project.id, data)
+      .then(() => {
+        message.success(text)
+        if (counter) void actions.bump(counter)
+        reload()
+        actions.changed()
+      })
+      .catch(showBoundary)
   }
 
   const warning = STATUS_COLORS.aguardando[mode]
@@ -784,7 +803,7 @@ function ProjectRow({
           <Typography.Link
             className="ct-ellipsis"
             style={{ color: token.colorText, fontWeight: 500 }}
-            onClick={() => navigate(`/project/${project.id}`)}
+            href={`#/project/${project.id}`}
           >
             {project.name}
           </Typography.Link>
@@ -834,7 +853,7 @@ function ProjectRow({
             onClick: ({ key }) =>
               update(
                 { status: key as Project['status'] },
-                key === 'done' ? `${project.name}: concluído` : `${project.name}: someday`
+                `${project.name}: ${PROJECT_STATUS_LABELS[key as Project['status']]}`
               )
           }}
         >
@@ -853,7 +872,7 @@ function ProjectRow({
 function ProjectsStep(props: ReviewStepBodyProps): React.JSX.Element {
   const [projects, reload] = useStepData(loadActiveProjects, null)
   if (!projects) return <div style={{ minHeight: 48 }} />
-  if (projects.length === 0) return <EmptyList text="Nenhum projeto ativo." icon={Folder} />
+  if (projects.length === 0) return <EmptyList text="Nenhum projeto ativo." icon={FolderKanban} />
   return (
     <div>
       {projects.map((project) => (
@@ -868,6 +887,7 @@ function SomedayStep(props: ReviewStepBodyProps): React.JSX.Element {
   const wide = !!screens.lg
   const { token } = theme.useToken()
   const { message } = App.useApp()
+  const { showBoundary } = useErrorBoundary()
   const [data, reload] = useStepData(loadSomeday, null)
   const { move, remove } = useTaskActions(props, reload)
   if (!data) return <div style={{ minHeight: 48 }} />
@@ -876,18 +896,21 @@ function SomedayStep(props: ReviewStepBodyProps): React.JSX.Element {
     return <EmptyList text="A lista someday está vazia." icon={Lightbulb} />
   }
   const activate = (project: Project): void => {
-    void window.api.updateProject(project.id, { status: 'active' }).then(() => {
-      message.success(`${project.name} ativado. Defina a próxima ação no passo Projetos.`)
-      reload()
-      props.changed()
-    })
+    void window.api
+      .updateProject(project.id, { status: 'active' })
+      .then(() => {
+        message.success(`${project.name} ativado. Defina a próxima ação no passo Projetos.`)
+        reload()
+        props.changed()
+      })
+      .catch(showBoundary)
   }
   return (
     <div>
       {projects.map((project) => (
         <div key={`p${project.id}`} className="ct-rvrow">
           <Flex align="center" gap={8} style={{ flex: 1, minWidth: 0 }}>
-            <Folder {...ICON} color={token.colorTextTertiary} />
+            <FolderKanban {...ICON} color={token.colorTextTertiary} />
             <span
               aria-hidden
               style={{
@@ -932,6 +955,7 @@ function SomedayStep(props: ReviewStepBodyProps): React.JSX.Element {
 function CreativeStep(props: ReviewStepBodyProps): React.JSX.Element {
   const navigate = useNavigate()
   const { message } = App.useApp()
+  const { showBoundary } = useErrorBoundary()
   const lines = ideaLines(props.ideas)
   const send = async (): Promise<void> => {
     for (const line of lines) await props.capture(line)
@@ -953,7 +977,7 @@ function CreativeStep(props: ReviewStepBodyProps): React.JSX.Element {
         <Button
           icon={<Inbox {...ICON} />}
           disabled={lines.length === 0}
-          onClick={() => void send()}
+          onClick={() => void send().catch(showBoundary)}
         >
           Mandar para o Inbox
         </Button>

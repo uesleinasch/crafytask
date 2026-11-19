@@ -25,11 +25,12 @@ import {
   CircleArrowRight,
   CircleCheck,
   CircleMinus,
-  Cloud,
+  Brain,
+  Clock,
   Download,
   ExternalLink,
   Flag,
-  Folder,
+  FolderKanban,
   History,
   Hourglass,
   Inbox,
@@ -48,6 +49,8 @@ import type {
 import { STATUS_COLORS } from '@renderer/theme/semantic'
 import { useThemeSettings } from '@renderer/theme/themeSettings'
 import { RegionBoundary } from '@renderer/components/shell/RegionBoundary'
+import { useErrorBoundary } from 'react-error-boundary'
+import { parseSqlTime } from '@shared/healthLimits'
 import { REVIEW_PHASES, REVIEW_STEP_LABELS } from './reviewEntryState'
 import {
   REVIEW_STEP_META,
@@ -61,22 +64,30 @@ import {
   systemRows,
   unmarkedSteps,
   unmarkedText,
-  type ReviewView
+  type ReviewView,
+  type SystemRow
 } from './reviewFlowState'
 import { ReviewStepBody } from './ReviewStepBody'
 
 const ICON = { size: 16, strokeWidth: 1.75, 'aria-hidden': true } as const
 const NOTES_DELAY_MS = 600
 
+const SYSTEM_ICONS: Record<SystemRow['key'], LucideIcon> = {
+  inboxCount: Inbox,
+  projectsWithoutNextAction: CircleArrowRight,
+  staleWaitingTasks: Hourglass,
+  staleNextTasks: Clock
+}
+
 const STEP_ICONS: Record<ReviewStepKey, LucideIcon> = {
   collect: Download,
   inbox: Inbox,
-  mind: Cloud,
+  mind: Brain,
   next: CircleArrowRight,
   past: History,
   upcoming: CalendarDays,
   waiting: Hourglass,
-  projects: Folder,
+  projects: FolderKanban,
   someday: Lightbulb,
   creative: Rocket
 }
@@ -110,6 +121,11 @@ function Eyebrow({ children }: { children: React.ReactNode }): React.JSX.Element
   )
 }
 
+function SystemIcon({ row, color }: { row: SystemRow; color: string }): React.JSX.Element {
+  const Icon = SYSTEM_ICONS[row.key]
+  return <Icon size={14} strokeWidth={1.75} aria-hidden color={color} />
+}
+
 function StepIcon({ step, color }: { step: ReviewStepKey; color: string }): React.JSX.Element {
   const Icon = STEP_ICONS[step]
   return <Icon size={18} strokeWidth={1.75} aria-hidden color={color} />
@@ -141,6 +157,7 @@ export function ReviewFlow({
   const navigate = useNavigate()
   const screens = Grid.useBreakpoint()
   const now = useMinuteClock()
+  const { showBoundary } = useErrorBoundary()
 
   const [atFinish, setAtFinish] = useState(false)
   const [ideas, setIdeas] = useState('')
@@ -155,10 +172,10 @@ export function ReviewFlow({
     if (notes === savedNotes.current) return
     const id = window.setTimeout(() => {
       savedNotes.current = notes
-      void onSaveNotes(notes)
+      void onSaveNotes(notes).catch(showBoundary)
     }, NOTES_DELAY_MS)
     return () => window.clearTimeout(id)
-  }, [notes, onSaveNotes])
+  }, [notes, onSaveNotes, showBoundary])
 
   const flushNotes = async (): Promise<void> => {
     if (notes === savedNotes.current) return
@@ -172,12 +189,12 @@ export function ReviewFlow({
       return
     }
     setAtFinish(false)
-    void onGoToStep(key)
+    void onGoToStep(key).catch(showBoundary)
   }
 
   const markStep = (key: ReviewStepKey, status: ReviewStepStatus): void => {
     setAtFinish(false)
-    void onSetStep(key, status)
+    void onSetStep(key, status).catch(showBoundary)
   }
 
   const markRef = useRef(markStep)
@@ -186,10 +203,12 @@ export function ReviewFlow({
   })
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
-      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter' && view !== 'finish') {
-        event.preventDefault()
-        markRef.current(view, 'done')
+      if (!(event.ctrlKey || event.metaKey) || event.key !== 'Enter' || view === 'finish') return
+      if (event.defaultPrevented || document.querySelector('[role="dialog"][aria-modal="true"]')) {
+        return
       }
+      event.preventDefault()
+      markRef.current(view, 'done')
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -227,7 +246,7 @@ export function ReviewFlow({
       message.success('Revisão registrada. Até a próxima semana.')
     }
     if (unmarked.length === 0) {
-      void save()
+      void save().catch(showBoundary)
       return
     }
     modal.confirm({
@@ -236,7 +255,7 @@ export function ReviewFlow({
         'Eles ficam registrados como pulados. Tudo bem: uma revisão parcial vale mais que nenhuma.',
       okText: 'Concluir assim',
       cancelText: 'Voltar',
-      onOk: save
+      onOk: () => save().catch(showBoundary)
     })
   }
 
@@ -363,8 +382,9 @@ export function ReviewFlow({
             size="small"
             type="link"
             icon={<ExternalLink {...ICON} />}
-            aria-label={target.text}
-            onClick={() => void openScreen(view)}
+            aria-label={screens.md ? undefined : target.text}
+            title={target.text}
+            onClick={() => void openScreen(view).catch(showBoundary)}
           >
             {screens.md ? 'Abrir a tela' : null}
           </Button>
@@ -435,6 +455,7 @@ export function ReviewFlow({
           <Flex vertical gap={6}>
             {systemRows(review.start_health, health).map((row) => (
               <Flex key={row.key} align="center" gap={8} style={{ fontSize: 13 }}>
+                <SystemIcon row={row} color={token.colorTextTertiary} />
                 <span style={{ flex: 1 }}>{row.label}</span>
                 <span className="font-mono tabular-nums" style={{ color: token.colorTextTertiary }}>
                   {row.start ?? '—'}
@@ -482,14 +503,17 @@ export function ReviewFlow({
           placeholder="Observações, decisões, foco da próxima semana"
           value={notes}
           onChange={(event) => setNotes(event.target.value)}
-          onBlur={() => void flushNotes()}
+          onBlur={() => void flushNotes().catch(showBoundary)}
           aria-label="Notas da revisão"
         />
       </Card>
     </Flex>
   )
 
-  const weekLabel = now.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+  const weekLabel = parseSqlTime(review.started_at).toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit'
+  })
 
   return (
     <>
@@ -515,7 +539,7 @@ export function ReviewFlow({
             {done}/10
           </span>
         </Flex>
-        <Button icon={<Pause {...ICON} />} onClick={() => void pause()}>
+        <Button icon={<Pause {...ICON} />} onClick={() => void pause().catch(showBoundary)}>
           Pausar
         </Button>
       </Flex>

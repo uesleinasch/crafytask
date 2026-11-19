@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { App, Flex, Spin } from 'antd'
+import { useErrorBoundary } from 'react-error-boundary'
 import { useWeeklyReview } from '@renderer/hooks/useWeeklyReview'
 import { PageContainer } from '@renderer/components/shell/PageContainer'
 import { ReviewEntry } from '@renderer/components/review/ReviewEntry'
@@ -29,6 +30,7 @@ function writeActive(id: number | null): void {
 export function WeeklyReviewPage(): React.JSX.Element {
   const navigate = useNavigate()
   const { message } = App.useApp()
+  const { showBoundary } = useErrorBoundary()
   const {
     currentReview,
     reviews,
@@ -100,9 +102,9 @@ export function WeeklyReviewPage(): React.JSX.Element {
             openReview={currentReview}
             reviews={reviews}
             health={healthIndicators}
-            onStart={() => void handleStart()}
+            onStart={() => void handleStart().catch(showBoundary)}
             onResume={() => currentReview && setActiveId(currentReview.id)}
-            onDiscard={handleDiscard}
+            onDiscard={() => handleDiscard().catch(showBoundary)}
             onOpenHealth={(route) => void navigate(route)}
           />
         )}

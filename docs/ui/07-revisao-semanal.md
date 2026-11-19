@@ -80,9 +80,11 @@ agrupado por fase (✓ feito, – pulado) mais a opção "Fechar a revisão".
 
 Título com fase, "passo N de 10", ícone e nome; à direita, **Abrir a tela** (só o ícone abaixo de
 `md`), que grava as notas e leva à tela completa (Inbox, Próximas, Aguardando e Someday em Tarefas,
-Calendário, Projetos, Horizontes; Esvaziar a cabeça não tem). Embaixo do título, a pergunta do passo;
+Calendário, Projetos, Horizontes; Esvaziar a cabeça não tem). Semana que passou e Próximas duas
+semanas abrem o Calendário na semana atual ("Abre o Calendário") até a F4-e deixar abrir numa semana
+pela URL. Embaixo do título, a pergunta do passo;
 o conteúdo fica num `RegionBoundary` próprio. Rodapé: **Anterior**, **Pular** e **Concluir passo**
-(primário, `Ctrl+Enter`, escrito no tooltip). Marcar um passo vai para o próximo pendente; sem
+(primário, `Ctrl+Enter`, escrito no tooltip; o atalho não age com um modal aberto por cima). Marcar um passo vai para o próximo pendente; sem
 pendentes, para o fechamento.
 
 | Passo | Conteúdo | Ações (contador) |
@@ -97,6 +99,11 @@ pendentes, para o fechamento.
 | Projetos | ativos, `feitas/total` e a próxima ação ou o chip "Sem próxima ação" | `Select` define a próxima (`next_task_id`; próximas definidas); menu: someday ou concluído |
 | Someday | projetos e tarefas someday | Ativar; Excluir tarefa (tiradas das listas) |
 | Pensar adiante | texto livre, uma ideia por linha (rascunho só na tela) | Mandar para o Inbox (coletados), Rever áreas e metas |
+
+Nomes de tarefa e projeto são links (`#/task/:id`, `#/project/:id`), focáveis pelo teclado. Falha
+de IPC numa ação ou na carga de uma lista vai para o `RegionBoundary` do passo (`showBoundary`).
+O protótipo marca Esvaziar a cabeça e Semana que passou com uma tag "novo"; no app ela não existe,
+porque ficaria para sempre.
 
 As ações das linhas mostram texto a partir de `lg` e só ícone com tooltip abaixo (Excluir sempre só
 ícone). Cada captura entra na lista "No Inbox nesta revisão" (`captured`), que vale para todos os
