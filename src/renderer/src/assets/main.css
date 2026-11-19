@@ -960,6 +960,7 @@ body.float-window #root {
   min-width: 0;
   padding: 6px 8px;
   border-radius: 8px;
+  cursor: pointer;
 }
 
 .ct-hzrow:hover {

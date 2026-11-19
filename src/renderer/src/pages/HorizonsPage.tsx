@@ -163,7 +163,11 @@ export function HorizonsPage(): React.JSX.Element {
                 </Typography.Text>
                 <Typography.Text
                   type="secondary"
-                  style={{ fontSize: 12, fontFamily: token.fontFamilyCode }}
+                  style={{
+                    fontSize: 12,
+                    fontFamily: token.fontFamilyCode,
+                    fontVariantNumeric: 'tabular-nums'
+                  }}
                 >
                   {count}
                 </Typography.Text>
@@ -203,12 +207,17 @@ export function HorizonsPage(): React.JSX.Element {
           const due = task.due_date?.slice(0, 10)
           const tone = dueTone(due, new Date())
           return (
-            <div key={task.id} className="ct-hzrow">
+            <div
+              key={task.id}
+              className="ct-hzrow"
+              onClick={() => void navigate(`/task/${task.id}`)}
+            >
               {running && <LiveDot label="Timer rodando" />}
               <Typography.Link
                 href={`#/task/${task.id}`}
                 onClick={(e) => {
                   e.preventDefault()
+                  e.stopPropagation()
                   void navigate(`/task/${task.id}`)
                 }}
                 ellipsis
@@ -222,7 +231,12 @@ export function HorizonsPage(): React.JSX.Element {
               {due && (
                 <Typography.Text
                   type={tone ?? 'secondary'}
-                  style={{ fontSize: 12, fontFamily: token.fontFamilyCode, flex: 'none' }}
+                  style={{
+                    fontSize: 12,
+                    fontFamily: token.fontFamilyCode,
+                    fontVariantNumeric: 'tabular-nums',
+                    flex: 'none'
+                  }}
                 >
                   {formatDueShort(due, task.due_time)}
                 </Typography.Text>
@@ -234,11 +248,12 @@ export function HorizonsPage(): React.JSX.Element {
                   disabled={task.is_blocked}
                   aria-label={running ? `Pausar ${task.name}` : `Iniciar timer de ${task.name}`}
                   icon={running ? <Pause {...ICON} /> : <Play {...ICON} />}
-                  onClick={() =>
-                    (running ? stopTimer(task.id) : startTimer(task.id)).catch((error) =>
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    ;(running ? stopTimer(task.id) : startTimer(task.id)).catch((error) =>
                       message.error(errorMessage(error))
                     )
-                  }
+                  }}
                 />
               </Tooltip>
             </div>
@@ -259,7 +274,12 @@ export function HorizonsPage(): React.JSX.Element {
     view.projects.length ? (
       <Flex vertical gap={2}>
         {view.projects.map((project) => (
-          <div key={project.id} className="ct-hzrow" style={{ flexWrap: 'wrap', rowGap: 6 }}>
+          <div
+            key={project.id}
+            className="ct-hzrow"
+            style={{ flexWrap: 'wrap', rowGap: 6 }}
+            onClick={() => void navigate(`/project/${project.id}`)}
+          >
             <span
               aria-hidden
               style={{
@@ -274,6 +294,7 @@ export function HorizonsPage(): React.JSX.Element {
               href={`#/project/${project.id}`}
               onClick={(e) => {
                 e.preventDefault()
+                e.stopPropagation()
                 void navigate(`/project/${project.id}`)
               }}
               style={{ color: token.colorText, fontWeight: 500 }}
@@ -299,7 +320,7 @@ export function HorizonsPage(): React.JSX.Element {
   const areaMenu = (area: Area): MenuProps => ({
     items: [
       { key: 'filter', icon: <Filter {...ICON} />, label: 'Ver só esta área nos horizontes' },
-      { key: 'projects', icon: <Folder {...ICON} />, label: 'Ver projetos' },
+      { key: 'projects', icon: <Folder {...ICON} />, label: 'Ver projetos da área' },
       { key: 'edit', icon: <Pencil {...ICON} />, label: 'Editar' },
       { type: 'divider' },
       { key: 'delete', icon: <Trash2 {...ICON} />, label: 'Excluir…', danger: true }
@@ -307,7 +328,7 @@ export function HorizonsPage(): React.JSX.Element {
     onClick: ({ key, domEvent }) => {
       domEvent.stopPropagation()
       if (key === 'filter') setAreaId(area.id)
-      if (key === 'projects') void navigate('/projects')
+      if (key === 'projects') void navigate(`/projects?q=${encodeURIComponent(area.name)}`)
       if (key === 'edit') setAreaEdit(areaDraft(area))
       if (key === 'delete') {
         modal.confirm({
@@ -344,7 +365,7 @@ export function HorizonsPage(): React.JSX.Element {
                   type="button"
                   className="ct-hzarea-main"
                   aria-pressed={on}
-                  aria-label={`${on ? 'Mostrar todas as áreas' : `Filtrar por ${area.name}`}`}
+                  title={`Filtrar os horizontes por ${area.name}`}
                   onClick={() => setAreaId(on ? null : area.id)}
                 >
                   <span className="ct-emoji-box" aria-hidden>
@@ -365,7 +386,12 @@ export function HorizonsPage(): React.JSX.Element {
                     )}
                     <Typography.Text
                       type="secondary"
-                      style={{ fontSize: 12, display: 'block', fontFamily: token.fontFamilyCode }}
+                      style={{
+                        fontSize: 12,
+                        display: 'block',
+                        fontFamily: token.fontFamilyCode,
+                        fontVariantNumeric: 'tabular-nums'
+                      }}
                     >
                       {areaSummary(areaCounts(area, data.projects, data.goals))}
                     </Typography.Text>

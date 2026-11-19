@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useErrorBoundary } from 'react-error-boundary'
 import {
   Alert,
@@ -51,7 +51,8 @@ export function ProjectsPage(): React.JSX.Element {
   const [projects, setProjects] = useState<Project[] | null>(null)
   const [areas, setAreas] = useState<Area[]>([])
   const [tab, setTab] = useState<ProjectTab>('active')
-  const [search, setSearch] = useState('')
+  const [params] = useSearchParams()
+  const [search, setSearch] = useState(() => params.get('q') ?? '')
   const [onlyWithoutNext, setOnlyWithoutNext] = useState(false)
   const [storedView, setView] = usePersistedState<ProjectView | 'list'>(
     'ticktask:projectListViewMode',

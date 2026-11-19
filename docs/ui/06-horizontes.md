@@ -29,16 +29,16 @@ clicar rola até o nível com `scrollIntoView` (sem âncora de URL: o app roteia
 Cada `Card` mostra o chip, o nome, o contador em mono e o subtítulo; H2 a H5 têm **Adicionar**.
 
 - **H0 · Próximas ações** ("O que está planejado para hoje"): tarefas abertas de hoje
-  (`schedule:getForDate`). Nome (abre a tarefa), projeto, prazo em mono (âmbar hoje, vermelho
+  (`schedule:getForDate`). A linha inteira abre a tarefa (o nome é o link para o teclado), projeto, prazo em mono (âmbar hoje, vermelho
   vencido) e o botão do timer (iniciar/pausar; desabilitado se bloqueada), com o ponto pulsante
   quando roda. Vazio: "Nada planejado para hoje." com **Abrir o plano do dia**.
-- **H1 · Projetos** ("Resultados em andamento"): projetos ativos com ponto da cor, nome (abre o
-  projeto), etiqueta da área (sem filtro), próxima ação ou o chip "Sem próxima ação" e o progresso
+- **H1 · Projetos** ("Resultados em andamento"): projetos ativos com ponto da cor, nome (a linha
+  abre o projeto), etiqueta da área (sem filtro), próxima ação ou o chip "Sem próxima ação" e o progresso
   `feitas/total`. Vazio com **Abrir projetos**.
 - **H2 · Áreas de foco** ("Responsabilidades e papéis"): cards com emoji, nome, descrição e "N
   projetos · M metas" (projetos ativos). Clicar no card liga ou desliga o filtro (o card filtrado
   ganha a borda da cor primária). Menu (`⋯` e botão direito): Ver só esta área nos horizontes · Ver
-  projetos · Editar · Excluir…, que confirma e diz quantos projetos e metas ficam sem área.
+  projetos da área (abre `/projects?q={área}`, a busca já procura por área) · Editar · Excluir…, que confirma e diz quantos projetos e metas ficam sem área.
 - **H3 · Metas** (1 a 2 anos, 🎯), **H4 · Visão** (3 a 5 anos, 🔭), **H5 · Propósito** (princípios,
   ✨): emoji do nível, nome, etiqueta da área ("todas as áreas" sem área; clicar filtra) e
   descrição com as quebras de linha. Menu: Editar · Mover para ▸ (H3/H4/H5, com ✓ no atual) ·

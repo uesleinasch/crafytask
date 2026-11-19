@@ -87,13 +87,14 @@ janela), os onze botões ocupam praticamente toda a barra.
 | maioria | `<Button variant="ghost">` com "← Voltar" | `/` |
 | detalhe do projeto | `Button` `text` do antd com "← Projetos" (F5-e) | `/projects` |
 | detalhe da tarefa | `<button>` cru com "← Voltar" | `navigate(-1)` (histórico) |
-| calendário / horizontes | `<Button size="sm">` só com o ícone | `/` |
+| calendário / horizontes | sem voltar (F4-b2 e F5-b): a sidebar navega | — |
 
 ### B3. Ação primária em quatro cores
 
 `bg-slate-900` (maioria) · `bg-blue-600` (botão "+ Bloco" no calendário, "Salvar Alterações" e
 "Iniciar Revisão" do cartão azul) · `bg-emerald-600` ("Iniciar Revisão" do cabeçalho, "Sincronizar
-Todas as Tarefas") · `bg-indigo-600` ("Novo Objetivo" nos horizontes).
+Todas as Tarefas") · `bg-indigo-600` ("Novo Objetivo" nos horizontes; na F5-b virou o primário do
+tema, "Nova meta").
 
 Na revisão semanal, **o mesmo comando aparece duas vezes na mesma tela em duas cores diferentes**.
 

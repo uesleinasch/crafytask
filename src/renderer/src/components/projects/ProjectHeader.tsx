@@ -268,15 +268,14 @@ export function ProjectHeader({
         <PropPill
           label="Cor"
           content={
-            <Flex gap={8} wrap role="radiogroup" aria-label="Cor">
+            <Flex gap={8} wrap role="group" aria-label="Cor">
               {USER_COLORS.map((color) => {
                 const on = project.color.toLowerCase() === color.toLowerCase()
                 return (
                   <button
                     key={color}
                     type="button"
-                    role="radio"
-                    aria-checked={on}
+                    aria-pressed={on}
                     aria-label={`Cor ${color}`}
                     onClick={() => void onSave({ color })}
                     style={{

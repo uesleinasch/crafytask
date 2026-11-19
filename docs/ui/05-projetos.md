@@ -18,7 +18,8 @@ Dados: `project:list` (todos os status de uma vez) e `area:list`; relê em `task
 
 - **Abas de status** (`Tabs`; `Select` abaixo de `md`): Todos, Ativos (padrão), Someday, Concluídos e
   Arquivados, cada uma com o ícone e a cor do status e o contador em mono (`ProjectTabLabel`).
-- **Barra:** busca em nome, resultado desejado, descrição e área; ordenar (prazo, sem prazo no fim;
+- **Barra:** busca em nome, resultado desejado, descrição e área (começa com `?q=` da URL, que
+  Horizontes usa em "Ver projetos da área"); ordenar (prazo, sem prazo no fim;
   progresso; mais recentes; nome); **Cards / Tabela** (`Segmented`, só a partir de `md`: abaixo
   disso é sempre Cards); agrupar por área de foco; **Novo projeto** (primário).
 - Visão, ordem e agrupamento ficam em `localStorage` (`ticktask:projectListViewMode`, o valor antigo

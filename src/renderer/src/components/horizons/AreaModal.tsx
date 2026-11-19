@@ -54,13 +54,12 @@ export function AreaModal({ draft, onClose, onSaved }: AreaModalProps): React.JS
             <Typography.Text type="secondary" style={{ fontSize: 12 }}>
               Ícone
             </Typography.Text>
-            <Flex gap={6} wrap role="radiogroup" aria-label="Ícone" style={{ marginTop: 6 }}>
+            <Flex gap={6} wrap role="group" aria-label="Ícone" style={{ marginTop: 6 }}>
               {AREA_ICONS.map((icon) => (
                 <button
                   key={icon}
                   type="button"
-                  role="radio"
-                  aria-checked={value.icon === icon}
+                  aria-pressed={value.icon === icon}
                   aria-label={`Ícone ${icon}`}
                   className={value.icon === icon ? 'ct-emoji-opt on' : 'ct-emoji-opt'}
                   onClick={() => setValue({ ...value, icon })}
