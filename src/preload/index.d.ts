@@ -29,6 +29,10 @@ import type {
   Context,
   WeeklyReview,
   ReviewHealthIndicators,
+  ReviewCounterKey,
+  ReviewPastWeek,
+  ReviewStepKey,
+  ReviewStepStatus,
   TaskDependency,
   Area,
   CreateAreaInput,
@@ -261,15 +265,19 @@ interface API {
   getWeeklyReview: (id: number) => Promise<WeeklyReview | undefined>
   listWeeklyReviews: () => Promise<WeeklyReview[]>
   getLastWeeklyReview: () => Promise<WeeklyReview | undefined>
-  updateWeeklyReview: (
+  updateWeeklyReviewNotes: (id: number, notes: string) => Promise<void>
+  setWeeklyReviewStep: (
     id: number,
-    data: {
-      inbox_cleared?: boolean
-      notes?: string
-      checklist_state?: string
-      completed_at?: string
-    }
-  ) => Promise<void>
+    key: ReviewStepKey,
+    status: ReviewStepStatus | null
+  ) => Promise<WeeklyReview>
+  bumpWeeklyReviewCounter: (
+    id: number,
+    key: ReviewCounterKey,
+    taskId?: number
+  ) => Promise<WeeklyReview>
+  completeWeeklyReview: (id: number, notes?: string) => Promise<WeeklyReview>
+  getReviewPastWeek: () => Promise<ReviewPastWeek>
   getReviewHealthIndicators: () => Promise<ReviewHealthIndicators>
 
   // FASE 2: Subtarefas

@@ -16,6 +16,10 @@ import type {
   UpdateProjectInput,
   ProjectStatus,
   WeeklyReview,
+  ReviewCounterKey,
+  ReviewPastWeek,
+  ReviewStepKey,
+  ReviewStepStatus,
   ReviewHealthIndicators,
   TaskDependency,
   Area,
@@ -63,6 +67,18 @@ import {
 import { ensureNotebookSchema } from './notebookQueries'
 import { getProjectQuery, listProjectsQuery } from './projectQueries'
 import { ensureStatusChangedAt, healthIndicatorsQuery } from './healthQueries'
+import {
+  bumpReviewCounter,
+  completeReview,
+  createReview,
+  ensureReviewSchema,
+  getReview,
+  lastReview,
+  listReviews,
+  reviewPastWeek,
+  setReviewStep,
+  updateReviewNotes
+} from './reviewQueries'
 import {
   TIME_BLOCK_SELECT,
   calendarTasksQuery,
@@ -434,6 +450,7 @@ export function initDatabase(): void {
 
   ensureNotebookSchema(tagDb())
   ensureStatusChangedAt(tagDb())
+  ensureReviewSchema(tagDb())
 }
 
 // ===================== MIGRAÇÃO: someday status =====================
@@ -1717,72 +1734,47 @@ export function setTaskTotalTime(taskId: number, totalSeconds: number): void {
 // ===================== WEEKLY REVIEWS =====================
 
 export function createWeeklyReview(): WeeklyReview {
-  const stmt = db.prepare("INSERT INTO weekly_reviews (started_at) VALUES (datetime('now'))")
-  const result = stmt.run()
-  return getWeeklyReview(result.lastInsertRowid as number)!
+  return createReview(tagDb(), new Date())
 }
 
 export function getWeeklyReview(id: number): WeeklyReview | undefined {
-  const stmt = db.prepare('SELECT * FROM weekly_reviews WHERE id = ?')
-  const row = stmt.get(id) as WeeklyReview | undefined
-  if (row) {
-    return {
-      ...row,
-      inbox_cleared: Boolean(row.inbox_cleared)
-    }
-  }
-  return undefined
+  return getReview(tagDb(), id)
 }
 
 export function listWeeklyReviews(): WeeklyReview[] {
-  const stmt = db.prepare('SELECT * FROM weekly_reviews ORDER BY started_at DESC LIMIT 20')
-  return (stmt.all() as WeeklyReview[]).map((row) => ({
-    ...row,
-    inbox_cleared: Boolean(row.inbox_cleared)
-  }))
+  return listReviews(tagDb())
 }
 
 export function getLastWeeklyReview(): WeeklyReview | undefined {
-  const stmt = db.prepare('SELECT * FROM weekly_reviews ORDER BY started_at DESC LIMIT 1')
-  const row = stmt.get() as WeeklyReview | undefined
-  if (row) {
-    return {
-      ...row,
-      inbox_cleared: Boolean(row.inbox_cleared)
-    }
-  }
-  return undefined
+  return lastReview(tagDb())
 }
 
-export function updateWeeklyReview(
+export function updateWeeklyReviewNotes(id: number, notes: string): void {
+  updateReviewNotes(tagDb(), id, notes)
+}
+
+export function setWeeklyReviewStep(
   id: number,
-  data: { inbox_cleared?: boolean; notes?: string; checklist_state?: string; completed_at?: string }
-): void {
-  const updates: string[] = []
-  const values: unknown[] = []
+  key: ReviewStepKey,
+  status: ReviewStepStatus | null
+): WeeklyReview {
+  return setReviewStep(tagDb(), id, key, status)
+}
 
-  if (data.inbox_cleared !== undefined) {
-    updates.push('inbox_cleared = ?')
-    values.push(data.inbox_cleared ? 1 : 0)
-  }
-  if (data.notes !== undefined) {
-    updates.push('notes = ?')
-    values.push(data.notes)
-  }
-  if (data.checklist_state !== undefined) {
-    updates.push('checklist_state = ?')
-    values.push(data.checklist_state)
-  }
-  if (data.completed_at !== undefined) {
-    updates.push('completed_at = ?')
-    values.push(data.completed_at)
-  }
+export function bumpWeeklyReviewCounter(
+  id: number,
+  key: ReviewCounterKey,
+  taskId?: number
+): WeeklyReview {
+  return bumpReviewCounter(tagDb(), id, key, taskId)
+}
 
-  if (updates.length > 0) {
-    values.push(id)
-    const stmt = db.prepare(`UPDATE weekly_reviews SET ${updates.join(', ')} WHERE id = ?`)
-    stmt.run(...values)
-  }
+export function completeWeeklyReview(id: number, notes?: string): WeeklyReview {
+  return completeReview(tagDb(), id, new Date(), notes)
+}
+
+export function getReviewPastWeek(): ReviewPastWeek {
+  return reviewPastWeek(tagDb(), new Date())
 }
 
 export function getReviewHealthIndicators(): ReviewHealthIndicators {

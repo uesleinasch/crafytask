@@ -466,13 +466,57 @@ export type TaskListItem = Pick<Task, 'id' | 'name' | 'status' | 'category' | 'p
 
 // ===================== WEEKLY REVIEW =====================
 
+export type ReviewStepKey =
+  | 'collect'
+  | 'inbox'
+  | 'mind'
+  | 'next'
+  | 'past'
+  | 'upcoming'
+  | 'waiting'
+  | 'projects'
+  | 'someday'
+  | 'creative'
+
+export type ReviewStepStatus = 'done' | 'skipped'
+
+export type ReviewSteps = Partial<Record<ReviewStepKey, ReviewStepStatus>>
+
+export type ReviewCounterKey = 'collected' | 'processed' | 'nextSet' | 'chased' | 'cleaned'
+
+export type ReviewCounters = Record<ReviewCounterKey, number>
+
 export interface WeeklyReview {
   id: number
   started_at: string
   completed_at?: string
   inbox_cleared: boolean
   notes?: string
-  checklist_state: string
+  steps: ReviewSteps
+  step_total: number
+  counters: ReviewCounters
+  captured: number[]
+  start_health: ReviewHealthIndicators | null
+}
+
+export interface ReviewPastItem {
+  kind: 'work' | 'event'
+  task_id: number
+  name: string
+  seconds: number
+  done: boolean
+  time?: string
+}
+
+export interface ReviewPastDay {
+  day: string
+  items: ReviewPastItem[]
+}
+
+export interface ReviewPastWeek {
+  from: string
+  to: string
+  days: ReviewPastDay[]
 }
 
 export interface ReviewHealthIndicators {
