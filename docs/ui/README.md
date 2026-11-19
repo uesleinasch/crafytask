@@ -13,7 +13,7 @@ qual uma refatoração de interface pode ser desenhada sem perder funcionalidade
 | [00-visao-geral.md](00-visao-geral.md) | O produto, o vocabulário GTD, o shell da aplicação, as janelas, as rotas e os padrões que se repetem em toda tela |
 | [01-lista-de-tarefas.md](01-lista-de-tarefas.md) | Rota `/` — a tela inicial: abas de status, filtros, ações em massa, quatro modos de visualização |
 | [02-detalhe-da-tarefa.md](02-detalhe-da-tarefa.md) | Rota `/task/:id` — a tela mais densa do app: painel de dados, timer herói, editor de notas e desenho |
-| [03-plano-do-dia.md](03-plano-do-dia.md) | Rota `/today` — plano de hoje (arrastável) e visão da semana |
+| [03-plano-do-dia.md](03-plano-do-dia.md) | Rota `/today` — plano de hoje (carga contra a jornada, ordem automática) e horas da semana |
 | [04-calendario.md](04-calendario.md) | Rota `/calendar` — grade semanal com blocos de tempo e calendário mensal com drag-and-drop |
 | [05-projetos.md](05-projetos.md) | Rotas `/projects` e `/project/:id` |
 | [06-horizontes.md](06-horizontes.md) | Rota `/horizons` — as 6 perspectivas GTD (H0–H5), áreas de foco e metas |

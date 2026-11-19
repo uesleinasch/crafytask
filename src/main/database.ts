@@ -2211,7 +2211,8 @@ export function getTasksForDate(date: string): Task[] {
     LEFT JOIN projects p ON t.project_id = p.id
     WHERE t.scheduled_date = ? AND t.is_archived = 0 AND t.parent_task_id IS NULL
     ORDER BY t.scheduled_time IS NULL, t.scheduled_time,
-      (t.due_date = ? AND t.due_time IS NOT NULL) DESC, CASE WHEN t.due_date = ? THEN t.due_time END,
+      COALESCE(substr(t.due_date, 1, 10) = ? AND t.due_time IS NOT NULL, 0) DESC,
+      CASE WHEN substr(t.due_date, 1, 10) = ? THEN t.due_time END,
       COALESCE(t.day_order, 999999), t.created_at ASC
   `)
   const rows = stmt.all(date, date, date) as (Task & { project_name?: string })[]
@@ -2494,10 +2495,9 @@ export function getTimeBlocksForDate(date: string): TimeBlock[] {
 }
 
 export function getTimeBlocksForWeek(startDate: string): TimeBlock[] {
-  const start = new Date(startDate + 'T00:00:00')
-  const end = new Date(start)
-  end.setDate(end.getDate() + 6)
-  const endDate = end.toISOString().split('T')[0]
+  const end = new Date(startDate + 'T12:00:00Z')
+  end.setUTCDate(end.getUTCDate() + 6)
+  const endDate = end.toISOString().slice(0, 10)
 
   const stmt = db.prepare(`
     SELECT tb.*, t.name as task_name, t.category as task_category

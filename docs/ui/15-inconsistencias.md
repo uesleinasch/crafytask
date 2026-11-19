@@ -119,14 +119,14 @@ Fechar a janela esconde o app na bandeja. O único lugar que diz isso é uma not
 
 | Tela | O que oferece que as outras não têm |
 | --- | --- |
-| `/today` aba Hoje | ordenação manual por arraste, indicador de carga vs. 8h |
-| `/today` aba Semana | 7 dias em colunas, somatório por dia |
+| `/today` plano | carga do dia (blocos de tempo) vs. 8h, ordem automática |
+| `/today` semana | horas planejadas por dia (blocos de tempo) |
 | `/calendar` semana | grade horária, blocos de tempo, linha do "agora" |
 | `/calendar` mês | arraste para reagendar entre dias |
 | `/horizons` H0 | contexto vertical (do H0 ao H5) |
 
-Nenhuma delas faz o conjunto. Reagendar arrastando só existe no mês; ordenar o dia só existe em
-`/today`; ver blocos de tempo só existe no calendário.
+Nenhuma delas faz o conjunto. Reagendar arrastando só existe no mês; criar e editar blocos de tempo só existe
+no calendário.
 
 ### C2. Três desenhos para "timers em execução"
 

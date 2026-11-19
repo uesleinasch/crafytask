@@ -14,7 +14,8 @@ calendário mensal.
 
 - Tarefas de `schedule:getForDate(hoje)`, com a data local (`localDateString`), não a UTC.
 - Blocos de tempo da semana (segunda a domingo) de `timeBlock:getForWeek(segunda)`.
-- A tela relê tudo a cada `tasks:refresh`; falha de leitura vai para o `RegionBoundary` da rota.
+- A tela relê tudo a cada `tasks:refresh` e `timer:stopped`, e troca de dia sozinha à meia-noite;
+  falha de leitura vai para o `RegionBoundary` da rota.
 
 ## Layout
 
@@ -27,7 +28,8 @@ Título como "Plano de terça, 17 de novembro" (`planTitle`, sem "-feira").
 **Carga** no `extra`: `Progress` fino de 96px e "6,5h de 8h" em mono. A carga (`plannedMin`) é a
 soma dos blocos de tempo de hoje, a mesma conta do calendário; a jornada é 8h (`JOURNEY_MIN`) até a
 F7-f torná-la configurável. Passou da jornada: barra em `colorWarning`, texto em
-`colorWarningText` com "· passa da jornada". Nunca vermelho.
+`colorWarningText` com "· passa da jornada". Nunca vermelho. Abaixo de `sm`, a barra cai para
+48px e o aviso vira tooltip, para o título caber.
 
 **Lista** (`List size="small"`), sem arrasto. A ordem vem do SQL de `getTasksForDate`:
 
@@ -37,7 +39,7 @@ F7-f torná-la configurável. Passou da jornada: barra em `colorWarning`, texto 
 
 Cada linha: nome (abre `/task/:id`) e, embaixo, a faixa `09:00–10:30` com `Clock` (só com horário,
 tooltip "Horário fixo…"), `StatusChip` e `ProjectLabel`. À direita, em mono, a hora do prazo de hoje
-ou o tempo registrado (ao vivo quando o timer roda).
+ou o tempo registrado (`formatShortDuration`, ao vivo quando o timer roda; "—" sem tempo).
 
 **Vazio:** "Nada planejado para hoje.", a dica de usar **Hoje** na lista de tarefas e o botão **Ir
 para Tarefas** (`/`).

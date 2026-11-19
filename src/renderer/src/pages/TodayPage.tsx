@@ -7,6 +7,7 @@ import {
   Col,
   Empty,
   Flex,
+  Grid,
   List,
   Progress,
   Row,
@@ -23,7 +24,7 @@ import { formatTimeRange } from '@shared/taskTime'
 import { StatusChip } from '@renderer/components/chips/StatusChip'
 import { PageContainer } from '@renderer/components/shell/PageContainer'
 import { ProjectLabel } from '@renderer/components/tasks/ProjectLabel'
-import { formatHoursMinutes } from '@renderer/components/tasks/archiveView'
+import { formatShortDuration } from '@renderer/components/tasks/taskTableFormat'
 import {
   JOURNEY_MIN,
   formatPlannedHours,
@@ -46,24 +47,23 @@ function PlanItem({ task, today }: { task: Task; today: string }): React.JSX.Ele
   const seconds = useLiveSeconds(task)
   const range = formatTimeRange(task.scheduled_time, task.scheduled_end_time)
   const dueTime = task.due_date?.slice(0, 10) === today ? task.due_time : null
-  const aside = dueTime || (seconds > 0 ? formatHoursMinutes(seconds) : null)
 
   return (
     <List.Item
-      actions={
-        aside
-          ? [
-              <Typography.Text key="time" type="secondary" style={mono}>
-                {aside}
-              </Typography.Text>
-            ]
-          : undefined
-      }
+      actions={[
+        <Typography.Text key="time" style={mono}>
+          {dueTime || formatShortDuration(seconds)}
+        </Typography.Text>
+      ]}
     >
       <List.Item.Meta
         title={
           <Typography.Link
-            onClick={() => navigate(`/task/${task.id}`)}
+            href={`#/task/${task.id}`}
+            onClick={(event) => {
+              event.preventDefault()
+              navigate(`/task/${task.id}`)
+            }}
             style={{ color: token.colorText }}
           >
             {task.name}
@@ -100,9 +100,10 @@ export function TodayPage(): React.JSX.Element {
   const { showBoundary } = useErrorBoundary()
   const { token } = theme.useToken()
   const mono = useMono()
-  const [now] = useState(() => new Date())
-  const today = localDateString(now)
-  const week = useMemo(() => weekDays(now), [now])
+  const screens = Grid.useBreakpoint()
+  const [today, setToday] = useState(() => localDateString(new Date()))
+  const day = useMemo(() => new Date(`${today}T12:00:00`), [today])
+  const week = useMemo(() => weekDays(day), [day])
   const [tasks, setTasks] = useState<Task[] | null>(null)
   const [blocks, setBlocks] = useState<TimeBlock[]>([])
 
@@ -117,8 +118,19 @@ export function TodayPage(): React.JSX.Element {
 
   useEffect(() => {
     load().catch(showBoundary)
-    return window.api.onTasksRefresh(() => load().catch(showBoundary))
+    const reload = (): void => void load().catch(showBoundary)
+    const offRefresh = window.api.onTasksRefresh(reload)
+    const offStopped = window.api.onTimerStopped(reload)
+    return () => {
+      offRefresh()
+      offStopped()
+    }
   }, [load, showBoundary])
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setToday(localDateString(new Date())), 60_000)
+    return () => window.clearInterval(timer)
+  }, [])
 
   const minutesByDate = useMemo(() => plannedMinByDate(blocks), [blocks])
   const plannedMin = minutesByDate.get(today) ?? 0
@@ -139,7 +151,7 @@ export function TodayPage(): React.JSX.Element {
         <Row gutter={[16, 16]}>
           <Col xs={24} lg={16}>
             <Card
-              title={planTitle(now)}
+              title={planTitle(day)}
               extra={
                 <Flex align="center" gap={8}>
                   <Progress
@@ -147,16 +159,18 @@ export function TodayPage(): React.JSX.Element {
                     showInfo={false}
                     size="small"
                     strokeColor={over ? token.colorWarning : undefined}
-                    style={{ width: 96, margin: 0 }}
-                    aria-label={`Carga planejada: ${loadLabel}`}
+                    style={{ width: screens.sm ? 96 : 48, margin: 0 }}
+                    aria-label={`Carga planejada: ${loadLabel}${over ? ', passa da jornada' : ''}`}
                   />
-                  <Typography.Text
-                    type="secondary"
-                    style={over ? { ...mono, color: token.colorWarningText } : mono}
-                  >
-                    {loadLabel}
-                    {over ? ' · passa da jornada' : ''}
-                  </Typography.Text>
+                  <Tooltip title={over && !screens.sm ? 'Passa da jornada' : undefined}>
+                    <Typography.Text
+                      type="secondary"
+                      style={over ? { ...mono, color: token.colorWarningText } : mono}
+                    >
+                      {loadLabel}
+                      {over && screens.sm ? ' · passa da jornada' : ''}
+                    </Typography.Text>
+                  </Tooltip>
                 </Flex>
               }
               styles={tasks.length ? { body: { paddingTop: 4, paddingBottom: 4 } } : undefined}
