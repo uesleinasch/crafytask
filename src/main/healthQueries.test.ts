@@ -108,6 +108,23 @@ describe('healthIndicatorsQuery', () => {
     })
   })
 
+  it('idade do Inbox conta de quando a tarefa voltou para ele', () => {
+    seed(`
+      INSERT INTO tasks (id, status, created_at, status_changed_at) VALUES
+        (1, 'inbox', '2026-10-01 12:00:00', '2026-11-18 12:00:00');
+    `)
+    expect(healthIndicatorsQuery(db, NOW).oldestInboxDays).toBe(1)
+  })
+
+  it('"há mais de N dias" é estrito: exatamente no limite não conta', () => {
+    const limit = new Date(NOW.getTime() - 7 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 19)
+      .replace('T', ' ')
+    seed(`INSERT INTO tasks (id, status, status_changed_at) VALUES (1, 'aguardando', '${limit}')`)
+    expect(healthIndicatorsQuery(db, NOW).staleWaitingTasks).toBe(0)
+  })
+
   it('projeto sem próxima ação segue a mesma regra da lista de projetos', () => {
     seed(`
       INSERT INTO projects (id, status, created_at, next_task_id) VALUES

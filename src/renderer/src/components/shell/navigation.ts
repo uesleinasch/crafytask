@@ -1,5 +1,5 @@
 import type { WeeklyReview } from '@shared/types'
-import { HEALTH_LIMITS } from '@shared/healthLimits'
+import { calendarDaysSince, isReviewOverdue } from '@shared/healthLimits'
 
 export type NavKey =
   | 'tasks'
@@ -73,13 +73,9 @@ export function screenTitle(pathname: string): string {
   return ALL_ROUTES.find((item) => item.key === key)?.label ?? 'CrafyTask'
 }
 
-export const REVIEW_INTERVAL_DAYS = HEALTH_LIMITS.reviewDays
-
 export function isWeeklyReviewOverdue(reviews: readonly WeeklyReview[], now: Date): boolean {
-  const limit = now.getTime() - REVIEW_INTERVAL_DAYS * 24 * 60 * 60 * 1000
-  return !reviews.some((review) => review.completed_at && sqliteTime(review.completed_at) >= limit)
-}
-
-function sqliteTime(value: string): number {
-  return new Date(value.includes('T') ? value : `${value.replace(' ', 'T')}Z`).getTime()
+  const days = reviews
+    .filter((review) => review.completed_at)
+    .map((review) => calendarDaysSince(review.completed_at as string, now))
+  return isReviewOverdue(days.length ? Math.min(...days) : null)
 }

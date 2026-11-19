@@ -1,5 +1,5 @@
 import type { ReviewHealthIndicators } from '@shared/types'
-import { HEALTH_LIMITS } from '@shared/healthLimits'
+import { HEALTH_LIMITS, isReviewOverdue } from '@shared/healthLimits'
 
 export type HealthKey =
   | 'inbox'
@@ -61,7 +61,7 @@ function reviewItem(h: ReviewHealthIndicators): HealthItem {
     }
   }
   const valueText = since === 0 ? 'hoje' : `há ${days(since)}`
-  if (since > HEALTH_LIMITS.reviewDays) {
+  if (isReviewOverdue(since)) {
     return {
       ...base,
       valueText,

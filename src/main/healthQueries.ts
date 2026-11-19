@@ -1,5 +1,5 @@
 import type { ReviewHealthIndicators } from '@shared/types'
-import { HEALTH_LIMITS } from '@shared/healthLimits'
+import { HEALTH_LIMITS, calendarDaysSince } from '@shared/healthLimits'
 import { localDateString } from '@shared/dueState'
 import type { SqliteLike, SqliteParam } from './tagQueries'
 
@@ -34,16 +34,6 @@ function sqlUtc(date: Date): string {
   return date.toISOString().slice(0, 19).replace('T', ' ')
 }
 
-function parseSqlTime(value: string): Date {
-  return new Date(value.includes('T') ? value : `${value.replace(' ', 'T')}Z`)
-}
-
-function calendarDaysSince(value: string, now: Date): number {
-  const then = parseSqlTime(value)
-  const start = (d: Date): number => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
-  return Math.max(0, Math.round((start(now) - start(then)) / DAY_MS))
-}
-
 function count(db: SqliteLike, sql: string, ...params: SqliteParam[]): number {
   return (db.prepare(sql).get(...params) as { n: number }).n
 }
@@ -57,7 +47,7 @@ export function healthIndicatorsQuery(db: SqliteLike, now: Date): ReviewHealthIn
 
   const inbox = db
     .prepare(
-      `SELECT COUNT(*) AS n, MIN(created_at) AS oldest FROM tasks
+      `SELECT COUNT(*) AS n, MIN(COALESCE(status_changed_at, created_at)) AS oldest FROM tasks
        WHERE status = 'inbox' AND COALESCE(is_archived, 0) = 0`
     )
     .get() as { n: number; oldest: string | null }
@@ -89,7 +79,7 @@ export function healthIndicatorsQuery(db: SqliteLike, now: Date): ReviewHealthIn
       db,
       `SELECT COUNT(*) AS n FROM projects p
        WHERE p.status = 'active'
-         AND julianday(p.created_at) <= julianday(?)
+         AND julianday(p.created_at) < julianday(?)
          AND NOT EXISTS (
            SELECT 1 FROM time_entries e JOIN tasks t ON t.id = e.task_id
            WHERE t.project_id = p.id
@@ -106,13 +96,13 @@ export function healthIndicatorsQuery(db: SqliteLike, now: Date): ReviewHealthIn
     staleWaitingTasks: count(
       db,
       `SELECT COUNT(*) AS n FROM tasks WHERE status = 'aguardando'
-       AND COALESCE(is_archived, 0) = 0 AND ${CHANGED} <= julianday(?)`,
+       AND COALESCE(is_archived, 0) = 0 AND ${CHANGED} < julianday(?)`,
       cutoff(HEALTH_LIMITS.waitingDays)
     ),
     staleNextTasks: count(
       db,
       `SELECT COUNT(*) AS n FROM tasks WHERE status = 'proximas'
-       AND COALESCE(is_archived, 0) = 0 AND ${CHANGED} <= julianday(?)`,
+       AND COALESCE(is_archived, 0) = 0 AND ${CHANGED} < julianday(?)`,
       cutoff(HEALTH_LIMITS.nextDays)
     ),
     overdueTasks: count(
