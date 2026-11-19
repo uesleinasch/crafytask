@@ -350,8 +350,6 @@ const api = {
   // ===================== FASE 2: Agendamento =====================
   getTasksForDate: (date: string): Promise<Task[]> =>
     ipcRenderer.invoke('schedule:getForDate', date),
-  getWeeklySchedule: (startDate: string): Promise<{ date: string; tasks: Task[] }[]> =>
-    ipcRenderer.invoke('schedule:getWeekly', startDate),
   scheduleTaskForDate: (taskId: number, date: string | null): Promise<void> =>
     ipcRenderer.invoke('task:scheduleForDate', taskId, date),
 
@@ -463,8 +461,6 @@ const api = {
     ipcRenderer.invoke('timeBlock:getForDate', date),
   getTimeBlocksForWeek: (startDate: string): Promise<TimeBlock[]> =>
     ipcRenderer.invoke('timeBlock:getForWeek', startDate),
-  getTimeBlocksForMonth: (yearMonth: string): Promise<TimeBlock[]> =>
-    ipcRenderer.invoke('timeBlock:getForMonth', yearMonth),
   updateTimeBlock: (id: number, data: UpdateTimeBlockInput): Promise<TimeBlock> =>
     ipcRenderer.invoke('timeBlock:update', id, data),
   getTimeBlocksForRange: (from: string, to: string): Promise<TimeBlock[]> =>

@@ -106,7 +106,6 @@ import {
   createTimeBlock,
   getTimeBlocksForDate,
   getTimeBlocksForWeek,
-  getTimeBlocksForMonth,
   getTimeBlocksForRange,
   listCalendarTasks,
   listUnscheduledTasks,
@@ -131,7 +130,6 @@ import {
   addTaskDependency,
   removeTaskDependency,
   getTasksForDate,
-  getWeeklySchedule,
   createNextRecurrence,
   deleteNextRecurrence,
   getTasksDueForNotification,
@@ -1182,7 +1180,6 @@ function setupIpcHandlers(): void {
 
   // ===================== FASE 2: Agendamento =====================
   ipcMain.handle('schedule:getForDate', (_, date: string) => getTasksForDate(date))
-  ipcMain.handle('schedule:getWeekly', (_, startDate: string) => getWeeklySchedule(startDate))
   ipcMain.handle('task:scheduleForDate', (_, taskId: number, date: string | null) => {
     updateTask(taskId, { scheduled_date: date })
     autoSyncToGoogle(taskId)
@@ -1198,9 +1195,6 @@ function setupIpcHandlers(): void {
   })
   ipcMain.handle('timeBlock:getForDate', (_, date: string) => getTimeBlocksForDate(date))
   ipcMain.handle('timeBlock:getForWeek', (_, startDate: string) => getTimeBlocksForWeek(startDate))
-  ipcMain.handle('timeBlock:getForMonth', (_, yearMonth: string) =>
-    getTimeBlocksForMonth(yearMonth)
-  )
   ipcMain.handle('timeBlock:update', (_, id: number, data: UpdateTimeBlockInput) => {
     const before = getTimeBlock(id)
     if (!before) throw new Error('Bloco não encontrado.')

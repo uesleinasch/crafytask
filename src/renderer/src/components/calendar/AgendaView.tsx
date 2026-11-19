@@ -32,9 +32,7 @@ export function AgendaView({
 
   if (!rows.length) {
     return (
-      <div className="ct-calagenda" style={{ padding: 24 }}>
-        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Nada nas próximas duas semanas." />
-      </div>
+      <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Nada nas próximas duas semanas." />
     )
   }
 

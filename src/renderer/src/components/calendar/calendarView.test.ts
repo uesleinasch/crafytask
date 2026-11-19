@@ -217,6 +217,9 @@ describe('mês e agenda', () => {
     expect([days.length, days[0], days[13]]).toEqual([14, '2026-11-19', '2026-12-02'])
     expect(stepCursor('agenda', '2026-11-19', 1)).toBe('2026-12-03')
     expect(periodLabel('agenda', '2026-11-19', days)).toBe('19 nov – 2 dez 2026')
+    expect(periodLabel('agenda', '2026-11-01', agendaDays('2026-11-01'))).toBe(
+      '1 nov – 14 nov 2026'
+    )
   })
 
   it('itens com hora do dia: blocos e tarefas com horário em ordem, conforme Mostrar', () => {

@@ -378,10 +378,13 @@
   font: inherit;
   font-size: 13px;
   font-weight: 500;
+}
+
+button.ct-calnum.sm {
   cursor: pointer;
 }
 
-.ct-calnum.sm:hover:not(.today) {
+button.ct-calnum.sm:hover:not(.today) {
   background: var(--ant-color-bg-layout);
 }
 

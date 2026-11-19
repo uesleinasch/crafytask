@@ -106,7 +106,7 @@ export function periodLabel(view: CalendarView, cursor: string, days: string[]):
   if (view === 'day') return fmt(cursor, { weekday: 'long', day: 'numeric', month: 'long' })
   const first = days[0]
   const last = days[days.length - 1]
-  if (first.slice(0, 7) === last.slice(0, 7)) {
+  if (view !== 'agenda' && first.slice(0, 7) === last.slice(0, 7)) {
     return `${Number(first.slice(8))}–${fmt(last, { day: 'numeric', month: 'long', year: 'numeric' })}`
   }
   const short = (d: string): string =>

@@ -53,11 +53,11 @@ export function MonthView({
     <div style={{ height: '100%', overflow: 'auto' }}>
       <div
         className="ct-calmonth"
-        role="grid"
+        role="group"
         aria-label={fmt(cursor, { month: 'long', year: 'numeric' })}
       >
         {cells.slice(0, 7).map((d) => (
-          <span key={`wd-${d}`} className="ct-calmonth-wd" role="columnheader">
+          <span key={`wd-${d}`} className="ct-calmonth-wd" aria-hidden>
             {fmt(d, { weekday: 'short' }).replace('.', '')}
           </span>
         ))}
@@ -70,7 +70,6 @@ export function MonthView({
           return (
             <div
               key={d}
-              role="gridcell"
               className={out ? 'ct-calmonth-cell out' : 'ct-calmonth-cell'}
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
@@ -98,7 +97,7 @@ export function MonthView({
                   type="button"
                   className={d === today ? 'ct-calnum sm today' : 'ct-calnum sm'}
                   onClick={() => onOpenDay(d)}
-                  aria-label={`Ver ${fmt(d, { day: 'numeric', month: 'long' })}`}
+                  aria-label={`Ver ${fmt(d, { weekday: 'long', day: 'numeric', month: 'long' })}`}
                   aria-current={d === today ? 'date' : undefined}
                 >
                   {Number(d.slice(8))}
@@ -108,6 +107,8 @@ export function MonthView({
                     title={timed.map((i) => `${i.start}–${i.end} ${itemName(i)}`).join(' · ')}
                   >
                     <span
+                      role="img"
+                      tabIndex={0}
                       aria-label={summary}
                       style={{
                         fontFamily: token.fontFamilyCode,

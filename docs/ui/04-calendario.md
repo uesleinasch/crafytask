@@ -114,8 +114,8 @@ tarefa. Abre pelo **Novo bloco** e pelo clique na grade. Erro do main
 ## Dados
 
 Grade, Mês e Agenda usam `timeBlock:getForRange`, `schedule:getRange` e `timeEntry:listRange`
-sobre os dias da visão (no Mês, as 5 ou 6 semanas inteiras). `timeBlock:getForMonth` segue só para
-o MCP.
+sobre os dias da visão (no Mês, as 5 ou 6 semanas inteiras). Os canais antigos
+`timeBlock:getForMonth` e `schedule:getWeekly` saíram; o MCP chama as funções do banco direto.
 
 - `timeEntry:listRange(fromIso, toIso)` → `TimeEntrySpan[]`: sessões de tempo que cruzam o
   intervalo, com nome e categoria da tarefa e cor do projeto (`listTimeEntriesInRange` em
