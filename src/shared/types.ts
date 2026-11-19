@@ -469,10 +469,14 @@ export interface WeeklyReview {
 
 export interface ReviewHealthIndicators {
   inboxCount: number
+  oldestInboxDays: number | null
   projectsWithoutNextAction: number
+  stalledProjects: number
   staleWaitingTasks: number
   staleNextTasks: number
+  overdueTasks: number
   somedayCount: number
+  daysSinceLastReview: number | null
 }
 
 // ===================== TIME BLOCK (GTD Time Blocking) =====================

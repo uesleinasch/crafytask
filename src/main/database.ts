@@ -62,6 +62,7 @@ import {
 } from './contextQueries'
 import { ensureNotebookSchema } from './notebookQueries'
 import { getProjectQuery, listProjectsQuery } from './projectQueries'
+import { ensureStatusChangedAt, healthIndicatorsQuery } from './healthQueries'
 import {
   TIME_BLOCK_SELECT,
   calendarTasksQuery,
@@ -432,6 +433,7 @@ export function initDatabase(): void {
   `)
 
   ensureNotebookSchema(tagDb())
+  ensureStatusChangedAt(tagDb())
 }
 
 // ===================== MIGRAÇÃO: someday status =====================
@@ -1784,70 +1786,7 @@ export function updateWeeklyReview(
 }
 
 export function getReviewHealthIndicators(): ReviewHealthIndicators {
-  const inboxCount = (
-    db
-      .prepare("SELECT COUNT(*) as count FROM tasks WHERE status = 'inbox' AND is_archived = 0")
-      .get() as { count: number }
-  ).count
-
-  const projectsWithoutNextAction = (
-    db
-      .prepare(
-        `
-      SELECT COUNT(*) as count FROM projects p
-      WHERE p.status = 'active'
-      AND NOT EXISTS (
-        SELECT 1 FROM tasks t WHERE t.project_id = p.id AND t.status = 'proximas'
-      )
-    `
-      )
-      .get() as { count: number }
-  ).count
-
-  const staleWaitingTasks = (
-    db
-      .prepare(
-        `
-      SELECT COUNT(*) as count FROM tasks
-      WHERE status = 'aguardando'
-      AND is_archived = 0
-      AND updated_at <= datetime('now', '-7 days')
-    `
-      )
-      .get() as { count: number }
-  ).count
-
-  const staleNextTasks = (
-    db
-      .prepare(
-        `
-      SELECT COUNT(*) as count FROM tasks
-      WHERE status = 'proximas'
-      AND is_archived = 0
-      AND updated_at <= datetime('now', '-14 days')
-    `
-      )
-      .get() as { count: number }
-  ).count
-
-  const somedayCount = (
-    db
-      .prepare(
-        `
-      SELECT COUNT(*) as count FROM tasks
-      WHERE status = 'someday' AND is_archived = 0
-    `
-      )
-      .get() as { count: number }
-  ).count
-
-  return {
-    inboxCount,
-    projectsWithoutNextAction,
-    staleWaitingTasks,
-    staleNextTasks,
-    somedayCount
-  }
+  return healthIndicatorsQuery(tagDb(), new Date())
 }
 
 // ===================== ESTATÍSTICAS =====================

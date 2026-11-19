@@ -52,4 +52,8 @@ describe('revisão semanal atrasada', () => {
   it('atrasa quando a última concluída passou de sete dias', () => {
     expect(isWeeklyReviewOverdue([review('2026-11-10T09:00:00.000Z')], now)).toBe(true)
   })
+
+  it('conta dias de calendário, como o card de revisão: no 7º dia ainda está em dia', () => {
+    expect(isWeeklyReviewOverdue([review('2026-11-11T09:00:00.000Z')], now)).toBe(false)
+  })
 })

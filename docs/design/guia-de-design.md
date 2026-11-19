@@ -734,7 +734,10 @@ tempo?** Toda métrica abre o que ela conta (E4). Base: NN/g (comprimento e posi
   discordarem. A consulta traz oito indicadores: Inbox, sem próxima ação, projetos parados (> 7
   dias), aguardando (> 7 dias), próximas paradas (> 14 dias), prazos vencidos, someday e dias desde
   a última revisão. O dashboard mostra seis (sem próximas paradas e someday); a revisão mostra seis
-  (sem projetos parados e a própria revisão).
+  (sem projetos parados e a própria revisão). Título e texto de cada indicador são os mesmos nas duas telas
+  (`healthItems.ts`), e o ponto âmbar da Revisão na sidebar usa a mesma regra do cartão (mais de 7
+  dias de calendário desde a última concluída). "Há mais de N dias" conta da última mudança de
+  status, não da última edição.
 - **Tarefas abertas por status** (Agora): barras horizontais ordenadas pelo fluxo, chip do status
   ao lado, contagem e %. Substitui o funil, que punha Aguardando como etapa depois de Executando.
 - **Filtros** (No período): `Segmented` 7 dias / 30 dias / 90 dias / 12 meses (padrão 30),
