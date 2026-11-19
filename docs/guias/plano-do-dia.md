@@ -10,12 +10,15 @@ Uma tarefa entra no plano de hoje quando a data **Programado para** é hoje. Voc
 - arrastando a tarefa para o dia de hoje na visão mensal do calendário;
 - pelo MCP, com a ferramenta `plan_day`.
 
-A tela **Hoje** tem duas abas:
+A tela **Hoje** tem dois cartões:
 
-- **Hoje** — a lista do dia, que você ordena arrastando. No topo, o **indicador de carga** soma os
-  limites de tempo das tarefas do dia contra uma jornada de 8 h (fica vermelho quando passa) e
-  conta quantas já foram feitas.
-- **Esta Semana** — panorama dos próximos sete dias, só leitura.
+- **Plano do dia** — as tarefas de hoje, em ordem automática: primeiro as que têm horário, pela
+  hora; depois as com prazo hoje e hora; o resto pela ordem do `plan_day` e pela data de criação.
+  Para mudar a posição de uma tarefa, dê um horário a ela. No topo do cartão, a **carga** soma os
+  blocos de tempo de hoje (os do calendário) contra uma jornada de 8 h; quando passa, fica em
+  âmbar com "passa da jornada".
+- **Semana** — as horas planejadas em blocos de tempo de segunda a domingo, com os dias acima da
+  jornada em âmbar.
 
 ## Horários e prazos
 

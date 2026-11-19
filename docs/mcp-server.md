@@ -76,7 +76,7 @@ Ao subir a ponte com `ELECTRON_RUN_AS_NODE=1`, essa variável é removida do amb
 | `read_drawing` | Devolve o desenho (Excalidraw) de uma task como imagem PNG, com um resumo dos elementos e dos textos contidos. |
 | `write_notes` | Grava Markdown nas notas; `mode=append` (recomendado) ou `mode=replace` sobre nota não vazia, que exige `confirm_token`. |
 | `agenda` | Tasks agendadas e blocos de tempo de um dia, semana ou mês. |
-| `plan_day` | Agenda tasks numa data (itens de `schedule` aceitam `start_time`/`end_time`, gravados como horário da task), ordena o dia, cria/remove blocos de tempo; acima do `bulkThreshold` exige `confirm_token`. |
+| `plan_day` | Agenda tasks numa data (itens de `schedule` aceitam `start_time`/`end_time`, gravados como horário da task), ordena o dia (a `order` só pesa entre as tasks sem horário e sem prazo de hoje com hora), cria/remove blocos de tempo; acima do `bulkThreshold` exige `confirm_token`. |
 | `weekly_review` | Lê revisões anteriores e indicadores de saúde, ou registra uma nova revisão. |
 | `list_notebooks` | Cadernos, seções e páginas (subpáginas em ordem de árvore, `depth` 0–2); `notebook_id` limita a um caderno. |
 | `search_pages` | Busca páginas de caderno pelo título e pelo texto das notas (até 30, com trecho). |

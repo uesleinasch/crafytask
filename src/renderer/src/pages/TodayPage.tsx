@@ -1,420 +1,255 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useErrorBoundary } from 'react-error-boundary'
 import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent
-} from '@dnd-kit/core'
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy
-} from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
-import { ScrollArea } from '@renderer/components/ui/scroll-area'
+  Button,
+  Card,
+  Col,
+  Empty,
+  Flex,
+  Grid,
+  List,
+  Progress,
+  Row,
+  Space,
+  Spin,
+  Tooltip,
+  Typography,
+  theme
+} from 'antd'
+import { CheckSquare, Clock } from 'lucide-react'
+import type { Task, TimeBlock } from '@shared/types'
+import { localDateString } from '@shared/dueState'
 import { formatTimeRange } from '@shared/taskTime'
-import { DueDateBadge } from '@renderer/components/DueDateBadge'
 import { StatusChip } from '@renderer/components/chips/StatusChip'
-import { formatTime } from '@renderer/lib/utils'
-import type { Task } from '../../../shared/types'
+import { PageContainer } from '@renderer/components/shell/PageContainer'
+import { ProjectLabel } from '@renderer/components/tasks/ProjectLabel'
+import { formatShortDuration } from '@renderer/components/tasks/taskTableFormat'
 import {
-  CalendarDays,
-  GripVertical,
-  Clock,
-  CheckSquare,
-  Lock,
-  Activity,
-  Calendar,
-  AlertTriangle
-} from 'lucide-react'
-import { cn } from '@renderer/lib/utils'
+  JOURNEY_MIN,
+  formatPlannedHours,
+  loadPercent,
+  planTitle,
+  plannedMinByDate,
+  weekDays
+} from '@renderer/components/today/dayPlan'
 import { useLiveSeconds } from '@renderer/hooks/useLiveSeconds'
 
-// ===================== Sortable Task Row =====================
-
-interface SortableTaskRowProps {
-  task: Task
-  onTaskClick: (id: number) => void
+function useMono(): React.CSSProperties {
+  const { token } = theme.useToken()
+  return { fontFamily: token.fontFamilyCode, fontVariantNumeric: 'tabular-nums' }
 }
 
-function SortableTaskRow({ task, onTaskClick }: SortableTaskRowProps): React.JSX.Element {
+function PlanItem({ task, today }: { task: Task; today: string }): React.JSX.Element {
+  const navigate = useNavigate()
+  const { token } = theme.useToken()
+  const mono = useMono()
   const seconds = useLiveSeconds(task)
-  const timeRange = formatTimeRange(task.scheduled_time, task.scheduled_end_time)
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: task.id,
-    disabled: !!timeRange
-  })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1
-  }
+  const range = formatTimeRange(task.scheduled_time, task.scheduled_end_time)
+  const dueTime = task.due_date?.slice(0, 10) === today ? task.due_time : null
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={cn(
-        'flex items-center gap-3 px-4 py-3 bg-white border border-slate-200 rounded-sm hover:shadow-md transition-all cursor-pointer group',
-        isDragging && 'shadow-lg border-slate-300',
-        task.is_blocked && 'border-l-4 border-l-orange-300'
-      )}
+    <List.Item
+      actions={[
+        <Typography.Text key="time" style={mono}>
+          {dueTime || formatShortDuration(seconds)}
+        </Typography.Text>
+      ]}
     >
-      {timeRange ? (
-        <span
-          title="Com horário: a posição segue a hora"
-          className="flex-shrink-0 w-[4.5rem] text-xs font-semibold text-blue-700 tabular-nums"
-        >
-          {timeRange}
-        </span>
-      ) : (
-        <button
-          {...attributes}
-          {...listeners}
-          className="flex-shrink-0 text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <GripVertical size={16} />
-        </button>
-      )}
-
-      {/* Status indicator */}
-      <div className="flex-shrink-0">
-        {task.status === 'finalizada' ? (
-          <CheckSquare size={18} className="text-purple-500" />
-        ) : task.is_running ? (
-          <Activity size={18} className="text-emerald-500 animate-pulse" />
-        ) : task.is_blocked ? (
-          <Lock size={18} className="text-orange-400" />
-        ) : (
-          <div className="w-4.5 h-4.5 rounded-full border-2 border-slate-300" />
-        )}
-      </div>
-
-      {/* Task info */}
-      <div
-        className="flex-1 min-w-0"
-        onClick={() => onTaskClick(task.id)}
-      >
-        <div className="flex items-center gap-2 flex-wrap">
-          <span
-            className={cn(
-              'font-medium text-slate-800 truncate',
-              task.status === 'finalizada' && 'line-through text-slate-400'
-            )}
+      <List.Item.Meta
+        title={
+          <Typography.Link
+            href={`#/task/${task.id}`}
+            onClick={(event) => {
+              event.preventDefault()
+              navigate(`/task/${task.id}`)
+            }}
+            style={{ color: token.colorText }}
           >
             {task.name}
-          </span>
-          <StatusChip status={task.status} />
-          {task.due_date && <DueDateBadge dueDate={task.due_date} dueTime={task.due_time} />}
-        </div>
-        {task.project_name && (
-          <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1.5">
-            <span
-              className="h-2 w-2 rounded-full shrink-0"
-              style={{ backgroundColor: task.project_color || '#6366f1' }}
-            />
-            {task.project_name}
-          </p>
-        )}
-      </div>
-
-      {/* Time */}
-      <div className="flex-shrink-0 text-right">
-        <span className={cn(
-          'font-mono text-sm font-medium',
-          task.is_running ? 'text-emerald-600' : 'text-slate-500'
-        )}>
-          {formatTime(seconds)}
-        </span>
-        {task.time_limit_seconds && task.time_limit_seconds > 0 && (
-          <p className="text-xs text-slate-400">/ {formatTime(task.time_limit_seconds)}</p>
-        )}
-      </div>
-    </div>
+          </Typography.Link>
+        }
+        description={
+          <Space size={6} wrap>
+            {range && (
+              <Tooltip title="Horário fixo: tarefas com horário vêm primeiro, pela hora">
+                <Typography.Text type="secondary" style={{ ...mono, fontSize: 12 }}>
+                  <Clock
+                    size={14}
+                    strokeWidth={1.75}
+                    aria-hidden
+                    style={{ verticalAlign: -2, marginRight: 4 }}
+                  />
+                  {range}
+                </Typography.Text>
+              </Tooltip>
+            )}
+            <StatusChip status={task.status} />
+            {task.project_name && (
+              <ProjectLabel name={task.project_name} color={task.project_color} />
+            )}
+          </Space>
+        }
+      />
+    </List.Item>
   )
 }
-
-// ===================== Weekly Day Column =====================
-
-interface DayColumnProps {
-  date: string
-  tasks: Task[]
-  isToday: boolean
-  onTaskClick: (id: number) => void
-}
-
-function DayColumn({ date, tasks, isToday, onTaskClick }: DayColumnProps): React.JSX.Element {
-  const d = new Date(date + 'T12:00:00')
-  const dayName = d.toLocaleDateString('pt-BR', { weekday: 'short' })
-  const dayNum = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
-  const totalSeconds = tasks.reduce((acc, t) => acc + (t.time_limit_seconds || 0), 0)
-
-  return (
-    <div
-      className={cn(
-        'flex flex-col bg-white border border-slate-200 rounded-sm overflow-hidden min-w-[160px] flex-1',
-        isToday && 'border-blue-300 shadow-md'
-      )}
-    >
-      <div className={cn(
-        'px-3 py-2 border-b border-slate-100 text-center',
-        isToday && 'bg-blue-50'
-      )}>
-        <p className={cn(
-          'text-xs font-semibold uppercase tracking-wider',
-          isToday ? 'text-blue-700' : 'text-slate-500'
-        )}>
-          {dayName}
-        </p>
-        <p className={cn(
-          'text-sm font-bold',
-          isToday ? 'text-blue-800' : 'text-slate-700'
-        )}>
-          {dayNum}
-        </p>
-        {totalSeconds > 0 && (
-          <p className="text-xs text-slate-400">{formatTime(totalSeconds)}</p>
-        )}
-      </div>
-      <div className="flex-1 p-2 space-y-1.5 overflow-y-auto max-h-64">
-        {tasks.length === 0 ? (
-          <p className="text-xs text-slate-300 text-center py-4">Vazio</p>
-        ) : (
-          tasks.map((task) => (
-            <button
-              key={task.id}
-              onClick={() => onTaskClick(task.id)}
-              className={cn(
-                'w-full text-left px-2 py-1.5 rounded-lg text-xs hover:bg-slate-50 transition-colors border border-slate-100',
-                task.status === 'finalizada' && 'opacity-50 line-through'
-              )}
-            >
-              <span className="truncate block text-slate-700">{task.name}</span>
-              {task.due_date && (
-                <DueDateBadge dueDate={task.due_date} dueTime={task.due_time} className="mt-0.5" />
-              )}
-            </button>
-          ))
-        )}
-      </div>
-    </div>
-  )
-}
-
-// ===================== TodayPage =====================
 
 export function TodayPage(): React.JSX.Element {
   const navigate = useNavigate()
-  const [tab, setTab] = useState<'today' | 'week'>('today')
-  const [todayTasks, setTodayTasks] = useState<Task[]>([])
-  const [weekSchedule, setWeekSchedule] = useState<{ date: string; tasks: Task[] }[]>([])
-  const [loading, setLoading] = useState(true)
+  const { showBoundary } = useErrorBoundary()
+  const { token } = theme.useToken()
+  const mono = useMono()
+  const screens = Grid.useBreakpoint()
+  const [today, setToday] = useState(() => localDateString(new Date()))
+  const day = useMemo(() => new Date(`${today}T12:00:00`), [today])
+  const week = useMemo(() => weekDays(day), [day])
+  const [tasks, setTasks] = useState<Task[] | null>(null)
+  const [blocks, setBlocks] = useState<TimeBlock[]>([])
 
-  const today = new Date().toISOString().split('T')[0]
-
-  const loadData = useCallback(async (): Promise<void> => {
-    setLoading(true)
-    try {
-      const [dayTasks, weekData] = await Promise.all([
-        window.api.getTasksForDate(today),
-        window.api.getWeeklySchedule(today)
-      ])
-      setTodayTasks(dayTasks)
-      setWeekSchedule(weekData)
-    } catch (err) {
-      console.error('Erro ao carregar dados do dia:', err)
-    } finally {
-      setLoading(false)
-    }
-  }, [today])
+  const load = useCallback(async (): Promise<void> => {
+    const [dayTasks, weekBlocks] = await Promise.all([
+      window.api.getTasksForDate(today),
+      window.api.getTimeBlocksForWeek(week[0].date)
+    ])
+    setTasks(dayTasks)
+    setBlocks(weekBlocks)
+  }, [today, week])
 
   useEffect(() => {
-    loadData()
-  }, [loadData])
+    load().catch(showBoundary)
+    const reload = (): void => void load().catch(showBoundary)
+    const offRefresh = window.api.onTasksRefresh(reload)
+    const offStopped = window.api.onTimerStopped(reload)
+    return () => {
+      offRefresh()
+      offStopped()
+    }
+  }, [load, showBoundary])
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  )
+  useEffect(() => {
+    const timer = window.setInterval(() => setToday(localDateString(new Date())), 60_000)
+    return () => window.clearInterval(timer)
+  }, [])
 
-  const handleDragEnd = useCallback(
-    async (event: DragEndEvent): Promise<void> => {
-      const { active, over } = event
-      if (!over || active.id === over.id) return
+  const minutesByDate = useMemo(() => plannedMinByDate(blocks), [blocks])
+  const plannedMin = minutesByDate.get(today) ?? 0
+  const over = plannedMin > JOURNEY_MIN
+  const loadLabel = `${formatPlannedHours(plannedMin)} de ${formatPlannedHours(JOURNEY_MIN)}`
 
-      const oldIndex = todayTasks.findIndex((t) => t.id === active.id)
-      const newIndex = todayTasks.findIndex((t) => t.id === over.id)
-      if (todayTasks[newIndex]?.scheduled_time) return
-      const reordered = arrayMove(todayTasks, oldIndex, newIndex)
-
-      setTodayTasks(reordered)
-
-      // Persist order
-      await Promise.all(
-        reordered.map((task, index) => window.api.updateDayOrder(task.id, index))
-      )
-    },
-    [todayTasks]
-  )
-
-  // Time estimates
-  const totalLimitSeconds = todayTasks.reduce((acc, t) => acc + (t.time_limit_seconds || 0), 0)
-  const totalLimitHours = totalLimitSeconds / 3600
-  const WORK_DAY_HOURS = 8
-  const loadPercent = Math.min((totalLimitHours / WORK_DAY_HOURS) * 100, 100)
-  const isOverloaded = totalLimitHours > WORK_DAY_HOURS
-  const completedCount = todayTasks.filter((t) => t.status === 'finalizada').length
+  if (tasks === null) {
+    return (
+      <Flex justify="center" style={{ padding: 48 }}>
+        <Spin />
+      </Flex>
+    )
+  }
 
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-slate-50">
-      {/* Header — mesmo padrão de SingleTaskPage */}
-      <header className="shrink-0 px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <CalendarDays size={20} className="text-blue-600" />
-          <div>
-            <span className="text-lg font-bold text-slate-900">Hoje</span>
-            <span className="ml-2 text-sm text-slate-500">
-              {new Date().toLocaleDateString('pt-BR', {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long'
-              })}
-            </span>
-          </div>
-        </div>
-
-        {/* Load indicator */}
-        {tab === 'today' && totalLimitSeconds > 0 && (
-            <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-sm px-4 py-3">
-              <Clock size={16} className={isOverloaded ? 'text-red-500' : 'text-green-500'} />
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className={cn(
-                    'text-sm font-bold',
-                    isOverloaded ? 'text-red-600' : 'text-green-600'
-                  )}>
-                    {formatTime(totalLimitSeconds)}
-                  </span>
-                  <span className="text-xs text-slate-400">/ {WORK_DAY_HOURS}h</span>
-                  {isOverloaded && <AlertTriangle size={14} className="text-red-500" />}
-                </div>
-                <div className="w-32 h-1.5 bg-slate-100 rounded-full overflow-hidden mt-1">
-                  <div
-                    className={cn(
-                      'h-full rounded-full transition-all',
-                      isOverloaded ? 'bg-red-500' : 'bg-green-500'
-                    )}
-                    style={{ width: `${loadPercent}%` }}
+    <div className="h-full overflow-y-auto">
+      <PageContainer>
+        <Row gutter={[16, 16]}>
+          <Col xs={24} lg={16}>
+            <Card
+              title={planTitle(day)}
+              extra={
+                <Flex align="center" gap={8}>
+                  <Progress
+                    percent={loadPercent(plannedMin)}
+                    showInfo={false}
+                    size="small"
+                    strokeColor={over ? token.colorWarning : undefined}
+                    style={{ width: screens.sm ? 96 : 48, margin: 0 }}
+                    aria-label={`Carga planejada: ${loadLabel}${over ? ', passa da jornada' : ''}`}
                   />
-                </div>
-              </div>
-              <div className="text-xs text-slate-500">
-                {completedCount}/{todayTasks.length} feitas
-              </div>
-            </div>
-          )}
-      </header>
-
-      {/* Tabs */}
-      <div className="px-6 py-3 bg-white border-b border-slate-100 flex gap-2 shrink-0">
-          <button
-            onClick={() => setTab('today')}
-            className={cn(
-              'flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all',
-              tab === 'today'
-                ? 'bg-slate-900 text-white shadow-md'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-            )}
-          >
-            <CalendarDays size={14} />
-            Hoje
-            {todayTasks.length > 0 && (
-              <span className={cn(
-                'text-xs px-1.5 py-0.5 rounded-full',
-                tab === 'today' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
-              )}>
-                {todayTasks.length}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => setTab('week')}
-            className={cn(
-              'flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all',
-              tab === 'week'
-                ? 'bg-slate-900 text-white shadow-md'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-            )}
-          >
-            <Calendar size={14} />
-            Esta Semana
-          </button>
-        </div>
-
-      {/* Content */}
-      <ScrollArea className="flex-1 h-0">
-        <div className="p-6 pt-3 pb-24">
-          {loading ? (
-            <div className="flex items-center justify-center py-16 text-slate-400">
-              Carregando...
-            </div>
-          ) : tab === 'today' ? (
-            <>
-              {todayTasks.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-slate-400">
-                  <CalendarDays size={40} className="mb-3 text-slate-300" />
-                  <p className="text-lg font-medium">Nenhuma tarefa programada para hoje</p>
-                  <p className="text-sm mt-1">
-                    Use o botão 📅 nas tarefas para programá-las para hoje.
-                  </p>
-                </div>
-              ) : (
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragEnd={handleDragEnd}
-                >
-                  <SortableContext
-                    items={todayTasks.map((t) => t.id)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    <div className="space-y-2 max-w-2xl">
-                      {todayTasks.map((task) => (
-                        <SortableTaskRow
-                          key={task.id}
-                          task={task}
-                          onTaskClick={(id) => navigate(`/task/${id}`)}
-                        />
-                      ))}
-                    </div>
-                  </SortableContext>
-                </DndContext>
-              )}
-            </>
-          ) : (
-            /* Weekly view */
-            <div className="flex gap-3 overflow-x-auto pb-4">
-              {weekSchedule.map(({ date, tasks }) => (
-                <DayColumn
-                  key={date}
-                  date={date}
-                  tasks={tasks}
-                  isToday={date === today}
-                  onTaskClick={(id) => navigate(`/task/${id}`)}
+                  <Tooltip title={over && !screens.sm ? 'Passa da jornada' : undefined}>
+                    <Typography.Text
+                      type="secondary"
+                      style={over ? { ...mono, color: token.colorWarningText } : mono}
+                    >
+                      {loadLabel}
+                      {over && screens.sm ? ' · passa da jornada' : ''}
+                    </Typography.Text>
+                  </Tooltip>
+                </Flex>
+              }
+              styles={tasks.length ? { body: { paddingTop: 4, paddingBottom: 4 } } : undefined}
+            >
+              {tasks.length ? (
+                <List
+                  size="small"
+                  dataSource={tasks}
+                  rowKey="id"
+                  renderItem={(task) => <PlanItem task={task} today={today} />}
                 />
-              ))}
-            </div>
-          )}
-        </div>
-      </ScrollArea>
+              ) : (
+                <Empty
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description={
+                    <>
+                      Nada planejado para hoje.
+                      <br />
+                      <Typography.Text type="secondary">
+                        Na lista de tarefas, use <b>Hoje</b> (botão da linha ou do menu ⋯) para
+                        trazer tarefas para cá.
+                      </Typography.Text>
+                    </>
+                  }
+                >
+                  <Button
+                    icon={<CheckSquare size={14} strokeWidth={1.75} />}
+                    onClick={() => navigate('/')}
+                  >
+                    Ir para Tarefas
+                  </Button>
+                </Empty>
+              )}
+            </Card>
+          </Col>
+          <Col xs={24} lg={8}>
+            <Card
+              title="Semana"
+              extra={
+                <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                  blocos de tempo
+                </Typography.Text>
+              }
+            >
+              <Flex vertical gap={10}>
+                {week.map((day) => {
+                  const minutes = minutesByDate.get(day.date) ?? 0
+                  const dayOver = minutes > JOURNEY_MIN
+                  return (
+                    <Flex key={day.date} align="center" gap={10}>
+                      <Typography.Text strong={day.date === today} style={{ width: 32 }}>
+                        {day.label}
+                      </Typography.Text>
+                      <Progress
+                        percent={loadPercent(minutes)}
+                        showInfo={false}
+                        size="small"
+                        strokeColor={dayOver ? token.colorWarning : undefined}
+                        style={{ flex: 1, margin: 0 }}
+                        aria-label={`${day.label}: ${formatPlannedHours(minutes)} planejadas`}
+                      />
+                      <Typography.Text
+                        style={{
+                          ...mono,
+                          width: 44,
+                          textAlign: 'right',
+                          color: dayOver ? token.colorWarningText : undefined
+                        }}
+                      >
+                        {minutes ? formatPlannedHours(minutes) : '—'}
+                      </Typography.Text>
+                    </Flex>
+                  )
+                })}
+              </Flex>
+            </Card>
+          </Col>
+        </Row>
+      </PageContainer>
     </div>
   )
 }

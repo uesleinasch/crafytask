@@ -281,7 +281,6 @@ interface API {
   // FASE 2: Agendamento
   getTasksForDate: (date: string) => Promise<Task[]>
   getWeeklySchedule: (startDate: string) => Promise<{ date: string; tasks: Task[] }[]>
-  updateDayOrder: (taskId: number, order: number) => Promise<void>
   scheduleTaskForDate: (taskId: number, date: string | null) => Promise<void>
 
   // FASE 2: Eventos push

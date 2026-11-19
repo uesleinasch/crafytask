@@ -245,8 +245,7 @@ Transições comuns: `transition-colors`, `transition-all duration-200`,
 | Captura rápida | `400 × 140` | quick capture |
 | Grade do calendário | 1,2px/min → 1h = 72px; 07:00–22:00 | calendário |
 | Célula do mês | `min-h-[90px]` | calendário |
-| Coluna de dia (semana) | `min-w-[160px]` | plano do dia |
-| Larguras máximas de conteúdo | `max-w-2xl` (settings, plano do dia) · `max-w-3xl` (revisão, projeto) · `max-w-4xl` (horizontes) · `max-w-6xl` (dashboard) | — |
+| Larguras máximas de conteúdo | `max-w-2xl` (settings) · `max-w-3xl` (revisão, projeto) · `max-w-4xl` (horizontes) · `max-w-6xl` (dashboard) | — |
 
 Cinco larguras máximas diferentes para conteúdo centralizado.
 

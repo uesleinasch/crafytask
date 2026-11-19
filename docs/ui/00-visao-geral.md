@@ -229,7 +229,7 @@ Reconhecer estes padrões evita redesenhar a mesma coisa quinze vezes.
 
 ### 1. Cabeçalho de sub-página
 
-Presente em `/today`, `/calendar`, `/notebooks`, `/projects`, `/project/:id`, `/horizons`,
+Presente em `/calendar`, `/notebooks`, `/projects`, `/project/:id`, `/horizons`,
 `/review`, `/dashboard`, `/contexts`, `/tags`, `/archived`, `/settings`.
 
 ```
@@ -261,7 +261,7 @@ cabeçalho fixo (`padBlock="top"`) e o conteúdo rolável (`padBlock="bottom"`).
 
 ### 3. Abas em pílula
 
-Filtros de status na lista de tarefas, em projetos e no plano do dia usam o mesmo botão:
+Filtros de status na lista de tarefas e em projetos usam o mesmo botão:
 
 ```
 ativo:   bg-slate-900 text-white shadow-md

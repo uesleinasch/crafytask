@@ -128,7 +128,6 @@ import {
   removeTaskDependency,
   getTasksForDate,
   getWeeklySchedule,
-  updateDayOrder,
   createNextRecurrence,
   deleteNextRecurrence,
   getTasksDueForNotification,
@@ -1175,9 +1174,6 @@ function setupIpcHandlers(): void {
   // ===================== FASE 2: Agendamento =====================
   ipcMain.handle('schedule:getForDate', (_, date: string) => getTasksForDate(date))
   ipcMain.handle('schedule:getWeekly', (_, startDate: string) => getWeeklySchedule(startDate))
-  ipcMain.handle('schedule:updateDayOrder', (_, taskId: number, order: number) =>
-    updateDayOrder(taskId, order)
-  )
   ipcMain.handle('task:scheduleForDate', (_, taskId: number, date: string | null) => {
     updateTask(taskId, { scheduled_date: date })
     autoSyncToGoogle(taskId)

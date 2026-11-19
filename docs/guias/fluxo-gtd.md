@@ -81,7 +81,7 @@ relatório semanal em PDF.
 
 ## 5. Executar
 
-- Abra **Hoje** para ver o que está planejado para o dia, na ordem que você definiu
+- Abra **Hoje** para ver o que está planejado para o dia, com as de horário primeiro
   ([plano do dia](plano-do-dia.md)).
 - Filtre a lista por **contexto**, **projeto**, **categoria** ou **tag** no painel **Filtros**
   para achar o que dá para fazer agora.

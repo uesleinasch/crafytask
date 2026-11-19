@@ -119,14 +119,14 @@ Fechar a janela esconde o app na bandeja. O único lugar que diz isso é uma not
 
 | Tela | O que oferece que as outras não têm |
 | --- | --- |
-| `/today` aba Hoje | ordenação manual por arraste, indicador de carga vs. 8h |
-| `/today` aba Semana | 7 dias em colunas, somatório por dia |
+| `/today` plano | carga do dia (blocos de tempo) vs. 8h, ordem automática |
+| `/today` semana | horas planejadas por dia (blocos de tempo) |
 | `/calendar` semana | grade horária, blocos de tempo, linha do "agora" |
 | `/calendar` mês | arraste para reagendar entre dias |
 | `/horizons` H0 | contexto vertical (do H0 ao H5) |
 
-Nenhuma delas faz o conjunto. Reagendar arrastando só existe no mês; ordenar o dia só existe em
-`/today`; ver blocos de tempo só existe no calendário.
+Nenhuma delas faz o conjunto. Reagendar arrastando só existe no mês; criar e editar blocos de tempo só existe
+no calendário.
 
 ### C2. Três desenhos para "timers em execução"
 
@@ -183,6 +183,8 @@ O rodapé chama o quadrado laranja de **"Bloco urgente"**, mas laranja é a cor 
 urgente é vermelho. A legenda também cita só duas das quatro cores de categoria.
 
 ### D5. Dica com emoji que não existe na interface
+
+**Resolvida na F4-a:** o vazio diz "Nada planejado para hoje.", explica o botão **Hoje** e leva às Tarefas.
 
 O estado vazio de `/today` diz *"Use o botão 📅 nas tarefas para programá-las para hoje."* O botão
 real é textual ("Hoje") com um ícone `CalendarDays`, não um emoji.
@@ -261,6 +263,8 @@ Uma tarefa com três contextos aparece nos três grupos; a soma dos contadores d
 real. É o comportamento correto para o caso de uso, mas precisa ser comunicado.
 
 ### F5. A ordem do plano do dia grava uma chamada por tarefa
+
+**Resolvida na F4-a:** o plano do dia não tem mais ordem manual; a ordem é automática, no SQL.
 
 Reordenar uma lista de 40 itens dispara 40 chamadas IPC em paralelo.
 
