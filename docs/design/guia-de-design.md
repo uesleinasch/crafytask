@@ -619,8 +619,9 @@ o que de fato aconteceu (sessões do timer) na mesma grade.
 - **Faixa "Dia":** agendadas sem horário (chip com ponto do projeto) e prazos (bandeira, borda
   tracejada; âmbar no dia, vermelho só se venceu; mostra a hora do prazo quando tem). `+N` abre um
   `Popover` com o resto. Arrastar um chip para outro dia reagenda ou move o prazo.
-- **Grade:** faixa de horas das configurações (padrão 07–22), 48px por hora (40 no compacto), snap
-  de 15 minutos, linha de hora em `border`, fim de semana em `bg`. A linha do agora é da cor
+- **Grade:** faixa de horas das configurações; o padrão é o dia inteiro, 00:00–24:00, com a régua
+  em 24 horas como no Google Calendar (rótulos de 01:00 a 23:00, nenhum na meia-noite das pontas,
+  para nada ficar cortado). 48px por hora (40 no compacto), snap de 15 minutos, linha de hora em `border`, fim de semana em `bg`. A linha do agora é da cor
   primária (vermelho é só para erro) e a tela abre rolada até ela. Rola dentro do próprio card, com
   cabeçalho e faixa "Dia" fixos.
 - **Bloco de tempo:** fundo `calBlock` com borda `calBlockBorder` (§3.1), ponto do projeto, ícone da
