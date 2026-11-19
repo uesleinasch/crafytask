@@ -7,12 +7,8 @@ const PROJECT_SELECT = `
     COALESCE(s.completed_task_count, 0) AS completed_task_count,
     COALESCE(s.open_task_count, 0) AS open_task_count,
     COALESCE(s.total_seconds, 0) AS total_seconds,
-    (SELECT n.id FROM tasks n
-      WHERE n.project_id = p.id AND n.status = 'proximas' AND COALESCE(n.is_archived, 0) = 0
-      ORDER BY n.updated_at DESC, n.id DESC LIMIT 1) AS next_action_id,
-    (SELECT n.name FROM tasks n
-      WHERE n.project_id = p.id AND n.status = 'proximas' AND COALESCE(n.is_archived, 0) = 0
-      ORDER BY n.updated_at DESC, n.id DESC LIMIT 1) AS next_action
+    COALESCE(c.id, d.id) AS next_action_id,
+    COALESCE(c.name, d.name) AS next_action
   FROM projects p
   LEFT JOIN areas a ON a.id = p.area_id
   LEFT JOIN (
@@ -25,7 +21,14 @@ const PROJECT_SELECT = `
     FROM tasks
     WHERE project_id IS NOT NULL
     GROUP BY project_id
-  ) s ON s.project_id = p.id`
+  ) s ON s.project_id = p.id
+  LEFT JOIN tasks c ON c.id = p.next_task_id AND c.project_id = p.id
+    AND c.status <> 'finalizada' AND COALESCE(c.is_archived, 0) = 0
+  LEFT JOIN tasks d ON d.id = (
+    SELECT n.id FROM tasks n
+    WHERE n.project_id = p.id AND n.status = 'proximas' AND COALESCE(n.is_archived, 0) = 0
+    ORDER BY n.updated_at DESC, n.id DESC LIMIT 1
+  )`
 
 type ProjectRow = Project & { next_action: string | null; next_action_id: number | null }
 

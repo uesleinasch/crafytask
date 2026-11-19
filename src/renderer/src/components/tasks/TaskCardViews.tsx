@@ -14,6 +14,7 @@ interface CardCommonProps {
   onScheduleForToday?: (taskId: number) => void
   showStatus: boolean
   contexts: Context[]
+  hideProject?: boolean
 }
 
 const GRID: React.CSSProperties = {
@@ -36,7 +37,7 @@ function cardsOf(
       onOpen={props.onTaskClick}
       onScheduleForToday={props.onScheduleForToday}
       showStatus={props.showStatus}
-      showProject={groupBy !== 'project'}
+      showProject={!props.hideProject && groupBy !== 'project'}
       showContexts={groupBy !== 'context'}
       contexts={props.contexts}
     />
@@ -109,11 +110,13 @@ interface TaskKanbanProps extends CardCommonProps {
   columns: TaskGroup[]
   groupBy: GroupBy
   onReorderColumns?: (activeKey: string, overKey: string) => void
+  columnIcon?: (column: TaskGroup) => React.ReactNode
+  emptyText?: string
 }
 
 export function TaskKanban(props: TaskKanbanProps): React.JSX.Element {
   const { token } = theme.useToken()
-  const { columns, groupBy, onReorderColumns } = props
+  const { columns, groupBy, onReorderColumns, columnIcon, emptyText } = props
   const mono: React.CSSProperties = {
     fontFamily: token.fontFamilyCode,
     fontVariantNumeric: 'tabular-nums'
@@ -147,7 +150,9 @@ export function TaskKanban(props: TaskKanbanProps): React.JSX.Element {
         >
           <Flex align="center" gap={8} style={{ marginBottom: 8, minWidth: 0 }}>
             {onReorderColumns && <GroupDragButton label={col.label} />}
-            {col.icon ? (
+            {columnIcon ? (
+              columnIcon(col)
+            ) : col.icon ? (
               <span aria-hidden>{col.icon}</span>
             ) : col.color ? (
               <span
@@ -170,6 +175,11 @@ export function TaskKanban(props: TaskKanbanProps): React.JSX.Element {
           </Flex>
           <Flex vertical gap={8}>
             {cardsOf(col.tasks, props, groupBy)}
+            {col.tasks.length === 0 && emptyText && (
+              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                {emptyText}
+              </Typography.Text>
+            )}
           </Flex>
         </SortableGroups.Item>
       ))}

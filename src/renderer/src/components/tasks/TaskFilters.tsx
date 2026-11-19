@@ -17,6 +17,7 @@ interface TaskFiltersProps {
   tags: Tag[]
   shown: number
   total: number
+  hideProject?: boolean
 }
 
 export function TaskFilters({
@@ -26,7 +27,8 @@ export function TaskFilters({
   projects,
   tags,
   shown,
-  total
+  total,
+  hideProject
 }: TaskFiltersProps): React.JSX.Element {
   const screens = Grid.useBreakpoint()
   const [open, setOpen] = useState(false)
@@ -58,18 +60,20 @@ export function TaskFilters({
           label: `${context.icon} ${context.name}`
         }))}
       />
-      <Select
-        aria-label="Projeto"
-        placeholder="Projeto"
-        allowClear
-        showSearch={search}
-        value={value.projectId ?? undefined}
-        onChange={(projectId) => onChange({ projectId: projectId ?? null })}
-        options={[
-          { value: NO_PROJECT, label: 'Sem projeto' },
-          ...projects.map((project) => ({ value: project.id, label: project.name }))
-        ]}
-      />
+      {!hideProject && (
+        <Select
+          aria-label="Projeto"
+          placeholder="Projeto"
+          allowClear
+          showSearch={search}
+          value={value.projectId ?? undefined}
+          onChange={(projectId) => onChange({ projectId: projectId ?? null })}
+          options={[
+            { value: NO_PROJECT, label: 'Sem projeto' },
+            ...projects.map((project) => ({ value: project.id, label: project.name }))
+          ]}
+        />
+      )}
       <Select
         aria-label="Tag"
         placeholder="Tag"

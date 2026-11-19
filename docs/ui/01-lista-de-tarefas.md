@@ -1,6 +1,8 @@
 # Lista de tarefas — `/`
 
-`src/renderer/src/pages/TaskListPage.tsx` (~1000 linhas)
+`src/renderer/src/pages/TaskListPage.tsx` (casca: `PageContainer`, diálogo de nova tarefa) ·
+`components/tasks/TaskListView.tsx` (abas, barra, visões e ações em massa; também usado no detalhe
+do projeto, ver `05-projetos.md`)
 
 A tela inicial e o centro de gravidade do app (item **Tarefas** da sidebar) e a única com ações em
 massa. Concentra quatro modos de visualização diferentes sobre o mesmo conjunto
