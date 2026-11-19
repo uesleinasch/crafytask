@@ -188,7 +188,7 @@ propósito), usada só no chip `H0`…`H5` (fundo / texto): claro `#F1EFFF/#4B3B
 | Números                | Geist Mono, `tabular-nums`      | 12–14 em listas; 24–30 no cronômetro da task; 40 na vitrine                | tempo, ids, contadores, prazos                                |
 | Número de painel       | Geist, algarismos proporcionais | 48 / 600 (herói, um por tela); 26 / 600 (`Statistic.contentFontSize`)      | totais do dashboard, que não se alinham em coluna             |
 | Valor de saúde         | Geist                           | 20 / 600                                                                   | valor do `HealthCard` (dashboard e revisão)                   |
-| Número de card pequeno | Geist Mono, `tabular-nums`      | 20 (`Statistic` com `valueStyle`)                                          | card Progresso do projeto (abertas, bloqueadas, tempo, prazo) |
+| Número de card pequeno | Geist Mono, `tabular-nums`      | 20 (`Statistic` com `styles.content`)                                          | card Progresso do projeto (abertas, bloqueadas, tempo, prazo) |
 
 Geist e Geist Mono entram por `@fontsource-variable/*` (o app é offline e a CSP bloqueia fonte
 remota). Isso também corrige `--font-sans`/`--font-mono`, que hoje apontam para variáveis que não
@@ -462,7 +462,7 @@ notas:
 - **Cabeçalho:** voltar para Projetos / área; status do projeto; cor + nome e descrição editáveis;
   terminal (se houver diretório) e `⋯` (copiar nome, arquivar/reativar, excluir).
 - **Pílulas:** Área de foco (editável aqui: resolve E2; link para Horizontes), Prazo (com dias
-  restantes e cor), Cor (paleta), Diretório de trabalho (escolher, alterar, remover).
+  restantes e cor, âmbar e vermelho só em projeto ativo), Cor (paleta), Diretório de trabalho (escolher, alterar, remover).
 - **Aviso** "Sem próxima ação definida" com "Definir", quando ativo, com tarefas abertas e sem
   próxima.
 - **Área principal:** a mesma tabela de tarefas (abas de status, busca, filtros, agrupamento, menu

@@ -72,7 +72,7 @@ interface PropPillProps {
 
 const ReadOnlyContext = createContext(false)
 
-function PropPill({
+export function PropPill({
   label,
   icon: Icon,
   muted,

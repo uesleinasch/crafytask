@@ -324,6 +324,14 @@ export function initDatabase(): void {
     /* já existe */
   }
 
+  try {
+    db.exec(
+      'ALTER TABLE projects ADD COLUMN next_task_id INTEGER REFERENCES tasks(id) ON DELETE SET NULL'
+    )
+  } catch {
+    /* já existe */
+  }
+
   // ===================== FASE 4.2: Energy Tracking =====================
   try {
     db.exec(
@@ -774,6 +782,10 @@ export function updateProject(id: number, data: UpdateProjectInput): void {
   if (data.working_dir !== undefined) {
     updates.push('working_dir = ?')
     values.push(data.working_dir || null)
+  }
+  if (data.next_task_id !== undefined) {
+    updates.push('next_task_id = ?')
+    values.push(data.next_task_id)
   }
 
   if (updates.length > 0) {

@@ -938,8 +938,8 @@
       "titulo": "Criar tarefa dentro do projeto",
       "check": {
         "tipo": "contem",
-        "arquivos": "src/renderer/src/pages/ProjectDetailPage.tsx",
-        "padrao": "TaskDialog|createTask|NewTask"
+        "arquivos": "src/renderer/src/{pages/ProjectDetailPage.tsx,components/tasks/TaskListView.tsx}",
+        "padrao": "Adicionar tarefa a"
       }
     },
     {
@@ -978,9 +978,9 @@
       "titulo": "Detalhe do projeto: cabeçalho, pílulas, tabela de tarefas do projeto e coluna de resumo",
       "check": {
         "tipo": "contem-todos",
-        "arquivos": "src/renderer/src/{pages/ProjectDetailPage.tsx,components/projects/*.tsx}",
+        "arquivos": "src/renderer/src/{pages/ProjectDetailPage.tsx,components/projects/*.tsx,components/tasks/TaskListView.tsx}",
         "padroes": [
-          "TaskTable|TasksPage",
+          "TaskTable|TasksPage|TaskListView",
           "Área de foco",
           "Resultado desejado",
           "Próxima ação",

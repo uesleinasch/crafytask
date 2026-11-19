@@ -6,15 +6,18 @@ export type ListGroup = 'none' | GroupBy
 
 export const LIST_VIEW_KEY = 'ticktask:taskListView'
 export const LIST_GROUP_KEY = 'ticktask:taskListGroup'
+export const PROJECT_VIEW_KEY = 'ticktask:projectTaskView'
+export const PROJECT_GROUP_KEY = 'ticktask:projectTaskGroup'
 
 const GROUPS: readonly GroupBy[] = ['project', 'context', 'jira_space', 'jira_parent']
 
 export function effectiveListView(
   view: ListView,
   status: TaskStatus | 'all',
-  narrow = false
+  narrow = false,
+  kanbanAlways = false
 ): ListView {
-  const byStatus = view === 'kanban' && status !== 'executando' ? 'table' : view
+  const byStatus = view === 'kanban' && !kanbanAlways && status !== 'executando' ? 'table' : view
   return narrow && byStatus === 'table' ? 'cards' : byStatus
 }
 

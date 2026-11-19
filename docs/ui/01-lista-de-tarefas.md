@@ -1,6 +1,8 @@
 # Lista de tarefas — `/`
 
-`src/renderer/src/pages/TaskListPage.tsx` (~1000 linhas)
+`src/renderer/src/pages/TaskListPage.tsx` (casca: `PageContainer`, diálogo de nova tarefa) ·
+`components/tasks/TaskListView.tsx` (abas, barra, visões e ações em massa; também usado no detalhe
+do projeto, ver `05-projetos.md`)
 
 A tela inicial e o centro de gravidade do app (item **Tarefas** da sidebar) e a única com ações em
 massa. Concentra quatro modos de visualização diferentes sobre o mesmo conjunto
@@ -159,7 +161,7 @@ submenu leva `✓`.
 Se a linha faz parte de uma seleção maior, o menu age sobre a seleção toda: título "N tarefas
 selecionadas", rótulos com "(N)" e sem Abrir, timer, Jira, Contextos e Copiar. Projetos, contextos, ids
 selecionados e a busca de tarefa por id chegam pelo `TaskMenuDataContext`
-(`components/taskMenuContext.ts`), que a `TaskListPage` fornece junto com o
+(`components/taskMenuContext.ts`), que o `TaskListView` fornece junto com o
 `TaskMenuChangedContext` (recarregar a lista).
 
 ### Modo tabela (`components/tasks/TaskTable.tsx`) — padrão

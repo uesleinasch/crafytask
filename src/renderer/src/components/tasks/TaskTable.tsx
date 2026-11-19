@@ -81,6 +81,7 @@ interface TaskTableProps {
   onSubtasksChange?: (subtasks: Task[]) => void
   collapsedGroups: Set<string>
   onToggleGroup: (key: string) => void
+  hideProject?: boolean
 }
 
 interface RowMenu {
@@ -131,7 +132,8 @@ export function TaskTable({
   onScheduleForToday,
   onSubtasksChange,
   collapsedGroups,
-  onToggleGroup
+  onToggleGroup,
+  hideProject
 }: TaskTableProps): React.JSX.Element {
   const { token } = theme.useToken()
   const { mode } = useThemeSettings()
@@ -396,7 +398,7 @@ export function TaskTable({
           }
         ]
       : []),
-    ...(screens.xl && groupBy !== 'project'
+    ...(screens.xl && groupBy !== 'project' && !hideProject
       ? [
           {
             title: 'Projeto',

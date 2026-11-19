@@ -11,7 +11,7 @@ beforeEach(() => {
     CREATE TABLE areas (id INTEGER PRIMARY KEY, name TEXT);
     CREATE TABLE projects (
       id INTEGER PRIMARY KEY, name TEXT, status TEXT, color TEXT, area_id INTEGER,
-      created_at TEXT, updated_at TEXT
+      created_at TEXT, updated_at TEXT, next_task_id INTEGER
     );
     CREATE TABLE tasks (
       id INTEGER PRIMARY KEY, name TEXT, status TEXT, project_id INTEGER,
@@ -19,9 +19,9 @@ beforeEach(() => {
     );
     INSERT INTO areas VALUES (1, 'Carreira');
     INSERT INTO projects VALUES
-      (1, 'Site', 'active', '#2A62D6', 1, '2026-11-01', '2026-11-10'),
-      (2, 'Viagem', 'someday', '#0B7A50', NULL, '2026-11-01', '2026-11-12'),
-      (3, 'Vazio', 'active', '#5D6B82', NULL, '2026-11-01', '2026-11-05');
+      (1, 'Site', 'active', '#2A62D6', 1, '2026-11-01', '2026-11-10', NULL),
+      (2, 'Viagem', 'someday', '#0B7A50', NULL, '2026-11-01', '2026-11-12', NULL),
+      (3, 'Vazio', 'active', '#5D6B82', NULL, '2026-11-01', '2026-11-05', NULL);
     INSERT INTO tasks VALUES
       (10, 'Rascunho', 'finalizada', 1, 3600, '2026-11-02', 0),
       (11, 'Layout', 'proximas', 1, 600, '2026-11-03', 0),
@@ -58,5 +58,19 @@ describe('listProjectsQuery', () => {
     expect(listProjectsQuery(db, 'someday').map((p) => p.name)).toEqual(['Viagem'])
     expect(getProjectQuery(db, 1)?.next_action).toBe('Deploy')
     expect(getProjectQuery(db, 99)).toBeUndefined()
+  })
+
+  it('próxima ação escolhida vale enquanto a tarefa está aberta, no projeto e fora do arquivo', () => {
+    const choose = (id: number | null): void => {
+      db.prepare('UPDATE projects SET next_task_id = ? WHERE id = 1').run(id)
+    }
+    choose(11)
+    expect(getProjectQuery(db, 1)).toMatchObject({ next_action: 'Layout', next_action_id: 11 })
+    choose(13)
+    expect(getProjectQuery(db, 1)?.next_action).toBe('Deploy')
+    choose(10)
+    expect(getProjectQuery(db, 1)?.next_action).toBe('Deploy')
+    choose(15)
+    expect(getProjectQuery(db, 1)?.next_action).toBe('Deploy')
   })
 })

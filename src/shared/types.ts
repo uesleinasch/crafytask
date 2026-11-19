@@ -67,6 +67,7 @@ export interface Project {
   total_seconds?: number
   next_action?: string
   next_action_id?: number
+  next_task_id?: number | null
   working_dir?: string | null
 }
 
@@ -87,9 +88,10 @@ export interface UpdateProjectInput {
   outcome?: string
   status?: ProjectStatus
   color?: string
-  due_date?: string
+  due_date?: string | null
   area_id?: number | null
   working_dir?: string | null
+  next_task_id?: number | null
 }
 
 // ===================== AREA (GTD Horizonte 2) =====================
