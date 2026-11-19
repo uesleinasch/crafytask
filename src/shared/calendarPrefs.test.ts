@@ -5,8 +5,8 @@ describe('calendarPrefs', () => {
   it('usa os valores fixos até a F7-f', () => {
     expect(calendarPrefs()).toEqual({
       journeyMinutes: 480,
-      dayStartHour: 7,
-      dayEndHour: 22,
+      dayStartHour: 0,
+      dayEndHour: 24,
       weekStart: 'monday'
     })
   })

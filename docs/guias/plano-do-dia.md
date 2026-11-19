@@ -36,7 +36,7 @@ Uma tarefa conta como **atrasada** quando o prazo é anterior a hoje, ou é hoje
 A tela **Calendário** tem as visões **Dia**, **3 dias**, **Semana** e **Mês**. Ela abre na Semana
 em janela larga, em 3 dias numa média e no Dia numa estreita.
 
-- **Dia, 3 dias e Semana** — *time blocking*: uma grade das 07:00 às 22:00. Clique num espaço vazio
+- **Dia, 3 dias e Semana** — *time blocking*: uma grade do dia inteiro, de 00:00 a 24:00, que abre rolada até a hora atual. Clique num espaço vazio
   para criar um **bloco de tempo** de 1 hora em volta do ponto clicado e escolha a tarefa. Para mudar um bloco,
   clique nele. Acima da grade, cada dia mostra quantas horas já estão em blocos contra a jornada de
   8 h (âmbar quando passa) e a faixa **Dia** com as tarefas agendadas sem horário e os prazos.

@@ -2024,7 +2024,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           <//>
         <//>
         <${SettingsCard} title="Calendário">
-          <${SettingRow} title="Faixa de horas da grade" desc="Hoje 07:00–22:00." isNew=${true}>
+          <${SettingRow} title="Faixa de horas da grade" desc="Padrão: o dia inteiro, 00:00–24:00." isNew=${true}>
             <${TimePicker.RangePicker} format="HH:mm" minuteStep=${30} defaultValue=${[dayjs('2026-01-01 07:00'), dayjs('2026-01-01 22:00')]} style=${{ width: 180 }} />
           <//>
         <//>
@@ -3275,7 +3275,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
   }
 
   const CAL_NOW = '16:20';
-  const CAL_RANGE = [7, 22];
+  const CAL_RANGE = [0, 24];
   const WORKDAY_H = 8;
   const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
   const fromMin = m => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
@@ -3511,8 +3511,8 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           </div>`; })}
       </div>
       </div>
-      <div className="ct-calgrid" ref=${gridRef} style=${{ gridTemplateColumns: `52px repeat(${visibleDays.length}, minmax(${view === 'week' ? 96 : 140}px, 1fr))`, height: (h1 - h0) * hourH + 20, paddingBlock: 10 }}>
-        <div style=${{ position: 'relative' }}>${Array.from({ length: h1 - h0 + 1 }, (_, i) => html`<span key=${i} className="ct-calhour" style=${{ top: i * hourH }}>${String(h0 + i).padStart(2, '0')}:00</span>`)}</div>
+      <div className="ct-calgrid" ref=${gridRef} style=${{ gridTemplateColumns: `52px repeat(${visibleDays.length}, minmax(${view === 'week' ? 96 : 140}px, 1fr))`, height: (h1 - h0) * hourH }}>
+        <div style=${{ position: 'relative' }}>${Array.from({ length: h1 - h0 - 1 }, (_, i) => i + 1).map(i => html`<span key=${i} className="ct-calhour" style=${{ top: i * hourH }}>${String(h0 + i).padStart(2, '0')}:00</span>`)}</div>
         ${visibleDays.map(d => { const k = d.format('YYYY-MM-DD'); const weekend = d.day() === 0 || d.day() === 6;
           return html`<div key=${k} className=${'ct-calcol' + (weekend ? ' weekend' : '')} style=${{ backgroundSize: `100% ${hourH}px` }}
             onClick=${e => { if (e.target !== e.currentTarget) return; const r = e.currentTarget.getBoundingClientRect(); createAt(d, h0 * 60 + (e.clientY - r.top) / pxMin - 30); }}

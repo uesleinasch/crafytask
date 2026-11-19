@@ -242,7 +242,7 @@ Transições comuns: `transition-colors`, `transition-all duration-200`,
 | Coluna do Kanban | `300px` | lista |
 | Janela flutuante | `300px` × (44 × n + 60) | float |
 | Captura rápida | `400 × 140` | quick capture |
-| Grade do calendário | 48px por hora (40 no compacto); 07:00–22:00 de `calendarPrefs()` | calendário |
+| Grade do calendário | 48px por hora (40 no compacto); 00:00–24:00 de `calendarPrefs()` | calendário |
 | Célula do mês | `min-h-[90px]` | calendário |
 | Larguras máximas de conteúdo | `max-w-2xl` (settings) · `max-w-3xl` (revisão, projeto) · `max-w-4xl` (horizontes) · `max-w-6xl` (dashboard) | — |
 

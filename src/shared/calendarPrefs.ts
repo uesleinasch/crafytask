@@ -11,8 +11,8 @@ export interface CalendarPrefs {
 
 export const DEFAULT_CALENDAR_PREFS: CalendarPrefs = {
   journeyMinutes: 8 * 60,
-  dayStartHour: 7,
-  dayEndHour: 22,
+  dayStartHour: 0,
+  dayEndHour: 24,
   weekStart: 'monday'
 }
 

@@ -45,7 +45,6 @@ interface CalendarGridProps {
 }
 
 const HOUR_LABEL_WIDTH = 52
-const RULER_GAP = 10
 
 function weekdayShort(date: string): string {
   return new Intl.DateTimeFormat('pt-BR', { weekday: 'short' })
@@ -345,14 +344,10 @@ export function CalendarGrid({
         </div>
         <div
           className="ct-calgrid"
-          style={{
-            gridTemplateColumns: columns,
-            height: (h1 - h0) * hourHeight + 2 * RULER_GAP,
-            paddingBlock: RULER_GAP
-          }}
+          style={{ gridTemplateColumns: columns, height: (h1 - h0) * hourHeight }}
         >
           <div style={{ position: 'relative' }}>
-            {Array.from({ length: h1 - h0 + 1 }, (_, i) => (
+            {Array.from({ length: h1 - h0 - 1 }, (_, i) => i + 1).map((i) => (
               <span key={i} className="ct-calhour" style={{ top: i * hourHeight }}>
                 {String(h0 + i).padStart(2, '0')}:00
               </span>

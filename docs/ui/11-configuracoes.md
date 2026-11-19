@@ -168,6 +168,6 @@ Versões em lista: CrafyTask (`app:getVersion`), Electron, Chromium e Node
 - Nenhuma preferência de **aparência** (tema claro/escuro, densidade, fonte) — apesar de o CSS já
   definir a paleta `.dark` completa.
 - Nenhuma configuração de **comportamento**: jornada de trabalho (fixa em 8h no plano do dia),
-  limiares de time leak (1h/30min/0), janela da grade do calendário (07:00–22:00), intervalo do
-  auto-sync de notas (60s), atalho global (fixo).
+  limiares de time leak (1h/30min/0), janela da grade do calendário (dia inteiro,
+  00:00–24:00), intervalo do auto-sync de notas (60s), atalho global (fixo).
 - Backup só manual: não há backup automático periódico nem limpeza de snapshots antigos.
