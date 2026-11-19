@@ -36,7 +36,7 @@ até a hora atual. Colunas de no mínimo 96px (Semana) ou 140px; em tela estreit
 - **Faixa Dia:** agendadas sem horário (chip com o ponto do projeto) e prazos abertos (bandeira,
   borda tracejada; bandeira âmbar no dia, vermelha se venceu; hora do prazo em mono). Até 2 por dia
   (6 na visão Dia) e `+N` abre um `Popover` com todos. Clicar abre a tarefa.
-- **Horas:** faixa de `calendarPrefs()` (07–22), 48px por hora (40 no compacto), linha a cada hora,
+- **Horas:** faixa de `calendarPrefs()` (07–22, com os dois rótulos das pontas visíveis e 10px de folga em cima e embaixo), 48px por hora (40 no compacto), linha a cada hora,
   fim de semana em `colorBgLayout`. Clicar num espaço vazio abre o diálogo de bloco com o dia e 1h
   centrada no clique (arredondada em 15 min).
 - **Bloco de tempo:** fundo `calBlock` com borda `calBlockBorder` (`CAL_BLOCK_COLORS`), ponto do
