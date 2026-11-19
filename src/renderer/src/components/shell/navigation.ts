@@ -1,4 +1,5 @@
 import type { WeeklyReview } from '@shared/types'
+import { HEALTH_LIMITS } from '@shared/healthLimits'
 
 export type NavKey =
   | 'tasks'
@@ -72,7 +73,7 @@ export function screenTitle(pathname: string): string {
   return ALL_ROUTES.find((item) => item.key === key)?.label ?? 'CrafyTask'
 }
 
-export const REVIEW_INTERVAL_DAYS = 7
+export const REVIEW_INTERVAL_DAYS = HEALTH_LIMITS.reviewDays
 
 export function isWeeklyReviewOverdue(reviews: readonly WeeklyReview[], now: Date): boolean {
   const limit = now.getTime() - REVIEW_INTERVAL_DAYS * 24 * 60 * 60 * 1000

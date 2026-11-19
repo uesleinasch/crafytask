@@ -8,7 +8,6 @@ import {
   Play,
   CheckCircle2,
   Circle,
-  AlertTriangle,
   Inbox,
   FolderKanban,
   Hourglass,
@@ -20,6 +19,8 @@ import {
 } from 'lucide-react'
 import { toast } from '@renderer/components/ui/sonner'
 import { cn } from '@renderer/lib/utils'
+import { HealthCard, HealthGrid } from '@renderer/components/health/HealthCard'
+import { REVIEW_HEALTH, healthItems } from '@renderer/components/health/healthItems'
 
 interface ChecklistItem {
   id: string
@@ -196,38 +197,11 @@ export function WeeklyReviewPage(): React.JSX.Element {
 
               {/* Health Indicators */}
               {healthIndicators && (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  <HealthCard
-                    label="Inbox"
-                    value={healthIndicators.inboxCount}
-                    warning={healthIndicators.inboxCount > 0}
-                    icon={Inbox}
-                  />
-                  <HealthCard
-                    label="Projetos sem ação"
-                    value={healthIndicators.projectsWithoutNextAction}
-                    warning={healthIndicators.projectsWithoutNextAction > 0}
-                    icon={FolderKanban}
-                  />
-                  <HealthCard
-                    label="Aguardando >7d"
-                    value={healthIndicators.staleWaitingTasks}
-                    warning={healthIndicators.staleWaitingTasks > 0}
-                    icon={Hourglass}
-                  />
-                  <HealthCard
-                    label="Próximas >14d"
-                    value={healthIndicators.staleNextTasks}
-                    warning={healthIndicators.staleNextTasks > 0}
-                    icon={Calendar}
-                  />
-                  <HealthCard
-                    label="Someday/Maybe"
-                    value={healthIndicators.somedayCount}
-                    warning={false}
-                    icon={Lightbulb}
-                  />
-                </div>
+                <HealthGrid>
+                  {healthItems(healthIndicators, REVIEW_HEALTH).map((item) => (
+                    <HealthCard key={item.key} item={item} />
+                  ))}
+                </HealthGrid>
               )}
 
               {/* Checklist */}
@@ -330,38 +304,11 @@ export function WeeklyReviewPage(): React.JSX.Element {
                   <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">
                     Saúde do Sistema
                   </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    <HealthCard
-                      label="Inbox"
-                      value={healthIndicators.inboxCount}
-                      warning={healthIndicators.inboxCount > 0}
-                      icon={Inbox}
-                    />
-                    <HealthCard
-                      label="Projetos sem ação"
-                      value={healthIndicators.projectsWithoutNextAction}
-                      warning={healthIndicators.projectsWithoutNextAction > 0}
-                      icon={FolderKanban}
-                    />
-                    <HealthCard
-                      label="Aguardando >7d"
-                      value={healthIndicators.staleWaitingTasks}
-                      warning={healthIndicators.staleWaitingTasks > 0}
-                      icon={Hourglass}
-                    />
-                    <HealthCard
-                      label="Próximas >14d"
-                      value={healthIndicators.staleNextTasks}
-                      warning={healthIndicators.staleNextTasks > 0}
-                      icon={Calendar}
-                    />
-                    <HealthCard
-                      label="Someday/Maybe"
-                      value={healthIndicators.somedayCount}
-                      warning={false}
-                      icon={Lightbulb}
-                    />
-                  </div>
+                  <HealthGrid>
+                    {healthItems(healthIndicators, REVIEW_HEALTH).map((item) => (
+                      <HealthCard key={item.key} item={item} />
+                    ))}
+                  </HealthGrid>
                 </div>
               )}
 
@@ -406,47 +353,6 @@ export function WeeklyReviewPage(): React.JSX.Element {
           )}
         </div>
       </ScrollArea>
-    </div>
-  )
-}
-
-// Health indicator card component
-function HealthCard({
-  label,
-  value,
-  warning,
-  icon: Icon
-}: {
-  label: string
-  value: number
-  warning: boolean
-  icon: React.ElementType
-}): React.JSX.Element {
-  return (
-    <div
-      className={cn(
-        'bg-white border rounded-sm p-3 flex items-center gap-3',
-        warning ? 'border-amber-200 bg-amber-50' : 'border-slate-200'
-      )}
-    >
-      <div
-        className={cn(
-          'w-8 h-8 rounded-lg flex items-center justify-center',
-          warning ? 'bg-amber-100' : 'bg-slate-100'
-        )}
-      >
-        {warning ? (
-          <AlertTriangle size={16} className="text-amber-600" />
-        ) : (
-          <Icon size={16} className="text-slate-500" />
-        )}
-      </div>
-      <div>
-        <p className={cn('text-lg font-bold', warning ? 'text-amber-700' : 'text-slate-700')}>
-          {value}
-        </p>
-        <p className="text-xs text-slate-500">{label}</p>
-      </div>
     </div>
   )
 }
