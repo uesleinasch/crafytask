@@ -15,6 +15,8 @@ interface UseWeeklyReviewReturn {
   startReview: () => Promise<WeeklyReview>
   saveNotes: (notes: string) => Promise<void>
   setStep: (key: ReviewStepKey, status: ReviewStepStatus | null) => Promise<void>
+  goToStep: (key: ReviewStepKey) => Promise<void>
+  discardReview: () => Promise<void>
   bumpCounter: (key: ReviewCounterKey, taskId?: number) => Promise<void>
   completeReview: (notes?: string) => Promise<void>
   refreshData: () => Promise<void>
@@ -74,6 +76,21 @@ export function useWeeklyReview(): UseWeeklyReviewReturn {
     [reviewId]
   )
 
+  const goToStep = useCallback(
+    async (key: ReviewStepKey): Promise<void> => {
+      if (!reviewId) return
+      setCurrentReview(await window.api.setWeeklyReviewCurrentStep(reviewId, key))
+    },
+    [reviewId]
+  )
+
+  const discardReview = useCallback(async (): Promise<void> => {
+    if (!reviewId) return
+    await window.api.discardWeeklyReview(reviewId)
+    setCurrentReview(null)
+    await refreshData()
+  }, [reviewId, refreshData])
+
   const bumpCounter = useCallback(
     async (key: ReviewCounterKey, taskId?: number): Promise<void> => {
       if (!reviewId) return
@@ -100,6 +117,8 @@ export function useWeeklyReview(): UseWeeklyReviewReturn {
     startReview,
     saveNotes,
     setStep,
+    goToStep,
+    discardReview,
     bumpCounter,
     completeReview,
     refreshData

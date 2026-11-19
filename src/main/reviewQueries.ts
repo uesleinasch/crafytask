@@ -16,10 +16,11 @@ import {
   REVIEW_STEP_KEYS,
   emptyReviewCounters,
   isReviewStepKey,
-  isReviewStepStatus
+  isReviewStepStatus,
+  nextPendingStep
 } from '@shared/reviewSteps'
 import { parseSqlTime } from '@shared/healthLimits'
-import { localDateString } from '@shared/dueState'
+import { currentTime, localDateString } from '@shared/dueState'
 import type { SqliteLike } from './tagQueries'
 import { healthIndicatorsQuery } from './healthQueries'
 import { listTimeEntriesInRange } from './timeEntryQueries'
@@ -48,6 +49,7 @@ interface ReviewRow {
   step_total: number | null
   counters: string | null
   start_health: string | null
+  current_step: string | null
 }
 
 function parseJson(value: string | null): unknown {
@@ -87,18 +89,21 @@ function parseCounters(value: string | null): { counters: ReviewCounters; captur
   const captured = Array.isArray(raw?.captured)
     ? raw.captured.filter((id): id is number => Number.isInteger(id))
     : []
+  counters.collected = captured.length
   return { counters, captured }
 }
 
 function toReview(row: ReviewRow): WeeklyReview {
   const { counters, captured } = parseCounters(row.counters)
+  const steps = migrateReviewSteps(parseJson(row.checklist_state), Boolean(row.completed_at))
   return {
     id: row.id,
     started_at: row.started_at,
     completed_at: row.completed_at ?? undefined,
     inbox_cleared: Boolean(row.inbox_cleared),
     notes: row.notes ?? undefined,
-    steps: migrateReviewSteps(parseJson(row.checklist_state), Boolean(row.completed_at)),
+    steps,
+    current_step: isReviewStepKey(row.current_step) ? row.current_step : nextPendingStep(steps),
     step_total: row.step_total ?? REVIEW_STEP_KEYS.length,
     counters,
     captured,
@@ -113,17 +118,20 @@ export function ensureReviewSchema(db: SqliteLike): void {
   if (!has('start_health')) {
     db.prepare('ALTER TABLE weekly_reviews ADD COLUMN start_health TEXT').run()
   }
+  if (!has('current_step')) {
+    db.prepare('ALTER TABLE weekly_reviews ADD COLUMN current_step TEXT').run()
+  }
   if (has('step_total')) return
-  db.prepare(
-    `ALTER TABLE weekly_reviews ADD COLUMN step_total INTEGER NOT NULL DEFAULT ${REVIEW_STEP_KEYS.length}`
-  ).run()
-  const rows = db
-    .prepare('SELECT id, completed_at, checklist_state FROM weekly_reviews')
-    .all() as Pick<ReviewRow, 'id' | 'completed_at' | 'checklist_state'>[]
-  const update = db.prepare(
-    'UPDATE weekly_reviews SET checklist_state = ?, step_total = ? WHERE id = ?'
-  )
   db.transaction(() => {
+    db.prepare(
+      `ALTER TABLE weekly_reviews ADD COLUMN step_total INTEGER NOT NULL DEFAULT ${REVIEW_STEP_KEYS.length}`
+    ).run()
+    const rows = db
+      .prepare('SELECT id, completed_at, checklist_state FROM weekly_reviews')
+      .all() as Pick<ReviewRow, 'id' | 'completed_at' | 'checklist_state'>[]
+    const update = db.prepare(
+      'UPDATE weekly_reviews SET checklist_state = ?, step_total = ? WHERE id = ?'
+    )
     for (const row of rows) {
       const completed = Boolean(row.completed_at)
       const steps = migrateReviewSteps(parseJson(row.checklist_state), completed)
@@ -142,22 +150,28 @@ export function getReview(db: SqliteLike, id: number): WeeklyReview | undefined 
   return row ? toReview(row) : undefined
 }
 
-export function listReviews(db: SqliteLike, limit = 20): WeeklyReview[] {
+export function listReviews(db: SqliteLike): WeeklyReview[] {
   return (
     db
-      .prepare('SELECT * FROM weekly_reviews ORDER BY started_at DESC, id DESC LIMIT ?')
-      .all(limit) as ReviewRow[]
+      .prepare(
+        `SELECT * FROM weekly_reviews WHERE completed_at IS NOT NULL
+         ORDER BY julianday(started_at) DESC, id DESC`
+      )
+      .all() as ReviewRow[]
   ).map(toReview)
 }
 
 export function lastReview(db: SqliteLike): WeeklyReview | undefined {
-  return listReviews(db, 1)[0]
+  const row = db
+    .prepare('SELECT * FROM weekly_reviews ORDER BY julianday(started_at) DESC, id DESC LIMIT 1')
+    .get() as ReviewRow | undefined
+  return row ? toReview(row) : undefined
 }
 
 export function openReview(db: SqliteLike): WeeklyReview | undefined {
   const row = db
     .prepare(
-      'SELECT * FROM weekly_reviews WHERE completed_at IS NULL ORDER BY started_at DESC, id DESC LIMIT 1'
+      'SELECT * FROM weekly_reviews WHERE completed_at IS NULL ORDER BY julianday(started_at) DESC, id DESC LIMIT 1'
     )
     .get() as ReviewRow | undefined
   return row ? toReview(row) : undefined
@@ -173,12 +187,16 @@ export function createReview(db: SqliteLike, now: Date): WeeklyReview {
        VALUES (?, '{}', ?, ?, ?)`
     )
     .run(
-      now.toISOString().slice(0, 19).replace('T', ' '),
+      sqlUtc(now),
       REVIEW_STEP_KEYS.length,
       JSON.stringify({ counters: emptyReviewCounters(), captured: [] }),
       JSON.stringify(health)
     ) as { lastInsertRowid: number | bigint }
   return getReview(db, Number(result.lastInsertRowid))!
+}
+
+function sqlUtc(date: Date): string {
+  return date.toISOString().slice(0, 19).replace('T', ' ')
 }
 
 function openRow(db: SqliteLike, id: number): ReviewRow {
@@ -200,12 +218,25 @@ export function setReviewStep(
     const steps = toReview(openRow(db, id)).steps
     if (status) steps[key] = status
     else delete steps[key]
-    db.prepare('UPDATE weekly_reviews SET checklist_state = ? WHERE id = ?').run(
+    db.prepare('UPDATE weekly_reviews SET checklist_state = ?, current_step = ? WHERE id = ?').run(
       JSON.stringify(steps),
+      status ? nextPendingStep(steps) : key,
       id
     )
   })()
   return getReview(db, id)!
+}
+
+export function setReviewCurrentStep(db: SqliteLike, id: number, key: ReviewStepKey): WeeklyReview {
+  if (!isReviewStepKey(key)) throw new Error('Passo da revisão inválido.')
+  openRow(db, id)
+  db.prepare('UPDATE weekly_reviews SET current_step = ? WHERE id = ?').run(key, id)
+  return getReview(db, id)!
+}
+
+export function discardReview(db: SqliteLike, id: number): void {
+  openRow(db, id)
+  db.prepare('DELETE FROM weekly_reviews WHERE id = ?').run(id)
 }
 
 export function bumpReviewCounter(
@@ -215,10 +246,13 @@ export function bumpReviewCounter(
   taskId?: number
 ): WeeklyReview {
   if (!REVIEW_COUNTER_KEYS.includes(key)) throw new Error('Contador da revisão inválido.')
+  if (key === 'collected' && !Number.isInteger(taskId)) {
+    throw new Error('Informe a tarefa coletada.')
+  }
   db.transaction(() => {
     const { counters, captured } = toReview(openRow(db, id))
-    counters[key] += 1
-    if (key === 'collected' && Number.isInteger(taskId)) captured.push(taskId as number)
+    if (key === 'collected') captured.push(taskId as number)
+    else counters[key] += 1
     db.prepare('UPDATE weekly_reviews SET counters = ? WHERE id = ?').run(
       JSON.stringify({ counters, captured }),
       id
@@ -244,9 +278,9 @@ export function completeReview(
     const inboxCleared = healthIndicatorsQuery(db, now).inboxCount === 0
     db.prepare(
       `UPDATE weekly_reviews
-       SET completed_at = ?, checklist_state = ?, inbox_cleared = ?, notes = COALESCE(?, notes)
+       SET completed_at = ?, current_step = NULL, checklist_state = ?, inbox_cleared = ?, notes = COALESCE(?, notes)
        WHERE id = ?`
-    ).run(now.toISOString(), JSON.stringify(steps), inboxCleared ? 1 : 0, notes ?? null, id)
+    ).run(sqlUtc(now), JSON.stringify(steps), inboxCleared ? 1 : 0, notes ?? null, id)
   })()
   return getReview(db, id)!
 }
@@ -300,7 +334,9 @@ export function reviewPastWeek(db: SqliteLike, now: Date): ReviewPastWeek {
     work(localDateString(parseSqlTime(task.status_changed_at)), task.id, task.name).done = true
   }
 
+  const clock = currentTime(now)
   for (const block of listTimeBlocksInRange(db, from, to)) {
+    if (block.date === to && block.start_time > clock) continue
     day(block.date).events.push({
       kind: 'event',
       task_id: block.task_id,

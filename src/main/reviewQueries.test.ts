@@ -7,11 +7,14 @@ import {
   completeReview,
   createReview,
   ensureReviewSchema,
+  discardReview,
   getReview,
+  lastReview,
   listReviews,
   migrateReviewSteps,
   openReview,
   reviewPastWeek,
+  setReviewCurrentStep,
   setReviewStep,
   updateReviewNotes
 } from './reviewQueries'
@@ -144,6 +147,32 @@ describe('revisão em andamento', () => {
       cleaned: 0
     })
     expect(review.captured).toEqual([7])
+    expect(() => bumpReviewCounter(db, id, 'collected')).toThrow()
+  })
+
+  it('guarda o passo atual: avança ao marcar, volta ao desfazer e aceita ir a um passo', () => {
+    const { id } = createReview(db, NOW)
+    expect(getReview(db, id)!.current_step).toBe('collect')
+    expect(setReviewStep(db, id, 'collect', 'done').current_step).toBe('inbox')
+    expect(setReviewCurrentStep(db, id, 'collect').current_step).toBe('collect')
+    expect(setReviewStep(db, id, 'inbox', 'skipped').current_step).toBe('mind')
+    expect(setReviewStep(db, id, 'collect', null).current_step).toBe('collect')
+  })
+
+  it('descarta só a revisão em andamento', () => {
+    const { id } = createReview(db, NOW)
+    discardReview(db, id)
+    expect(getReview(db, id)).toBeUndefined()
+    const other = createReview(db, NOW)
+    completeReview(db, other.id, NOW)
+    expect(() => discardReview(db, other.id)).toThrow('Revisão já concluída.')
+  })
+
+  it('lista só as concluídas, sem limite, e lastReview inclui a aberta', () => {
+    for (let i = 0; i < 25; i++) completeReview(db, createReview(db, NOW).id, NOW)
+    const open = createReview(db, NOW)
+    expect(listReviews(db)).toHaveLength(25)
+    expect(lastReview(db)?.id).toBe(open.id)
   })
 
   it('conclui com passos pulados, marca o Inbox zerado e trava a revisão', () => {
@@ -151,7 +180,7 @@ describe('revisão em andamento', () => {
     setReviewStep(db, id, 'collect', 'done')
     updateReviewNotes(db, id, 'rascunho')
     const done = completeReview(db, id, NOW)
-    expect(done.completed_at).toBe(NOW.toISOString())
+    expect(done.completed_at).toBe(NOW.toISOString().slice(0, 19).replace('T', ' '))
     expect(done.notes).toBe('rascunho')
     expect(done.inbox_cleared).toBe(true)
     expect(done.steps.collect).toBe('done')
@@ -160,7 +189,7 @@ describe('revisão em andamento', () => {
     expect(() => setReviewStep(db, id, 'mind', 'done')).toThrow('Revisão já concluída.')
     expect(() => completeReview(db, id, NOW)).toThrow()
     expect(openReview(db)).toBeUndefined()
-    expect(listReviews(db)[0].id).toBe(id)
+    expect(listReviews(db).map((r) => r.id)).toEqual([id])
   })
 
   it('guarda as notas passadas ao concluir', () => {
@@ -188,7 +217,8 @@ describe('reviewPastWeek', () => {
         (2, '${utc(at(17, 9))}', '${utc(at(17, 9, 15))}'),
         (4, '${utc(at(10, 9))}', '${utc(at(10, 10))}');
       INSERT INTO time_blocks (task_id, date, start_time, end_time) VALUES
-        (3, '2026-11-17', '14:00', '15:00'), (3, '2026-11-10', '14:00', '15:00');
+        (3, '2026-11-17', '14:00', '15:00'), (3, '2026-11-10', '14:00', '15:00'),
+        (3, '2026-11-19', '16:00', '17:00');
     `)
     seed(`UPDATE tasks SET status = 'finalizada' WHERE id = 2`)
     seed(`UPDATE tasks SET status_changed_at = '${utc(at(17, 16))}' WHERE id = 2`)

@@ -271,6 +271,8 @@ interface API {
     key: ReviewStepKey,
     status: ReviewStepStatus | null
   ) => Promise<WeeklyReview>
+  setWeeklyReviewCurrentStep: (id: number, key: ReviewStepKey) => Promise<WeeklyReview>
+  discardWeeklyReview: (id: number) => Promise<void>
   bumpWeeklyReviewCounter: (
     id: number,
     key: ReviewCounterKey,

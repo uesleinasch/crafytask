@@ -71,11 +71,13 @@ import {
   bumpReviewCounter,
   completeReview,
   createReview,
+  discardReview,
   ensureReviewSchema,
   getReview,
   lastReview,
   listReviews,
   reviewPastWeek,
+  setReviewCurrentStep,
   setReviewStep,
   updateReviewNotes
 } from './reviewQueries'
@@ -1759,6 +1761,14 @@ export function setWeeklyReviewStep(
   status: ReviewStepStatus | null
 ): WeeklyReview {
   return setReviewStep(tagDb(), id, key, status)
+}
+
+export function setWeeklyReviewCurrentStep(id: number, key: ReviewStepKey): WeeklyReview {
+  return setReviewCurrentStep(tagDb(), id, key)
+}
+
+export function discardWeeklyReview(id: number): void {
+  discardReview(tagDb(), id)
 }
 
 export function bumpWeeklyReviewCounter(

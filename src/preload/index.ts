@@ -333,6 +333,9 @@ const api = {
     key: ReviewStepKey,
     status: ReviewStepStatus | null
   ): Promise<WeeklyReview> => ipcRenderer.invoke('review:setStep', id, key, status),
+  setWeeklyReviewCurrentStep: (id: number, key: ReviewStepKey): Promise<WeeklyReview> =>
+    ipcRenderer.invoke('review:setCurrentStep', id, key),
+  discardWeeklyReview: (id: number): Promise<void> => ipcRenderer.invoke('review:discard', id),
   bumpWeeklyReviewCounter: (
     id: number,
     key: ReviewCounterKey,

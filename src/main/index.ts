@@ -102,6 +102,8 @@ import {
   getLastWeeklyReview,
   updateWeeklyReviewNotes,
   setWeeklyReviewStep,
+  setWeeklyReviewCurrentStep,
+  discardWeeklyReview,
   bumpWeeklyReviewCounter,
   completeWeeklyReview,
   getReviewPastWeek,
@@ -1104,6 +1106,10 @@ function setupIpcHandlers(): void {
     (_, id: number, key: ReviewStepKey, status: ReviewStepStatus | null) =>
       setWeeklyReviewStep(id, key, status)
   )
+  ipcMain.handle('review:setCurrentStep', (_, id: number, key: ReviewStepKey) =>
+    setWeeklyReviewCurrentStep(id, key)
+  )
+  ipcMain.handle('review:discard', (_, id: number) => discardWeeklyReview(id))
   ipcMain.handle('review:bumpCounter', (_, id: number, key: ReviewCounterKey, taskId?: number) =>
     bumpWeeklyReviewCounter(id, key, taskId)
   )

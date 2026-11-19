@@ -493,6 +493,7 @@ export interface WeeklyReview {
   inbox_cleared: boolean
   notes?: string
   steps: ReviewSteps
+  current_step: ReviewStepKey | null
   step_total: number
   counters: ReviewCounters
   captured: number[]

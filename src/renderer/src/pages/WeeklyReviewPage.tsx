@@ -25,6 +25,7 @@ import { useNavigate } from 'react-router-dom'
 import { HEALTH_TARGETS, REVIEW_HEALTH, healthItems } from '@renderer/components/health/healthItems'
 import type { ReviewStepKey } from '@shared/types'
 import { reviewStepsWith } from '@shared/reviewSteps'
+import { parseSqlTime } from '@shared/healthLimits'
 
 interface ChecklistItem {
   id: ReviewStepKey
@@ -152,7 +153,7 @@ export function WeeklyReviewPage(): React.JSX.Element {
   }, [completeReview, notes])
 
   const formatDate = (dateStr: string): string => {
-    return new Date(dateStr).toLocaleDateString('pt-BR', {
+    return parseSqlTime(dateStr).toLocaleDateString('pt-BR', {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
@@ -363,7 +364,7 @@ export function WeeklyReviewPage(): React.JSX.Element {
                             )}
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs text-slate-500">
+                            <span className="text-xs text-slate-500 font-mono tabular-nums">
                               {reviewStepsWith(review.steps, 'done').length}/{review.step_total}{' '}
                               passos
                             </span>

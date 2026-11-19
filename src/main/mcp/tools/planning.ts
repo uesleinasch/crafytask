@@ -205,7 +205,8 @@ export function registerPlanningTools(server: McpServer, ctx: ToolContext): void
     {
       title: 'Revisão semanal',
       description:
-        'Revisão semanal: status (revisão em andamento, última e indicadores de saúde), list, ' +
+        'Revisão semanal: status (revisão em andamento, última e indicadores de saúde), list ' +
+        '(concluídas), ' +
         'past_week (sessões, conclusões e blocos dos últimos 7 dias), start (abre a revisão ou ' +
         'devolve a que está em andamento), step (marca um passo como feito, pulado ou pendente), ' +
         'notes e complete (conclui; passos pendentes ficam como pulados).',
@@ -229,10 +230,12 @@ export function registerPlanningTools(server: McpServer, ctx: ToolContext): void
       if (action === 'past_week') return ok(getReviewPastWeek())
 
       if (action === 'start') {
+        const before = getLastWeeklyReview()
+        if (before && !before.completed_at) return ok({ review: before, already_open: true })
         const review = createWeeklyReview()
         if (notes !== undefined) updateWeeklyReviewNotes(review.id, notes)
         broadcastRefresh()
-        return ok({ review: getLastWeeklyReview() })
+        return ok({ review: notes !== undefined ? { ...review, notes } : review })
       }
 
       const open = getLastWeeklyReview()

@@ -9,6 +9,7 @@ const review = (completed_at?: string): WeeklyReview => ({
   completed_at,
   inbox_cleared: true,
   steps: {},
+  current_step: null,
   step_total: 10,
   counters: emptyReviewCounters(),
   captured: [],

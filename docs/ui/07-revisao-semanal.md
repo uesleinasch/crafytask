@@ -118,21 +118,30 @@ Cartão branco com:
   `next`, `past`, `upcoming`, `waiting`, `projects`, `someday`, `creative`). Passo sem chave está
   pendente. `migrateReviewSteps` leva os 8 passos antigos (`process_inbox`, `review_next`,
   `review_calendar`…) para as chaves novas; nas revisões concluídas antes da mudança, o que não foi
-  marcado vira pulado.
+  marcado vira pulado. Numa revisão sobre 8, `mind` e `past` não existem: chave ausente em revisão
+  concluída quer dizer "passo que não existia", não "feito".
+- `current_step`: o passo em que a revisão está, para retomar de onde parou. Marcar um passo avança
+  para o próximo pendente; desfazer volta para ele; `review:setCurrentStep` vai a qualquer passo.
 - `step_total`: 10, ou 8 nas revisões que já estavam concluídas quando a coluna nasceu
   (`ensureReviewSchema`, no fim de `initDatabase()`). Uma revisão antiga em andamento passa a 10.
-- `counters`: `{ counters: { collected, processed, nextSet, chased, cleaned }, captured: [ids] }`, os
-  contadores da sessão (coletados, processados, próximas definidas, cobranças, tiradas das listas) e
-  as tarefas criadas no Inbox durante a revisão.
+- `counters`: `{ counters: { processed, nextSet, chased, cleaned }, captured: [ids] }`, os
+  contadores da sessão (processados, próximas definidas, cobranças, tiradas das listas) e as tarefas
+  criadas no Inbox durante a revisão. `collected` é sempre o tamanho de `captured`: contar um item
+  coletado exige o id da tarefa.
 - `start_health`: o retrato de `healthIndicatorsQuery` no início, para comparar começo e agora mesmo
   depois de pausar.
 
+`started_at` e `completed_at` são gravados em UTC no formato do SQLite (`AAAA-MM-DD HH:MM:SS`);
+revisões antigas têm `completed_at` em ISO com `Z`. Leia os dois com `parseSqlTime`.
+
 Só há uma revisão aberta por vez: `review:create` devolve a que está em andamento em vez de abrir
-outra. Passos e contadores mudam por `review:setStep` e `review:bumpCounter` (recusam revisão
+outra; `review:discard` apaga a revisão em andamento (as mudanças feitas nas tarefas ficam).
+`review:list` traz todas as concluídas, sem limite; `review:getLast` traz a mais recente, aberta ou
+não. Passos e contadores mudam por `review:setStep` e `review:bumpCounter` (recusam revisão
 concluída); `review:complete` grava os pendentes como pulados, `completed_at` e `inbox_cleared`;
 `review:updateNotes` grava as notas. `review:pastWeek` traz os últimos 7 dias (hoje incluído) por
 dia: sessões somadas por tarefa (cortadas no início do intervalo; a que está rodando conta até agora),
-tarefas concluídas no período e blocos de tempo, mais recentes primeiro. A tool `weekly_review` do
+tarefas concluídas no período e blocos de tempo que já começaram, mais recentes primeiro. A tool `weekly_review` do
 MCP usa as mesmas funções.
 
 ---
