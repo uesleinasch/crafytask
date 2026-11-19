@@ -1,5 +1,5 @@
 import type { EnergyLevel, ProjectStatus, TaskCategory, TaskStatus } from '@shared/types'
-import type { ThemeMode } from './tokens'
+import { PALETTE, type ThemeMode } from './tokens'
 
 export interface ChipColors {
   fg: string
@@ -149,3 +149,40 @@ export const USER_COLORS = [
 export function userColorTint(color: string): string | undefined {
   return /^#[0-9a-f]{6}$/i.test(color) ? `${color}24` : undefined
 }
+
+const TERMINAL_BASE = PALETTE.dark
+
+export const TERMINAL = {
+  background: TERMINAL_BASE.sider,
+  surface: TERMINAL_BASE.surface,
+  border: TERMINAL_BASE.border,
+  hover: TERMINAL_BASE.hover,
+  text: TERMINAL_BASE.text,
+  text2: TERMINAL_BASE.text2,
+  meta: TERMINAL_BASE.text3,
+  success: TERMINAL_BASE.success,
+  accent: TERMINAL_BASE.primary,
+  xterm: {
+    background: TERMINAL_BASE.sider,
+    foreground: TERMINAL_BASE.text,
+    cursor: TERMINAL_BASE.text,
+    cursorAccent: TERMINAL_BASE.sider,
+    selectionBackground: '#3B3561',
+    black: '#4A4660',
+    red: TERMINAL_BASE.error,
+    green: TERMINAL_BASE.success,
+    yellow: TERMINAL_BASE.warning,
+    blue: TERMINAL_BASE.info,
+    magenta: '#B79CFF',
+    cyan: '#5CD3E6',
+    white: TERMINAL_BASE.text,
+    brightBlack: TERMINAL_BASE.text3,
+    brightRed: '#FFA3A9',
+    brightGreen: '#7BE3B5',
+    brightYellow: '#F6CB7E',
+    brightBlue: '#A3C1FF',
+    brightMagenta: '#CDBBFF',
+    brightCyan: '#8BE1EE',
+    brightWhite: '#FFFFFF'
+  }
+} as const

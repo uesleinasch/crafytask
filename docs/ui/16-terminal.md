@@ -34,6 +34,15 @@ sessão leva o tipo (`t12-1`, `p3-1`). Ao excluir, as sessões do dono morrem: `
 
 ## Painel (`components/terminal/TerminalPanel.tsx`)
 
+O painel é escuro nos dois temas: fica dentro de um `ConfigProvider` com `buildTheme('dark', densidade,
+'ct-term-theme')`, então botões, tooltips, menus e a confirmação do antd saem escuros mesmo no tema
+claro. As cores vêm de `TERMINAL` em `theme/semantic.ts` (tirada de `PALETTE.dark`: fundo `sider`
+`#15141D`, texto e cursor `text`, metadado `text3`, destaque `primary`, mais as 16 cores ANSI do
+xterm, todas com contraste AA sobre o fundo, testado em `contrast.test.ts`). As classes `ct-term-*`
+de `main.css` leem essas cores por variáveis CSS postas no `<section>`. Fonte do xterm: Geist Mono
+(`FONT_FAMILY_CODE`). O menu do botão direito é um `Dropdown` do antd (`trigger: contextMenu`) e a
+confirmação de encerrar, um `Modal`.
+
 ```
 ┌──────────────────────────────────────────────────────────────────────┐ ← alça (arrastar)
 │ ▣ ● Front (1)                                       +  ◫  ×  ⤢  ⌄ │
@@ -60,16 +69,16 @@ main) são puras, em `stores/terminalPanes.ts` (testadas).
   terminal focado — pede confirmação se há processo rodando. Encerrar **não** desvincula o diretório
   do dono.
 - **Lista à direita** (só com 2+ terminais): um item por terminal, na ordem dos grupos; terminais
-  do mesmo grupo ficam ligados por `┌ ├ └`. O focado tem fundo `slate-800`, os outros do grupo
-  visível um fundo mais leve. Clicar foca (e mostra o grupo); `×` aparece no hover; duplo clique
+  do mesmo grupo ficam ligados por `┌ ├ └`. O focado e os outros do grupo visível têm o fundo de hover da paleta;
+  o focado com o texto mais claro. Cada item é focável (Enter ou Espaço foca o terminal). Clicar foca (e mostra o grupo); `×` aparece no hover; duplo clique
   renomeia. O menu do botão direito é o mesmo do cabeçalho (`TerminalSessionMenu.tsx`):
   Renomear, Restaurar nome, **Separar do grupo** (move o terminal para um grupo próprio logo depois),
-  **Cor ▸** (a paleta `DEFAULT_COLORS`, ou "Sem cor": faixa de 2px à esquerda do item e cor do ícone)
+  **Cor ▸** (a paleta `USER_COLORS`, ou "Sem cor": faixa de 2px à esquerda do item e cor do ícone)
   e **Ícone ▸** (um dos 12 do catálogo `shared/terminalTab.ts`). O main só aceita hex de 6 dígitos
-  e ícone do catálogo (`normalizeTabColor`/`normalizeTabIcon`, testados). Ponto laranja = processo
+  e ícone do catálogo (`normalizeTabColor`/`normalizeTabIcon`, testados). Ponto na cor de destaque = processo
   em foreground diferente do shell (consulta a cada 2s com o painel aberto). Riscado = processo
   encerrado; aí aparece **Reiniciar**, que troca a sessão no mesmo lugar do grupo.
-- Grupo dividido: cada painel tem um cabeçalho fino com ícone e nome (borda laranja no focado).
+- Grupo dividido: cada painel tem um cabeçalho fino com ícone e nome (borda na cor de destaque no focado).
   Clicar num painel foca o terminal. As divisórias arrastam; cada painel fica com pelo menos 10% do
   grupo. As proporções valem enquanto o app está aberto.
 - `⤢` (ou `Ctrl + Shift + '`) põe o terminal em **tela cheia**: cobre a janela inteira, inclusive
@@ -94,6 +103,6 @@ main) são puras, em `stores/terminalPanes.ts` (testadas).
   manda nas duas teclas. Claude Code e outras TUIs entendem como nova linha sem enviar; no zsh é o
   `self-insert-unmeta` (quebra a linha no buffer). Regra pura em `terminalKeys.ts` (testada).
 - O primeiro Enter de cada sessão de task inicia o timer da task se ele não estiver rodando e o toggle
-  estiver ligado (sessão de projeto não tem timer); o toast oferece **Parar**.
+  estiver ligado (sessão de projeto não tem timer); a notificação (`notification` do antd) oferece **Parar**.
 - Diretório que deixou de existir ou shell configurado inválido viram toast; o shell inválido cai
   no padrão do sistema.
