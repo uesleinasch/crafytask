@@ -4,7 +4,6 @@ import { FitAddon } from '@xterm/addon-fit'
 import '@xterm/xterm/css/xterm.css'
 import type { TerminalSession } from '@shared/types'
 import { App, Button } from 'antd'
-import type { NotificationInstance } from 'antd/es/notification/interface'
 import { TERMINAL } from '@renderer/theme/semantic'
 import { FONT_FAMILY_CODE } from '@renderer/theme/tokens'
 import { readTerminalAutoTimer } from '@renderer/lib/terminalPrefs'
@@ -17,10 +16,9 @@ function exitMessage(exitCode: number): string {
   return `\r\n\x1b[90m[processo encerrado — código ${exitCode}]\x1b[0m\r\n`
 }
 
-function startTimerFromTerminal(
-  session: TerminalSession,
-  notification: NotificationInstance
-): void {
+type Notifier = ReturnType<typeof App.useApp>['notification']
+
+function startTimerFromTerminal(session: TerminalSession, notification: Notifier): void {
   if (timerTriggered.has(session.id)) return
   timerTriggered.add(session.id)
   if (!readTerminalAutoTimer() || session.owner.kind !== 'task') return

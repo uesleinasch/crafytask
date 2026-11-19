@@ -38,7 +38,9 @@ O painel é escuro nos dois temas: fica dentro de um `ConfigProvider` com `build
 'ct-term-theme')`, então botões, tooltips, menus e a confirmação do antd saem escuros mesmo no tema
 claro. As cores vêm de `TERMINAL` em `theme/semantic.ts` (tirada de `PALETTE.dark`: fundo `sider`
 `#15141D`, texto e cursor `text`, metadado `text3`, destaque `primary`, mais as 16 cores ANSI do
-xterm, todas com contraste AA sobre o fundo, testado em `contrast.test.ts`). As classes `ct-term-*`
+xterm, todas com contraste AA sobre o fundo menos o preto ANSI, que costuma ser cor de fundo;
+testado em `contrast.test.ts`). O `<section>` leva a classe `ct-term-theme`, para o anel de foco e
+outras variáveis `--ant-*` virem do tema escuro. As classes `ct-term-*`
 de `main.css` leem essas cores por variáveis CSS postas no `<section>`. Fonte do xterm: Geist Mono
 (`FONT_FAMILY_CODE`). O menu do botão direito é um `Dropdown` do antd (`trigger: contextMenu`) e a
 confirmação de encerrar, um `Modal`.
@@ -70,7 +72,7 @@ main) são puras, em `stores/terminalPanes.ts` (testadas).
   do dono.
 - **Lista à direita** (só com 2+ terminais): um item por terminal, na ordem dos grupos; terminais
   do mesmo grupo ficam ligados por `┌ ├ └`. O focado e os outros do grupo visível têm o fundo de hover da paleta;
-  o focado com o texto mais claro. Cada item é focável (Enter ou Espaço foca o terminal). Clicar foca (e mostra o grupo); `×` aparece no hover; duplo clique
+  o focado com o texto mais claro. Cada item é focável (Enter ou Espaço foca o terminal). Clicar foca (e mostra o grupo); `×` (24px) aparece no hover e com foco; duplo clique
   renomeia. O menu do botão direito é o mesmo do cabeçalho (`TerminalSessionMenu.tsx`):
   Renomear, Restaurar nome, **Separar do grupo** (move o terminal para um grupo próprio logo depois),
   **Cor ▸** (a paleta `USER_COLORS`, ou "Sem cor": faixa de 2px à esquerda do item e cor do ícone)
@@ -104,5 +106,6 @@ main) são puras, em `stores/terminalPanes.ts` (testadas).
   `self-insert-unmeta` (quebra a linha no buffer). Regra pura em `terminalKeys.ts` (testada).
 - O primeiro Enter de cada sessão de task inicia o timer da task se ele não estiver rodando e o toggle
   estiver ligado (sessão de projeto não tem timer); a notificação (`notification` do antd) oferece **Parar**.
-- Diretório que deixou de existir ou shell configurado inválido viram toast; o shell inválido cai
+- Diretório que deixou de existir ou shell configurado inválido viram notificação (`terminalNotices.ts`,
+  registrada pelo painel com o `notification` de `App.useApp()`); o shell inválido cai
   no padrão do sistema.

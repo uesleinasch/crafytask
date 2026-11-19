@@ -101,7 +101,7 @@ export function TerminalSessionMenu({
   }
 
   return (
-    <Dropdown trigger={['contextMenu']} menu={{ items, onClick }}>
+    <Dropdown trigger={['contextMenu']} autoFocus menu={{ items, onClick }}>
       {children}
     </Dropdown>
   )

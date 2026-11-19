@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { TerminalOwner, TerminalSession, TerminalTabCustomization } from '@shared/types'
-import { toast } from '@renderer/components/ui/sonner'
+import { terminalNotice } from '@renderer/components/terminal/terminalNotices'
 import { readTerminalShell } from '@renderer/lib/terminalPrefs'
 import {
   EMPTY_LAYOUT,
@@ -41,11 +41,11 @@ export function sameOwner(a: TerminalOwner | undefined, b: TerminalOwner): boole
 async function spawn(owner: TerminalOwner): Promise<TerminalSession | null> {
   const result = await window.api.terminalCreate(owner, { shell: readTerminalShell() })
   if (!result.ok) {
-    toast.error(result.error)
+    terminalNotice('error', result.error)
     return null
   }
   if (result.shellFallback) {
-    toast.warning(`Shell configurado não encontrado; usando ${result.session.shell}`)
+    terminalNotice('warning', `Shell configurado não encontrado; usando ${result.session.shell}`)
   }
   return result.session
 }

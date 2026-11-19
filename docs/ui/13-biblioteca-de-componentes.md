@@ -18,7 +18,7 @@ Consomem os tokens CSS (`--primary`, `--border`, `--radius`…) definidos em `as
 | `searchable-select` | **componente próprio**, não do shadcn — ver abaixo |
 | `dialog` | diálogos de criação/edição |
 | `alert-dialog` | confirmações destrutivas |
-| `context-menu` | menu de sessão do terminal (`TerminalSessionMenu`); a lista de tarefas usa o `Dropdown` do antd |
+| `context-menu` | **importado por nenhuma tela** desde a F7-c: o menu de sessão do terminal e a lista de tarefas usam o `Dropdown` do antd |
 | `card` | **importado por nenhuma tela** — todas escrevem `bg-white border border-slate-200 rounded-sm` na mão |
 | `badge` | **importado por nenhuma tela** — status, categoria e energia usam os chips de `components/chips/` |
 | `progress` | só em H1 dos horizontes. As outras seis barras de progresso do app são `<div>` com `width` inline |

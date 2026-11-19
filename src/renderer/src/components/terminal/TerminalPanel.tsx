@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Button, ConfigProvider, Input, Modal, Tooltip, theme, type InputRef } from 'antd'
+import { App, Button, ConfigProvider, Input, Modal, Tooltip, theme, type InputRef } from 'antd'
 import {
   ChevronDown,
   Columns2,
@@ -22,7 +22,12 @@ import { TAB_ICON_COMPONENTS } from './tabIcons'
 import { TerminalSessionMenu } from './TerminalSessionMenu'
 import { TerminalView } from './TerminalView'
 import { RegionBoundary } from '@renderer/components/shell/RegionBoundary'
-import { TERMINAL_MAXIMIZE_SHORTCUT_LABEL, terminalShortcut } from './terminalKeys'
+import {
+  TERMINAL_MAXIMIZE_SHORTCUT_LABEL,
+  TERMINAL_SHORTCUT_LABEL,
+  terminalShortcut
+} from './terminalKeys'
+import { registerTerminalNotifier } from './terminalNotices'
 
 const MIN_HEIGHT = 120
 const MIN_PANE_SHARE = 0.1
@@ -157,6 +162,11 @@ function BarButton({
 
 export function TerminalPanel(): React.JSX.Element | null {
   const { density } = useThemeSettings()
+  const { notification } = App.useApp()
+  useEffect(() => {
+    registerTerminalNotifier(notification)
+    return () => registerTerminalNotifier(null)
+  }, [notification])
   const terminalTheme = useMemo(() => buildTheme('dark', density, TERMINAL_CSS_VAR_KEY), [density])
   return (
     <ConfigProvider theme={terminalTheme}>
@@ -177,6 +187,7 @@ function TerminalPanelBody(): React.JSX.Element | null {
   const [height, setHeight] = usePersistedState(TERMINAL_HEIGHT_KEY, 280)
   const [dragHeight, setDragHeight] = useState<number | null>(null)
   const [pendingClose, setPendingClose] = useState<TerminalSession | null>(null)
+  const [confirmOpen, setConfirmOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -229,8 +240,10 @@ function TerminalPanelBody(): React.JSX.Element | null {
 
   const requestClose = async (session: TerminalSession): Promise<void> => {
     const fresh = (await window.api.terminalList()).find((s) => s.id === session.id)
-    if (fresh?.busy) setPendingClose(fresh)
-    else await useTerminalStore.getState().close(session.id)
+    if (fresh?.busy) {
+      setPendingClose(fresh)
+      setConfirmOpen(true)
+    } else await useTerminalStore.getState().close(session.id)
   }
 
   const weightOf = (id: string): number => weights[id] ?? 1
@@ -303,7 +316,7 @@ function TerminalPanelBody(): React.JSX.Element | null {
   return (
     <section
       aria-label="Terminal"
-      className="ct-term"
+      className={`ct-term ${TERMINAL_CSS_VAR_KEY}`}
       style={{
         ...TERMINAL_VARS,
         ...(open ? {} : { display: 'none' }),
@@ -336,7 +349,7 @@ function TerminalPanelBody(): React.JSX.Element | null {
               minWidth: 0,
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
+              gap: 8,
               fontSize: 12
             }}
           >
@@ -381,7 +394,7 @@ function TerminalPanelBody(): React.JSX.Element | null {
           onClick={() => useTerminalStore.getState().toggleMaximized()}
         />
         <BarButton
-          title="Minimizar (os processos continuam rodando)"
+          title={`Minimizar (os processos continuam rodando) (${TERMINAL_SHORTCUT_LABEL})`}
           icon={icon(ChevronDown, 16)}
           onClick={() => useTerminalStore.getState().setOpen(false)}
         />
@@ -421,7 +434,7 @@ function TerminalPanelBody(): React.JSX.Element | null {
                         type="text"
                         size="small"
                         icon={icon(RotateCcw, 11)}
-                        style={{ marginLeft: 'auto', color: token.colorPrimary, height: 20 }}
+                        style={{ marginLeft: 'auto', color: token.colorPrimary, height: 24 }}
                         onClick={() => void useTerminalStore.getState().restart(session.id)}
                       >
                         Reiniciar
@@ -467,45 +480,43 @@ function TerminalPanelBody(): React.JSX.Element | null {
                     onRename={() => setEditingId(`list:${id}`)}
                   >
                     <div
-                      role="button"
-                      tabIndex={0}
-                      aria-current={id === active.id ? 'true' : undefined}
-                      onClick={() => useTerminalStore.getState().activate(id)}
-                      onKeyDown={(event) => {
-                        if (event.target !== event.currentTarget) return
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault()
-                          useTerminalStore.getState().activate(id)
-                        }
-                      }}
                       className={`ct-term-item${state}`}
                       style={
                         session.color ? { boxShadow: `inset 2px 0 0 ${session.color}` } : undefined
                       }
                     >
-                      <span
-                        aria-hidden
-                        className="font-mono"
-                        style={{ width: 12, flex: 'none', textAlign: 'center', opacity: 0.6 }}
-                      >
-                        {connectorFor(index, group.length)}
-                      </span>
-                      <SessionIcon session={session} size={13} />
-                      <BusyDot session={session} />
-                      <span style={{ flex: 1, minWidth: 0, display: 'flex' }}>
-                        {renderLabel(session, 'list')}
-                      </span>
+                      {editingId === `list:${id}` ? (
+                        <div className="ct-term-item-main">
+                          <SessionIcon session={session} size={13} />
+                          {renderLabel(session, 'list')}
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          className="ct-term-item-main"
+                          aria-current={id === active.id ? 'true' : undefined}
+                          onClick={() => useTerminalStore.getState().activate(id)}
+                        >
+                          <span
+                            aria-hidden
+                            className="font-mono"
+                            style={{ width: 12, flex: 'none', textAlign: 'center', opacity: 0.6 }}
+                          >
+                            {connectorFor(index, group.length)}
+                          </span>
+                          <SessionIcon session={session} size={13} />
+                          <BusyDot session={session} />
+                          {renderLabel(session, 'list')}
+                        </button>
+                      )}
                       <Button
                         type="text"
                         size="small"
                         className="ct-term-item-close"
                         aria-label={`Encerrar ${labelOf(session)}`}
                         icon={icon(X, 12)}
-                        style={{ width: 20, height: 20, minWidth: 20 }}
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          void requestClose(session)
-                        }}
+                        style={{ width: 24, height: 24, minWidth: 24 }}
+                        onClick={() => void requestClose(session)}
                       />
                     </div>
                   </TerminalSessionMenu>
@@ -517,16 +528,17 @@ function TerminalPanelBody(): React.JSX.Element | null {
       </div>
 
       <Modal
-        open={pendingClose !== null}
+        open={confirmOpen}
         title="Encerrar terminal?"
         okText="Encerrar"
         cancelText="Cancelar"
         okButtonProps={{ danger: true }}
-        onCancel={() => setPendingClose(null)}
+        onCancel={() => setConfirmOpen(false)}
         onOk={() => {
           if (pendingClose) void useTerminalStore.getState().close(pendingClose.id)
-          setPendingClose(null)
+          setConfirmOpen(false)
         }}
+        afterClose={() => setPendingClose(null)}
       >
         Há um processo rodando neste terminal. Encerrar mata o processo; o diretório de trabalho
         continua vinculado {pendingClose?.owner.kind === 'project' ? 'ao projeto' : 'à task'}.

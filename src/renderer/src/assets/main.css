@@ -1265,10 +1265,10 @@ button.ct-health:focus-visible {
   display: flex;
   flex: none;
   align-items: center;
-  gap: 6px;
-  height: 24px;
-  padding: 0 8px;
-  font-size: 11px;
+  gap: 8px;
+  height: 28px;
+  padding: 0 4px 0 8px;
+  font-size: 12px;
   color: var(--ct-term-meta);
   border-bottom: 1px solid var(--ct-term-border);
 }
@@ -1297,9 +1297,9 @@ button.ct-health:focus-visible {
 .ct-term-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  height: 28px;
-  padding: 0 4px 0 6px;
+  gap: 4px;
+  height: 32px;
+  padding: 0 4px 0 8px;
   font-size: 12px;
   color: var(--ct-term-meta);
   cursor: pointer;
@@ -1314,6 +1314,22 @@ button.ct-health:focus-visible {
 .ct-term-item.active {
   color: var(--ct-term-text);
   background: var(--ct-term-hover);
+}
+
+.ct-term-item-main {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  background: transparent;
+  cursor: pointer;
 }
 
 .ct-term-item .ct-term-item-close {

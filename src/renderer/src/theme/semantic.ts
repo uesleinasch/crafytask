@@ -154,7 +154,6 @@ const TERMINAL_BASE = PALETTE.dark
 
 export const TERMINAL = {
   background: TERMINAL_BASE.sider,
-  surface: TERMINAL_BASE.surface,
   border: TERMINAL_BASE.border,
   hover: TERMINAL_BASE.hover,
   text: TERMINAL_BASE.text,
