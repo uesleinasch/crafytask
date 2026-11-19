@@ -44,15 +44,16 @@ até a hora atual. Colunas de no mínimo 96px (Semana) ou 140px; em tela estreit
   tarefa vai ao Google. Time leak pinta o fundo pela escala de três níveis (`timeLeakLevel` com o
   tempo total da tarefa). Concluída fica apagada e riscada; rodando agora, ponto pulsante.
 - **Tarefa com horário:** mesmo formato, fundo `colorBgContainer`, borda forte e ícone `Calendar`;
-  sem fim, dura 1h. Não arrasta; clique ou Enter abre o mesmo `Popover` com a etiqueta "Tarefa com
-  horário", onde o horário edita `scheduled_time`/`scheduled_end_time` (sem excluir).
+  sem fim, dura 1h. Arrasta e estica como o bloco (grava `scheduled_date`, `scheduled_time` e
+  `scheduled_end_time`, com Desfazer; mover uma tarefa sem fim não grava fim); clique ou Enter abre o mesmo `Popover` com a etiqueta
+  "Tarefa com horário", onde o horário edita os mesmos campos (sem excluir nem menu de contexto).
 - **Sobreposição:** itens que se cruzam dividem a coluna lado a lado (`layoutDay`).
 - **Sessões registradas:** faixa de 4px na borda direita da coluna, na cor primária, tracejada
   enquanto roda; cortada na meia-noite e na faixa de horas; tooltip "Sessão 09:00–09:40 · tarefa".
 - **Agora:** linha de 2px na cor primária com um ponto, atualizada a cada minuto.
-- **Editar na grade:** arrastar o bloco move (também para outro dia da visão), em passos de 15 min
-  e dentro do dia; a alça de baixo muda o fim (mínimo 15 min). Clique ou Enter abre o `Popover`
-  (`BlockPopover`): tarefa (abre), projeto, status, categoria, `TimePicker.RangePicker` com a
+- **Editar na grade:** arrastar o bloco (ou a tarefa com horário) move (também para outro dia da
+  visão), em passos de 15 min e dentro do dia; a alça de baixo muda o fim (mínimo 15 min). Clique
+  ou Enter abre o `Popover` (`BlockPopover`): tarefa (abre), projeto, status, categoria, `TimePicker.RangePicker` com a
   duração, **Iniciar timer**, **Abrir** e excluir. Botão direito: Abrir tarefa, Iniciar timer,
   Repetir no dia seguinte, Excluir bloco. Delete exclui. Esc ou cancelar o ponteiro solta o
   arraste sem gravar; arrastar e voltar ao mesmo lugar não grava. O `Popover` abre à direita (embaixo

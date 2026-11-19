@@ -38,8 +38,9 @@ em janela larga, em 3 dias numa média e no Dia numa estreita.
 
 - **Dia, 3 dias e Semana** — *time blocking*: uma grade do dia inteiro, de 00:00 a 24:00, que abre
   rolada até a hora atual. Clique num espaço vazio para criar um **bloco de tempo** de 1 hora em volta do ponto clicado e escolha a tarefa.
-  **Arraste** o bloco para mudar a hora ou o dia e puxe a borda de baixo para mudar o fim; clique
-  nele para ajustar o horário, iniciar o timer, abrir a tarefa ou excluir (Delete também exclui).
+  **Arraste** o bloco (ou a tarefa com horário) para mudar a hora ou o dia e puxe a borda de baixo
+  para mudar o fim; clique nele para ajustar o horário, iniciar o timer, abrir a tarefa ou excluir
+  (Delete também exclui).
   O botão direito tem **Repetir no dia seguinte**. Mover e excluir podem ser desfeitos na
   mensagem que aparece. O painel **A agendar** lista as próximas ações sem tempo reservado nos dias
   visíveis: arraste uma delas para a grade ou use o `+` para reservar 1 hora. Acima da grade, cada dia mostra quantas horas já estão em blocos contra a jornada de

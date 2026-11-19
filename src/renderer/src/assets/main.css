@@ -600,7 +600,7 @@
   pointer-events: none;
 }
 
-.ct-calblock:not(.event) {
+.ct-calblock {
   cursor: grab;
   touch-action: none;
 }
