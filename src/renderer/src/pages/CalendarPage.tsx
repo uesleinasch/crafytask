@@ -1,45 +1,61 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { App, Button, DatePicker, Flex, Grid, Segmented, Select, Space, Spin, Tooltip } from 'antd'
+import {
+  App,
+  Button,
+  DatePicker,
+  Drawer,
+  Flex,
+  Grid,
+  Segmented,
+  Select,
+  Space,
+  Spin,
+  Tooltip
+} from 'antd'
 import dayjs from 'dayjs'
-import { ChevronDown, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
-import type { CreateTimeBlockInput, TaskListItem, TimeBlock } from '@shared/types'
-import { calendarPrefs } from '@shared/calendarPrefs'
+import { ChevronDown, ChevronLeft, ChevronRight, ListTodo, PanelLeftOpen, Plus } from 'lucide-react'
+import type { CreateTimeBlockInput, TimeBlock } from '@shared/types'
+import { addDays, calendarPrefs } from '@shared/calendarPrefs'
 import { localDateString } from '@shared/dueState'
-import { CalendarGrid } from '@renderer/components/calendar/CalendarGrid'
+import { CalendarGrid, type GridBlockActions } from '@renderer/components/calendar/CalendarGrid'
 import { CalendarShowMenu } from '@renderer/components/calendar/CalendarShowMenu'
 import { MonthlyCalendar } from '@renderer/components/calendar/LegacyMonthView'
-import { TimeBlockDialog } from '@renderer/components/calendar/TimeBlockDialog'
+import { NewBlockModal, type NewBlockDraft } from '@renderer/components/calendar/NewBlockModal'
+import { UnscheduledPanel } from '@renderer/components/calendar/UnscheduledPanel'
 import {
   SHOW_KEYS,
   VIEW_OPTIONS,
   defaultView,
+  dropStart,
   fromMin,
   isWeekend,
   periodLabel,
   snapSlot,
   stepCursor,
   viewDays,
+  type AllDayItem,
   type CalendarView,
   type GridView,
   type ShowKey
 } from '@renderer/components/calendar/calendarView'
-import { RegionBoundary } from '@renderer/components/shell/RegionBoundary'
 import { errorMessage } from '@renderer/components/settings/settingsStatus'
 import { PageContainer } from '@renderer/components/shell/PageContainer'
+import { RegionBoundary } from '@renderer/components/shell/RegionBoundary'
 import { useCalendarMonth, useCalendarRange } from '@renderer/hooks/useCalendar'
 import { usePersistedState } from '@renderer/hooks/usePersistedState'
+import { useTimerStore } from '@renderer/stores/timerStore'
 
 const SHOW_KEY = 'ticktask:calendar-show'
 
-interface BlockDialogState {
-  open: boolean
-  block?: TimeBlock
-  initial?: Partial<{ taskId: string; date: string; startTime: string; endTime: string }>
-}
-
 function initialView(): GridView {
   return defaultView({ lg: window.innerWidth >= 992, md: window.innerWidth >= 768 })
+}
+
+function shortDay(date: string): string {
+  return new Intl.DateTimeFormat('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })
+    .format(new Date(`${date}T12:00:00`))
+    .replace('.', '')
 }
 
 type GridSectionProps = Omit<React.ComponentProps<typeof CalendarGrid>, 'data'> & {
@@ -94,13 +110,16 @@ export function CalendarPage(): React.JSX.Element {
   const { message } = App.useApp()
   const screens = Grid.useBreakpoint()
   const prefs = calendarPrefs()
+  const { startTimer } = useTimerStore()
   const [view, setView] = useState<CalendarView>(initialView)
   const [cursor, setCursor] = useState(() => localDateString(new Date()))
   const [now, setNow] = useState(() => new Date())
   const [storedShow, setStoredShow] = usePersistedState<ShowKey[]>(SHOW_KEY, SHOW_KEYS)
   const show = useMemo(() => new Set(storedShow), [storedShow])
-  const [dialog, setDialog] = useState<BlockDialogState>({ open: false })
-  const [selectable, setSelectable] = useState<TaskListItem[]>([])
+  const [draft, setDraft] = useState<NewBlockDraft | null>(null)
+  const [version, setVersion] = useState(0)
+  const [panel, setPanel] = useState(() => window.innerWidth >= 1200)
+  const changed = useCallback(() => setVersion((v) => v + 1), [])
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 60_000)
@@ -115,13 +134,10 @@ export function CalendarPage(): React.JSX.Element {
   )
   const days =
     view === 'week' && !show.has('weekend') ? allDays.filter((d) => !isWeekend(d)) : allDays
-  const [version, setVersion] = useState(0)
-  const changed = (): void => setVersion((v) => v + 1)
-
-  useEffect(() => {
-    if (!dialog.open) return
-    window.api.listActiveTasksLight().then(setSelectable).catch(console.error)
-  }, [dialog.open])
+  const panelRange =
+    view === 'month'
+      ? { from: `${cursor.slice(0, 7)}-01`, to: addDays(`${stepCursor('month', cursor, 1)}`, -1) }
+      : { from: allDays[0], to: allDays[allDays.length - 1] }
 
   const openTask = useCallback((id: number) => navigate(`/task/${id}`), [navigate])
 
@@ -133,49 +149,127 @@ export function CalendarPage(): React.JSX.Element {
   const slotClick = useCallback(
     (date: string, minutes: number) => {
       const start = snapSlot(minutes, prefs.dayStartHour, prefs.dayEndHour)
-      setDialog({
-        open: true,
-        initial: { date, startTime: fromMin(start), endTime: fromMin(start + 60) }
-      })
+      setDraft({ date, start: fromMin(start), end: fromMin(start + 60) })
     },
     [prefs.dayStartHour, prefs.dayEndHour]
   )
 
-  const blockClick = useCallback((block: TimeBlock) => {
-    setDialog({
-      open: true,
-      block,
-      initial: {
-        taskId: String(block.task_id),
-        date: block.date,
-        startTime: block.start_time,
-        endTime: block.end_time
-      }
-    })
-  }, [])
-
-  async function saveBlock(input: CreateTimeBlockInput): Promise<void> {
+  async function run<T>(action: () => Promise<T>): Promise<{ value: T } | null> {
     try {
-      if (dialog.block) await window.api.updateTimeBlock(dialog.block.id, input)
-      else await window.api.createTimeBlock(input)
+      const value = await action()
+      changed()
+      return { value }
     } catch (error) {
       message.error(errorMessage(error))
-      throw error
+      return null
     }
-    message.success(dialog.block ? 'Bloco atualizado' : 'Bloco criado')
-    changed()
   }
 
-  async function deleteBlock(): Promise<void> {
-    if (!dialog.block) return
+  function undoable(text: string, undo: () => Promise<unknown>): void {
+    const key = `calendar-undo-${Date.now()}`
+    message.success({
+      key,
+      duration: 5,
+      content: (
+        <span>
+          {text} ·{' '}
+          <a
+            onClick={() => {
+              message.destroy(key)
+              void run(undo)
+            }}
+          >
+            Desfazer
+          </a>
+        </span>
+      )
+    })
+  }
+
+  async function createBlock(input: CreateTimeBlockInput): Promise<void> {
     try {
-      await window.api.deleteTimeBlock(dialog.block.id)
+      await window.api.createTimeBlock(input)
     } catch (error) {
       message.error(errorMessage(error))
       throw error
     }
-    message.success('Bloco removido')
+    setDraft(null)
     changed()
+    message.success('Bloco reservado')
+  }
+
+  const blockActions: GridBlockActions = {
+    onOpen: openTask,
+    onStartTimer: (block) => {
+      startTimer(block.task_id)
+        .then(() => message.success(`Timer iniciado: ${block.task_name}`))
+        .catch((error) => message.error(errorMessage(error)))
+    },
+    onChange: (block, patch) => {
+      void run(() => window.api.updateTimeBlock(block.id, patch))
+    },
+    onMove: (block, patch) => {
+      void run(() => window.api.updateTimeBlock(block.id, patch)).then((result) => {
+        if (!result) return
+        const before = result.value
+        const where = patch.date && patch.date !== block.date ? `${shortDay(patch.date)}, ` : ''
+        undoable(`${block.task_name}: ${where}${patch.start_time}–${patch.end_time}`, () =>
+          window.api.updateTimeBlock(block.id, {
+            date: before.date,
+            start_time: before.start_time,
+            end_time: before.end_time
+          })
+        )
+      })
+    },
+    onDuplicate: (block) => {
+      const date = addDays(block.date, 1)
+      void run(() =>
+        window.api.createTimeBlock({
+          task_id: block.task_id,
+          date,
+          start_time: block.start_time,
+          end_time: block.end_time
+        })
+      ).then((result) => result && message.success(`Bloco repetido em ${shortDay(date)}`))
+    },
+    onDelete: (block: TimeBlock) => {
+      void run(() => window.api.deleteTimeBlock(block.id)).then((result) => {
+        if (!result) return
+        undoable('Bloco excluído', () =>
+          window.api.createTimeBlock({
+            task_id: block.task_id,
+            date: block.date,
+            start_time: block.start_time,
+            end_time: block.end_time
+          })
+        )
+      })
+    }
+  }
+
+  function reserve(taskId: number, date: string, startMin: number): void {
+    const start = dropStart(startMin, prefs.dayStartHour, prefs.dayEndHour)
+    void run(() =>
+      window.api.createTimeBlock({
+        task_id: taskId,
+        date,
+        start_time: fromMin(start),
+        end_time: fromMin(start + 60)
+      })
+    ).then((result) => result && message.success(`Bloco de 1h para ${result.value.task_name}`))
+  }
+
+  function dropChip(kind: AllDayItem['kind'], taskId: number, date: string): void {
+    if (kind === 'scheduled') {
+      void run(() => window.api.scheduleTaskForDate(taskId, date)).then(
+        (result) => result && message.success(`Reagendada para ${shortDay(date)}`)
+      )
+    } else {
+      void run(() => window.api.updateTask(taskId, { due_date: date })).then(
+        (result) => result && message.success(`Prazo movido para ${shortDay(date)}`)
+      )
+    }
   }
 
   const label = periodLabel(view, cursor, view === 'month' ? [] : allDays)
@@ -195,6 +289,22 @@ export function CalendarPage(): React.JSX.Element {
       aria-label="Visão"
     />
   )
+  const sidePanel = (inDrawer: boolean): React.JSX.Element => (
+    <RegionBoundary region="A agendar" resetKeys={[panelRange.from, panelRange.to]}>
+      <UnscheduledPanel
+        from={panelRange.from}
+        to={panelRange.to}
+        days={allDays}
+        version={version}
+        inDrawer={inDrawer}
+        onHide={screens.xl && !inDrawer ? () => setPanel(false) : undefined}
+        onReserve={(taskId, date) => {
+          if (inDrawer) setPanel(false)
+          reserve(taskId, date, 9 * 60)
+        }}
+      />
+    </RegionBoundary>
+  )
 
   return (
     <PageContainer
@@ -203,6 +313,24 @@ export function CalendarPage(): React.JSX.Element {
       style={{ height: '100%', display: 'flex', flexDirection: 'column', paddingBottom: 16 }}
     >
       <Flex gap={8} wrap align="center" style={{ marginBottom: 12 }}>
+        {screens.lg && !panel && (
+          <Tooltip title="Mostrar a agendar">
+            <Button
+              icon={<PanelLeftOpen size={16} strokeWidth={1.75} />}
+              aria-label="Mostrar painel a agendar"
+              onClick={() => setPanel(true)}
+            />
+          </Tooltip>
+        )}
+        {!screens.lg && (
+          <Button
+            icon={<ListTodo size={16} strokeWidth={1.75} />}
+            aria-label="A agendar"
+            onClick={() => setPanel(true)}
+          >
+            {screens.sm ? 'A agendar' : null}
+          </Button>
+        )}
         <Button onClick={() => setCursor(localDateString(new Date()))}>Hoje</Button>
         <Space.Compact>
           <Tooltip title="Anterior">
@@ -238,52 +366,55 @@ export function CalendarPage(): React.JSX.Element {
           type="primary"
           icon={<Plus size={14} strokeWidth={1.75} />}
           aria-label="Novo bloco"
-          onClick={() =>
-            setDialog({
-              open: true,
-              initial: { date: cursor, startTime: '09:00', endTime: '10:00' }
-            })
-          }
+          onClick={() => setDraft({ date: cursor, start: '09:00', end: '10:00' })}
         >
           {screens.sm ? 'Novo bloco' : null}
         </Button>
       </Flex>
-      <div style={{ flex: 1, minHeight: 0 }}>
-        <RegionBoundary region="grade do calendário" resetKeys={[view, cursor]}>
-          {view === 'month' ? (
-            <MonthSection
-              key={version}
-              cursor={cursor}
-              onTaskOpen={openTask}
-              onDayClick={(date) => setDialog({ open: true, initial: { date } })}
-            />
-          ) : (
-            <GridSection
-              from={allDays[0]}
-              to={allDays[allDays.length - 1]}
-              version={version}
-              view={gridView}
-              days={days}
-              today={today}
-              now={now}
-              show={show}
-              onOpenDay={openDay}
-              onSlotClick={slotClick}
-              onBlockClick={blockClick}
-              onTaskOpen={openTask}
-            />
-          )}
-        </RegionBoundary>
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', gap: 16 }}>
+        {screens.lg && panel && sidePanel(false)}
+        <div style={{ flex: 1, minWidth: 0, minHeight: 0 }}>
+          <RegionBoundary region="grade do calendário" resetKeys={[view, cursor]}>
+            {view === 'month' ? (
+              <MonthSection
+                key={version}
+                cursor={cursor}
+                onTaskOpen={openTask}
+                onDayClick={(date) => setDraft({ date, start: '09:00', end: '10:00' })}
+              />
+            ) : (
+              <GridSection
+                from={allDays[0]}
+                to={allDays[allDays.length - 1]}
+                version={version}
+                view={gridView}
+                days={days}
+                today={today}
+                now={now}
+                show={show}
+                onOpenDay={openDay}
+                onSlotClick={slotClick}
+                onTaskOpen={openTask}
+                blockActions={blockActions}
+                onDropTask={reserve}
+                onDropChip={dropChip}
+              />
+            )}
+          </RegionBoundary>
+        </div>
       </div>
-      <TimeBlockDialog
-        open={dialog.open}
-        onClose={() => setDialog({ open: false })}
-        onSave={saveBlock}
-        onDelete={dialog.block ? deleteBlock : undefined}
-        tasks={selectable}
-        initial={dialog.initial}
-        title={dialog.block ? 'Editar bloco de tempo' : 'Novo bloco de tempo'}
-      />
+      {!screens.lg && (
+        <Drawer
+          open={panel}
+          onClose={() => setPanel(false)}
+          placement="left"
+          size={Math.min(340, window.innerWidth - 40)}
+          title="A agendar"
+        >
+          {sidePanel(true)}
+        </Drawer>
+      )}
+      <NewBlockModal draft={draft} onCancel={() => setDraft(null)} onCreate={createBlock} />
     </PageContainer>
   )
 }

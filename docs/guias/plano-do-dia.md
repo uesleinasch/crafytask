@@ -36,9 +36,13 @@ Uma tarefa conta como **atrasada** quando o prazo é anterior a hoje, ou é hoje
 A tela **Calendário** tem as visões **Dia**, **3 dias**, **Semana** e **Mês**. Ela abre na Semana
 em janela larga, em 3 dias numa média e no Dia numa estreita.
 
-- **Dia, 3 dias e Semana** — *time blocking*: uma grade do dia inteiro, de 00:00 a 24:00, que abre rolada até a hora atual. Clique num espaço vazio
-  para criar um **bloco de tempo** de 1 hora em volta do ponto clicado e escolha a tarefa. Para mudar um bloco,
-  clique nele. Acima da grade, cada dia mostra quantas horas já estão em blocos contra a jornada de
+- **Dia, 3 dias e Semana** — *time blocking*: uma grade do dia inteiro, de 00:00 a 24:00, que abre
+  rolada até a hora atual. Clique num espaço vazio para criar um **bloco de tempo** de 1 hora em volta do ponto clicado e escolha a tarefa.
+  **Arraste** o bloco para mudar a hora ou o dia e puxe a borda de baixo para mudar o fim; clique
+  nele para ajustar o horário, iniciar o timer, abrir a tarefa ou excluir (Delete também exclui).
+  O botão direito tem **Repetir no dia seguinte**. Mover e excluir podem ser desfeitos na
+  mensagem que aparece. O painel **A agendar** lista as próximas ações sem tempo reservado nos dias
+  visíveis: arraste uma delas para a grade ou use o `+` para reservar 1 hora. Acima da grade, cada dia mostra quantas horas já estão em blocos contra a jornada de
   8 h (âmbar quando passa) e a faixa **Dia** com as tarefas agendadas sem horário e os prazos.
   Tarefas com horário aparecem como compromisso, e as sessões do timer como uma faixa fina na borda
   da coluna. Em **Mostrar** você escolhe o que aparece (blocos, tarefas com horário, agendadas,

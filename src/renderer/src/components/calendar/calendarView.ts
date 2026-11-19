@@ -5,6 +5,8 @@ import { localDateString } from '@shared/dueState'
 export type CalendarView = 'day' | '3days' | 'week' | 'month'
 export type GridView = Exclude<CalendarView, 'month'>
 
+export const DRAG_TYPE = 'application/x-crafytask-calendar'
+
 export type ShowKey = 'block' | 'event' | 'scheduled' | 'due' | 'sessions' | 'weekend'
 export const SHOW_KEYS: ShowKey[] = ['block', 'event', 'scheduled', 'due', 'sessions', 'weekend']
 
@@ -217,4 +219,35 @@ export function clampToGrid(
 export function snapSlot(minutes: number, startHour: number, endHour: number): number {
   const snapped = Math.round(minutes / 15) * 15
   return Math.min(Math.max(startHour * 60, snapped), endHour * 60 - 60)
+}
+
+const LAST_MINUTE = 24 * 60 - 1
+
+export function snapDelta(minutes: number): number {
+  return Math.round(minutes / 15) * 15
+}
+
+export function movedTimes(
+  start: string,
+  end: string,
+  deltaMin: number,
+  startHour: number,
+  endHour: number
+): { start_time: string; end_time: string } {
+  const length = toMin(end) - toMin(start)
+  const last = Math.min(endHour * 60, LAST_MINUTE)
+  const from = Math.min(last - length, Math.max(startHour * 60, toMin(start) + snapDelta(deltaMin)))
+  return { start_time: fromMin(from), end_time: fromMin(from + length) }
+}
+
+export function resizedEnd(start: string, end: string, deltaMin: number, endHour: number): string {
+  const last = Math.min(endHour * 60, LAST_MINUTE)
+  return fromMin(Math.min(last, Math.max(toMin(start) + 15, toMin(end) + snapDelta(deltaMin))))
+}
+
+export function dropStart(minutes: number, startHour: number, endHour: number): number {
+  return Math.min(
+    Math.max(startHour * 60, snapDelta(minutes)),
+    Math.min(endHour * 60, LAST_MINUTE) - 60
+  )
 }
