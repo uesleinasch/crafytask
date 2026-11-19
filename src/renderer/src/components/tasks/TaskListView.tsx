@@ -93,6 +93,7 @@ const GROUP_BY_OPTIONS: { value: GroupBy; label: string }[] = [
 
 interface TaskListViewProps {
   project?: { id: number; name: string }
+  onChanged?: () => void
 }
 
 function statusColumns(tasks: Task[]): TaskGroup[] {
@@ -109,10 +110,11 @@ function StatusColumnIcon({ status }: { status: TaskStatus }): React.JSX.Element
   return <Icon size={14} strokeWidth={1.75} aria-hidden color={STATUS_COLORS[status][mode].fg} />
 }
 
-export function TaskListView({ project }: TaskListViewProps): React.JSX.Element {
+export function TaskListView({ project, onChanged }: TaskListViewProps): React.JSX.Element {
   const navigate = useNavigate()
   const { message } = App.useApp()
   const inProject = !!project
+  const projectId = project?.id
   const [storedStatus, setStoredStatus] = usePersistedState<FilterStatus>(
     'ticktask:taskListStatusFilter',
     'inbox'
@@ -155,7 +157,7 @@ export function TaskListView({ project }: TaskListViewProps): React.JSX.Element 
     inProject ? 'none' : legacyPrefs.group
   )
   const [groupOrder, setGroupOrder] = usePersistedState<Partial<Record<GroupBy, string[]>>>(
-    'ticktask:taskListGroupOrder',
+    inProject ? 'ticktask:projectTaskGroupOrder' : 'ticktask:taskListGroupOrder',
     {}
   )
   const screens = Grid.useBreakpoint()
@@ -184,7 +186,7 @@ export function TaskListView({ project }: TaskListViewProps): React.JSX.Element 
       archived: false,
       status: statusFilter,
       category: categoryFilter,
-      projectId: project ? project.id : projectFilter === -1 ? 'none' : projectFilter,
+      projectId: projectId ?? (projectFilter === -1 ? 'none' : projectFilter),
       tagId: tagFilter,
       contextId: contextFilter,
       search: searchQuery,
@@ -192,7 +194,7 @@ export function TaskListView({ project }: TaskListViewProps): React.JSX.Element 
       sort: sortMode
     }),
     [
-      project,
+      projectId,
       statusFilter,
       categoryFilter,
       projectFilter,
@@ -218,26 +220,23 @@ export function TaskListView({ project }: TaskListViewProps): React.JSX.Element 
     sentinelRef
   } = useIncrementalList(tasks, JSON.stringify(filters))
 
-  // Carregar dados de filtros
   useEffect(() => {
     window.api.listTags().then(setAvailableTags).catch(console.error)
     window.api.listContexts().then(setAvailableContexts).catch(console.error)
     window.api.listProjects().then(setAvailableProjects).catch(console.error)
   }, [])
 
-  // Total sem filtros, para o rodapé "mostrando N de M"
   useEffect(() => {
     window.api
-      .countTasks(project ? { archived: false, projectId: project.id } : { archived: false })
+      .countTasks(projectId ? { archived: false, projectId } : { archived: false })
       .then(setTotalTasks)
       .catch(console.error)
-  }, [tasks, project])
+  }, [tasks, projectId])
 
   useEffect(() => {
     if (error) toast.error(error)
   }, [error])
 
-  // Listener para refresh vindo do quick capture
   useEffect(() => {
     const unsubscribe = window.api.onTasksRefresh(() => {
       refreshTasks()
@@ -350,6 +349,7 @@ export function TaskListView({ project }: TaskListViewProps): React.JSX.Element 
       const task = await createTask({ name, project_id: project.id })
       await window.api.updateStatus(task.id, 'proximas')
       await refreshTasks()
+      onChanged?.()
       setNewName('')
       message.success(`Tarefa criada em ${project.name}`)
     } catch (err) {
@@ -359,7 +359,8 @@ export function TaskListView({ project }: TaskListViewProps): React.JSX.Element 
 
   const handleMenuChanged = useCallback((): void => {
     void refreshTasks()
-  }, [refreshTasks])
+    onChanged?.()
+  }, [refreshTasks, onChanged])
 
   const handleTaskClick = (taskId: number): void => {
     navigate(`/task/${taskId}`)
@@ -665,8 +666,10 @@ export function TaskListView({ project }: TaskListViewProps): React.JSX.Element 
             )}
 
             {hasMore && !showGroups && (
-              <div ref={sentinelRef} className="py-6 text-center text-xs text-slate-400">
-                Carregando mais {remaining} {remaining === 1 ? 'tarefa' : 'tarefas'}...
+              <div ref={sentinelRef} style={{ padding: '24px 0', textAlign: 'center' }}>
+                <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                  Carregando mais {remaining} {remaining === 1 ? 'tarefa' : 'tarefas'}...
+                </Typography.Text>
               </div>
             )}
             <BulkActionBar

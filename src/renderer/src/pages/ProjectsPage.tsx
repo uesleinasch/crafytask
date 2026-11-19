@@ -264,7 +264,7 @@ export function ProjectsPage(): React.JSX.Element {
             type="warning"
             icon={<TriangleAlert size={16} strokeWidth={1.75} aria-hidden />}
             style={{ marginBottom: 12 }}
-            message={
+            title={
               <span>
                 <Typography.Text strong>{noNextActionNotice(withoutNext)}</Typography.Text> Projeto
                 sem próxima ação fica parado: defina o próximo passo concreto.

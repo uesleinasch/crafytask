@@ -85,7 +85,7 @@ janela), os onze botões ocupam praticamente toda a barra.
 | Tela | Implementação | Destino |
 | --- | --- | --- |
 | maioria | `<Button variant="ghost">` com "← Voltar" | `/` |
-| detalhe do projeto | `<Button variant="ghost">` com "← Projetos" | `/projects` |
+| detalhe do projeto | `Button` `text` do antd com "← Projetos" (F5-e) | `/projects` |
 | detalhe da tarefa | `<button>` cru com "← Voltar" | `navigate(-1)` (histórico) |
 | calendário / horizontes | `<Button size="sm">` só com o ícone | `/` |
 
@@ -197,10 +197,16 @@ real é textual ("Hoje") com um ícone `CalendarDays`, não um emoji.
 
 ### E1. Não se cria tarefa dentro de um projeto
 
+**Resolvida na F5-e:** o detalhe do projeto tem o campo "Adicionar tarefa a {projeto}…", que cria a
+tarefa já em Próximas.
+
 `/project/:id` lista as tarefas mas não tem botão de adicionar. O estado vazio instrui o usuário a
 sair, abrir cada tarefa e selecionar o projeto lá.
 
 ### E2. Área de foco de projeto não é editável pela interface
+
+**Resolvida na F5-a e na F5-e:** a área se escolhe no "Novo projeto", no menu da lista de projetos e
+na pílula Área de foco do detalhe.
 
 O campo existe, aparece como etiqueta em `/horizons`, e só o **servidor MCP** consegue gravá-lo. Um
 projeto criado pela interface nunca terá área — o que esvazia o H2 dos horizontes.

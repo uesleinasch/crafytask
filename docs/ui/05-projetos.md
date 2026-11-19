@@ -78,9 +78,10 @@ Descrição, Área de foco (`Select`) e Cor (as dez cores de `USER_COLORS`, como
 
 `project:list` usa `listProjectsQuery` (`src/main/projectQueries.ts`, testado): uma consulta com a
 área, `task_count`, `completed_task_count`, `open_task_count` (sem as arquivadas), `total_seconds`
-(soma do tempo das tarefas) e a próxima ação (`next_action` e `next_action_id`: a tarefa em
-Próximas mais recente, fora do arquivo) — no lugar das três
-consultas por projeto de antes. `project:get` usa a mesma consulta.
+(soma do tempo das tarefas) e a próxima ação (`next_action` e `next_action_id`: a escolhida em
+`projects.next_task_id` se ainda estiver aberta, no projeto e fora do arquivo; senão, a tarefa em
+Próximas mais recente fora do arquivo) — no lugar das três consultas por projeto de antes.
+`project:get` usa a mesma consulta.
 
 ---
 
@@ -136,7 +137,7 @@ do projeto têm chaves próprias em `localStorage` (`ticktask:projectTaskView`,
   em Próximas mais recente).
 - **Resultado desejado:** `TextArea` sem borda, grava ao sair.
 - **Progresso:** "N de M tarefas" com a porcentagem e a barra; `Statistic` em mono 20: Abertas,
-  Bloqueadas (âmbar quando há), Tempo total e Prazo ("12 dias", "venceu").
+  Bloqueadas (no laranja de Prioridade quando há), Tempo total e Prazo ("12 dias", "venceu").
 
 ## Larguras
 

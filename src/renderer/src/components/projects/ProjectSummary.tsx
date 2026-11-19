@@ -23,7 +23,7 @@ import { STATUS_ICONS } from '@renderer/components/chips/statusMeta'
 import { errorMessage } from '@renderer/components/settings/settingsStatus'
 import { formatShortDuration } from '@renderer/components/tasks/taskTableFormat'
 import { useTimerStore } from '@renderer/stores/timerStore'
-import { STATUS_COLORS } from '@renderer/theme/semantic'
+import { CATEGORY_COLORS, STATUS_COLORS } from '@renderer/theme/semantic'
 import { useThemeSettings } from '@renderer/theme/themeSettings'
 import { daysUntil, openTasks, progressPercent } from './projectList'
 
@@ -174,6 +174,7 @@ export function ProgressCard({
   today: string
 }): React.JSX.Element {
   const { token } = theme.useToken()
+  const { mode } = useThemeSettings()
   const mono: React.CSSProperties = {
     fontFamily: token.fontFamilyCode,
     fontVariantNumeric: 'tabular-nums',
@@ -205,32 +206,39 @@ export function ProgressCard({
         </div>
         <Row gutter={[12, 12]}>
           <Col span={12}>
-            <Statistic title="Abertas" value={openTasks(project)} valueStyle={mono} />
+            <Statistic title="Abertas" value={openTasks(project)} styles={{ content: mono }} />
           </Col>
           <Col span={12}>
             <Statistic
               title="Bloqueadas"
               value={blocked}
-              valueStyle={{ ...mono, color: blocked ? token.colorWarning : undefined }}
+              styles={{
+                content: {
+                  ...mono,
+                  color: blocked ? CATEGORY_COLORS.prioridade[mode].fg : undefined
+                }
+              }}
             />
           </Col>
           <Col span={12}>
             <Statistic
               title="Tempo total"
               value={formatShortDuration(project.total_seconds ?? 0)}
-              valueStyle={mono}
+              styles={{ content: mono }}
             />
           </Col>
           <Col span={12}>
             <Statistic
               title="Prazo"
               value={days === null ? '—' : days < 0 ? 'venceu' : `${days} dias`}
-              valueStyle={{
-                ...mono,
-                color:
-                  days !== null && days < 0 && project.status === 'active'
-                    ? token.colorError
-                    : undefined
+              styles={{
+                content: {
+                  ...mono,
+                  color:
+                    days !== null && days < 0 && project.status === 'active'
+                      ? token.colorError
+                      : undefined
+                }
               }}
             />
           </Col>

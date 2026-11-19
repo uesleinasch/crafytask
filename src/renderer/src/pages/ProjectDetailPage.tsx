@@ -92,7 +92,11 @@ export function ProjectDetailPage(): React.JSX.Element {
   const outcomeCard = <OutcomeCard project={project} onSave={save} />
   const progressCard = <ProgressCard project={project} tasks={tasks} today={today} />
   const taskArea = (
-    <TaskListView key={project.id} project={{ id: project.id, name: project.name }} />
+    <TaskListView
+      key={project.id}
+      project={{ id: project.id, name: project.name }}
+      onChanged={load}
+    />
   )
 
   return (
@@ -111,7 +115,7 @@ export function ProjectDetailPage(): React.JSX.Element {
             showIcon
             icon={<TriangleAlert size={16} strokeWidth={1.75} aria-hidden />}
             style={{ marginTop: 12 }}
-            message="Sem próxima ação definida: o projeto não anda até ter um próximo passo concreto."
+            title="Sem próxima ação definida: o projeto não anda até ter um próximo passo concreto."
             action={
               <Button
                 size="small"
@@ -131,7 +135,23 @@ export function ProjectDetailPage(): React.JSX.Element {
             onChange={setTab}
             style={{ marginTop: 8 }}
             items={[
-              { key: 'tarefas', label: `Tarefas ${openTasks(project)}`, children: taskArea },
+              {
+                key: 'tarefas',
+                label: (
+                  <span>
+                    Tarefas{' '}
+                    <span
+                      style={{
+                        fontFamily: 'var(--ant-font-family-code)',
+                        fontVariantNumeric: 'tabular-nums'
+                      }}
+                    >
+                      {openTasks(project)}
+                    </span>
+                  </span>
+                ),
+                children: taskArea
+              },
               {
                 key: 'resumo',
                 label: 'Resumo',
