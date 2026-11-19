@@ -1137,7 +1137,8 @@
       "titulo": "Revisão: cada passo resolve ali mesmo, resumo ao fechar e conclusão com pulados conferidos",
       "check": {
         "tipo": "manual"
-      }
+      },
+      "validado": "2026-11-19"
     },
     {
       "id": "F5.4",
@@ -1145,7 +1146,8 @@
       "titulo": "Projetos, horizontes e revisão conferidos",
       "check": {
         "tipo": "manual"
-      }
+      },
+      "validado": "2026-11-19"
     },
     {
       "id": "F6.1",
