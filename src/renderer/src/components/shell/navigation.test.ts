@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { WeeklyReview } from '@shared/types'
+import { emptyReviewCounters } from '@shared/reviewSteps'
 import { NAV_FOOTER, NAV_GROUPS, isWeeklyReviewOverdue, navKeyFor, screenTitle } from './navigation'
 
 const review = (completed_at?: string): WeeklyReview => ({
@@ -7,7 +8,12 @@ const review = (completed_at?: string): WeeklyReview => ({
   started_at: '2026-11-01T10:00:00.000Z',
   completed_at,
   inbox_cleared: true,
-  checklist_state: '{}'
+  steps: {},
+  current_step: null,
+  step_total: 10,
+  counters: emptyReviewCounters(),
+  captured: [],
+  start_health: null
 })
 
 describe('navegação', () => {

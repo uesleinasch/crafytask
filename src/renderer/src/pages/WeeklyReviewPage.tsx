@@ -15,16 +15,20 @@ import {
   Lightbulb,
   Clock,
   History,
-  Sparkles
+  Sparkles,
+  Cloud
 } from 'lucide-react'
 import { toast } from '@renderer/components/ui/sonner'
 import { cn } from '@renderer/lib/utils'
 import { HealthCard, HealthGrid } from '@renderer/components/health/HealthCard'
 import { useNavigate } from 'react-router-dom'
 import { HEALTH_TARGETS, REVIEW_HEALTH, healthItems } from '@renderer/components/health/healthItems'
+import type { ReviewStepKey } from '@shared/types'
+import { reviewStepsWith } from '@shared/reviewSteps'
+import { parseSqlTime } from '@shared/healthLimits'
 
 interface ChecklistItem {
-  id: string
+  id: ReviewStepKey
   label: string
   description: string
   icon: React.ElementType
@@ -38,40 +42,52 @@ const CHECKLIST_ITEMS: ChecklistItem[] = [
     icon: Inbox
   },
   {
-    id: 'process_inbox',
+    id: 'inbox',
     label: 'Processar Inbox',
     description: 'Alcance Inbox Zero — classifique cada item: ação, projeto, referência ou lixo.',
     icon: ClipboardCheck
   },
   {
-    id: 'review_next',
+    id: 'mind',
+    label: 'Esvaziar a cabeça',
+    description: 'O que ainda está ocupando sua cabeça? Anote tudo o que aparecer.',
+    icon: Cloud
+  },
+  {
+    id: 'next',
     label: 'Revisar Próximas Ações',
     description: 'As próximas ações ainda são relevantes? Alguma pode ser concluída ou removida?',
     icon: Calendar
   },
   {
-    id: 'review_projects',
-    label: 'Revisar Projetos',
-    description: 'Cada projeto ativo tem progresso? Existe próxima ação definida?',
-    icon: FolderKanban
+    id: 'past',
+    label: 'Olhar a semana que passou',
+    description: 'Reuniões, sessões e entregas dos últimos 7 dias geraram alguma ação?',
+    icon: History
   },
   {
-    id: 'review_waiting',
+    id: 'upcoming',
+    label: 'Revisar Calendário',
+    description: 'O que vem nas próximas duas semanas? Precisa preparar algo?',
+    icon: Clock
+  },
+  {
+    id: 'waiting',
     label: 'Revisar Aguardando',
     description: 'Alguém respondeu? Precisa fazer follow-up em algo pendente?',
     icon: Hourglass
   },
   {
-    id: 'review_someday',
+    id: 'projects',
+    label: 'Revisar Projetos',
+    description: 'Cada projeto ativo tem progresso? Existe próxima ação definida?',
+    icon: FolderKanban
+  },
+  {
+    id: 'someday',
     label: 'Revisar Someday/Maybe',
     description: 'Algum item está pronto para ser ativado? Algum pode ser descartado?',
     icon: Lightbulb
-  },
-  {
-    id: 'review_calendar',
-    label: 'Revisar Calendário',
-    description: 'O que vem na próxima semana? Precisa preparar algo?',
-    icon: Clock
   },
   {
     id: 'creative',
@@ -89,7 +105,8 @@ export function WeeklyReviewPage(): React.JSX.Element {
     healthIndicators,
     loading,
     startReview,
-    updateReview,
+    saveNotes,
+    setStep,
     completeReview
   } = useWeeklyReview()
 
@@ -105,25 +122,17 @@ export function WeeklyReviewPage(): React.JSX.Element {
 
   const openHealthTarget = useCallback(
     async (route: string): Promise<void> => {
-      if (reviewId && notes !== savedNotes) await updateReview({ notes })
+      if (reviewId && notes !== savedNotes) await saveNotes(notes)
       void navigate(route)
     },
-    [reviewId, notes, savedNotes, updateReview, navigate]
+    [reviewId, notes, savedNotes, saveNotes, navigate]
   )
 
-  // Parse checklist state
-  const checklistState = useMemo(() => {
-    if (!currentReview?.checklist_state) return {} as Record<string, boolean>
-    try {
-      return JSON.parse(currentReview.checklist_state) as Record<string, boolean>
-    } catch {
-      return {} as Record<string, boolean>
-    }
-  }, [currentReview?.checklist_state])
-
-  const completedCount = Object.values(checklistState).filter(Boolean).length
-  const totalItems = CHECKLIST_ITEMS.length
-  const allCompleted = completedCount === totalItems
+  const steps = useMemo(() => currentReview?.steps ?? {}, [currentReview?.steps])
+  const completedCount = reviewStepsWith(steps, 'done').length
+  const totalItems = currentReview?.step_total ?? CHECKLIST_ITEMS.length
+  const pendingCount = totalItems - completedCount
+  const allCompleted = pendingCount <= 0
 
   const handleStartReview = useCallback(async (): Promise<void> => {
     await startReview()
@@ -131,14 +140,10 @@ export function WeeklyReviewPage(): React.JSX.Element {
   }, [startReview])
 
   const toggleChecklistItem = useCallback(
-    async (itemId: string): Promise<void> => {
-      const newState = { ...checklistState, [itemId]: !checklistState[itemId] }
-      await updateReview({
-        checklist_state: JSON.stringify(newState),
-        inbox_cleared: newState['process_inbox'] || false
-      })
+    async (itemId: ReviewStepKey): Promise<void> => {
+      await setStep(itemId, steps[itemId] === 'done' ? null : 'done')
     },
-    [checklistState, updateReview]
+    [steps, setStep]
   )
 
   const handleCompleteReview = useCallback(async (): Promise<void> => {
@@ -148,7 +153,7 @@ export function WeeklyReviewPage(): React.JSX.Element {
   }, [completeReview, notes])
 
   const formatDate = (dateStr: string): string => {
-    return new Date(dateStr).toLocaleDateString('pt-BR', {
+    return parseSqlTime(dateStr).toLocaleDateString('pt-BR', {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
@@ -233,7 +238,7 @@ export function WeeklyReviewPage(): React.JSX.Element {
                   Checklist da Revisão
                 </h3>
                 {CHECKLIST_ITEMS.map((item) => {
-                  const checked = checklistState[item.id] || false
+                  const checked = steps[item.id] === 'done'
                   const Icon = item.icon
                   return (
                     <button
@@ -287,18 +292,12 @@ export function WeeklyReviewPage(): React.JSX.Element {
                 />
                 <Button
                   onClick={handleCompleteReview}
-                  disabled={!allCompleted}
-                  className={cn(
-                    'w-full',
-                    allCompleted
-                      ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-                      : 'bg-slate-200 text-slate-400'
-                  )}
+                  className="w-full bg-emerald-600 text-white hover:bg-emerald-700"
                 >
                   <CheckCircle2 className="mr-2 h-4 w-4" />
                   {allCompleted
                     ? 'Concluir Revisão Semanal'
-                    : `Complete todos os ${totalItems} itens para finalizar`}
+                    : `Concluir com ${pendingCount} ${pendingCount === 1 ? 'passo pulado' : 'passos pulados'}`}
                 </Button>
               </div>
             </>
@@ -365,6 +364,10 @@ export function WeeklyReviewPage(): React.JSX.Element {
                             )}
                           </div>
                           <div className="flex items-center gap-2">
+                            <span className="text-xs text-slate-500 font-mono tabular-nums">
+                              {reviewStepsWith(review.steps, 'done').length}/{review.step_total}{' '}
+                              passos
+                            </span>
                             {review.inbox_cleared && (
                               <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
                                 Inbox Zero

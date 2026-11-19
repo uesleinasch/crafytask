@@ -100,7 +100,13 @@ import {
   getWeeklyReview,
   listWeeklyReviews,
   getLastWeeklyReview,
-  updateWeeklyReview,
+  updateWeeklyReviewNotes,
+  setWeeklyReviewStep,
+  setWeeklyReviewCurrentStep,
+  discardWeeklyReview,
+  bumpWeeklyReviewCounter,
+  completeWeeklyReview,
+  getReviewPastWeek,
   getReviewHealthIndicators,
   // FASE 4.3: Blocos de Tempo
   createTimeBlock,
@@ -180,7 +186,10 @@ import type {
   JiraFieldInput,
   JiraImportResult,
   JiraOptionsInput,
-  NotesOwner
+  NotesOwner,
+  ReviewCounterKey,
+  ReviewStepKey,
+  ReviewStepStatus
 } from '@shared/types'
 import type { StatusMapping } from './jiraPlan'
 import {
@@ -1089,19 +1098,25 @@ function setupIpcHandlers(): void {
   ipcMain.handle('review:get', (_, id: number) => getWeeklyReview(id))
   ipcMain.handle('review:list', () => listWeeklyReviews())
   ipcMain.handle('review:getLast', () => getLastWeeklyReview())
-  ipcMain.handle(
-    'review:update',
-    (
-      _,
-      id: number,
-      data: {
-        inbox_cleared?: boolean
-        notes?: string
-        checklist_state?: string
-        completed_at?: string
-      }
-    ) => updateWeeklyReview(id, data)
+  ipcMain.handle('review:updateNotes', (_, id: number, notes: string) =>
+    updateWeeklyReviewNotes(id, notes)
   )
+  ipcMain.handle(
+    'review:setStep',
+    (_, id: number, key: ReviewStepKey, status: ReviewStepStatus | null) =>
+      setWeeklyReviewStep(id, key, status)
+  )
+  ipcMain.handle('review:setCurrentStep', (_, id: number, key: ReviewStepKey) =>
+    setWeeklyReviewCurrentStep(id, key)
+  )
+  ipcMain.handle('review:discard', (_, id: number) => discardWeeklyReview(id))
+  ipcMain.handle('review:bumpCounter', (_, id: number, key: ReviewCounterKey, taskId?: number) =>
+    bumpWeeklyReviewCounter(id, key, taskId)
+  )
+  ipcMain.handle('review:complete', (_, id: number, notes?: string) =>
+    completeWeeklyReview(id, notes)
+  )
+  ipcMain.handle('review:pastWeek', () => getReviewPastWeek())
   ipcMain.handle('review:healthIndicators', () => getReviewHealthIndicators())
 
   // ===================== QUICK CAPTURE =====================

@@ -30,6 +30,10 @@ import type {
   Context,
   WeeklyReview,
   ReviewHealthIndicators,
+  ReviewCounterKey,
+  ReviewPastWeek,
+  ReviewStepKey,
+  ReviewStepStatus,
   TaskDependency,
   Area,
   CreateAreaInput,
@@ -322,15 +326,24 @@ const api = {
   listWeeklyReviews: (): Promise<WeeklyReview[]> => ipcRenderer.invoke('review:list'),
   getLastWeeklyReview: (): Promise<WeeklyReview | undefined> =>
     ipcRenderer.invoke('review:getLast'),
-  updateWeeklyReview: (
+  updateWeeklyReviewNotes: (id: number, notes: string): Promise<void> =>
+    ipcRenderer.invoke('review:updateNotes', id, notes),
+  setWeeklyReviewStep: (
     id: number,
-    data: {
-      inbox_cleared?: boolean
-      notes?: string
-      checklist_state?: string
-      completed_at?: string
-    }
-  ): Promise<void> => ipcRenderer.invoke('review:update', id, data),
+    key: ReviewStepKey,
+    status: ReviewStepStatus | null
+  ): Promise<WeeklyReview> => ipcRenderer.invoke('review:setStep', id, key, status),
+  setWeeklyReviewCurrentStep: (id: number, key: ReviewStepKey): Promise<WeeklyReview> =>
+    ipcRenderer.invoke('review:setCurrentStep', id, key),
+  discardWeeklyReview: (id: number): Promise<void> => ipcRenderer.invoke('review:discard', id),
+  bumpWeeklyReviewCounter: (
+    id: number,
+    key: ReviewCounterKey,
+    taskId?: number
+  ): Promise<WeeklyReview> => ipcRenderer.invoke('review:bumpCounter', id, key, taskId),
+  completeWeeklyReview: (id: number, notes?: string): Promise<WeeklyReview> =>
+    ipcRenderer.invoke('review:complete', id, notes),
+  getReviewPastWeek: (): Promise<ReviewPastWeek> => ipcRenderer.invoke('review:pastWeek'),
   getReviewHealthIndicators: (): Promise<ReviewHealthIndicators> =>
     ipcRenderer.invoke('review:healthIndicators'),
 

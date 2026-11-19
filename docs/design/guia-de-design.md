@@ -720,8 +720,10 @@ as ações para resolver ali mesmo (E5).
 - **Backend novo:** `checklist_state` guarda `done` ou `skipped` por passo. As chaves dos oito
   passos antigos migram para as dez novas (`collect`, `inbox`, `mind`, `next`, `past`, `upcoming`,
   `waiting`, `projects`, `someday`, `creative`); revisão antiga aparece no histórico sobre 8.
-  Também: contadores da sessão, data da última mudança de status para "parada há N dias", e a
-  revisão concluída com passos pulados.
+  Também: contadores da sessão, o passo atual (para retomar), o retrato dos indicadores no início
+  (`start_health`, base do "Sistema nesta revisão"), a semana que passou (`review:pastWeek`),
+  descartar a revisão em andamento, data da última mudança de status para "parada há N dias", e a
+  revisão concluída com passos pulados. Dados em `docs/ui/07-revisao-semanal.md`.
 
 ### Dashboard
 
