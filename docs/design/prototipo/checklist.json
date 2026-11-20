@@ -1407,7 +1407,8 @@
       "titulo": "Dashboard: saúde do sistema, heatmap por hora e visão de tabela conferidos",
       "check": {
         "tipo": "manual"
-      }
+      },
+      "validado": "2026-11-20"
     },
     {
       "id": "F7.4",
@@ -1505,7 +1506,8 @@
       "titulo": "Cadernos, dashboard, terminal e configurações conferidos",
       "check": {
         "tipo": "manual"
-      }
+      },
+      "validado": "2026-11-20"
     },
     {
       "id": "F8.1",
