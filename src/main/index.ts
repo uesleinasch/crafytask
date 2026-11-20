@@ -60,13 +60,6 @@ import {
   updateTimeEntry,
   deleteTimeEntry,
   listTimeEntriesRange,
-  getWeeklyStats,
-  getTaskTimeStats,
-  getStatusStats,
-  getCategoryStats,
-  getHeatmapData,
-  getGeneralStats,
-  getEnergyStats,
   getPeriodStats,
   // Tags
   createTag,
@@ -1016,14 +1009,6 @@ function setupIpcHandlers(): void {
   })
 
   // Statistics
-  ipcMain.handle('stats:weekly', () => getWeeklyStats())
-  ipcMain.handle('stats:taskTime', () => getTaskTimeStats())
-  ipcMain.handle('stats:status', () => getStatusStats())
-  ipcMain.handle('stats:category', () => getCategoryStats())
-  ipcMain.handle('stats:heatmap', () => getHeatmapData())
-  ipcMain.handle('stats:general', () => getGeneralStats())
-  // FASE 4.2: Advanced stats
-  ipcMain.handle('stats:energy', () => getEnergyStats())
   ipcMain.handle('stats:period', (_, period: StatsPeriod) =>
     getPeriodStats({
       start: String(period?.start ?? ''),
@@ -1031,21 +1016,28 @@ function setupIpcHandlers(): void {
       projectId: Number.isInteger(period?.projectId) ? Number(period.projectId) : null
     })
   )
-  ipcMain.handle('report:weeklyPDF', async () => {
-    if (!mainWindow) return
+  ipcMain.handle('report:weeklyPDF', async (_, range?: { start?: unknown; end?: unknown }) => {
+    if (!mainWindow) return false
+    const day = (value: unknown): string | null =>
+      typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null
+    const start = day(range?.start)
+    const end = day(range?.end)
     const { filePath } = await dialog.showSaveDialog(mainWindow, {
-      defaultPath: `ticktask-relatorio-${new Date().toISOString().split('T')[0]}.pdf`,
+      defaultPath:
+        start && end
+          ? `crafytask-dashboard-${start}_${end}.pdf`
+          : `crafytask-relatorio-${new Date().toISOString().split('T')[0]}.pdf`,
       filters: [{ name: 'PDF', extensions: ['pdf'] }]
     })
-    if (filePath) {
-      const data = await mainWindow.webContents.printToPDF({
-        printBackground: true,
-        landscape: true
-      })
-      const { writeFile } = await import('fs/promises')
-      await writeFile(filePath, data)
-      shell.openPath(filePath)
-    }
+    if (!filePath) return false
+    const data = await mainWindow.webContents.printToPDF({
+      printBackground: true,
+      landscape: true
+    })
+    const { writeFile } = await import('fs/promises')
+    await writeFile(filePath, data)
+    shell.openPath(filePath)
+    return true
   })
 
   // Tags

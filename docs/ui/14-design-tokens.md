@@ -151,7 +151,7 @@ Quatro definições:
 **Time leak é amarelo em três lugares e roxo em dois.** Prioridade é laranja nos badges e âmbar no
 acento.
 
-`CalendarPage` e `DashboardPage` declaram cópias locais. O `CATEGORY_COLORS` morto de
+`CalendarPage` declara cópias locais (as do dashboard saíram na F7-b3). O `CATEGORY_COLORS` morto de
 `shared/types.ts` saiu na F0-b; as cores novas moram em `theme/semantic.ts`.
 
 ### Status do projeto

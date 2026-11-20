@@ -91,6 +91,7 @@ de baixo). Campos, em `Select` do antd com busca onde a lista é longa:
 | Campo | Comportamento |
 | --- | --- |
 | Categoria | Urgente / Prioridade / Normal / Time leak; limpar = todas |
+| Energia | Alta / Média / Baixa; limpar = todas (`TaskListFilters.energy`) |
 | Contexto | `ícone nome` |
 | Projeto | Inclui **"Sem projeto"** (`-1` → `'none'`) |
 | Tag | nome da tag |
@@ -103,7 +104,8 @@ No pé: `Mostrando {tasks.length} de {totalTasks}` e **Limpar filtros** (não me
 busca). A contagem do botão soma os campos acima (`taskFilterState.ts`, testado).
 
 **Pela URL** (`listIntentFromSearch`): `?status=inbox|proximas|…`, `?context=<id>`, `?tag=<id>`,
-`?prazo=vencido`, `?parada=<dias>` e `?ordem=parada|prazo` abrem a lista já recortada e trocam a aba
+`?prazo=vencido`, `?categoria=urgente|prioridade|normal|time_leak`, `?energia=alto|medio|baixo`,
+`?projeto=sem`, `?parada=<dias>` e `?ordem=parada|prazo` abrem a lista já recortada e trocam a aba
 salva (sem `status`, vai para Todas). É assim que Contextos, Tags e os indicadores de saúde
 (`HEALTH_TARGETS`) levam à lista.
 

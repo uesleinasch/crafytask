@@ -1,4 +1,4 @@
-import type { TaskCategory, TaskStatus } from '@shared/types'
+import type { EnergyLevel, TaskCategory, TaskStatus } from '@shared/types'
 import { TASK_STATUSES } from '@shared/taskStatusCounts'
 
 export type FilterCategory = TaskCategory | 'all'
@@ -7,10 +7,15 @@ export type SortMode = 'updated' | 'due_date' | 'status_changed'
 
 export const STALE_DAYS_OPTIONS = [7, 14, 30] as const
 
+const TASK_CATEGORIES: readonly TaskCategory[] = ['urgente', 'prioridade', 'normal', 'time_leak']
+const ENERGY_LEVELS: readonly EnergyLevel[] = ['alto', 'medio', 'baixo']
+export const NO_PROJECT_FILTER = -1
+
 export interface TaskFiltersValue {
   category: FilterCategory
   contextId: number | null
   projectId: number | null
+  energy?: EnergyLevel | null
   tagId: number | null
   blockedOnly: boolean
   overdue: boolean
@@ -22,6 +27,7 @@ export const EMPTY_TASK_FILTERS: TaskFiltersValue = {
   category: 'all',
   contextId: null,
   projectId: null,
+  energy: null,
   tagId: null,
   blockedOnly: false,
   overdue: false,
@@ -34,6 +40,7 @@ export function activeFilterCount(value: TaskFiltersValue): number {
     (value.category !== 'all' ? 1 : 0) +
     (value.contextId !== null ? 1 : 0) +
     (value.projectId !== null ? 1 : 0) +
+    (value.energy ? 1 : 0) +
     (value.tagId !== null ? 1 : 0) +
     (value.blockedOnly ? 1 : 0) +
     (value.overdue ? 1 : 0) +
@@ -64,13 +71,31 @@ export function listIntentFromSearch(search: string): ListIntent | null {
   const staleParam = idParam(params, 'parada')
   const staleDays = STALE_DAYS_OPTIONS.find((days) => days === staleParam) ?? null
   const sort = SORT_PARAMS[params.get('ordem') ?? '']
-  if (contextId === null && tagId === null && !status && !overdue && staleDays === null && !sort) {
+  const categoryParam = params.get('categoria')
+  const category = TASK_CATEGORIES.find((c) => c === categoryParam)
+  const energyParam = params.get('energia')
+  const energy = ENERGY_LEVELS.find((e) => e === energyParam) ?? null
+  const noProject = params.get('projeto') === 'sem'
+  if (
+    contextId === null &&
+    tagId === null &&
+    !status &&
+    !overdue &&
+    staleDays === null &&
+    !sort &&
+    !category &&
+    !energy &&
+    !noProject
+  ) {
     return null
   }
   return {
     status: status ?? 'all',
     filters: {
       ...EMPTY_TASK_FILTERS,
+      category: category ?? 'all',
+      projectId: noProject ? NO_PROJECT_FILTER : null,
+      energy,
       contextId,
       tagId,
       overdue,

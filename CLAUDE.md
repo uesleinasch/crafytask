@@ -366,8 +366,9 @@ Defined in `electron.vite.config.ts` and the tsconfigs:
   dark tokens) and `ticktask:density` live in `localStorage`; the main window sends the theme to
   `app:setThemeSource` (`nativeTheme.themeSource`). Use `App.useApp()` for message/modal.
   Status, category and energy render through `components/chips/` (`StatusChip`, `CategoryChip`,
-  `EnergyMeter`: icon + text, never color alone). `DashboardPage` and `CalendarPage` still keep
-  local color copies that **disagree** — check `docs/ui/14-design-tokens.md` until they migrate.
+  `EnergyMeter`: icon + text, never color alone). `CalendarPage` still keeps local color copies
+  that **disagree** — check `docs/ui/14-design-tokens.md` until it migrates. The dashboard
+  (`components/dashboard/`) draws bars, columns and heatmaps in HTML with `CHART_COLORS`.
 - Carried over from `.github/copilot-instructions.md`: change only what the task requires, keep the
   code simple over clever, and reserve inline comments for genuinely non-obvious constraints.
 

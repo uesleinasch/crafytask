@@ -183,7 +183,7 @@ propósito), usada só no chip `H0`…`H5` (fundo / texto): claro `#F1EFFF/#4B3B
 | Título de tela         | Geist                           | 15 / 600 no Header; 20–24 / 600 só em cabeçalho próprio (detalhe, revisão) | o Header do shell mostra o nome da tela                       |
 | Título de seção        | Geist                           | 15 / 600; 14 no card pequeno (`Card.headerFontSize`, `headerFontSizeSM`)   | card, painel                                                  |
 | Interface              | Geist                           | 14 / 400–500                                                               | texto, tabela, controles                                      |
-| Metadado               | Geist                           | 12 / 400                                                                   | ids, datas, legendas; nunca abaixo de 12                      |
+| Metadado               | Geist                           | 12 / 400                                                                   | ids, datas, legendas; nunca abaixo de 12, exceto eixos de gráfico (11) e dias da Constância (10) |
 | Rótulo de seção        | Geist                           | 11 / 600, maiúsculas, `letter-spacing: .08em`                              | "ORGANIZAÇÃO", "AGENDA"                                       |
 | Números                | Geist Mono, `tabular-nums`      | 12–14 em listas; 24–30 no cronômetro da task; 40 na vitrine                | tempo, ids, contadores, prazos                                |
 | Número de painel       | Geist, algarismos proporcionais | 48 / 600 (herói, um por tela); 26 / 600 (`Statistic.contentFontSize`)      | totais do dashboard, que não se alinham em coluna             |
@@ -250,7 +250,7 @@ só porque roda de CDN; os nomes lucide de cada lugar estão nas tabelas acima e
 | Arquivo               | busca `Search` · abrir `FileText` · desarquivar `ArchiveRestore` · excluir de vez `Trash2` · limpar o arquivo `Eraser` · mais `Ellipsis` · grupo por mês `CalendarDays` · grupo sem projeto `Folder` |
 | Legenda do calendário | urgente `Flame` · prioridade `Flag` · time leak `Clock` · no Google `CalendarSync`                                                                                                                                                             |
 | Cadernos              | caderno `BookOpen` · busca `Search` · novo `Plus` · mais `Ellipsis` · sincronizar `RefreshCw` · exportar `Download` · editar `Pencil` · mover `ArrowUp`/`ArrowDown` (abas: `ArrowLeft`/`ArrowRight`) · mover para a seção `ArrowLeftRight` · nova subpágina `FilePlus2` · promover `IndentDecrease` · tornar subpágina `IndentIncrease` · excluir `Trash2` · Páginas (abaixo de `md`) `ListTree` · Notas `FileText` · Desenho `PenTool` · modo foco `Expand`/`Shrink` |
-| Dashboard             | Agora `Gauge` · tarefas abertas `ListTodo` · No período `CalendarRange` · Exportar PDF `FileDown` · alternar gráfico e tabela `ChartColumn`/`Table2` |
+| Dashboard             | Agora `Gauge` · tarefas abertas `ListTodo` · No período `CalendarRange` · Exportar PDF `FileDown` · alternar gráfico e tabela `ChartColumn`/`Table2` · Tempo focado `Timer` · concluídas `CircleCheck` · sessões `Zap` · média por sessão `History` · para onde foi o tempo `FolderOpen` (área `TrendingUp`) · tarefas com mais tempo `ListOrdered` · categoria `Flag` · energia `Zap` · quando você foca `Clock` · constância `CalendarDays` · diferença `ArrowUp`/`ArrowDown`/`Minus` |
 | Calendário            | painel A agendar `PanelLeftOpen`/`PanelLeftClose` · gaveta `ListTodo` · alça `GripVertical` · reservar `Plus` · repetir `Copy` · abrir `FileText` · timer `Play` · excluir `Trash2` · tarefa com horário `Calendar` |
 
 ## 7. AppShell
@@ -825,11 +825,13 @@ tempo?** Toda métrica abre o que ela conta (E4). Base: NN/g (comprimento e posi
 - **Sai do dashboard:** o painel "Em execução agora" (o timer já está no Header e na barra de
   status), o gráfico "Tempo por status" (tempo somado pelo status atual da tarefa não responde
   nada útil) e o título "Dashboard Avançado".
-- **Biblioteca:** fica o Recharts, que já está no projeto, com cores, fonte, grade e tooltip dos
-  tokens; barras horizontais, cartões e heatmaps são HTML com tokens, sem biblioteca.
+- **Biblioteca:** nenhuma. Colunas, barras horizontais, cartões e heatmaps são HTML com tokens
+  (`CHART_COLORS`), o que já dá tooltip no foco do teclado e o "Ver como tabela" sem adaptação. O
+  Recharts saiu do projeto na F7-b3.
+- **Período livre** vai até 365 dias (o `RangePicker` não deixa passar disso e a consulta recusa).
 - **Responsivo:** grade `Row`/`Col` — dois cards por linha a partir de `lg`, herói + números lado a
-  lado a partir de `xl`. No celular os filtros ocupam a largura toda e os heatmaps rolam na
-  horizontal dentro do card.
+  lado a partir de `xl` (16/8) e os dois heatmaps em 14/10 a partir de `xl`. No celular os filtros
+  ocupam a largura toda e os heatmaps rolam na horizontal dentro do card.
 
 ## 9. Modo escuro
 

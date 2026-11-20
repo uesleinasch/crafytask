@@ -91,6 +91,7 @@ describe('periodStatsQuery', () => {
     expect(stats.topTasks[0]).toEqual({
       taskId: 1,
       name: 'Refatorar',
+      projectName: 'CrafyTask',
       projectColor: '#E5484D',
       seconds: 90 * 60
     })
@@ -135,6 +136,7 @@ describe('periodStatsQuery', () => {
   it('recusa período invertido ou data malformada', () => {
     expect(() => periodStatsQuery(db, { ...WEEK, end: '2026-11-01' }, NOW)).toThrow()
     expect(() => periodStatsQuery(db, { ...WEEK, start: '13/11/2026' }, NOW)).toThrow()
+    expect(() => periodStatsQuery(db, { ...WEEK, start: '2024-01-01' }, NOW)).toThrow()
   })
 })
 

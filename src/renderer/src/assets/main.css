@@ -1521,3 +1521,161 @@ button.ct-health:focus-visible {
     grid-row: 2;
   }
 }
+
+.ct-hero-figure {
+  font-size: 48px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -.02em;
+  color: var(--ant-color-text);
+}
+
+.ct-tile-figure {
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--ant-color-text);
+}
+
+.ct-colchart {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.ct-colchart-y {
+  font-family: var(--ant-font-family-code);
+  font-variant-numeric: tabular-nums;
+  height: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  font-size: 11px;
+  color: var(--ant-color-text-tertiary);
+  transform: translateY(-6px);
+}
+
+.ct-colchart-plot {
+  position: relative;
+  height: 180px;
+  display: flex;
+  align-items: flex-end;
+  border-bottom: 1px solid var(--ant-color-border);
+}
+
+.ct-gridline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--ant-color-border-secondary);
+  pointer-events: none;
+}
+
+.ct-colslot {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.ct-colslot:hover {
+  background: var(--ant-color-bg-layout);
+}
+
+.ct-colbar {
+  width: 100%;
+  max-width: 24px;
+  min-height: 0;
+  border-radius: 4px 4px 0 0;
+}
+
+.ct-colchart-x {
+  display: flex;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--ant-color-text-tertiary);
+}
+
+.ct-colchart-x span {
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: center;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+.ct-heatcell {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  min-width: 12px;
+  border-radius: 3px;
+}
+
+.ct-heatcell:focus-visible {
+  outline-offset: 1px;
+}
+
+.ct-hourheat {
+  display: grid;
+  grid-template-columns: 32px repeat(18, minmax(14px, 1fr));
+  gap: 3px;
+  min-width: 360px;
+  max-width: 760px;
+}
+
+.ct-heat-x {
+  font-size: 11px;
+  color: var(--ant-color-text-tertiary);
+  white-space: nowrap;
+  height: 16px;
+}
+
+.ct-heat-y {
+  font-size: 11px;
+  color: var(--ant-color-text-tertiary);
+  align-self: center;
+}
+
+.ct-calheat {
+  display: flex;
+  gap: 3px;
+  width: max-content;
+}
+
+.ct-calheat-col,
+.ct-calheat-y {
+  display: grid;
+  grid-template-rows: 16px repeat(7, 13px);
+  gap: 3px;
+}
+
+.ct-calheat-col {
+  width: 13px;
+}
+
+.ct-calheat-col .ct-heatcell {
+  min-width: 0;
+  width: 13px;
+  height: 13px;
+}
+
+.ct-calheat-y {
+  font-size: 10px;
+  color: var(--ant-color-text-tertiary);
+  padding-right: 4px;
+  line-height: 13px;
+}
+
+.ct-dot {
+  display: inline-block;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}

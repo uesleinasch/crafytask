@@ -1,127 +1,78 @@
 # Dashboard — `/dashboard`
 
-`src/renderer/src/pages/DashboardPage.tsx` e `components/dashboard/`. Gráficos com **Recharts**.
+`src/renderer/src/pages/DashboardPage.tsx` (casca) e `components/dashboard/`. Desenho no guia
+(`docs/design/guia-de-design.md` §8 "Dashboard") e no protótipo (rota `#dashboard`).
 
 ## Função
 
-Analítica retrospectiva: quanto tempo foi para onde, e quão saudável está o sistema GTD. A página
-usa o `PageContainer` (até 1480px). A seção Agora carrega sozinha; os blocos antigos de "No
-período" vêm de um `Promise.all` com sete consultas e mostram "Carregando estatísticas…" sob o
-cabeçalho da seção, sem esconder a Agora.
+Responde duas perguntas, nessa ordem: **o sistema está em dia?** e **para onde foi o tempo?** A
+página usa o `PageContainer` (até 1480px) e tem duas seções, cada uma num `RegionBoundary`
+("Agora", "No período"). Toda métrica abre o que ela conta.
 
-## Agora (F7-b2)
+## Agora
 
-Seção do topo, sem filtro: o estado atual do sistema (`components/dashboard/DashboardNow.tsx`,
-dentro de um `RegionBoundary` "Agora"). Recarrega com o evento `tasks:refresh`.
+Estado atual, sem filtro (`DashboardNow.tsx`). Recarrega com o evento `tasks:refresh`.
 
 - **Saúde do sistema:** os seis `HealthCard` de `DASHBOARD_HEALTH` (Inbox, sem próxima ação,
   projetos parados, aguardando, prazos vencidos, revisão), da mesma consulta da revisão semanal
-  (`review:healthIndicators`). O Inbox mostra o item mais antigo e a taxa processada na semana.
-  Cada cartão leva à lista já filtrada (`HEALTH_TARGETS`).
+  (`review:healthIndicators`). O Inbox mostra o item mais antigo e a taxa processada na semana
+  (`task_status_events`). Cada cartão leva à lista já filtrada (`HEALTH_TARGETS`).
 - **Tarefas abertas por status:** barras horizontais (`HBarList`) na ordem do fluxo (Inbox,
   Próximas, Executando, Aguardando, Someday), chip do status, contagem e %. Contagem de
-  `task:statusCounts`, a mesma das abas da lista; clicar abre a aba. O card (`ChartCard`) tem
-  "Ver como tabela".
+  `task:statusCounts`, a mesma das abas da lista; clicar abre a aba.
 
-Saíram o título "Dashboard Avançado", o painel "Em execução agora" (o timer já está no header e na
-barra de status), as métricas GTD antigas e o funil de fluxo.
+## No período
 
-## No período (legado até a F7-b3)
+`DashboardPeriod.tsx`, sobre uma consulta só: `stats:period` (`StatsPeriod` → `PeriodStats`,
+`src/main/statsQueries.ts`). Também recarrega com `tasks:refresh`.
 
-Abaixo do cabeçalho "No período", uma linha com **Exportar PDF** (relatório semanal via
-`webContents.printToPDF`, aviso por `App.useApp()`), seguida dos blocos antigos, que a F7-b3 troca
-pelos de período (`stats:period`). A numeração abaixo é a dos blocos originais; os que saíram na
-F7-b2 (0, 2 e 3) não aparecem.
+- **Filtros** numa linha, valendo para tudo abaixo: `Segmented` 7 dias / 30 dias / 90 dias /
+  12 meses (padrão 30), `RangePicker` (sem datas futuras, até 365 dias) e `Select` de projeto (ativos e
+  someday). O cabeçalho da seção mostra o período e o projeto. Enquanto recarrega, o conteúdo fica
+  a 55% de opacidade (`aria-busy`), sem skeleton.
+- **Exportar PDF** no fim da linha: `report:weeklyPDF` com o período, nome sugerido
+  `crafytask-dashboard-<início>_<fim>.pdf`; imprime a janela (`printToPDF`) e abre o arquivo.
+- **Tempo focado:** número herói (48px, sans), diferença neutra para o período anterior de mesmo
+  tamanho e média por dia útil. Colunas por dia (até 31 dias), semana (segunda, até 120) ou mês, na
+  cor recuada, e a atual (hoje, esta semana, este mês) na cor da série. Escala do eixo em horas
+  redondas (`niceMaxHours`).
+- **Três números** ao lado: tarefas concluídas (pela data da mudança para Finalizada), sessões de
+  foco e média por sessão, cada um com a diferença.
+- **Para onde foi o tempo**, com `Segmented` Projeto / Área / Contexto no cabeçalho (troca a
+  visão, não filtra). Projeto abre o projeto e "Sem projeto" abre a lista com `?projeto=sem`; área
+  abre Horizontes; contexto abre a lista com o contexto. "Sem área" e "Sem contexto" não abrem
+  nada. Tempo de uma tarefa com vários contextos conta em cada um.
+- **Tarefas com mais tempo** (oito, ponto do projeto e o nome dele no tooltip e na tabela),
+  abrindo a tarefa.
+- **Por categoria:** chip, "N tarefas" e tempo; abre a lista filtrada pela categoria
+  (`?categoria=`). Com time leak acima de 10% do tempo, uma frase avisa, sem culpa.
+- **Por nível de energia:** medidor, média por tarefa e tempo; abre a lista filtrada pela energia
+  (`?energia=`).
+- **Quando você foca:** heatmap dia da semana × hora (6h–23h, segunda primeiro), escala
+  sequencial.
+- **Constância:** heatmap de dias do período em semanas (segunda a domingo), com rótulo de mês;
+  hoje contornado; "N de M dias com sessão de foco".
+- **Vazio:** sem sessão no período, um `Empty` só no lugar dos gráficos, com "Todos os projetos" e
+  "Ver 12 meses". A seção Agora continua.
 
-### 1. Quatro cartões de resumo (`StatCard`)
+Todo gráfico fica num `ChartCard` (título com ícone, botão "Ver como tabela", `RegionBoundary`
+próprio) e tem tooltip no hover e no foco do teclado. Barras, colunas e heatmaps são HTML com as
+cores de `CHART_COLORS` (`theme/semantic.ts`), uma cor só por gráfico; a identidade vem do ponto,
+do chip ou do medidor. Diferenças são neutras: seta e texto secundário, sem verde nem vermelho.
 
-Grade `grid-cols-2 md:grid-cols-4`. Ícone num quadrado colorido + valor em `text-2xl font-bold` +
-rótulo em `text-xs`.
+Tempo vem das sessões (`time_entries`), recortadas no período e em agora (a sessão aberta conta),
+divididas por dia e hora locais. Subtarefa entra no projeto da tarefa mãe.
 
-| Cartão | Ícone / cor | Valor |
-| --- | --- | --- |
-| Total de Tarefas | `Target` azul | contagem |
-| Concluídas | `CheckCircle` esmeralda | contagem |
-| Tempo Total | `Clock` roxo | `HH:MM:SS` |
-| Sessões | `Activity` laranja | contagem |
+## Responsivo
 
-### 4. Análise de Energia
+Grade `Row`/`Col`: herói e números lado a lado a partir de `xl` (16/8), cards de dois em dois a
+partir de `lg`, heatmaps 14/10 em `xl`. No celular os filtros ocupam a largura toda, o botão de PDF
+fica só com o ícone e os heatmaps rolam na horizontal dentro do card. Abaixo de 576px a barra vira
+nome e valor numa linha e a trilha embaixo.
 
-`Zap` âmbar. `BarChart` **horizontal** de 220px (uma barra por nível, na cor do nível) ao lado de
-três cartões `bg-slate-50`: emoji grande, rótulo, `N tarefas`, tempo total e "média: HH:MM:SS".
+## O que saiu
 
-Vazio: `Zap` de 32px com `opacity-30`, "Nenhum dado de energia ainda." e "Defina o nível de energia
-ao criar tarefas."
-
-### 5. Duas colunas: dia da semana e status
-
-| Bloco | Gráfico |
-| --- | --- |
-| **Tempo Focado por Dia da Semana** (`Calendar` azul) | `BarChart` vertical de 250px, barras `#3b82f6` com topo arredondado, eixo Y em horas |
-| **Tempo por Status** | `PieChart` em rosca (`innerRadius 50` / `outerRadius 80`), com `Legend`; valores em minutos |
-
-Os dados da semana são agrupados por **dia da semana** (Dom…Sáb) somando todas as ocorrências —
-é uma média acumulada, não a semana corrente.
-
-### 6. Duas colunas: categoria
-
-| Bloco | Conteúdo |
-| --- | --- |
-| **Tempo por Categoria** (`AlertTriangle` vermelho) | `PieChart` em rosca com as cores de categoria |
-| **Detalhes por Categoria** (`Flag` âmbar) | Lista `bg-slate-50`: ícone da categoria num quadrado tingido com 20% de opacidade, nome, `N tarefas`, tempo total à direita |
-
-Aqui **time leak é roxo** (`#a855f7`), diferente do amarelo usado nos badges da lista de tarefas.
-
-### 7. Top Tarefas (Tempo Investido)
-
-`PieChart` cheio (sem furo) com as **6 tarefas de maior tempo**, rótulos externos sem linha-guia, ao
-lado de uma lista com bolinha da cor, nome truncado e tempo. Nomes acima de 15 caracteres são
-truncados com "..." no gráfico.
-
-Paleta de 10 cores rotativa (`CHART_COLORS`), independente de qualquer semântica do app.
-
-### 8. Contribuições no Último Ano
-
-Heatmap no estilo GitHub. Colunas = semanas, linhas = dias, quadrados de 12px com `gap-0.5`,
-`overflow-x-auto`.
-
-Escala de cor por horas trabalhadas no dia:
-
-| Horas | Classe |
-| --- | --- |
-| 0 | `bg-slate-100` |
-| < 1 | `bg-emerald-200` |
-| < 2 | `bg-emerald-300` |
-| < 4 | `bg-emerald-400` |
-| < 6 | `bg-emerald-500` |
-| ≥ 6 | `bg-emerald-600` |
-
-Cada quadrado tem `title` com data e horas (`28/08/2026: 3.4h`). Legenda "Menos ▢▢▢▢▢▢ Mais" à
-direita.
-
-Não há rótulos de mês nem de dia da semana — só a malha.
-
-## Padrão visual comum aos blocos
-
-```
-<div class="bg-white border border-slate-200 rounded-sm p-6">
-  <h3 class="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-    [ícone 20px colorido] Título
-  </h3>
-  …
-</div>
-```
-
-Tooltips do Recharts usam `backgroundColor: #fff`, `border: 1px solid #e2e8f0`,
-`borderRadius: 8px` — um raio que não corresponde a nenhum outro elemento da tela (`rounded-sm`).
-
-Estado sem dados em cada gráfico: bloco de 250px com "Sem dados disponíveis" centralizado em
-`text-slate-400`.
-
-## Observações para o redesenho
-
-- **Três paletas de status coexistem** nesta tela: as constantes locais do dashboard, as de
-  `shared/types.ts` e as classes dos badges. Ver [14-design-tokens.md](14-design-tokens.md).
-- **Nada é clicável** exceto o painel de timers no topo. Toda métrica é um beco sem saída.
-- **Nenhum filtro de período.** Tudo é "sempre" ou uma janela fixa embutida na consulta (7 dias,
-  14 dias, 1 ano).
+Título "Dashboard Avançado", painel "Em execução agora", métricas GTD antigas, funil, pizzas,
+"Tempo por status" e as consultas `stats:weekly`, `stats:taskTime`, `stats:status`,
+`stats:category`, `stats:heatmap`, `stats:general` e `stats:energy` (o MCP continua usando as
+funções de semana, tarefas e geral).
