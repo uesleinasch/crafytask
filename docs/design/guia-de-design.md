@@ -251,6 +251,7 @@ só porque roda de CDN; os nomes lucide de cada lugar estão nas tabelas acima e
 | Legenda do calendário | urgente `Flame` · prioridade `Flag` · time leak `Clock` · no Google `CalendarSync`                                                                                                                                                             |
 | Cadernos              | caderno `BookOpen` · busca `Search` · novo `Plus` · mais `Ellipsis` · sincronizar `RefreshCw` · exportar `Download` · editar `Pencil` · mover `ArrowUp`/`ArrowDown` (abas: `ArrowLeft`/`ArrowRight`) · mover para a seção `ArrowLeftRight` · nova subpágina `FilePlus2` · promover `IndentDecrease` · tornar subpágina `IndentIncrease` · excluir `Trash2` · Páginas (abaixo de `md`) `ListTree` · Notas `FileText` · Desenho `PenTool` · modo foco `Expand`/`Shrink` |
 | Dashboard             | Agora `Gauge` · tarefas abertas `ListTodo` · No período `CalendarRange` · Exportar PDF `FileDown` · alternar gráfico e tabela `ChartColumn`/`Table2` · Tempo focado `Timer` · concluídas `CircleCheck` · sessões `Zap` · média por sessão `History` · para onde foi o tempo `FolderOpen` (área `TrendingUp`) · tarefas com mais tempo `ListOrdered` · categoria `Flag` · energia `Zap` · quando você foca `Clock` · constância `CalendarDays` · diferença `ArrowUp`/`ArrowDown`/`Minus` |
+| Nova tarefa           | Inbox `Inbox` · Limite de tempo `Timer` · Propriedade `Plus` · Link externo `Link` · as demais pílulas usam os ícones do detalhe |
 | Calendário            | painel A agendar `PanelLeftOpen`/`PanelLeftClose` · gaveta `ListTodo` · alça `GripVertical` · reservar `Plus` · repetir `Copy` · abrir `FileText` · timer `Play` · excluir `Trash2` · tarefa com horário `Calendar` |
 
 ## 7. AppShell
@@ -304,6 +305,25 @@ ConfigProvider (tema, cssVar) → App (message, modal, notification) → RegionB
   quantos botões há à direita; posição estável vira memória espacial e a captura, que é a ação de
   menor esforço do GTD (Bellotti 2004), fica sempre no mesmo lugar e larga como alvo (Fitts). Abaixo
   de `sm` a captura sai do header e vai para a paleta de comandos.
+- **Nova tarefa** (botão do header; abaixo de `lg`, só ícone com tooltip "Nova tarefa"): `Modal` de
+  640px montado no shell, por cima da tela atual (não navega para Tarefas). No corpo, o nome num
+  `Input` sem borda (18px, semibold, foco ao abrir) e a descrição num `TextArea` sem borda (opcional,
+  cresce até 6 linhas); embaixo, as **mesmas pílulas do detalhe** — Categoria, Projeto (só ativos e
+  someday), Contextos, Prazo e Energia sempre; Programado, Recorrência, Tags e Link externo por
+  "+ Propriedade". Duas diferenças do detalhe: não há Aguardando (task nova vai para o Inbox) e há a
+  pílula **Limite de tempo** (`HH:MM:SS`, `MM:SS` ou minutos, em mono), que no detalhe fica no
+  inspetor Tempo. Sem contextos cadastrados, o popover de Contextos mostra `Empty` com link para
+  Contextos e tags. Tags novas só são criadas ao criar a tarefa (nada fica órfão se cancelar).
+  Rodapé: à esquerda, `Checkbox` "Criar outra em seguida" e o lembrete "Vai para o Inbox" (`Inbox`);
+  à direita, as teclas `Ctrl` `Enter` em `Kbd` (a partir de `sm`), Cancelar e "Criar tarefa"
+  (primário, tooltip "Ctrl+Enter", desabilitado sem nome ou com limite inválido, `loading` enquanto
+  grava). Enter no nome ou `Ctrl+Enter` em qualquer campo criam, uma vez só: o envio trava até a
+  resposta. Criada a tarefa, o modal fecha e abre o detalhe. Com "Criar outra" ligado (fica ligado
+  enquanto o app está aberto), ele continua aberto, mantém categoria, projeto e contextos, limpa o
+  resto (nome, descrição, prazo, energia, programado, recorrência, tags, link e limite), esconde as
+  pílulas opcionais de novo e volta o foco ao nome. Um formulário rotulado campo a campo repetiria a
+  tela de detalhe com outra cara; as pílulas são a mesma peça, então o que se aprende num lugar
+  vale no outro.
 - **Pílula de timers:** ponto ao vivo, tempo do timer mais recente e o contador de timers; clicar
   abre o `Popover` com a lista. Abaixo de `md` ela continua no header, compacta: só o ponto e o
   tempo, sem contador, com o mesmo popover.
@@ -888,7 +908,7 @@ tempo?** Toda métrica abre o que ela conta (E4). Base: NN/g (comprimento e posi
   contagem). Usado no inspetor, no dashboard e na revisão.
 - **Tecla** (`Kbd`, criado na F7-d1, a partir do `.ct-kbd` do protótipo): tecla em mono 12px, borda
   `borderStrong` mais grossa embaixo, fundo `bg`. Usado onde um atalho aparece como texto
-  (Configurações, captura).
+  (Configurações, captura, rodapé do modal Nova tarefa).
 - **Atalho no tooltip:** todo controle que tem atalho diz o atalho no tooltip: "Buscar e comandos
   (Ctrl+K)", "Modo foco (Esc sai)", "Terminais (Ctrl+')".
 - **Anel de foco:** elemento clicável próprio (que não é componente do antd) usa o `:focus-visible`
