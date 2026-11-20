@@ -4,6 +4,9 @@ import path from 'path'
 import { mergeTaskTimes, normalizeTaskTimes, type TaskTimeFields } from '@shared/taskTime'
 import { normalizeWaitingFor } from '@shared/waitingFor'
 import type {
+  AddTaskHistoryInput,
+  TaskHistoryItem,
+  TaskHistoryOrigin,
   Task,
   TimeEntry,
   TimeEntrySpan,
@@ -76,6 +79,13 @@ import type { AppPrefs } from '@shared/appPrefs'
 import type { WorkflowPrefs } from '@shared/workflowPrefs'
 import { getProjectQuery, listProjectsQuery } from './projectQueries'
 import { ensureStatusChangedAt, healthIndicatorsQuery } from './healthQueries'
+import {
+  addTaskHistoryEntry,
+  ensureTaskHistorySchema,
+  getLastCheckpoint,
+  listTaskHistory,
+  type TaskHistoryQuery
+} from './taskHistoryQueries'
 import { periodStatsQuery } from './statsQueries'
 import {
   bumpReviewCounter,
@@ -462,6 +472,7 @@ export function initDatabase(): void {
 
   ensureNotebookSchema(tagDb())
   ensureStatusChangedAt(tagDb())
+  ensureTaskHistorySchema(tagDb())
   ensureReviewSchema(tagDb())
   ensurePrefsSchema(tagDb())
 }
@@ -616,6 +627,21 @@ export function setAppPrefs(patch: Partial<AppPrefs>): AppPrefs {
 
 export function notebookDb(): SqliteLike {
   return tagDb()
+}
+
+export function addTaskHistory(input: AddTaskHistoryInput, origin: TaskHistoryOrigin): number {
+  return addTaskHistoryEntry(tagDb(), input, origin)
+}
+
+export function getTaskHistory(query: TaskHistoryQuery): TaskHistoryItem[] {
+  return listTaskHistory(tagDb(), query)
+}
+
+export function getTaskLastCheckpoint(
+  taskId: number,
+  includeSubtasks = false
+): TaskHistoryItem | null {
+  return getLastCheckpoint(tagDb(), taskId, includeSubtasks)
 }
 
 export function updateTag(id: number, data: UpdateTagInput): void {

@@ -75,6 +75,7 @@ Ao subir a ponte com `ELECTRON_RUN_AS_NODE=1`, essa variável é removida do amb
 | `read_notes` | Devolve as notas de uma task convertidas para Markdown. |
 | `read_drawing` | Devolve o desenho (Excalidraw) de uma task como imagem PNG, com um resumo dos elementos e dos textos contidos. |
 | `write_notes` | Grava Markdown nas notas; `mode=append` (recomendado) ou `mode=replace` sobre nota não vazia, que exige `confirm_token`. |
+| `task_history` | Histórico e memória da task. `read` devolve mudanças de status e entradas escritas (mais recentes primeiro, `limit`/`before`) e o último checkpoint; `add` grava `checkpoint` (estado atual, `done`, `remaining`), `operation` ou `note`. `include_subtasks` junta o histórico das subtarefas. |
 | `agenda` | Tasks agendadas e blocos de tempo de um dia, semana ou mês. |
 | `plan_day` | Agenda tasks numa data (itens de `schedule` aceitam `start_time`/`end_time`, gravados como horário da task), ordena o dia (a `order` só pesa entre as tasks sem horário e sem prazo de hoje com hora), cria/remove blocos de tempo; acima do `bulkThreshold` exige `confirm_token`. |
 | `weekly_review` | `status` (revisão aberta, última e indicadores de saúde), `list` (concluídas), `past_week` (sessões, conclusões e blocos dos últimos 7 dias), `start` (abre a revisão; se já há uma em andamento, devolve essa com `already_open`, sem mexer nas notas), `step` (passo feito, pulado ou pendente), `notes` e `complete` (pendentes viram pulados). |

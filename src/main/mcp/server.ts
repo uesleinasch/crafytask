@@ -2,6 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { ConfirmStore } from './confirmGuard'
 import { ok } from './reply'
 import { registerDrawingTools } from './tools/drawing'
+import { registerHistoryTools } from './tools/history'
 import { registerNotebookTools } from './tools/notebooks'
 import { registerNotesTools } from './tools/notes'
 import { registerPlanningTools } from './tools/planning'
@@ -26,6 +27,7 @@ export function createMcpServer(bulkThreshold: number, confirmStore: ConfirmStor
   registerStructureTools(server, ctx)
   registerTimerTools(server)
   registerNotesTools(server, ctx)
+  registerHistoryTools(server)
   registerDrawingTools(server)
   registerNotebookTools(server, ctx)
   registerPlanningTools(server, ctx)
