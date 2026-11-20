@@ -4,6 +4,9 @@ import path from 'path'
 import { mergeTaskTimes, normalizeTaskTimes, type TaskTimeFields } from '@shared/taskTime'
 import { normalizeWaitingFor } from '@shared/waitingFor'
 import type {
+  AddTaskHistoryInput,
+  TaskHistoryItem,
+  TaskHistoryOrigin,
   Task,
   TimeEntry,
   TimeEntrySpan,
@@ -76,6 +79,23 @@ import type { AppPrefs } from '@shared/appPrefs'
 import type { WorkflowPrefs } from '@shared/workflowPrefs'
 import { getProjectQuery, listProjectsQuery } from './projectQueries'
 import { ensureStatusChangedAt, healthIndicatorsQuery } from './healthQueries'
+import { notesPlainText } from './notesPlainText'
+import {
+  ensureTaskNotesText,
+  searchAll,
+  type SearchOptions,
+  type SearchResult
+} from './searchQueries'
+import {
+  addTaskHistoryEntry,
+  ensureTaskHistorySchema,
+  getLastCheckpoint,
+  getLastSession,
+  lastCheckpointsFor,
+  listTaskHistory,
+  type LastSession,
+  type TaskHistoryQuery
+} from './taskHistoryQueries'
 import { periodStatsQuery } from './statsQueries'
 import {
   bumpReviewCounter,
@@ -406,7 +426,9 @@ export function initDatabase(): void {
     'jira_parent_summary',
     'working_dir',
     'start_command',
-    'waiting_for'
+    'waiting_for',
+    'git_branch',
+    'pr_url'
   ]) {
     try {
       db.exec(`ALTER TABLE tasks ADD COLUMN ${column} TEXT`)
@@ -462,6 +484,8 @@ export function initDatabase(): void {
 
   ensureNotebookSchema(tagDb())
   ensureStatusChangedAt(tagDb())
+  ensureTaskHistorySchema(tagDb())
+  ensureTaskNotesText(tagDb())
   ensureReviewSchema(tagDb())
   ensurePrefsSchema(tagDb())
 }
@@ -616,6 +640,33 @@ export function setAppPrefs(patch: Partial<AppPrefs>): AppPrefs {
 
 export function notebookDb(): SqliteLike {
   return tagDb()
+}
+
+export function addTaskHistory(input: AddTaskHistoryInput, origin: TaskHistoryOrigin): number {
+  return addTaskHistoryEntry(tagDb(), input, origin)
+}
+
+export function getTaskHistory(query: TaskHistoryQuery): TaskHistoryItem[] {
+  return listTaskHistory(tagDb(), query)
+}
+
+export function searchEverything(query: string, options?: SearchOptions): SearchResult[] {
+  return searchAll(tagDb(), query, options)
+}
+
+export function getTaskLastSession(taskId: number, includeSubtasks = false): LastSession | null {
+  return getLastSession(tagDb(), taskId, includeSubtasks)
+}
+
+export function getLastCheckpointsFor(taskIds: number[]): Map<number, TaskHistoryItem> {
+  return lastCheckpointsFor(tagDb(), taskIds)
+}
+
+export function getTaskLastCheckpoint(
+  taskId: number,
+  includeSubtasks = false
+): TaskHistoryItem | null {
+  return getLastCheckpoint(tagDb(), taskId, includeSubtasks)
 }
 
 export function updateTag(id: number, data: UpdateTagInput): void {
@@ -923,6 +974,17 @@ export function createTask(data: CreateTaskInput): Task {
   return getTask(taskId)!
 }
 
+export function createTaskWithSubtasks(
+  parent: CreateTaskInput,
+  children: CreateTaskInput[]
+): { parent: Task; subtasks: Task[] } {
+  return db.transaction(() => {
+    const created = createTask(parent)
+    const subtasks = children.map((child) => createTask({ ...child, parent_task_id: created.id }))
+    return { parent: getTask(created.id)!, subtasks }
+  })()
+}
+
 // Projeção das listagens: sem `notes` (JSON do Tiptap) e com `description` truncada — a lista
 // exibe no máximo duas linhas dela. Quem precisa do conteúdo integral usa getTask.
 const TASK_LIST_COLUMNS = `
@@ -933,6 +995,7 @@ const TASK_LIST_COLUMNS = `
   t.energy_level, t.scheduled_time, t.scheduled_end_time, t.due_time,
   t.external_url, t.jira_key, t.jira_status, t.jira_space, t.jira_issue_type, t.jira_issue_kind,
   t.jira_parent_key, t.jira_parent_summary, t.waiting_for, t.archived_at, t.status_changed_at,
+  t.git_branch, t.pr_url,
   p.name as project_name, p.color as project_color
 `
 
@@ -1100,6 +1163,21 @@ export function listRunningTasks(): Task[] {
   return enrichTasks(rows)
 }
 
+export function listTasksInProgress(): Task[] {
+  const rows = db
+    .prepare(
+      `
+    SELECT ${TASK_LIST_COLUMNS}
+    FROM tasks t
+    LEFT JOIN projects p ON t.project_id = p.id
+    WHERE t.status = 'executando' AND t.is_archived = 0
+    ORDER BY t.updated_at DESC
+  `
+    )
+    .all() as (Task & { project_name?: string })[]
+  return enrichTasks(rows)
+}
+
 export function listActiveTasksLight(): Pick<
   Task,
   'id' | 'name' | 'status' | 'category' | 'project_id'
@@ -1236,8 +1314,22 @@ export function updateTask(id: number, data: UpdateTaskInput): void {
 }
 
 export function updateTaskNotes(id: number, notes: string | null): void {
-  const stmt = db.prepare('UPDATE tasks SET notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-  stmt.run(notes, id)
+  const stmt = db.prepare(
+    'UPDATE tasks SET notes = ?, notes_text = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+  )
+  stmt.run(notes, notesPlainText(notes), id)
+}
+
+export function setTaskGitLink(
+  id: number,
+  link: { git_branch?: string | null; pr_url?: string | null }
+): void {
+  if (link.git_branch !== undefined) {
+    db.prepare('UPDATE tasks SET git_branch = ? WHERE id = ?').run(link.git_branch || null, id)
+  }
+  if (link.pr_url !== undefined) {
+    db.prepare('UPDATE tasks SET pr_url = ? WHERE id = ?').run(link.pr_url || null, id)
+  }
 }
 
 export function updateTaskDrawing(id: number, drawing: string | null): void {
@@ -2016,6 +2108,22 @@ export function getSubtasks(parentId: number): Task[] {
   `
     )
     .all(parentId) as (Task & { project_name?: string })[]
+  return enrichTasks(rows)
+}
+
+export function listOpenTasksWithWorkingDir(): Task[] {
+  const rows = db
+    .prepare(
+      `
+    SELECT ${TASK_LIST_COLUMNS}, t.working_dir, p.working_dir AS project_working_dir
+    FROM tasks t
+    LEFT JOIN projects p ON t.project_id = p.id
+    WHERE t.status != 'finalizada' AND t.is_archived = 0
+      AND (t.working_dir IS NOT NULL OR p.working_dir IS NOT NULL)
+    ORDER BY t.updated_at DESC
+  `
+    )
+    .all() as (Task & { project_name?: string })[]
   return enrichTasks(rows)
 }
 

@@ -19,46 +19,116 @@ export interface PMDoc {
   content: PMNode[]
 }
 
-const INLINE = /(`[^`]+`)|(\[[^\]]+\]\([^)]+\))|(\*\*[^*]+\*\*)|(\*[^*]+\*)/g
+export const MENTION_ENTITY_TYPES = ['task', 'project', 'page', 'context'] as const
+export type MentionEntityType = (typeof MENTION_ENTITY_TYPES)[number]
 
-function textNode(text: string, marks?: PMMark[]): PMNode {
-  return marks && marks.length > 0 ? { type: 'text', text, marks } : { type: 'text', text }
+export interface MarkdownParseOptions {
+  /** Menção a algo que não existe vira texto puro. Sem a função, toda menção é aceita. */
+  mentionExists?: (entityType: MentionEntityType, id: number) => boolean
 }
 
-export function parseInline(line: string): PMNode[] {
+const INLINE = new RegExp(
+  [
+    '(`[^`]+`)',
+    `(@\\[[^\\]]+\\]\\((?:${MENTION_ENTITY_TYPES.join('|')}):\\d+\\))`,
+    '(\\[[^\\]]+\\]\\([^)]+\\))',
+    '(==.+?==)',
+    '(\\*\\*\\*.+?\\*\\*\\*)',
+    '(\\*\\*.+?\\*\\*)',
+    '(\\*[^*]+\\*)',
+    '(~~.+?~~)',
+    '(<u>.+?</u>)'
+  ].join('|'),
+  'g'
+)
+
+function textNode(text: string, marks: PMMark[]): PMNode {
+  return marks.length > 0 ? { type: 'text', text, marks } : { type: 'text', text }
+}
+
+function mentionNode(token: string, marks: PMMark[], options: MarkdownParseOptions): PMNode {
+  const [, label, entityType, rawId] = token.match(
+    /^@\[([^\]]+)\]\((\w+):(\d+)\)$/
+  ) as RegExpMatchArray
+  const id = Number(rawId)
+  const exists = options.mentionExists?.(entityType as MentionEntityType, id) ?? true
+  if (!exists) return textNode(`@${label}`, marks)
+  return { type: 'mention', attrs: { id, label, entityType } }
+}
+
+function inline(line: string, marks: PMMark[], options: MarkdownParseOptions): PMNode[] {
   const nodes: PMNode[] = []
   let cursor = 0
+  const nested = (inner: string, ...added: PMMark[]): void => {
+    nodes.push(...inline(inner, [...marks, ...added], options))
+  }
 
   for (const match of line.matchAll(INLINE)) {
     const token = match[0]
     const start = match.index ?? 0
-    if (start > cursor) nodes.push(textNode(line.slice(cursor, start)))
+    if (start > cursor) nodes.push(textNode(line.slice(cursor, start), marks))
 
-    if (token.startsWith('`')) {
+    if (match[1]) {
       nodes.push(textNode(token.slice(1, -1), [{ type: 'code' }]))
-    } else if (token.startsWith('[')) {
+    } else if (match[2]) {
+      nodes.push(mentionNode(token, marks, options))
+    } else if (match[3]) {
       const [, text, href] = token.match(/\[([^\]]+)\]\(([^)]+)\)/) as RegExpMatchArray
-      nodes.push(textNode(text, [{ type: 'link', attrs: { href } }]))
-    } else if (token.startsWith('**')) {
-      nodes.push(textNode(token.slice(2, -2), [{ type: 'bold' }]))
+      nested(text, { type: 'link', attrs: { href } })
+    } else if (match[4]) {
+      nested(token.slice(2, -2), { type: 'highlight' })
+    } else if (match[5]) {
+      nested(token.slice(3, -3), { type: 'bold' }, { type: 'italic' })
+    } else if (match[6]) {
+      nested(token.slice(2, -2), { type: 'bold' })
+    } else if (match[7]) {
+      nested(token.slice(1, -1), { type: 'italic' })
+    } else if (match[8]) {
+      nested(token.slice(2, -2), { type: 'strike' })
     } else {
-      nodes.push(textNode(token.slice(1, -1), [{ type: 'italic' }]))
+      nested(token.slice(3, -4), { type: 'underline' })
     }
 
     cursor = start + token.length
   }
 
-  if (cursor < line.length) nodes.push(textNode(line.slice(cursor)))
+  if (cursor < line.length) nodes.push(textNode(line.slice(cursor), marks))
   return nodes
 }
 
-function paragraph(line: string): PMNode {
-  return { type: 'paragraph', content: parseInline(line) }
+export function parseInline(line: string, options: MarkdownParseOptions = {}): PMNode[] {
+  return inline(line, [], options)
 }
 
-export function markdownToProsemirror(markdown: string): PMDoc {
+const TASK_ITEM = /^[-*]\s+\[([ xX])\]\s+(.*)$/
+const BULLET_ITEM = /^[-*]\s+(.*)$/
+const ORDERED_ITEM = /^\d+[.)]\s+(.*)$/
+const TABLE_SEPARATOR = /^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?$/
+
+type ListKind = 'taskList' | 'bulletList' | 'orderedList'
+
+function listKind(line: string): ListKind | null {
+  if (TASK_ITEM.test(line)) return 'taskList'
+  if (BULLET_ITEM.test(line)) return 'bulletList'
+  if (ORDERED_ITEM.test(line)) return 'orderedList'
+  return null
+}
+
+function splitTableRow(line: string): string[] {
+  const inner = line
+    .trim()
+    .replace(/^\|/, '')
+    .replace(/(?<!\\)\|$/, '')
+  return inner.split(/(?<!\\)\|/).map((cell) => cell.trim().replace(/\\\|/g, '|'))
+}
+
+export function markdownToProsemirror(markdown: string, options: MarkdownParseOptions = {}): PMDoc {
   const lines = markdown.replace(/\r\n/g, '\n').split('\n')
   const content: PMNode[] = []
+  const paragraph = (line: string): PMNode => ({
+    type: 'paragraph',
+    content: parseInline(line, options)
+  })
   let index = 0
 
   while (index < lines.length) {
@@ -94,12 +164,12 @@ export function markdownToProsemirror(markdown: string): PMDoc {
       continue
     }
 
-    const heading = trimmed.match(/^(#{1,3})\s+(.*)$/)
+    const heading = trimmed.match(/^(#{1,6})\s+(.*)$/)
     if (heading) {
       content.push({
         type: 'heading',
         attrs: { level: heading[1].length },
-        content: parseInline(heading[2])
+        content: parseInline(heading[2], options)
       })
       index += 1
       continue
@@ -115,19 +185,49 @@ export function markdownToProsemirror(markdown: string): PMDoc {
       continue
     }
 
-    const bullet = trimmed.match(/^[-*]\s+(.*)$/)
-    const ordered = trimmed.match(/^\d+[.)]\s+(.*)$/)
-    if (bullet || ordered) {
-      const isOrdered = Boolean(ordered)
-      const items: PMNode[] = []
-      while (index < lines.length) {
-        const current = lines[index].trim()
-        const match = isOrdered ? current.match(/^\d+[.)]\s+(.*)$/) : current.match(/^[-*]\s+(.*)$/)
-        if (!match) break
-        items.push({ type: 'listItem', content: [paragraph(match[1])] })
+    if (trimmed.startsWith('|') && TABLE_SEPARATOR.test(lines[index + 1]?.trim() ?? '')) {
+      const header = splitTableRow(trimmed)
+      const rows: PMNode[] = [
+        {
+          type: 'tableRow',
+          content: header.map((cell) => ({ type: 'tableHeader', content: [paragraph(cell)] }))
+        }
+      ]
+      index += 2
+      while (index < lines.length && lines[index].trim().startsWith('|')) {
+        const cells = splitTableRow(lines[index]).slice(0, header.length)
+        while (cells.length < header.length) cells.push('')
+        rows.push({
+          type: 'tableRow',
+          content: cells.map((cell) => ({ type: 'tableCell', content: [paragraph(cell)] }))
+        })
         index += 1
       }
-      content.push({ type: isOrdered ? 'orderedList' : 'bulletList', content: items })
+      content.push({ type: 'table', content: rows })
+      continue
+    }
+
+    const kind = listKind(trimmed)
+    if (kind) {
+      const items: PMNode[] = []
+      while (index < lines.length && listKind(lines[index].trim()) === kind) {
+        const current = lines[index].trim()
+        if (kind === 'taskList') {
+          const [, mark, text] = current.match(TASK_ITEM) as RegExpMatchArray
+          items.push({
+            type: 'taskItem',
+            attrs: { checked: mark !== ' ' },
+            content: [paragraph(text)]
+          })
+        } else {
+          const [, text] = current.match(
+            kind === 'orderedList' ? ORDERED_ITEM : BULLET_ITEM
+          ) as RegExpMatchArray
+          items.push({ type: 'listItem', content: [paragraph(text)] })
+        }
+        index += 1
+      }
+      content.push({ type: kind, content: items })
       continue
     }
 

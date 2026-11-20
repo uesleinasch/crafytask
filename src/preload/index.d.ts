@@ -1,4 +1,5 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
+import type { DrawingRenderPayload, DrawingRenderResult } from '@shared/drawingRender'
 import type {
   GcalStatus,
   TerminalBuffer,
@@ -68,7 +69,8 @@ import type {
   MovePageInput,
   PageLocation,
   PageSearchResult,
-  FloatTimerData
+  FloatTimerData,
+  TaskHistoryView
 } from '../shared/types'
 import type { ThemePreference } from '../shared/themePreference'
 import type { WorkflowPrefs, WorkflowPrefsPatch } from '../shared/workflowPrefs'
@@ -159,6 +161,8 @@ interface API {
   setTotalTime: (id: number, seconds: number) => Promise<void>
   updateStatus: (id: number, status: TaskStatus) => Promise<void>
   getTimeEntries: (taskId: number) => Promise<TimeEntry[]>
+  getTaskHistory: (taskId: number, includeSubtasks: boolean) => Promise<TaskHistoryView>
+  addTaskHistory: (taskId: number, summary: string) => Promise<number>
   updateTimeEntry: (id: number, startIso: string, endIso: string) => Promise<void>
   deleteTimeEntry: (id: number) => Promise<void>
   listTimeEntriesRange: (fromIso: string, toIso: string) => Promise<TimeEntrySpan[]>
@@ -353,6 +357,10 @@ interface API {
   setAutoBackup: (enabled: boolean) => Promise<AppPrefsStatus>
   onBackupChanged: (callback: () => void) => () => void
   appLogRendererError: (report: RendererErrorReport) => Promise<void>
+  onDrawingRenderRequest: (
+    callback: (requestId: string, payload: DrawingRenderPayload) => void
+  ) => () => void
+  sendDrawingRenderResult: (requestId: string, result: DrawingRenderResult) => Promise<void>
   onRendererRecovered: (callback: () => void) => () => void
   onNavigate: (callback: (path: string) => void) => () => void
 

@@ -773,6 +773,16 @@
       }
     },
     {
+      "id": "F3.18",
+      "fase": "F3",
+      "titulo": "Aba Histórico na área de trabalho da task (Onde parei, filtros, linha do tempo, Anotar)",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/components/tasks/TaskHistoryPanel.tsx",
+        "padroes": ["<Timeline", "Onde parei", "Movimentações", "Anotar"]
+      }
+    },
+    {
       "id": "F3.15",
       "fase": "F3",
       "titulo": "Campos do Jira num Drawer do antd",

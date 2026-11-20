@@ -13,6 +13,41 @@ export type TaskCategory = 'urgente' | 'prioridade' | 'normal' | 'time_leak'
 export type ProjectStatus = 'active' | 'someday' | 'done' | 'archived'
 export type EnergyLevel = 'alto' | 'medio' | 'baixo'
 
+// ===================== TASK HISTORY =====================
+
+export type TaskHistoryEntryKind = 'checkpoint' | 'operation' | 'note'
+export type TaskHistoryKind = TaskHistoryEntryKind | 'status'
+export type TaskHistoryOrigin = 'app' | 'mcp'
+
+export interface TaskHistoryItem {
+  id: number
+  task_id: number
+  task_name: string
+  kind: TaskHistoryKind
+  origin: TaskHistoryOrigin | null
+  summary: string | null
+  done: string | null
+  remaining: string | null
+  from_status: TaskStatus | null
+  to_status: TaskStatus | null
+  created_at: string
+  session_id?: string | null
+}
+
+export interface TaskHistoryView {
+  entries: TaskHistoryItem[]
+  lastCheckpoint: TaskHistoryItem | null
+}
+
+export interface AddTaskHistoryInput {
+  task_id: number
+  summary: string
+  kind?: TaskHistoryEntryKind
+  done?: string | null
+  remaining?: string | null
+  session_id?: string | null
+}
+
 // ===================== TAG =====================
 
 export interface Tag {
@@ -219,6 +254,8 @@ export interface Task {
   working_dir?: string | null
   project_working_dir?: string | null
   start_command?: string | null
+  git_branch?: string | null
+  pr_url?: string | null
   jira_key?: string | null
   jira_status?: string | null
   jira_space?: string | null

@@ -1,3 +1,4 @@
+import type { DrawingRenderPayload, DrawingRenderResult } from '@shared/drawingRender'
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import type {
@@ -69,7 +70,8 @@ import type {
   MovePageInput,
   PageLocation,
   PageSearchResult,
-  FloatTimerData
+  FloatTimerData,
+  TaskHistoryView
 } from '../shared/types'
 import type { ThemePreference } from '../shared/themePreference'
 import type { WorkflowPrefs, WorkflowPrefsPatch } from '../shared/workflowPrefs'
@@ -207,6 +209,10 @@ const api = {
   // Time Entries
   getTimeEntries: (taskId: number): Promise<TimeEntry[]> =>
     ipcRenderer.invoke('task:getTimeEntries', taskId),
+  getTaskHistory: (taskId: number, includeSubtasks: boolean): Promise<TaskHistoryView> =>
+    ipcRenderer.invoke('task:history', taskId, includeSubtasks),
+  addTaskHistory: (taskId: number, summary: string): Promise<number> =>
+    ipcRenderer.invoke('task:addHistory', taskId, summary),
   updateTimeEntry: (id: number, startIso: string, endIso: string): Promise<void> =>
     ipcRenderer.invoke('timeEntry:update', id, startIso, endIso),
   deleteTimeEntry: (id: number): Promise<void> => ipcRenderer.invoke('timeEntry:delete', id),
@@ -549,6 +555,19 @@ const api = {
   },
   appLogRendererError: (report: RendererErrorReport): Promise<void> =>
     ipcRenderer.invoke('app:logRendererError', report),
+  onDrawingRenderRequest: (
+    callback: (requestId: string, payload: DrawingRenderPayload) => void
+  ): (() => void) => {
+    const listener = (
+      _: Electron.IpcRendererEvent,
+      requestId: string,
+      payload: DrawingRenderPayload
+    ): void => callback(requestId, payload)
+    ipcRenderer.on('drawing:renderRequest', listener)
+    return () => ipcRenderer.removeListener('drawing:renderRequest', listener)
+  },
+  sendDrawingRenderResult: (requestId: string, result: DrawingRenderResult): Promise<void> =>
+    ipcRenderer.invoke('drawing:renderResult', requestId, result),
   onRendererRecovered: (callback: () => void): (() => void) => {
     const listener = (): void => callback()
     ipcRenderer.on('app:rendererRecovered', listener)
