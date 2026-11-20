@@ -589,6 +589,31 @@
       "validado": "2026-11-18"
     },
     {
+      "id": "F2.21",
+      "fase": "F2",
+      "titulo": "Nova tarefa em Modal do antd com a barra de propriedades do detalhe",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/components/tasks/NewTaskModal.tsx",
+        "padroes": ["<Modal", "PropPill", "Criar outra em seguida", "Vai para o Inbox", "Ctrl"]
+      }
+    },
+    {
+      "id": "F2.22",
+      "fase": "F2",
+      "titulo": "Modal legado de nova tarefa removido",
+      "check": {
+        "tipo": "sem-arquivo",
+        "caminho": [
+          "src/renderer/src/components/TaskDialog.tsx",
+          "src/renderer/src/components/TagInput.tsx",
+          "src/renderer/src/components/CategorySelect.tsx",
+          "src/renderer/src/components/RecurrenceSelect.tsx",
+          "src/renderer/src/components/ui/searchable-select.tsx"
+        ]
+      }
+    },
+    {
       "id": "F3.1",
       "fase": "F3",
       "titulo": "Detalhe responsivo: inspetor ao lado (xl), em Drawer (md), abas (estreito)",

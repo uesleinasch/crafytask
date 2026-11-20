@@ -585,6 +585,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const [drawer, setDrawer] = useState(false);
     const [route, go] = useRoute();
     const [palette, setPalette] = useState(false);
+    const [newTask, setNewTask] = useState(false);
     const [crash, setCrash] = useState(false);
     const [capture, setCapture] = useState('');
     const [term, setTerm] = useState(false);
@@ -678,7 +679,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
                 <${RunningPill} go=${go} compact=${!screens.md} />
                 <${Tooltip} title="Buscar e comandos (Ctrl+K)"><${Button} aria-label="Buscar" icon=${html`<${I.SearchOutlined} />`} onClick=${() => setPalette(true)}>${screens.xxl ? html`<span>Buscar <${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12, marginInlineStart: 6 }}>Ctrl K<//></span>` : null}<//><//>
                 <${Dropdown} menu=${prefsMenu} trigger=${['click']}><${Button} aria-label="Aparência" icon=${createElement(themeIcon)} /><//>
-                <${Button} type="primary" icon=${html`<${I.PlusOutlined} />`}>${screens.lg ? 'Nova tarefa' : null}<//>
+                <${Button} type="primary" aria-label="Nova tarefa" icon=${html`<${I.PlusOutlined} />`} onClick=${() => setNewTask(true)}>${screens.lg ? 'Nova tarefa' : null}<//>
               </div>
             </div>
           <//>
@@ -709,6 +710,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         </div>
       <//>
       <${CommandPalette} open=${palette} onClose=${() => setPalette(false)} go=${k => { go(k); setPalette(false); }} />
+      <${NewTaskModal} open=${newTask} onClose=${() => setNewTask(false)} mode=${mode} screens=${screens} go=${go} />
     <//>`;
   }
 
@@ -729,6 +731,113 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         <span className="ct-mono">${fmt(secs)}</span>
         ${compact ? null : html`<${Badge} count=${2} size="small" color="var(--ct-primary)" />`}
       </button>
+    <//>`;
+  }
+
+  function NewTaskModal({ open, onClose, mode, screens, go }) {
+    const { message } = AntApp.useApp();
+    const blank = { name: '', desc: '', category: 'normal', project: null, ctxs: [], due: null, energy: null, sched: null, recurrence: 'none', tags: [], limit: '' };
+    const [d, setD] = useState(blank);
+    const [shown, setShown] = useState([]);
+    const [another, setAnother] = useState(false);
+    const nameRef = React.useRef(null);
+    const set = patch => setD(prev => ({ ...prev, ...patch }));
+    useEffect(() => { if (open) { setD(blank); setShown([]); } }, [open]);
+    const ddmm = v => v.split('-').reverse().slice(0, 2).join('/');
+    const toIso = v => v ? v.format('YYYY-MM-DD') : null;
+    const limitOk = !d.limit.trim() || /^\d{1,3}(:\d{1,2}){0,2}$/.test(d.limit.trim());
+    const canCreate = !!d.name.trim() && limitOk;
+    const create = () => {
+      if (!canCreate) return;
+      if (another) {
+        message.success('Tarefa criada: ' + d.name.trim());
+        setD({ ...blank, category: d.category, project: d.project, ctxs: d.ctxs });
+        if (nameRef.current) nameRef.current.focus();
+        return;
+      }
+      message.success('Tarefa criada');
+      onClose();
+      go('tarefa');
+    };
+    const optional = [
+      { key: 'programado', label: 'Programado', icon: 'ScheduleOutlined', set: !!d.sched },
+      { key: 'recorrencia', label: 'Recorrência', icon: 'SyncOutlined', set: d.recurrence !== 'none' },
+      { key: 'tags', label: 'Tags', icon: 'TagsOutlined', set: d.tags.length > 0 },
+      { key: 'limite', label: 'Limite de tempo', icon: 'ClockCircleOutlined', set: !!d.limit.trim() }
+    ];
+    const visible = k => optional.find(o => o.key === k).set || shown.includes(k);
+    const hidden = optional.filter(o => !visible(o.key));
+    const dueTone = d.due && d.due.date < TODAY ? PALETTE[mode].error : null;
+
+    const propBar = html`<div className="ct-propbar" style=${{ marginTop: 12 }}>
+      <${PropPill} label="Categoria" content=${html`<${Flex} vertical gap=${6}>${Object.entries(CATEGORY).map(([k, v]) => html`<${Button} key=${k} type=${d.category === k ? 'primary' : 'text'} ghost=${d.category === k} style=${{ justifyContent: 'flex-start' }} onClick=${() => set({ category: k })}><${Chip} def=${v} mode=${mode} /><//>`)}<//>`}>
+        ${d.category === 'normal' ? html`<span style=${{ color: 'var(--ct-text-2)' }}>Normal</span>` : html`<${Chip} def=${CATEGORY[d.category]} mode=${mode} />`}
+      <//>
+      <${PropPill} label="Projeto" muted=${!d.project} content=${html`<${Select} showSearch allowClear placeholder="Sem projeto" value=${d.project} onChange=${v => set({ project: v || null })} optionFilterProp="title" style=${{ width: '100%' }}
+          options=${PROJECTS.filter(p => p.status === 'active' || p.status === 'someday').map(p => ({ value: p.id, title: p.name, label: html`<${ProjectLabel} id=${p.id} />` }))} />`}>
+        ${d.project ? html`<${ProjectLabel} id=${d.project} />` : html`<span><${I.FolderOutlined} /> Sem projeto</span>`}
+      <//>
+      <${PropPill} label="Contextos" icon=${d.ctxs.length ? null : 'EnvironmentOutlined'} muted=${!d.ctxs.length} content=${html`<${Flex} gap=${4} wrap="wrap">${CONTEXTS.map(c => html`<${Tag.CheckableTag} key=${c.name} checked=${d.ctxs.includes(c.name)} onChange=${on => set({ ctxs: on ? d.ctxs.concat(c.name) : d.ctxs.filter(x => x !== c.name) })}>${c.emoji} ${c.name}<//>`)}<//>`}>
+        ${d.ctxs.length ? d.ctxs.slice(0, 2).map(n => { const c = CONTEXTS.find(x => x.name === n); return html`<span key=${n}>${c ? c.emoji + ' ' : ''}${n}</span>`; }) : 'Contexto'}${d.ctxs.length > 2 ? html`<span style=${{ color: 'var(--ct-text-3)' }}>+${d.ctxs.length - 2}</span>` : null}
+      <//>
+      <${PropPill} label="Prazo" icon="FlagOutlined" muted=${!d.due} tone=${dueTone} content=${html`<${Flex} vertical gap=${8}>
+          <${Flex} gap=${6}>
+            <${DatePicker} format="DD/MM/YYYY" placeholder="Data" value=${d.due ? dayjs(d.due.date) : null} onChange=${v => set({ due: v ? { date: toIso(v), time: d.due && d.due.time } : null })} style=${{ flex: 1 }} />
+            <${TimePicker} format="HH:mm" placeholder="Hora" disabled=${!d.due} value=${d.due && d.due.time ? dayjs('2026-01-01 ' + d.due.time) : null} onChange=${v => set({ due: { ...d.due, time: v ? v.format('HH:mm') : null } })} style=${{ width: 96 }} />
+          <//>
+          ${d.due ? html`<a onClick=${() => set({ due: null })}>Remover prazo</a>` : null}
+        <//>`}>
+        ${d.due ? `Prazo ${ddmm(d.due.date)}${d.due.time ? ' ' + d.due.time : ''}` : 'Prazo'}
+      <//>
+      <${PropPill} label="Energia" muted=${!d.energy} content=${html`<${Flex} gap=${4}>${Object.keys(ENERGY).map(k => html`<${Button} key=${k} size="small" type=${d.energy === k ? 'primary' : 'default'} ghost=${d.energy === k} style=${{ flex: 1 }} onClick=${() => set({ energy: d.energy === k ? null : k })} aria-pressed=${d.energy === k}><${Energy} level=${k} />${ENERGY[k].label}<//>`)}<//>`}>
+        ${d.energy ? html`<${Energy} level=${d.energy} />` : null}${d.energy ? 'Energia ' + ENERGY[d.energy].label.toLowerCase() : 'Energia'}
+      <//>
+      ${visible('programado') ? html`<${PropPill} label="Programado" icon="ScheduleOutlined" muted=${!d.sched} content=${html`<${Flex} vertical gap=${8}>
+          <${DatePicker} format="DD/MM/YYYY" placeholder="Data" value=${d.sched ? dayjs(d.sched.date) : null} onChange=${v => set({ sched: v ? { date: toIso(v), start: d.sched && d.sched.start, end: d.sched && d.sched.end } : null })} />
+          <${TimePicker.RangePicker} format="HH:mm" placeholder=${['Início', 'Fim']} allowEmpty=${[true, true]} disabled=${!d.sched}
+            value=${d.sched && d.sched.start ? [dayjs('2026-01-01 ' + d.sched.start), d.sched.end ? dayjs('2026-01-01 ' + d.sched.end) : null] : null}
+            onChange=${v => set({ sched: { ...d.sched, start: v && v[0] ? v[0].format('HH:mm') : null, end: v && v[1] ? v[1].format('HH:mm') : null } })} />
+          ${d.sched ? html`<a onClick=${() => set({ sched: null })}>Remover agendamento</a>` : null}
+        <//>`}>
+        ${d.sched ? `${ddmm(d.sched.date)}${d.sched.start ? ' ' + d.sched.start : ''}${d.sched.end ? '–' + d.sched.end : ''}` : 'Programado'}
+      <//>` : null}
+      ${visible('recorrencia') ? html`<${PropPill} label="Recorrência" icon="SyncOutlined" muted=${d.recurrence === 'none'} content=${html`<${Select} value=${d.recurrence} onChange=${v => set({ recurrence: v })} options=${RECURRENCE} style=${{ width: '100%' }} />`}>
+        ${RECURRENCE.find(r => r.value === d.recurrence).label}
+      <//>` : null}
+      ${visible('tags') ? html`<${PropPill} label="Tags" icon="TagsOutlined" muted=${!d.tags.length} content=${html`<${Select} mode="tags" value=${d.tags} onChange=${v => set({ tags: v })} placeholder="Adicionar ou criar tag" style=${{ width: '100%' }} options=${['refactor', 'design', 'jira', 'bug'].map(v => ({ value: v, label: v }))} />`}>
+        ${d.tags.length ? d.tags.map(x => '#' + x).join(' ') : 'Tags'}
+      <//>` : null}
+      ${visible('limite') ? html`<${PropPill} label="Limite de tempo" icon="ClockCircleOutlined" muted=${!d.limit.trim()} tone=${limitOk ? null : PALETTE[mode].error} content=${html`<${Flex} vertical gap=${6}>
+          <${Input} autoFocus className="ct-mono" placeholder="HH:MM:SS" aria-label="Limite de tempo" status=${limitOk ? '' : 'error'} value=${d.limit} onChange=${e => set({ limit: e.target.value })} />
+          <${Text} type=${limitOk ? 'secondary' : 'danger'} style=${{ fontSize: 12 }}>${limitOk ? 'Avisa quando o tempo da tarefa chegar perto. Ex.: 1:30:00 ou 45.' : 'Use HH:MM:SS, MM:SS ou só os minutos.'}<//>
+        <//>`}>
+        <span className="ct-mono">${d.limit.trim() ? d.limit.trim() : 'Limite'}</span>
+      <//>` : null}
+      ${hidden.length ? html`<${Dropdown} trigger=${['click']} menu=${{ items: hidden.map(o => ({ key: o.key, icon: createElement(I[o.icon]), label: o.label })), onClick: ({ key }) => setShown(shown.concat(key)) }}>
+        <button type="button" className="ct-prop muted" aria-label="Adicionar propriedade"><${I.PlusOutlined} />Propriedade</button>
+      <//>` : null}
+    </div>`;
+
+    const footer = html`<${Flex} align="center" justify="space-between" gap=${8} wrap="wrap">
+      <${Flex} align="center" gap=${12} wrap="wrap" style=${{ minWidth: 0 }}>
+        <${Checkbox} checked=${another} onChange=${e => setAnother(e.target.checked)}>Criar outra em seguida<//>
+        <${Text} type="secondary" style=${{ fontSize: 12 }}><${I.InboxOutlined} /> Vai para o Inbox<//>
+      <//>
+      <${Flex} align="center" gap=${8}>
+        ${screens.sm ? html`<${Space} size=${4} aria-hidden="true"><kbd className="ct-kbd">Ctrl</kbd><kbd className="ct-kbd">Enter</kbd><//>` : null}
+        <${Button} onClick=${onClose}>Cancelar<//>
+        <${Button} type="primary" disabled=${!canCreate} onClick=${create}>Criar tarefa<//>
+      <//>
+    <//>`;
+
+    return html`<${Modal} open=${open} onCancel=${onClose} title="Nova tarefa" width=${640} footer=${footer} destroyOnClose>
+      <div onKeyDown=${e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); create(); } }}>
+        <${Input} ref=${nameRef} variant="borderless" autoFocus placeholder="Nome da tarefa" aria-label="Nome da tarefa" maxLength=${300}
+          value=${d.name} onChange=${e => set({ name: e.target.value })} onPressEnter=${create} style=${{ fontSize: 18, fontWeight: 600, paddingInline: 0 }} />
+        <${Input.TextArea} variant="borderless" placeholder="Descrição (opcional)" aria-label="Descrição" autoSize=${{ minRows: 2, maxRows: 6 }}
+          value=${d.desc} onChange=${e => set({ desc: e.target.value })} style=${{ paddingInline: 0 }} />
+        ${propBar}
+      </div>
     <//>`;
   }
 

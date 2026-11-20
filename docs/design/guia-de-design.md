@@ -251,6 +251,7 @@ só porque roda de CDN; os nomes lucide de cada lugar estão nas tabelas acima e
 | Legenda do calendário | urgente `Flame` · prioridade `Flag` · time leak `Clock` · no Google `CalendarSync`                                                                                                                                                             |
 | Cadernos              | caderno `BookOpen` · busca `Search` · novo `Plus` · mais `Ellipsis` · sincronizar `RefreshCw` · exportar `Download` · editar `Pencil` · mover `ArrowUp`/`ArrowDown` (abas: `ArrowLeft`/`ArrowRight`) · mover para a seção `ArrowLeftRight` · nova subpágina `FilePlus2` · promover `IndentDecrease` · tornar subpágina `IndentIncrease` · excluir `Trash2` · Páginas (abaixo de `md`) `ListTree` · Notas `FileText` · Desenho `PenTool` · modo foco `Expand`/`Shrink` |
 | Dashboard             | Agora `Gauge` · tarefas abertas `ListTodo` · No período `CalendarRange` · Exportar PDF `FileDown` · alternar gráfico e tabela `ChartColumn`/`Table2` · Tempo focado `Timer` · concluídas `CircleCheck` · sessões `Zap` · média por sessão `History` · para onde foi o tempo `FolderOpen` (área `TrendingUp`) · tarefas com mais tempo `ListOrdered` · categoria `Flag` · energia `Zap` · quando você foca `Clock` · constância `CalendarDays` · diferença `ArrowUp`/`ArrowDown`/`Minus` |
+| Nova tarefa           | Inbox `Inbox` · Limite de tempo `Timer` · Propriedade `Plus` · as pílulas usam os ícones do detalhe |
 | Calendário            | painel A agendar `PanelLeftOpen`/`PanelLeftClose` · gaveta `ListTodo` · alça `GripVertical` · reservar `Plus` · repetir `Copy` · abrir `FileText` · timer `Play` · excluir `Trash2` · tarefa com horário `Calendar` |
 
 ## 7. AppShell
@@ -304,6 +305,18 @@ ConfigProvider (tema, cssVar) → App (message, modal, notification) → RegionB
   quantos botões há à direita; posição estável vira memória espacial e a captura, que é a ação de
   menor esforço do GTD (Bellotti 2004), fica sempre no mesmo lugar e larga como alvo (Fitts). Abaixo
   de `sm` a captura sai do header e vai para a paleta de comandos.
+- **Nova tarefa** (botão do header): `Modal` de 640px com o título "Nova tarefa". No corpo, o nome
+  num `Input` sem borda (18px, semibold, foco ao abrir) e a descrição num `TextArea` sem borda
+  (opcional, cresce até 6 linhas); embaixo, a **mesma barra de propriedades do detalhe** — Categoria,
+  Projeto (só ativos e someday), Contextos, Prazo e Energia sempre; Programado, Recorrência, Tags e
+  Limite de tempo (`HH:MM:SS`, `MM:SS` ou minutos, em mono) por "+ Propriedade". Rodapé: à esquerda,
+  `Checkbox` "Criar outra em seguida" e o lembrete "Vai para o Inbox" (`Inbox`); à direita, as teclas
+  `Ctrl` `Enter` em `Kbd` (a partir de `sm`), Cancelar e "Criar tarefa" (primário, desabilitado sem
+  nome ou com limite inválido). Enter no nome ou `Ctrl+Enter` em qualquer campo criam. Criada a
+  tarefa, o modal fecha e abre o detalhe; com "Criar outra" ligado, ele fica aberto, limpa nome,
+  descrição e datas, mantém categoria, projeto e contextos e volta o foco ao nome. Um formulário
+  rotulado campo a campo repetiria a tela de detalhe com outra cara; as pílulas são a mesma peça,
+  então o que se aprende num lugar vale no outro.
 - **Pílula de timers:** ponto ao vivo, tempo do timer mais recente e o contador de timers; clicar
   abre o `Popover` com a lista. Abaixo de `md` ela continua no header, compacta: só o ponto e o
   tempo, sem contador, com o mesmo popover.
