@@ -262,6 +262,12 @@ protocol.registerSchemesAsPrivileged([
   }
 ])
 
+// No Wayland (padrão do Electron 38 no Linux) o globalShortcut só registra pelo portal
+// GlobalShortcuts, ligado por esta feature antes do 'ready'; sem ela, todo atalho é recusado.
+if (process.platform === 'linux') {
+  app.commandLine.appendSwitch('enable-features', 'GlobalShortcutsPortal')
+}
+
 // Precisa vir antes da trava de instância única, que é por pasta de dados, e de qualquer leitura
 // de app.getPath('userData').
 const userDataOverride = resolveUserDataOverride({
