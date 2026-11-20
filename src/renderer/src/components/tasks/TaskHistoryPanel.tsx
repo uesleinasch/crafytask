@@ -137,16 +137,16 @@ export function TaskHistoryPanel({
 
   const timelineItem = (
     item: TaskHistoryItem
-  ): { key: string; dot: React.JSX.Element; children: React.JSX.Element } => {
+  ): { key: string; icon: React.JSX.Element; content: React.JSX.Element } => {
     if (item.kind === 'status') {
-      const StatusIcon = item.to_status ? STATUS_ICONS[item.to_status] : Flag
+      const StatusIcon = item.to_status ? STATUS_ICONS[item.to_status] : ArrowRight
       const color = item.to_status
         ? STATUS_COLORS[item.to_status][mode].fg
         : token.colorTextSecondary
       return {
         key: historyItemKey(item),
-        dot: <StatusIcon {...ICON} color={color} />,
-        children: (
+        icon: <StatusIcon {...ICON} color={color} />,
+        content: (
           <Flex vertical gap={2}>
             <Flex gap={6} align="center" wrap>
               {item.from_status ? (
@@ -169,8 +169,8 @@ export function TaskHistoryPanel({
     const KindIcon = kind.icon
     return {
       key: historyItemKey(item),
-      dot: <KindIcon {...ICON} color={token.colorTextSecondary} />,
-      children: (
+      icon: <KindIcon {...ICON} color={token.colorTextSecondary} />,
+      content: (
         <Flex vertical gap={4}>
           <Flex gap={6} align="center" wrap>
             <Text strong>{kind.label}</Text>
