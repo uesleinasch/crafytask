@@ -11,6 +11,7 @@ import { registerIntegrationTools } from './tools/integrations'
 import { registerNotebookTools } from './tools/notebooks'
 import { registerNotesTools } from './tools/notes'
 import { registerPlanningTools } from './tools/planning'
+import { registerSearchTools } from './tools/search'
 import { registerStructureTools } from './tools/structure'
 import { registerTaskTools } from './tools/tasks'
 import { registerTimerTools } from './tools/timer'
@@ -44,6 +45,7 @@ export function createMcpServer(bulkThreshold: number, confirmStore: ConfirmStor
   registerIntegrationTools(server, ctx)
   registerAppTools(server)
   registerBriefingTools(server)
+  registerSearchTools(server)
   registerPrompts(server)
 
   return server

@@ -159,6 +159,11 @@ header, and the extra height can be scrolled by a programmatic `scrollIntoView` 
   the Notion sync serializes both fields whole.
 - Never enrich rows one by one: `enrichTasks(rows)` resolves tags, contexts, subtask counts and
   `is_blocked` with four aggregate queries per batch.
+- `tasks.notes_text` is the plain text of `notes`, derived in `updateTaskNotes` (the only writer
+  of task notes: IPC, MCP and the Jira import go through it) with `notesPlainText.ts`, same design
+  as `notebook_pages.search_text`. `searchQueries.ts` (pure, tested) owns the column's migration
+  and `searchAll`, the text search over tasks, pages, history and projects behind the MCP tool
+  `search`.
 - Screens that need a slice ask for that slice: `task:listRunning` (timer store),
   `task:listActiveLight` (task pickers), `schedule:getForDate` (today's tasks). Pulling the whole
   list to `Array.filter` it in the renderer is the pattern this replaced.
