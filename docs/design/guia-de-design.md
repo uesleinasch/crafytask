@@ -120,7 +120,7 @@ ficam em `TIME_LEAK_THRESHOLDS`, e `timeLeakLevel` (ambos em `theme/semantic.ts`
 **Energia** — não usa cor: um medidor de três barras na cor primária (cheias = nível), com tooltip
 "Energia alta/média/baixa". O emoji atual sai.
 
-**Projetos, contextos e tags** — cor escolhida pelo usuário numa paleta fixa de dez, `USER_COLORS`
+**Projetos, contextos, tags, cadernos e seções** — cor escolhida pelo usuário numa paleta fixa de dez, `USER_COLORS`
 em `semantic.ts`: `#E5484D #A84803 #A15C00 #0B7A50 #0F6E7A #2A62D6 #5B47EB #7647B0 #B8327A #5D6B82`.
 Os seletores oferecem só essas dez. Uma cor já gravada fora delas continua valendo e
 aparece como está. A cor aparece como ponto de 8px ao lado do nome, nunca como fundo de texto. A
@@ -214,7 +214,9 @@ tipografia juntos. Ela existe só no protótipo: nenhuma fase a constrói no app
 - **Contêiner de página:** `PageContainer` (em `components/shell/`) dá à página padding de 20px 24px
   32px (12px 12px 24px abaixo de `md`) e largura máxima de 1480px, centralizada. Calendário,
   Cadernos, modo foco e terminal usam a variante de largura total. No protótipo são as classes
-  `.ct-page` e `.ct-page-narrow`.
+  `.ct-page` e `.ct-page-narrow`. Cadernos usa ainda a **altura total**: as colunas rolam por
+  dentro e a página não, com padding de 16px 24px (12px abaixo de `md`), classe `.ct-nb` no
+  protótipo.
 - **Espaço:** múltiplos de 4. 16px entre cards, 8px entre controles de uma barra.
 - **Densidade:** padrão "confortável" (`controlHeight` 32, linhas de tabela com 10px). "Compacta"
   liga o `compactAlgorithm`, passa `componentSize="small"` ao `ConfigProvider` e usa linhas de 6px;
@@ -247,6 +249,7 @@ só porque roda de CDN; os nomes lucide de cada lugar estão nas tabelas acima e
 | Contextos e tags      | abas `MapPin`/`Tags` · busca `Search` · Cards `LayoutGrid` · Tabela `Table2` · novo `Plus` · mais `Ellipsis` · Ver tarefas `ListTodo` · editar `Pencil` · mesclar `Merge` · excluir `Trash2` |
 | Arquivo               | busca `Search` · abrir `FileText` · desarquivar `ArchiveRestore` · excluir de vez `Trash2` · limpar o arquivo `Eraser` · mais `Ellipsis` · grupo por mês `CalendarDays` · grupo sem projeto `Folder` |
 | Legenda do calendário | urgente `Flame` · prioridade `Flag` · time leak `Clock` · no Google `CalendarSync`                                                                                                                                                             |
+| Cadernos              | caderno `BookOpen` · busca `Search` · novo `Plus` · mais `Ellipsis` · sincronizar `RefreshCw` · exportar `Download` · editar `Pencil` · mover `ArrowUp`/`ArrowDown` (abas: `ArrowLeft`/`ArrowRight`) · mover para a seção `ArrowLeftRight` · nova subpágina `FilePlus2` · promover `IndentDecrease` · tornar subpágina `IndentIncrease` · excluir `Trash2` · Páginas (abaixo de `md`) `ListTree` · Notas `FileText` · Desenho `PenTool` · modo foco `Expand`/`Shrink` |
 | Calendário            | painel A agendar `PanelLeftOpen`/`PanelLeftClose` · gaveta `ListTodo` · alça `GripVertical` · reservar `Plus` · repetir `Copy` · abrir `FileText` · timer `Play` · excluir `Trash2` · tarefa com horário `Calendar` |
 
 ## 7. AppShell
@@ -550,6 +553,45 @@ Mesmo esqueleto das outras telas, com navegação própria porque são muitas se
   time leak, faixa de horas do calendário, os quatro avisos de prazo, intervalo do envio das notas
   ao Notion). Também novos: alterar o atalho da captura e backup automático (diário, guarda 14).
   Tudo isso hoje é fixo no código (E8) e precisa de backend; no protótipo leva a etiqueta "novo".
+
+### Cadernos
+
+Anotações livres no molde do OneNote: caderno → seção → página, com até 2 níveis de subpágina.
+Variante de altura total (§5), em colunas que ocupam a altura da área, sem rolar a página:
+
+- **Coluna de cadernos** (248px, a partir de `lg`): busca nas páginas no topo (`AutoComplete` com
+  título, caderno › seção e um trecho; o título que bate vem primeiro), `Menu` com os cadernos
+  (ícone `BookOpen` na cor do caderno) e "Novo caderno" no pé. Cada caderno tem `⋯` no hover e o
+  mesmo menu no botão direito: Sincronizar com o Notion, Exportar em Markdown, Editar, Mover para
+  cima, Mover para baixo, Excluir. Arrastar o caderno também reordena. Abaixo de `lg` a coluna vira
+  uma barra: `Select` do caderno (com "Novo caderno" no fim da lista), `⋯` e a busca.
+- **Seções** em `Tabs` `editable-card` acima das páginas e do editor: ponto na cor da seção e nome,
+  `+` cria, `⋯` à direita e botão direito na aba (Editar, Mover para a esquerda, Mover para a
+  direita, Excluir). Arrastar a aba reordena. Soltar uma página numa aba move a página, com as
+  subpáginas, para o fim daquela seção; a aba ganha um contorno tracejado enquanto a página está
+  por cima.
+- **Páginas** num `Tree` (card de 280px com "Páginas" e "Nova página"): linhas-guia, subpáginas
+  recolhíveis, arrastar entre páginas reordena e soltar sobre uma página a torna subpágina; a
+  soltura que passaria de 2 níveis não é aceita. Cada linha tem "Nova subpágina" e `⋯` no hover, e
+  o mesmo menu no botão direito: Nova subpágina, Promover, Tornar subpágina da anterior, Mover para
+  cima, Mover para baixo, Mover para a seção ▸, Excluir. Tudo que se faz arrastando tem caminho
+  pelo menu. Página sem título aparece em itálico, em `colorTextTertiary`. Abaixo de `md` a árvore
+  vai para um `Drawer` aberto pelo botão "Páginas".
+- **Editor** no molde do detalhe da tarefa: título grande sem borda (salva sozinho), "criada ·
+  editada" em mono, abas Notas e Desenho, ações das notas e **Modo foco**, o mesmo da tarefa sem o
+  timer. O Modo foco substitui os antigos Maximizar e Zen da página. As ações diferem da tarefa:
+  a página **exporta uma vez**, pelo diálogo de salvar `.md` (`Download`), em vez de manter um
+  arquivo atualizado a cada salvamento; ao lado, Salvar e sincronizar com o Notion.
+- **Cor** de caderno e seção na paleta fixa de dez (§3.2), no mesmo modal de nome e cor
+  ("Novo caderno", "Editar caderno", "Nova seção", "Editar seção"). Cada amostra tem nome
+  ("Cor azul"), não o hex.
+- **Vazios** com `Empty` e o próximo passo: sem caderno ("Novo caderno"), sem seção ("Nova
+  seção"), seção sem página ("Nova página").
+- **Excluir** confirma com o que vai junto e quantos (seções, páginas, subpáginas, com notas,
+  imagens e desenhos) e o que não acontece: as tarefas não mudam e menções `@` às páginas ficam sem
+  destino. No Notion, as páginas vão para o arquivo só com o envio automático ligado.
+- A árvore de páginas e o editor ficam cada um num `RegionBoundary` (os editores de notas e de
+  desenho já têm o seu).
 
 ### Arquivo
 

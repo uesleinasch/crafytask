@@ -23,9 +23,9 @@ Desempate: guia e protótipo discordando, vale o protótipo e o guia é corrigid
 
 - §3 Cor (base, domínio GTD, time leak, energia, gráficos), §4 Tipografia, §5 Forma, §6 Ícones.
 - §7 AppShell: sidebar, Header, paleta Ctrl+K, barra de status, RegionBoundary, modo foco, detalhe da task.
-- §8 Responsividade e telas: Tabela de tarefas, Projetos (lista e detalhe), Horizontes, Contextos e tags, Configurações, Arquivo, Hoje, Calendário, Revisão semanal, Dashboard.
+- §8 Responsividade e telas: Tabela de tarefas, Projetos (lista e detalhe), Horizontes, Contextos e tags, Configurações, Cadernos, Arquivo, Hoje, Calendário, Revisão semanal, Dashboard.
 - §9 Modo escuro, §10 componentes atuais → antd, §11 padrões de tela, §14 proibido.
-- Cadernos, Terminal, timer flutuante e captura rápida não têm protótipo: seguem tokens, §7 e os padrões das outras telas.
+- Terminal, timer flutuante e captura rápida não têm protótipo: seguem tokens, §7 e os padrões das outras telas.
 
 ## Construir: ao mexer em tela ou componente
 

@@ -1412,7 +1412,27 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/{pages/NotebooksPage.tsx,components/notebooks/*.tsx}",
-        "padroes": ["<Tree\\b|<Menu\\b", "<RegionBoundary"]
+        "padroes": ["<Tree\\b", "<Menu\\b", "<RegionBoundary"]
+      }
+    },
+    {
+      "id": "F7.20",
+      "fase": "F7",
+      "titulo": "Cadernos: busca em AutoComplete, seções em Tabs, Select e Drawer nas telas estreitas, vazios com Empty e Modo foco",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/{pages/NotebooksPage.tsx,components/notebooks/*.tsx}",
+        "padroes": ["<AutoComplete\\b", "type=\"editable-card\"", "<Empty\\b", "<Select\\b", "<Drawer\\b", "FocusOverlay|Workspace\\b"]
+      }
+    },
+    {
+      "id": "F7.21",
+      "fase": "F7",
+      "titulo": "Cadernos sem Maximizar e Zen próprios (o Modo foco da tarefa substitui os dois)",
+      "check": {
+        "tipo": "ausente",
+        "arquivos": "src/renderer/src/{pages/NotebooksPage.tsx,components/notebooks/*.tsx}",
+        "padrao": "onZen|onMaximize|viewMode"
       }
     },
     {
