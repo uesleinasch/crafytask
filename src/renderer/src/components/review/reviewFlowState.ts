@@ -39,7 +39,7 @@ export const REVIEW_STEP_META: Record<ReviewStepKey, ReviewStepMeta> = {
     question:
       'Reuniões, sessões e entregas dos últimos 7 dias. Alguma gerou ação, recado ou pendência?',
     open: {
-      route: (today) => calendarRoute('week', addDays(today, -7)),
+      route: (today) => calendarRoute('week', addDays(today, -3)),
       text: 'Abre o Calendário na semana passada'
     }
   },

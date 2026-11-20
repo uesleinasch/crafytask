@@ -81,8 +81,10 @@ agrupado por fase (✓ feito, – pulado) mais a opção "Fechar a revisão".
 Título com fase, "passo N de 10", ícone e nome; à direita, **Abrir a tela** (só o ícone abaixo de
 `md`), que grava as notas e leva à tela completa (Inbox, Próximas, Aguardando e Someday em Tarefas,
 Calendário, Projetos, Horizontes; Esvaziar a cabeça não tem). Semana que passou abre o Calendário
-na Semana de 7 dias atrás (`?visao=semana&semana=<data>`) e Próximas duas semanas abre a Agenda a
-partir de hoje (`?visao=agenda`); a rota é montada no clique (`reviewStepRoute`). Embaixo do título,
+na Semana que contém hoje − 3 dias (`?visao=semana&semana=<data>`): nenhuma visão da grade mostra
+7 dias corridos, e essa é a semana com a maior parte dos últimos 7 dias (a atual, numa revisão de
+sexta a domingo). Próximas duas semanas abre a Agenda a partir de hoje
+(`?visao=agenda&semana=<hoje>`). A rota é montada no clique (`reviewStepRoute`). Embaixo do título,
 a pergunta do passo;
 o conteúdo fica num `RegionBoundary` próprio. Rodapé: **Anterior**, **Pular** e **Concluir passo**
 (primário, `Ctrl+Enter`, escrito no tooltip; o atalho não age com um modal aberto por cima). Marcar um passo vai para o próximo pendente; sem

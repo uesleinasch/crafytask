@@ -692,6 +692,8 @@ o que de fato aconteceu (sessões do timer) na mesma grade.
   do tema; sai o azul exclusivo desta tela). Visão inicial por largura: Semana a partir de `lg`,
   3 dias em `md`, Dia abaixo disso. Abaixo de `md` o `Segmented` de visão vira `Select`. O
   calendário ocupa a largura toda do conteúdo (variante de largura total do `PageContainer`).
+  A URL pode abrir a tela numa visão e numa data (`?visao=semana&semana=AAAA-MM-DD`); é assim que
+  a revisão semanal leva à semana que passou e à Agenda das próximas duas semanas.
 - **"Mostrar"** é ao mesmo tempo filtro e legenda (corrige D4): Blocos de tempo, Tarefas com
   horário, Agendadas sem horário, Prazos, Sessões registradas e Fins de semana, cada um com a
   amostra do que aparece na grade, mais a chave dos ícones (urgente, prioridade, time leak, Google).

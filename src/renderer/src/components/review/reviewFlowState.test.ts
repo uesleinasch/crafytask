@@ -138,8 +138,8 @@ describe('reviewStepRoute', () => {
   const route = (key: 'past' | 'upcoming' | 'inbox'): string =>
     reviewStepRoute(REVIEW_STEP_META[key].open!, '2026-11-20')
 
-  it('abre o calendário na semana passada e na agenda de hoje', () => {
-    expect(route('past')).toBe('/calendar?visao=semana&semana=2026-11-13')
+  it('abre a semana com a maior parte dos últimos 7 dias e a agenda de hoje', () => {
+    expect(route('past')).toBe('/calendar?visao=semana&semana=2026-11-17')
     expect(route('upcoming')).toBe('/calendar?visao=agenda&semana=2026-11-20')
   })
 
