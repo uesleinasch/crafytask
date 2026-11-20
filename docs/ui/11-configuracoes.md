@@ -38,7 +38,6 @@ item **Configurações** no rodapé da sidebar.
   `mcpGetStatus`, `appGetAutostart` em paralelo), aparece um `Spin`; a navegação já está lá.
 - A página é dona dos estados e os repassa às seções com um callback de mudança. Por isso o ponto
   na navegação muda no mesmo instante em que a seção conecta ou desliga algo.
-- Notion, Google Calendar e Jira ainda usam as peças antigas dentro de um `Card` (migram na F7-d2).
 
 ## Peças compartilhadas (`components/settings/`)
 
@@ -48,16 +47,22 @@ item **Configurações** no rodapé da sidebar.
 | `SettingRow` | título e descrição à esquerda, controle à direita (`Switch`, `Input`, botão); quebra para baixo quando falta espaço; `vertical` põe o controle embaixo |
 | `SettingsHeader` | cabeçalho da seção, descrito acima |
 | `Kbd` / `KeyCombo` (`components/shell/Kbd.tsx`) | teclas em `<kbd>` mono com borda (guia §11) |
-| `ToggleRow`, `Switch`, `OutLink`, `Callout` (`SettingsPrimitives.tsx`) | peças antigas, só nas integrações até a F7-d2 |
+| `SetupGuide`, `GuideLink`, `GuideField` (`SetupGuide.tsx`) | guia de configuração das integrações, descrito abaixo; link externo com ícone e rótulo de campo dentro do passo |
 | `settingsStatus.ts` | puro e testado: estado de cada integração, `STATUS_BADGE`, tipo `NotionConfig`, `errorMessage` (tira o prefixo `Error invoking remote method…`) |
 
-### `SetupSteps`
+### `SetupGuide`
 
-Lista numerada vertical. Cada passo é **manual** (você marca "Marcar como feito"; os ids ficam no
-`localStorage` sob a chave da seção) ou **automático** (`autoDone`, derivado do estado real — ex.:
-credenciais salvas, conta conectada). O **primeiro passo não feito** é o atual (número em
-`bg-slate-900`); feitos ficam com check esmeralda e recolhidos, e o título vira um botão para
-reabrir. Lógica em `stepProgress.ts` (pura, testada).
+`Steps` vertical do antd. Cada passo é **manual** (botão "Marcar como feito" / "Desmarcar"; os ids
+ficam no `localStorage` sob a chave da seção) ou **automático** (`autoDone`, derivado do estado
+real — ex.: credenciais salvas, conta conectada). O **primeiro passo não feito** é o atual
+(`process`); os feitos ficam `finish`. O conteúdo de todos os passos fica aberto, com os campos
+dentro do passo (largura até 420px). Avisos são `Alert` (`warning`/`info`). Lógica em
+`stepProgress.ts` (pura, testada).
+
+Sem a integração conectada, o guia fica num card "Configurar a conexão". Conectada, ele vai para um
+`Collapse` fechado abaixo dos cards, para trocar credenciais. Mensagens de resultado usam
+`App.useApp().message`; ações destrutivas (limpar, desconectar) passam por `Popconfirm` que diz o
+que sai do CrafyTask e o que continua no serviço.
 
 ## Seções
 
@@ -100,37 +105,41 @@ Valores em `localStorage` (`lib/terminalPrefs.ts`).
 
 ### Notion
 
-- **Sem banco criado** → `SetupSteps` (`settings.notion.steps`):
+- **Sem banco criado** → `SetupGuide` (`settings.notion.steps`):
   1. Criar a integração (link para `notion.so/my-integrations`).
   2. API Key + **Testar conexão** (salva antes de testar). Automático: feito quando há chave salva e
      o teste passou ou o banco já existe.
   3. Conectar a integração a uma página (⋯ → Conexões → Adicionar conexões) + aviso de que ela só
      enxerga páginas conectadas.
   4. Page ID opcional + **Criar banco GTD APP**. Automático: feito quando há `databaseId`.
-- **Com banco** → id do banco e última sincronização; `ToggleRow` de auto-sync (salva na hora);
-  **Sincronizar todas as tarefas**; **Limpar configurações** (com confirmação — só apaga o
-  `notion-config.json`, nada no Notion); e o recolhível "Ver guia de configuração e trocar a API
-  Key" com os mesmos passos.
+- **Com banco** → card **Banco conectado**: id do banco em mono, última sincronização e **Abrir no
+  Notion** (`app:openExternal`); `Switch` de auto-sync (salva na hora); **Sincronizar agora**;
+  **Limpar** (com `Popconfirm` — só apaga o `notion-config.json`, nada no Notion). Abaixo, o
+  `Collapse` "Guia de configuração e troca da API key" com os mesmos passos.
 - Os antigos blocos azul/âmbar de ajuda no pé da página viraram o passo 3.
 
 ### Google Calendar
 
-- **Não conectado** → `SetupSteps` (`settings.gcal.steps`) com o guia do Google Cloud embutido:
+- **Não conectado** → `SetupGuide` (`settings.gcal.steps`) com o guia do Google Cloud embutido:
   1. Criar projeto · 2. Ativar a Calendar API · 3. Branding (com aviso: **não enviar logo**, exige
   verificação) · 4. Audience → Publish app (aviso: em Testing o acesso expira em 7 dias) ·
   5. Client "Desktop app" — os campos **Client ID** e **Client Secret** ficam dentro deste passo,
   com "Salvar credenciais" quando editados (automático: credenciais salvas) · 6. **Conectar com o
   Google** (automático: conectado), com a instrução Avançado → Acessar CrafyTask.
-- **Conectado** → `ToggleRow` de auto-sync, **Ressincronizar todas**, **Desconectar** (a agenda
-  "TickTask" continua no Google) e o recolhível "Ver guia de configuração e trocar credenciais".
+- **Conectado** → card **Agenda TickTask**: `Switch` de auto-sync, **Ressincronizar**,
+  **Desconectar** (com `Popconfirm`: a agenda "TickTask", os eventos e as tarefas continuam) e o
+  `Collapse` "Guia de configuração e troca de credenciais".
 - O secret nunca volta ao renderer: o campo mostra `•••••••• (salvo)`.
 
 ### Jira
 
+- Cards: **Conta** (site, e-mail, token e **Desconectar**), **Boards** (só conectado), **Destino das
+  tasks importadas** e **Opções**. Desconectar passa por `Popconfirm`: saem site, e-mail, token e
+  boards; as tasks importadas e as issues continuam.
 - Autenticação por **site Jira Cloud + e-mail + API token** (Basic auth). O token vai para o
   `safeStorage`; o campo mostra `•••••••• (salvo)` e nunca volta ao renderer. Trocar site ou e-mail
   exige um token novo. "Salvar e testar" valida com `/myself`.
-- **Boards**: "Carregar boards" lista os boards do site agrupados por espaço (nome + chave; boards
+- **Boards**: "Carregar boards" (no cabeçalho do card) lista os boards do site agrupados por espaço (nome + chave; boards
   sem espaço, como os de usuário, vão para "Sem espaço" no fim); checkboxes escolhem quais
   alimentam o app.
 - **Importar agora**: traz as issues atribuídas a você nos boards marcados (abertas, ou concluídas
@@ -144,17 +153,18 @@ Valores em `localStorage` (`lib/terminalPrefs.ts`).
 - Excluir uma task importada não impede que ela volte na próxima importação; para tirá-la da
   frente, arquive.
 - **Projeto por espaço**: "Projeto padrão" e uma linha por espaço conhecido (dos boards marcados e
-  das issues já importadas, chave em `font-mono`), cada uma com um `select` de projeto. Task nova vai
+  das issues já importadas, chave em mono), numa `Table` com um `Select` de projeto por linha. Task nova vai
   para o projeto do espaço, senão para o padrão; task já vinculada **sem projeto** recebe o do espaço
   na importação, mas uma task movida para outro projeto não é tocada. Mapeamento para projeto
   apagado é ignorado. Fica em `jira-config.json` (`spaceProjects`, chave do espaço → id).
-- **Status inicial das tasks novas**: a lista vem dos status vistos na última importação. Só vale
+- **Status inicial das tasks novas**: `Table` com os status vistos na última importação e um
+  `Select` de status local (`StatusChip`) por linha. Só vale
   quando a importação cria a task. "Padrão da categoria" usa a categoria Jira (A fazer → Inbox, Em
   andamento → Executando, Concluído → Finalizada); uma escolha explícita vence.
-- **Opções**: "Sincronizar
-  com o Notion" (opt-in: tasks do Jira só vão ao Notion se ligado, inclusive no sync em lote e no
-  ressync após mudança de tag), "Registrar o tempo no Jira (worklog)" e importação automática em
-  intervalos de 15 min / 30 min / 1 h (só roda com board escolhido).
+- **Importação automática** (card Boards): 15 min / 30 min / 1 h (só roda com board escolhido).
+- **Opções**: "Registrar o tempo no Jira (worklog)" e "Sincronizar tasks do Jira com o Notion"
+  (opt-in: tasks do Jira só vão ao Notion se ligado, inclusive no sync em lote e no ressync após
+  mudança de tag).
 - **Worklog** (opt-in): ligar grava `worklogSince` (agora) em `jira-config.json`. A partir daí, cada
   sessão encerrada de 1 min ou mais (play/pause ou tempo manual) em task vinculada vira um worklog
   na issue (`adjustEstimate=auto`), e o id volta para `time_entries.jira_worklog_id`. Tempo anterior

@@ -175,6 +175,7 @@ O botão que leva à tela diz "Arquivadas"; o título da tela diz "Arquivo Morto
 ### D3. `DeleteConfirmDialog` genérico fala em "tarefa" para tudo
 
 **Resolvida para contextos na F6-a:** a exclusão de contexto cita o uso, como a de tag.
+**Resolvida na F7-d2:** o último uso (limpar o Notion) virou `Popconfirm` e o componente saiu.
 
 O texto padrão é *"Esta ação não pode ser desfeita. Isso irá deletar permanentemente a tarefa."* —
 exibido também ao excluir **contextos** e ao apagar tarefas arquivadas. Só a tela de tags
