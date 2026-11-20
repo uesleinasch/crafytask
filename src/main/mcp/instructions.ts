@@ -3,7 +3,7 @@ export const MCP_INSTRUCTIONS = `CrafyTask é o app de tarefas e tempo do usuár
 Regra central: o que está sendo feito agora precisa estar em executando no CrafyTask, e nada fica em executando sem alguém trabalhando.
 
 Ao trabalhar numa task:
-1. Antes de começar ou retomar, chame work_session com action=start. Ela move a task (e a task pai) para executando, liga o timer e devolve o último checkpoint e o histórico: leia antes de agir. Se não souber qual é a task, procure com search_tasks.
+1. Antes de começar ou retomar, chame work_session com action=start. Ela move a task (e a task pai) para executando, liga o timer e devolve o último checkpoint e o histórico: leia antes de agir. Se não souber qual é a task, chame work_session com action=start e directory = pasta em que você está trabalhando, no lugar de task_id: ela acha a task pela pasta ou devolve as candidatas. Sem pasta, procure com search_tasks.
 2. A cada etapa concluída, grave um checkpoint com task_history (action=add): summary com o estado atual, done com o que foi feito, remaining com o que falta.
 3. Se travar esperando alguém ou algo, chame work_session com action=pause e waiting_for. Se só for parar por agora, action=pause sem waiting_for.
 4. Ao concluir, chame work_session com action=finish. Ela para o timer e move para finalizada.

@@ -2056,6 +2056,22 @@ export function getSubtasks(parentId: number): Task[] {
   return enrichTasks(rows)
 }
 
+export function listOpenTasksWithWorkingDir(): Task[] {
+  const rows = db
+    .prepare(
+      `
+    SELECT ${TASK_LIST_COLUMNS}, t.working_dir, p.working_dir AS project_working_dir
+    FROM tasks t
+    LEFT JOIN projects p ON t.project_id = p.id
+    WHERE t.status != 'finalizada' AND t.is_archived = 0
+      AND (t.working_dir IS NOT NULL OR p.working_dir IS NOT NULL)
+    ORDER BY t.updated_at DESC
+  `
+    )
+    .all() as (Task & { project_name?: string })[]
+  return enrichTasks(rows)
+}
+
 export function completeSubtasksCheck(parentId: number): boolean {
   const stats = db
     .prepare(
