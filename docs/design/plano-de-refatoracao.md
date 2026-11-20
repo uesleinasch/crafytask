@@ -24,7 +24,7 @@ ids que elas fecham. Itens marcados como manuais só fecham quando o usuário co
 - **O modo escuro ficou atrás de uma flag até a F7-d3.** Enquanto havia tela sem tokens escuros, o
   seletor ficava escondido e `'light'` era o padrão. A F7-d3 mostrou o seletor (Configurações →
   Aparência, menu de aparência do header e paleta) e mudou o padrão para `'system'` em
-  `shared/themePreference.ts`. O timer flutuante e a captura rápida ainda têm cores fixas até a F8.
+  `shared/themePreference.ts`. O timer flutuante e a captura rápida entraram no tema na F8-a.
 - **Tailwind fica só para layout.** Depois da migração, classes de cor do Tailwind são proibidas
   (`F9.1`); espaçamento e flex/grid podem continuar, se não houver equivalente direto no antd.
 - **Uma subtarefa = um PR** em `production`, no fluxo do CLAUDE.md (`feature/…`, squash). Cada PR

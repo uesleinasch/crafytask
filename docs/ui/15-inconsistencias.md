@@ -37,7 +37,7 @@ com texto branco. Ambos aparecem em listas do mesmo app.
 ### A4. Cinco raios de borda sem regra
 
 `rounded-sm` (65×), `rounded-md` (36×), `rounded-lg` (83×), `rounded-full` (82×) e `rounded-2xl`
-(2×, só na captura rápida). Um cartão pode ser `rounded-sm` e conter blocos `rounded-lg`.
+(2×, só na captura rápida, até a F8-a). Um cartão pode ser `rounded-sm` e conter blocos `rounded-lg`.
 
 ### A5. Sombras sobreviveram à migração "flat"
 
@@ -132,12 +132,12 @@ no calendário.
 
 ### C2. Três desenhos para "timers em execução"
 
-**Em parte resolvida na F1-d e na F7-b2:** o `FloatingTimer` deu lugar à pílula do header e o
-painel do dashboard saiu. Falta a janela flutuante (F8).
+**Resolvida na F1-d, na F7-b2 e na F8-a:** o `FloatingTimer` deu lugar à pílula do header, o
+painel do dashboard saiu e a janela flutuante passou a seguir a pílula (ponto ao vivo, nome que abre
+a tarefa, tempo mono, "Pausar" sem vermelho).
 
 Eram `FloatingTimer` (pílula preta fixa), `RunningNowPanel` (painel esmeralda no dashboard) e
-`FloatTimerPage` (janela escura): mesma informação, três layouts, três conjuntos de ações. Hoje
-sobra só a `FloatTimerPage`.
+`FloatTimerPage` (janela escura): mesma informação, três layouts, três conjuntos de ações.
 
 ### C3. `/archived` é um filtro promovido a tela
 

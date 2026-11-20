@@ -1,10 +1,14 @@
 import { App } from 'antd'
 import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { toast } from '@renderer/components/ui/sonner'
 import { useTimerStore } from '@renderer/stores/timerStore'
 
 export function useShellEvents(): void {
   const { message } = App.useApp()
+  const navigate = useNavigate()
+
+  useEffect(() => window.api.onNavigate((path) => navigate(path)), [navigate])
 
   useEffect(
     () =>

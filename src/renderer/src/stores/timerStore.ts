@@ -47,6 +47,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
     const list = Object.values(timers).map((t) => ({
       taskId: t.task.id,
       taskName: t.task.name,
+      category: t.task.category,
       seconds: t.displaySeconds
     }))
     if (list.length > 0) {

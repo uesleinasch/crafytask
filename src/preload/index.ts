@@ -68,7 +68,8 @@ import type {
   CreatePageInput,
   MovePageInput,
   PageLocation,
-  PageSearchResult
+  PageSearchResult,
+  FloatTimerData
 } from '../shared/types'
 import type { ThemePreference } from '../shared/themePreference'
 import type { WorkflowPrefs, WorkflowPrefsPatch } from '../shared/workflowPrefs'
@@ -220,22 +221,18 @@ const api = {
   },
 
   // Float window controls
-  updateFloatTimer: (
-    timers: { taskId: number; taskName: string; seconds: number }[]
-  ): Promise<void> => ipcRenderer.invoke('float:updateTimer', timers),
+  updateFloatTimer: (timers: FloatTimerData[]): Promise<void> =>
+    ipcRenderer.invoke('float:updateTimer', timers),
   clearFloatTimer: (): Promise<void> => ipcRenderer.invoke('float:clearTimer'),
   restoreFromFloat: (): Promise<void> => ipcRenderer.invoke('float:restore'),
   stopFromFloat: (taskId: number): Promise<void> => ipcRenderer.invoke('float:stopTimer', taskId),
   stopAllFromFloat: (): Promise<void> => ipcRenderer.invoke('float:stopAll'),
+  openTaskFromFloat: (taskId: number): Promise<void> =>
+    ipcRenderer.invoke('float:openTask', taskId),
 
   // Float window events
-  onFloatUpdate: (
-    callback: (timers: { taskId: number; taskName: string; seconds: number }[]) => void
-  ): (() => void) => {
-    const handler = (
-      _: Electron.IpcRendererEvent,
-      timers: { taskId: number; taskName: string; seconds: number }[]
-    ): void => {
+  onFloatUpdate: (callback: (timers: FloatTimerData[]) => void): (() => void) => {
+    const handler = (_: Electron.IpcRendererEvent, timers: FloatTimerData[]): void => {
       callback(timers)
     }
     ipcRenderer.on('float:update', handler)
@@ -556,6 +553,11 @@ const api = {
     const listener = (): void => callback()
     ipcRenderer.on('app:rendererRecovered', listener)
     return () => ipcRenderer.removeListener('app:rendererRecovered', listener)
+  },
+  onNavigate: (callback: (path: string) => void): (() => void) => {
+    const listener = (_: Electron.IpcRendererEvent, path: string): void => callback(path)
+    ipcRenderer.on('app:navigate', listener)
+    return () => ipcRenderer.removeListener('app:navigate', listener)
   },
 
   // ===================== BACKUP =====================

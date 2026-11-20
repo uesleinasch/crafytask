@@ -259,7 +259,8 @@ import type {
   McpStatus,
   CreateTimeBlockInput,
   UpdateTimeBlockInput,
-  UnscheduledTaskFilters
+  UnscheduledTaskFilters,
+  FloatTimerData
 } from '../shared/types'
 
 // Protocolo custom para servir imagens locais das notas ao renderer.
@@ -290,7 +291,6 @@ if (!hasSingleInstanceLock) {
 let mainWindow: BrowserWindow | null = null
 let floatWindow: BrowserWindow | null = null
 let quickCaptureWindow: BrowserWindow | null = null
-type FloatTimerData = { taskId: number; taskName: string; seconds: number }
 let currentTimers: FloatTimerData[] = []
 let isQuitting = false
 let startHidden = shouldStartHidden(process.argv) || wantsQuickCapture(process.argv)
@@ -299,12 +299,12 @@ let startHidden = shouldStartHidden(process.argv) || wantsQuickCapture(process.a
 const FLOAT_WIDTH = 300
 const FLOAT_ROW_HEIGHT = 44
 const FLOAT_FOOTER_HEIGHT = 44
-const FLOAT_VPADDING = 16
+const FLOAT_BORDERS = 2
 const FLOAT_MAX_ROWS = 5
 
 function floatHeightFor(count: number): number {
   const rows = Math.min(Math.max(count, 1), FLOAT_MAX_ROWS)
-  return rows * FLOAT_ROW_HEIGHT + FLOAT_FOOTER_HEIGHT + FLOAT_VPADDING
+  return rows * FLOAT_ROW_HEIGHT + FLOAT_FOOTER_HEIGHT + FLOAT_BORDERS
 }
 
 let captureShortcut = DEFAULT_CAPTURE_SHORTCUT
@@ -577,6 +577,7 @@ function createQuickCaptureWindow(): void {
     skipTaskbar: true,
     resizable: false,
     movable: true,
+    hasShadow: false,
     show: false,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -704,10 +705,10 @@ async function changeCaptureShortcut(accelerator: unknown): Promise<AppPrefsStat
 
 // ===================== MAIN WINDOW =====================
 
-function revealMainWindow(): void {
+function revealMainWindow(route?: string): void {
   if (!mainWindow || mainWindow.isDestroyed()) {
     startHidden = false
-    createWindow()
+    createWindow(route)
     return
   }
 
@@ -730,7 +731,7 @@ function quitApp(): void {
   app.quit()
 }
 
-function createWindow(): void {
+function createWindow(route?: string): void {
   mainWindow = new BrowserWindow({
     width: 1024,
     height: 700,
@@ -786,9 +787,10 @@ function createWindow(): void {
   })
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+    const url = process.env['ELECTRON_RENDERER_URL']
+    mainWindow.loadURL(route ? `${url}#${route}` : url)
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    mainWindow.loadFile(join(__dirname, '../renderer/index.html'), route ? { hash: route } : {})
   }
 }
 
@@ -1093,18 +1095,22 @@ function setupIpcHandlers(): void {
     clearFloatWindowState()
     hideFloatWindow()
   })
-  ipcMain.handle('float:restore', () => {
-    if (mainWindow) {
-      mainWindow.restore()
-      mainWindow.focus()
-    }
-    hideFloatWindow()
-  })
+  ipcMain.handle('float:restore', () => revealMainWindow())
   ipcMain.handle('float:stopTimer', async (_, taskId: number) => {
     const result = await stopTask(taskId)
     autoSyncTask(taskId)
     mainWindow?.webContents.send('timer:stopped', taskId)
     return result
+  })
+  ipcMain.handle('float:openTask', (_, taskId: number) => {
+    if (!Number.isInteger(taskId) || taskId <= 0) return
+    const path = `/task/${taskId}`
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      revealMainWindow(path)
+      return
+    }
+    revealMainWindow()
+    mainWindow.webContents.send('app:navigate', path)
   })
   ipcMain.handle('float:stopAll', async () => {
     const ids = currentTimers.map((t) => t.taskId)
@@ -1239,10 +1245,6 @@ function setupIpcHandlers(): void {
   })
   ipcMain.handle('quickCapture:capture', (_, name: string) => {
     const task = createTask({ name })
-    // Fechar a janela de captura
-    if (quickCaptureWindow && !quickCaptureWindow.isDestroyed()) {
-      quickCaptureWindow.close()
-    }
     // Notificar a janela principal para atualizar
     mainWindow?.webContents.send('tasks:refresh')
     // Mostrar notificação
