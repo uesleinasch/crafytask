@@ -2,8 +2,7 @@ export type ThemePreference = 'system' | 'light' | 'dark'
 export type ThemeMode = 'light' | 'dark'
 export type Density = 'comfortable' | 'compact'
 
-// As telas legadas não têm tema escuro: o padrão só pode virar 'system' quando todas migrarem.
-export const DEFAULT_THEME_PREFERENCE: ThemePreference = 'light'
+export const DEFAULT_THEME_PREFERENCE: ThemePreference = 'system'
 export const DEFAULT_DENSITY: Density = 'comfortable'
 
 export function isThemePreference(value: unknown): value is ThemePreference {

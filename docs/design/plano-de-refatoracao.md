@@ -21,12 +21,10 @@ ids que elas fecham. Itens marcados como manuais só fecham quando o usuário co
   F9. Cada tela é migrada inteira numa subtarefa: nada de tela meio antd, meio shadcn.
 - **O shell vem primeiro.** Com o AppShell pronto (F1), toda tela antiga já ganha navegação lateral,
   isolamento de falhas e barra de status, mesmo antes de ser migrada.
-- **O modo escuro fica atrás de uma flag até a F7.** As telas antigas não têm tokens escuros. O
-  seletor de tema só aparece em Configurações quando todas as telas estiverem migradas; até lá, a
-  flag `ticktask:theme` é ligada à mão por quem desenvolve: no DevTools da janela principal,
-  `localStorage.setItem('ticktask:theme', 'dark')` (ou `'system'`) e recarregar; `'light'` é o
-  padrão. A densidade compacta é `localStorage.setItem('ticktask:density', 'compact')`. A F7-d3
-  muda o padrão para `'system'` em `shared/themePreference.ts`.
+- **O modo escuro ficou atrás de uma flag até a F7-d3.** Enquanto havia tela sem tokens escuros, o
+  seletor ficava escondido e `'light'` era o padrão. A F7-d3 mostrou o seletor (Configurações →
+  Aparência, menu de aparência do header e paleta) e mudou o padrão para `'system'` em
+  `shared/themePreference.ts`. O timer flutuante e a captura rápida ainda têm cores fixas até a F8.
 - **Tailwind fica só para layout.** Depois da migração, classes de cor do Tailwind são proibidas
   (`F9.1`); espaçamento e flex/grid podem continuar, se não houver equivalente direto no antd.
 - **Uma subtarefa = um PR** em `production`, no fluxo do CLAUDE.md (`feature/…`, squash). Cada PR

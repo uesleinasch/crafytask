@@ -18,6 +18,7 @@ import {
   Calendar,
   DatabaseBackup,
   Info,
+  Palette,
   Plug,
   Search,
   Settings,
@@ -29,6 +30,7 @@ import { usePersistedState } from '@renderer/hooks/usePersistedState'
 import { PageContainer } from '@renderer/components/shell/PageContainer'
 import { RegionBoundary } from '@renderer/components/shell/RegionBoundary'
 import { AboutSection } from '@renderer/components/settings/AboutSection'
+import { AppearanceSection } from '@renderer/components/settings/AppearanceSection'
 import { BackupSection } from '@renderer/components/settings/BackupSection'
 import { GeneralSection } from '@renderer/components/settings/GeneralSection'
 import { GoogleCalendarSection } from '@renderer/components/settings/GoogleCalendarSection'
@@ -47,7 +49,16 @@ import {
   type StatusInfo
 } from '@renderer/components/settings/settingsStatus'
 
-type SectionId = 'geral' | 'terminal' | 'backup' | 'notion' | 'google' | 'jira' | 'mcp' | 'sobre'
+type SectionId =
+  | 'geral'
+  | 'aparencia'
+  | 'terminal'
+  | 'backup'
+  | 'notion'
+  | 'google'
+  | 'jira'
+  | 'mcp'
+  | 'sobre'
 
 interface NavItem {
   id: SectionId
@@ -110,6 +121,13 @@ export function SettingsPage(): React.JSX.Element {
           icon: Settings,
           keywords: 'iniciar sistema bandeja fechar captura atalho',
           description: 'Como o CrafyTask abre, fecha e captura.'
+        },
+        {
+          id: 'aparencia',
+          label: 'Aparência',
+          icon: Palette,
+          keywords: 'tema escuro claro sistema densidade compacta confortável',
+          description: 'Tema e densidade. Valem para as três janelas.'
         },
         {
           id: 'terminal',
@@ -254,6 +272,7 @@ export function SettingsPage(): React.JSX.Element {
       {current.id === 'geral' && (
         <GeneralSection autostart={autostart} onAutostartChange={setAutostart} />
       )}
+      {current.id === 'aparencia' && <AppearanceSection />}
       {current.id === 'terminal' && <TerminalSection />}
       {current.id === 'backup' && <BackupSection />}
       {current.id === 'notion' && <NotionSection config={notion} onConfigChange={setNotion} />}

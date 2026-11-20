@@ -16,10 +16,10 @@ describe('preferência de tema', () => {
     expect(isThemePreference(1)).toBe(false)
   })
 
-  it('cai no padrão claro com valor ausente ou inválido', () => {
-    expect(DEFAULT_THEME_PREFERENCE).toBe('light')
-    expect(parseThemePreference(null)).toBe('light')
-    expect(parseThemePreference('"dark"')).toBe('light')
+  it('segue o sistema com valor ausente ou inválido', () => {
+    expect(DEFAULT_THEME_PREFERENCE).toBe('system')
+    expect(parseThemePreference(null)).toBe('system')
+    expect(parseThemePreference('"dark"')).toBe('system')
     expect(parseThemePreference('dark')).toBe('dark')
   })
 

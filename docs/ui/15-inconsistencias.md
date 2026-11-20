@@ -252,9 +252,9 @@ Mover um bloco de 09:00 para 10:00 exige abrir o diálogo e digitar os dois hor�
 
 ### E8. `/settings` não tem nenhuma preferência de aplicativo
 
-Além das integrações, só a inicialização com o sistema e a versão (seção Sobre). Não há tema,
-densidade, idioma, jornada de trabalho (fixa em 8h), limiares de time leak (1h/30min), faixa
-horária do calendário (dia inteiro), intervalo de auto-sync (60s), atalho global (fixo) nem backup.
+Além das integrações, só a inicialização com o sistema, a aparência (tema e densidade, desde a
+F7-d3) e a versão (seção Sobre). Não há idioma, jornada de trabalho (fixa em 8h), limiares de
+time leak (1h/30min), faixa horária do calendário (dia inteiro), intervalo de auto-sync (60s), atalho global (fixo) nem backup.
 
 ---
 

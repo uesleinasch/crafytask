@@ -327,11 +327,11 @@ ConfigProvider (tema, cssVar) → App (message, modal, notification) → RegionB
 - **Pílula de timers:** ponto ao vivo, tempo do timer mais recente e o contador de timers; clicar
   abre o `Popover` com a lista. Abaixo de `md` ela continua no header, compacta: só o ponto e o
   tempo, sem contador, com o mesmo popover.
-- **Menu de aparência:** até a F7-d3 tem só a densidade (confortável ou compacta). Na F7-d3 entram as
-  opções de tema (Seguir o sistema, Claro, Escuro), no menu do header e em Configurações →
-  Aparência ao mesmo tempo. O protótipo já mostra o estado final.
+- **Menu de aparência:** o grupo Tema (Seguir o sistema, Claro, Escuro, com o atual marcado) e a
+  troca de densidade (confortável ou compacta). O ícone do botão segue o tema escolhido. As mesmas
+  opções ficam em Configurações → Aparência.
 - **Paleta de comandos (`Ctrl+K`):** navegar, buscar tasks, projetos (abre o projeto) e páginas,
-  iniciar timer e, a partir da F7-d3, mudar tema.
+  iniciar timer, mudar tema e densidade.
   Componente próprio sobre `Modal` + `Input` + `List` (o antd não tem um).
 - **Barra de status (28px):** indicadores passivos de integração. Substitui o banner
   `SyncNotification`. Erro de sync vira ponto vermelho com tooltip e ação, não toast.
@@ -866,8 +866,9 @@ tempo?** Toda métrica abre o que ela conta (E4). Base: NN/g (comprimento e posi
 - O terminal embutido é escuro nos dois temas, com paleta fixa tirada dos tokens escuros: fundo
   `#15141D` (`sider`), texto e cursor `#ECEAF6` (`text`), metadado `#8C89A1` (`text3`) e sucesso
   `#4CD69A` (`success`). Ela mora em `theme/semantic.ts` como `TERMINAL` (F7-c).
-- Até a fase F7 o seletor fica escondido (as telas antigas não têm tokens escuros). Na F7-d3 ele
-  aparece no menu de aparência do header, em Configurações → Aparência e na paleta de comandos.
+- O padrão é seguir o sistema. O seletor fica no menu de aparência do header, em Configurações →
+  Aparência e na paleta de comandos. Ele ficou escondido até a F7-d3, enquanto havia tela sem
+  tokens escuros.
 
 ## 10. Componentes: do atual para o antd
 

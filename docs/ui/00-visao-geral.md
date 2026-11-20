@@ -11,8 +11,9 @@ Duas ideias convivem na interface e às vezes competem por espaço:
 1. **Sistema GTD completo** — inbox, contextos, projetos, áreas, horizontes, revisão semanal.
 2. **Cronômetro de tarefas** — timer por tarefa, sessões, limite de tempo, alerta de *time leak*.
 
-Toda a interface está em português. Não há tema escuro em uso (existem tokens `.dark` no CSS, mas
-nada aciona a classe).
+Toda a interface está em português. A janela principal tem tema claro e escuro (padrão: seguir o
+sistema), escolhido em Configurações → Aparência, no menu de aparência do header ou na paleta. O
+timer flutuante e a captura rápida ainda têm cores fixas (F8).
 
 ## Vocabulário do domínio
 
@@ -146,8 +147,9 @@ Grid de três zonas (`minmax(max-content, 1fr) · 200–520px · minmax(max-cont
   número; abaixo de `md` fica compacta (ponto ao vivo e tempo, sem o número). O popover lista
   todos, com link para a tarefa e botão de pausar. Substitui
   o antigo `FloatingTimer`. Depois, **Buscar** (abre a paleta; mostra "Ctrl K" a partir de `xxl`),
-  **Aparência** (por enquanto só a densidade; o tema entra com a
-  seção de Configurações) e **Nova tarefa** (só ícone com tooltip abaixo de `lg`), que abre o
+  **Aparência** (`Dropdown` com o grupo Tema — Seguir o sistema, Claro, Escuro, com o atual
+  marcado — e a troca de densidade; o ícone do botão segue o tema escolhido: `Monitor`, `Sun` ou
+  `Moon`) e **Nova tarefa** (só ícone com tooltip abaixo de `lg`), que abre o
   `NewTaskModal` montado no shell, por cima da tela atual (`lib/newTaskRequest.ts`).
 
 As telas não têm mais botão "Voltar"; só os detalhes (tarefa e projeto) mantêm o seu.
@@ -168,7 +170,8 @@ cada troca de rota) e muda com os eventos de sync; as regras ficam em `integrati
 atalho é do shell. Um `Modal` com campo de busca e lista navegável por setas e Enter:
 
 - **Ações:** capturar o texto digitado no Inbox (o substituto da captura do header abaixo de `sm`)
-  e alternar a densidade.
+  alternar a densidade e trocar o tema ("Tema: Claro", "Tema: Escuro", "Tema: Seguir o sistema",
+  menos o que já está ativo).
 - **Ir para:** uma entrada por tela da sidebar.
 - **Tarefas:** `listTasks({ search, limit: 8 })`, com botão para iniciar o timer de quem não está
   rodando.

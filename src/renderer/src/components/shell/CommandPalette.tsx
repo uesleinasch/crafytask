@@ -24,6 +24,7 @@ import {
   onCommandPaletteRequest,
   simulateCrash
 } from './paletteCommands'
+import { THEME_OPTIONS } from './themeOptions'
 
 const SHORTCUT_CODE = 'KeyK'
 const SEARCH_DEBOUNCE_MS = 150
@@ -45,7 +46,7 @@ export function CommandPalette(): React.JSX.Element {
   const { token } = theme.useToken()
   const { message } = App.useApp()
   const navigate = useNavigate()
-  const { density, setDensity } = useThemeSettings()
+  const { preference, setPreference, density, setDensity } = useThemeSettings()
   const startTimer = useTimerStore((s) => s.startTimer)
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -150,6 +151,22 @@ export function CommandPalette(): React.JSX.Element {
       })
     }
 
+    for (const option of THEME_OPTIONS) {
+      if (option.value === preference) continue
+      const label = `Tema: ${option.label}`
+      if (!matchesQuery(`${label} aparência ${option.keywords}`, term)) continue
+      list.push({
+        id: `theme-${option.value}`,
+        group: 'Ações',
+        label,
+        icon: option.icon,
+        run: () => {
+          close()
+          setPreference(option.value)
+        }
+      })
+    }
+
     if (import.meta.env.DEV && matchesQuery('Simular falha nesta tela', term)) {
       list.push({
         id: 'crash',
@@ -223,7 +240,20 @@ export function CommandPalette(): React.JSX.Element {
     }
 
     return list
-  }, [query, tasks, projects, pages, density, setDensity, navigate, close, message, startTimer])
+  }, [
+    query,
+    tasks,
+    projects,
+    pages,
+    preference,
+    setPreference,
+    density,
+    setDensity,
+    navigate,
+    close,
+    message,
+    startTimer
+  ])
 
   const activeIndex = Math.min(active, Math.max(items.length - 1, 0))
 
