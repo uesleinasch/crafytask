@@ -18,6 +18,7 @@ import { TaskWorkspace } from '@renderer/components/tasks/TaskWorkspace'
 import { usePersistedState } from '@renderer/hooks/usePersistedState'
 import { errorMessage } from '@renderer/components/settings/settingsStatus'
 import { UNTITLED_PAGE } from './notebookUi'
+import { inlineEditStyle } from '@renderer/lib/inlineEdit'
 
 export interface PageEditorHandle {
   flush: () => Promise<void>
@@ -206,7 +207,7 @@ export const PageEditor = forwardRef<PageEditorHandle, PageEditorProps>(function
         onChange={(e) => handleTitleChange(e.target.value)}
         onBlur={() => void saveTitle()}
         onPressEnter={(e) => e.currentTarget.blur()}
-        style={{ fontSize: 20, fontWeight: 600, padding: 0 }}
+        style={inlineEditStyle({ fontSize: 20, fontWeight: 600 })}
       />
       <span
         style={{

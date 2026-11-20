@@ -39,6 +39,7 @@ import {
   parseTimeLimit,
   type NewTaskDraft
 } from './newTaskDraft'
+import { inlineEditStyle } from '@renderer/lib/inlineEdit'
 
 const INBOX_HINT = 'Vai para o Inbox'
 
@@ -193,7 +194,7 @@ export function NewTaskModal(): React.JSX.Element {
           onPressEnter={(event) => {
             if (!event.ctrlKey && !event.metaKey) void submit()
           }}
-          style={{ fontSize: 18, fontWeight: 600, paddingInline: 0 }}
+          style={inlineEditStyle({ fontSize: 18, fontWeight: 600 })}
         />
         <Input.TextArea
           variant="borderless"
@@ -202,7 +203,7 @@ export function NewTaskModal(): React.JSX.Element {
           autoSize={{ minRows: 2, maxRows: 6 }}
           value={draft.description}
           onChange={(event) => set({ description: event.target.value })}
-          style={{ paddingInline: 0 }}
+          style={inlineEditStyle()}
         />
         <Flex wrap="wrap" gap={6} style={{ marginTop: 12 }}>
           <CategoryPill value={draft.category} onChange={(category) => set({ category })} />

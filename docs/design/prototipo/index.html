@@ -86,7 +86,8 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
 :focus-visible { outline: 2px solid var(--ct-primary); outline-offset: 2px; }
 .ct-taskhead { background: var(--ct-surface); border: 1px solid var(--ct-border); border-radius: 12px; padding: 12px 16px 14px; }
 .ct-taskhead-main { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px 24px; margin-top: 8px; }
-.ct-taskname-input { font-size: 22px !important; font-weight: 600; padding: 2px 0 !important; letter-spacing: -.01em; }
+.ct-taskname-input { font-size: 22px !important; font-weight: 600; letter-spacing: -.01em; }
+.ct-inline-edit { padding: 2px 8px !important; margin-inline: -8px; width: calc(100% + 16px) !important; }
 .ct-timerblock { display: inline-flex; align-items: center; gap: 10px; padding: 6px 6px 6px 12px; border: 1px solid var(--ct-border); border-radius: 12px; background: var(--ct-bg); }
 .ct-propbar { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .ct-archived-banner { margin-bottom: 12px; }
@@ -838,9 +839,9 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     return html`<${Modal} open=${open} onCancel=${onClose} title="Nova tarefa" width=${640} footer=${footer} destroyOnClose>
       <div onKeyDown=${e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); create(); } }}>
         <${Input} ref=${nameRef} variant="borderless" autoFocus placeholder="Nome da tarefa" aria-label="Nome da tarefa" maxLength=${300}
-          value=${d.name} onChange=${e => set({ name: e.target.value })} onPressEnter=${e => { if (!e.ctrlKey && !e.metaKey) create(); }} style=${{ fontSize: 18, fontWeight: 600, paddingInline: 0 }} />
+          value=${d.name} onChange=${e => set({ name: e.target.value })} onPressEnter=${e => { if (!e.ctrlKey && !e.metaKey) create(); }} className="ct-inline-edit" style=${{ fontSize: 18, fontWeight: 600 }} />
         <${Input.TextArea} variant="borderless" placeholder="Descrição (opcional)" aria-label="Descrição" autoSize=${{ minRows: 2, maxRows: 6 }}
-          value=${d.desc} onChange=${e => set({ desc: e.target.value })} style=${{ paddingInline: 0 }} />
+          value=${d.desc} onChange=${e => set({ desc: e.target.value })} className="ct-inline-edit" />
         ${propBar}
       </div>
     <//>`;
@@ -1393,8 +1394,8 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
             ${t.jira ? html`<${Tag} bordered=${false} style=${{ margin: 0 }}>${t.jira.type} · ${t.jira.key} · ${jiraStatus}<//>` : null}
             ${archived ? html`<${Tag} bordered=${false} style=${{ margin: 0 }}>Arquivada<//>` : null}
           <//>
-          <${Input} variant="borderless" readOnly=${archived} defaultValue=${t.name} aria-label="Nome da tarefa" className="ct-taskname-input" />
-          <${Input.TextArea} variant="borderless" readOnly=${archived} autoSize=${{ minRows: 1, maxRows: 4 }} placeholder="Adicionar descrição" defaultValue=${t.description} aria-label="Descrição" style=${{ padding: '0', color: 'var(--ct-text-2)' }} />
+          <${Input} variant="borderless" readOnly=${archived} defaultValue=${t.name} aria-label="Nome da tarefa" className="ct-taskname-input ct-inline-edit" />
+          <${Input.TextArea} variant="borderless" readOnly=${archived} autoSize=${{ minRows: 1, maxRows: 4 }} placeholder="Adicionar descrição" defaultValue=${t.description} aria-label="Descrição" className="ct-inline-edit" style=${{ color: 'var(--ct-text-2)' }} />
         </div>
         <${Flex} align="center" gap=${8} wrap="wrap" style=${{ flex: 'none' }}>${timerBlock}${headActions}<//>
       </div>
@@ -1908,9 +1909,9 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           <//>
           <${Flex} align="center" gap=${10} style=${{ marginTop: 4 }}>
             <span className="ct-dot" style=${{ background: p.color, width: 14, height: 14 }}></span>
-            <${Input} variant="borderless" key=${p.id} defaultValue=${p.name} aria-label="Nome do projeto" className="ct-taskname-input" />
+            <${Input} variant="borderless" key=${p.id} defaultValue=${p.name} aria-label="Nome do projeto" className="ct-taskname-input ct-inline-edit" />
           <//>
-          <${Input.TextArea} variant="borderless" autoSize=${{ minRows: 1, maxRows: 4 }} placeholder="Adicionar descrição" defaultValue=${p.description} aria-label="Descrição" style=${{ padding: 0, color: 'var(--ct-text-2)' }} />
+          <${Input.TextArea} variant="borderless" autoSize=${{ minRows: 1, maxRows: 4 }} placeholder="Adicionar descrição" defaultValue=${p.description} aria-label="Descrição" className="ct-inline-edit" style=${{ color: 'var(--ct-text-2)' }} />
         </div>
         <${Flex} align="center" gap=${4} wrap="wrap" style=${{ flex: 'none' }}>
           ${p.workingDir ? html`<${Tooltip} title=${'Terminal em ' + p.workingDir}><${Button} type="text" aria-label="Terminal" icon=${html`<${I.CodeOutlined} />`} onClick=${openTerminal} /><//>` : null}
@@ -1923,7 +1924,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     </div>`;
 
     const outcomeCard = html`<${Card} size="small" title=${html`<${Space} size=${6}><${I.AimOutlined} />Resultado desejado<//>`}>
-      <${Input.TextArea} variant="borderless" autoSize=${{ minRows: 2, maxRows: 8 }} defaultValue=${p.outcome} placeholder="Como vai ser quando este projeto estiver pronto?" aria-label="Resultado desejado" style=${{ padding: 0, fontSize: 15 }} />
+      <${Input.TextArea} variant="borderless" autoSize=${{ minRows: 2, maxRows: 8 }} defaultValue=${p.outcome} placeholder="Como vai ser quando este projeto estiver pronto?" aria-label="Resultado desejado" className="ct-inline-edit" style=${{ fontSize: 15 }} />
     <//>`;
     const nextCard = html`<${Card} size="small" title=${html`<${Space} size=${6}><${I.ForwardOutlined} style=${{ color: STATUS.proximas[mode][0] }} />Próxima ação<//>`}>
       ${next
@@ -4132,7 +4133,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
 
     const workspace = page ? html`<${Card} size="small" style=${{ height: '100%', display: 'flex', flexDirection: 'column' }} styles=${{ body: { padding: 0, display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 } }}>
         <div style=${{ padding: '16px 24px 8px' }}>
-          <${Input} variant="borderless" value=${page.title} placeholder=${NB_UNTITLED} aria-label="Título da página" onChange=${e => patchPage(page.id, { title: e.target.value })} style=${{ fontSize: 20, fontWeight: 600, padding: 0 }} />
+          <${Input} variant="borderless" value=${page.title} placeholder=${NB_UNTITLED} aria-label="Título da página" onChange=${e => patchPage(page.id, { title: e.target.value })} className="ct-inline-edit" style=${{ fontSize: 20, fontWeight: 600 }} />
           <span className="ct-mono" style=${{ fontSize: 12, color: 'var(--ct-text-3)' }}>criada ${page.created} · editada ${page.edited}</span>
         </div>
         <${Flex} align="center" gap=${4} style=${{ padding: '0 8px 0 12px', borderBottom: '1px solid var(--ct-border)' }}>

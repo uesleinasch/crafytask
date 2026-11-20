@@ -895,6 +895,11 @@ tempo?** Toda métrica abre o que ela conta (E4). Base: NN/g (comprimento e posi
   ou por uma barra de ferramentas (`Flex` com `wrap`, busca à esquerda, alternadores à direita).
 - **Ação primária:** uma por tela, `type="primary"`, sempre na cor primária. O verde, azul e índigo
   de hoje saem (B3).
+- **Edição no lugar** (nome e descrição da tarefa e do projeto, resultado desejado, título da página
+  do caderno, nome e descrição do modal Nova tarefa): `Input`/`TextArea` `variant="borderless"` com
+  8px de respiro dos lados e margem negativa de 8px (`lib/inlineEdit.ts`, `.ct-inline-edit` no
+  protótipo). Em repouso o texto fica alinhado com o resto da tela; no foco o contorno tem folga e o
+  texto não encosta nele. Nunca `padding: 0` nesses campos.
 - **Ações reveladas no hover** continuam em listas densas, mas também ficam acessíveis pelo teclado
   (foco mostra) e pelo menu de contexto.
 - **Estado vazio:** diz o que significa e o próximo passo. Inbox vazio: "Inbox zerado. Tudo

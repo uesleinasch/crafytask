@@ -26,6 +26,7 @@ import { useTimerStore } from '@renderer/stores/timerStore'
 import { CATEGORY_COLORS, STATUS_COLORS } from '@renderer/theme/semantic'
 import { useThemeSettings } from '@renderer/theme/themeSettings'
 import { daysUntil, openTasks, progressPercent } from './projectList'
+import { inlineEditStyle } from '@renderer/lib/inlineEdit'
 
 const ICON = { size: 14, strokeWidth: 1.75, 'aria-hidden': true } as const
 
@@ -158,7 +159,7 @@ export function OutcomeCard({
         onBlur={(e) => {
           if (e.target.value !== (project.outcome ?? '')) void onSave({ outcome: e.target.value })
         }}
-        style={{ padding: 0, fontSize: 15 }}
+        style={inlineEditStyle({ fontSize: 15 })}
       />
     </Card>
   )

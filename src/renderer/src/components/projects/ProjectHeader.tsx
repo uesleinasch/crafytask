@@ -27,6 +27,7 @@ import { TerminalProjectButton } from '@renderer/components/terminal/TerminalPro
 import { PROJECT_STATUS_COLORS, USER_COLORS } from '@renderer/theme/semantic'
 import { useThemeSettings } from '@renderer/theme/themeSettings'
 import { NO_AREA, daysUntil, deleteWarning, dueTone } from './projectList'
+import { inlineEditStyle } from '@renderer/lib/inlineEdit'
 
 const ICON = { size: 14, strokeWidth: 1.75, 'aria-hidden': true } as const
 const STATUSES = Object.keys(PROJECT_STATUS_LABELS) as ProjectStatus[]
@@ -182,7 +183,7 @@ export function ProjectHeader({
               }}
               onPressEnter={(e) => e.currentTarget.blur()}
               aria-label="Nome do projeto"
-              style={{ fontSize: 22, fontWeight: 600, padding: '2px 0', letterSpacing: '-.01em' }}
+              style={inlineEditStyle({ fontSize: 22, fontWeight: 600, letterSpacing: '-.01em' })}
             />
           </Flex>
           <Input.TextArea
@@ -195,7 +196,7 @@ export function ProjectHeader({
             }}
             placeholder="Adicionar descrição"
             aria-label="Descrição"
-            style={{ padding: 0, color: token.colorTextSecondary }}
+            style={inlineEditStyle({ color: token.colorTextSecondary })}
           />
         </div>
         <Flex align="center" gap={4} wrap="wrap" style={{ flex: 'none' }}>
