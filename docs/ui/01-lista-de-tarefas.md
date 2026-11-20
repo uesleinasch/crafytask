@@ -301,26 +301,27 @@ lista ("Carregando mais N tarefas…" em `text-xs text-slate-400`) é observada 
 A paginação é **desligada nos modos agrupado e Kanban** — esses renderizam a lista inteira de uma
 vez.
 
-## Diálogo "Nova Tarefa" (`TaskDialog`)
+## Modal "Nova tarefa" (`tasks/NewTaskModal`)
 
-Aberto pelo botão **Nova tarefa** do header. `max-h-[90vh] overflow-y-auto`. Campos, na ordem:
+Montado no `AppShell`, abre por cima de qualquer tela pelo botão **Nova tarefa** do header (pedido
+por `lib/newTaskRequest.ts`); não navega para a lista. Desenho no guia §7 "Nova tarefa".
 
-| Campo | Controle | Obrigatório |
-| --- | --- | --- |
-| Nome | `Input`, placeholder "Ex: Refatorar módulo de login" | sim |
-| Descrição | `Textarea` 3 linhas, sem redimensionar | não |
-| Categoria \| Tempo Limite | duas colunas: `CategorySelect` \| `Input` mono `00:00:00` | não |
-| Programar para \| Prazo | duas colunas de `input[type=date]` | não |
-| Recorrência | `RecurrenceSelect` (Não repete / Diária / Semanal / Mensal) | não |
-| Projeto | `SearchableSelect` — só projetos `active` ou `someday` | não |
-| Contextos | pílulas alternáveis, coloridas quando selecionadas | não |
-| Nível de Energia | três botões de largura igual com emoji; clicar no ativo desmarca | não |
-| Tags | `TagInput` + dica "Ex: E-mail, Trabalho, Pessoal, Cliente X" | não |
-
-O campo de tempo limite aceita `HH:MM:SS`, `MM:SS` ou um número solto (interpretado como minutos).
-Rodapé: "Cancelar" (ghost) e "Criar Tarefa" (primária, desabilitada com nome vazio, vira "Criando…").
-
-**Ao criar, o app navega direto para `/task/{id}`** — o diálogo não deixa o usuário no lugar.
+- **Corpo:** nome num `Input` sem borda (18px, foco ao abrir) e descrição num `TextArea` sem borda.
+  Embaixo, as pílulas do detalhe (`tasks/propertyPills.tsx`, as mesmas da `TaskPropertyBar`):
+  Categoria, Projeto (ativos e someday), Contextos (vazio: `Empty` com "Criar em Contextos e tags"),
+  Prazo e Energia sempre; Programado, Recorrência, Tags, Link externo e **Limite de tempo** por
+  "+ Propriedade". O limite aceita `HH:MM:SS`, `MM:SS` ou minutos, em mono; inválido fica vermelho.
+- **Rascunho:** tudo fica num estado local (`tasks/newTaskDraft.ts`, puro e testado) e vai num
+  `createTask` só: tags por `tagNames` (nada é criado se cancelar), hora do prazo só com data, fim
+  do agendamento só com início.
+- **Rodapé:** "Criar outra em seguida" (fica ligado enquanto o app está aberto), "Vai para o Inbox",
+  `Ctrl` `Enter` em `KeyCombo` (a partir de `sm`), Cancelar e "Criar tarefa" (tooltip "Ctrl+Enter",
+  desabilitado sem nome ou com limite ou link inválido; `loading` enquanto grava). No modal o link
+  grava a cada tecla, para o `Ctrl+Enter` dentro do popover não perder o que foi digitado.
+- **Criar:** Enter no nome ou `Ctrl+Enter` em qualquer campo, com trava contra envio duplo. Sem
+  "Criar outra", fecha e navega para `/task/{id}`; com ele, mantém categoria, projeto e contextos,
+  limpa o resto, esconde as pílulas opcionais e volta o foco ao nome. `task:create` emite
+  `tasks:refresh`, então a tela de trás se atualiza.
 
 ## Comportamentos que valem preservar
 

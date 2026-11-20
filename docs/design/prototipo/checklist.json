@@ -594,7 +594,7 @@
       "titulo": "Nova tarefa em Modal do antd com a barra de propriedades do detalhe",
       "check": {
         "tipo": "contem-todos",
-        "arquivos": "src/renderer/src/components/{tasks/NewTaskModal,shell/AppShell}.tsx",
+        "arquivos": "src/renderer/src/components/{tasks/NewTaskModal.tsx,tasks/newTaskDraft.ts,shell/AppShell.tsx}",
         "padroes": ["<Modal", "Criar outra em seguida", "Vai para o Inbox", "tagNames", "<NewTaskModal"]
       }
     },
@@ -619,7 +619,8 @@
       "titulo": "Nova tarefa conferida: pílulas, Criar outra e Ctrl+Enter, claro e escuro, 400px",
       "check": {
         "tipo": "manual"
-      }
+      },
+      "validado": "2026-11-20"
     },
     {
       "id": "F3.1",

@@ -775,6 +775,7 @@ function setupIpcHandlers(): void {
   ipcMain.handle('task:create', (_, data: CreateTaskInput) => {
     const task = createTask(data)
     autoSyncTask(task.id)
+    mainWindow?.webContents.send('tasks:refresh')
     return task
   })
   ipcMain.handle('task:list', (_, filters?: TaskListFilters) => listTasks(filters))

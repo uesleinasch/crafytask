@@ -16,7 +16,7 @@ cores de `theme/semantic.ts`. Falta o dashboard (F7) e o calendário (F4), que a
 
 Ver a tabela completa em [14-design-tokens.md](14-design-tokens.md#5-paletas-semanticas).
 
-O caso mais visível: **time leak é amarelo** no badge, no `CategorySelect` e no bloco do calendário,
+O caso mais visível: **time leak é amarelo** no badge, no `CategorySelect` (saiu na F2-k) e no bloco do calendário,
 mas **roxo** no acento da tela de tarefa e no gráfico do dashboard. E `finalizada` é roxo no badge,
 esmeralda no dashboard.
 

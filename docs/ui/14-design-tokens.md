@@ -141,7 +141,7 @@ Duas definições no código legado para as mesmas seis coisas (a nova, ainda se
 
 Quatro definições:
 
-| Categoria | `CategoryBadge` (até a F2-b; hoje `CategoryChip`) | `CategorySelect` (gatilho) | Acento da tela de tarefa | Bloco do calendário | Gráfico do dashboard |
+| Categoria | `CategoryBadge` (até a F2-b; hoje `CategoryChip`) | `CategorySelect` (gatilho; saiu na F2-k) | Acento da tela de tarefa | Bloco do calendário | Gráfico do dashboard |
 | --- | --- | --- | --- | --- | --- |
 | urgente | `bg-red-100 text-red-700` | `text-red-600 bg-red-50` | `#ef4444` | `bg-red-400` | `#ef4444` |
 | prioridade | `bg-orange-100 text-orange-700` | `text-orange-600 bg-orange-50` | `#f59e0b` ⚠️ | `bg-orange-400` | `#f59e0b` |

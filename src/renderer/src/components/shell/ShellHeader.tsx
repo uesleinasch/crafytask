@@ -1,6 +1,6 @@
 import { Button, Dropdown, Grid, Tooltip, Typography, theme, type MenuProps } from 'antd'
 import { Menu, Palette, Plus, Rows3, Rows4, Search } from 'lucide-react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { requestNewTask } from '@renderer/lib/newTaskRequest'
 import { useThemeSettings } from '@renderer/theme/themeSettings'
 import { HeaderCapture } from './HeaderCapture'
@@ -61,14 +61,8 @@ function SearchButton({ showLabel }: { showLabel: boolean }): React.JSX.Element 
 
 export function ShellHeader({ onOpenMenu }: ShellHeaderProps): React.JSX.Element {
   const location = useLocation()
-  const navigate = useNavigate()
   const screens = Grid.useBreakpoint()
   const showCapture = screens.sm !== false
-
-  const handleNewTask = (): void => {
-    if (location.pathname !== '/') navigate('/')
-    requestNewTask()
-  }
 
   return (
     <div
@@ -108,14 +102,16 @@ export function ShellHeader({ onOpenMenu }: ShellHeaderProps): React.JSX.Element
         <RunningTimersPill compact={!screens.md} />
         <SearchButton showLabel={!!screens.xxl} />
         <AppearanceMenu />
-        <Button
-          type="primary"
-          aria-label="Nova tarefa"
-          icon={<Plus size={16} strokeWidth={1.75} />}
-          onClick={handleNewTask}
-        >
-          {screens.lg ? 'Nova tarefa' : null}
-        </Button>
+        <Tooltip title={screens.lg ? '' : 'Nova tarefa'}>
+          <Button
+            type="primary"
+            aria-label="Nova tarefa"
+            icon={<Plus size={16} strokeWidth={1.75} />}
+            onClick={requestNewTask}
+          >
+            {screens.lg ? 'Nova tarefa' : null}
+          </Button>
+        </Tooltip>
       </div>
     </div>
   )

@@ -42,6 +42,7 @@ import { TerminalTaskButton } from '@renderer/components/terminal/TerminalTaskBu
 import { formatTime } from '@renderer/lib/utils'
 import { blockedLabel } from './taskTableFormat'
 import { TaskPropertyBar } from './TaskPropertyBar'
+import { inlineEditStyle } from '@renderer/lib/inlineEdit'
 
 const STATUSES: TaskStatus[] = [
   'inbox',
@@ -325,7 +326,7 @@ export function TaskHeader({
             onPressEnter={(event) => event.currentTarget.blur()}
             placeholder="Nome da tarefa"
             aria-label="Nome da tarefa"
-            style={{ fontSize: 22, fontWeight: 600, padding: '2px 0', letterSpacing: '-.01em' }}
+            style={inlineEditStyle({ fontSize: 22, fontWeight: 600, letterSpacing: '-.01em' })}
           />
           <Input.TextArea
             variant="borderless"
@@ -336,7 +337,7 @@ export function TaskHeader({
             onBlur={saveDescription}
             placeholder="Adicionar descrição"
             aria-label="Descrição"
-            style={{ padding: 0, color: token.colorTextSecondary }}
+            style={inlineEditStyle({ color: token.colorTextSecondary })}
           />
         </div>
 

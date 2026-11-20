@@ -147,9 +147,8 @@ Grid de três zonas (`minmax(max-content, 1fr) · 200–520px · minmax(max-cont
   todos, com link para a tarefa e botão de pausar. Substitui
   o antigo `FloatingTimer`. Depois, **Buscar** (abre a paleta; mostra "Ctrl K" a partir de `xxl`),
   **Aparência** (por enquanto só a densidade; o tema entra com a
-  seção de Configurações) e **Nova tarefa** (só ícone abaixo de `lg`). Fora de `/`, Nova tarefa
-  volta para a lista e o pedido fica guardado (`lib/newTaskRequest.ts`) até a `TaskListPage` montar
-  e abrir o `TaskDialog`.
+  seção de Configurações) e **Nova tarefa** (só ícone com tooltip abaixo de `lg`), que abre o
+  `NewTaskModal` montado no shell, por cima da tela atual (`lib/newTaskRequest.ts`).
 
 As telas não têm mais botão "Voltar"; só os detalhes (tarefa e projeto) mantêm o seu.
 

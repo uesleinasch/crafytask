@@ -1,121 +1,28 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  App,
-  Button,
-  DatePicker,
-  Dropdown,
-  Flex,
-  Input,
-  Popover,
-  Select,
-  Space,
-  Tag,
-  TimePicker,
-  Typography,
-  theme
-} from 'antd'
-import dayjs, { type Dayjs } from 'dayjs'
-import {
-  CalendarClock,
-  ExternalLink,
-  Flag,
-  Folder,
-  Hourglass,
-  Link,
-  MapPin,
-  Plus,
-  Repeat,
-  Tags,
-  type LucideIcon
-} from 'lucide-react'
-import type {
-  Context,
-  EnergyLevel,
-  Project,
-  Tag as TaskTag,
-  Task,
-  TaskCategory,
-  UpdateTaskInput
-} from '@shared/types'
+import { App, Flex, Input, Typography } from 'antd'
+import { CalendarClock, Hourglass, Link, Repeat, Tags } from 'lucide-react'
+import type { Context, Project, Tag as TaskTag, Task, UpdateTaskInput } from '@shared/types'
 import { WAITING_FOR_MAX, normalizeWaitingFor } from '@shared/waitingFor'
-import { isSafeHttpUrl } from '@shared/externalUrl'
-import {
-  RECURRENCE_OPTIONS,
-  recurrenceLabel,
-  recurrenceOptionValue
-} from '@shared/recurrenceOptions'
-import { CategoryChip } from '@renderer/components/chips/CategoryChip'
-import { EnergyMeter } from '@renderer/components/chips/EnergyMeter'
-import { ENERGY_LABELS, STATUS_COLORS } from '@renderer/theme/semantic'
+import { STATUS_COLORS } from '@renderer/theme/semantic'
 import { useThemeSettings } from '@renderer/theme/themeSettings'
-import { ProjectLabel } from './ProjectLabel'
-import { dueTone, formatDueShort } from './taskTableFormat'
-
-const ICON = { size: 14, strokeWidth: 1.75, 'aria-hidden': true } as const
-const CATEGORIES: TaskCategory[] = ['urgente', 'prioridade', 'normal', 'time_leak']
-const ENERGIES: EnergyLevel[] = ['alto', 'medio', 'baixo']
-const DATE_FORMAT = 'DD/MM/YYYY'
-const ISO = 'YYYY-MM-DD'
-const LINK_BUTTON = { padding: 0, height: 'auto', alignSelf: 'flex-start' } as const
+import {
+  AddPropertyButton,
+  CategoryPill,
+  ContextsPill,
+  DuePill,
+  EnergyPill,
+  LinkPill,
+  PropPill,
+  PropertyReadOnly,
+  ProjectPill,
+  RecurrencePill,
+  SchedulePill,
+  TagsPill,
+  type OptionalPill
+} from './propertyPills'
 
 type OptionalKey = 'programado' | 'recorrencia' | 'tags' | 'link'
-
-interface PropPillProps {
-  label: string
-  icon?: LucideIcon
-  muted?: boolean
-  tone?: string
-  content: ReactNode
-  children: ReactNode
-}
-
-const ReadOnlyContext = createContext(false)
-
-export function PropPill({
-  label,
-  icon: Icon,
-  muted,
-  tone,
-  content,
-  children
-}: PropPillProps): React.JSX.Element {
-  const { token } = theme.useToken()
-  const [open, setOpen] = useState(false)
-  const readOnly = useContext(ReadOnlyContext)
-  const pill = (
-    <button
-      type="button"
-      className={muted ? 'ct-prop muted' : 'ct-prop'}
-      aria-haspopup={readOnly ? undefined : 'dialog'}
-      aria-expanded={readOnly ? undefined : open}
-      disabled={readOnly}
-      style={tone && !readOnly ? { color: tone } : undefined}
-    >
-      <span className="sr-only">{label}: </span>
-      {Icon && <Icon {...ICON} color={(!readOnly && tone) || token.colorTextTertiary} />}
-      {children}
-    </button>
-  )
-  if (readOnly) return pill
-  return (
-    <Popover
-      trigger="click"
-      placement="bottomLeft"
-      title={label}
-      destroyOnHidden
-      open={open}
-      onOpenChange={setOpen}
-      content={
-        <div role="dialog" aria-label={label} style={{ width: 280, maxWidth: '80vw' }}>
-          {content}
-        </div>
-      }
-    >
-      {pill}
-    </Popover>
-  )
-}
 
 function useDraft(value: string): [string, (next: string) => void] {
   const [draft, setDraft] = useState(value)
@@ -157,60 +64,6 @@ function WaitingForEditor({
   )
 }
 
-function LinkEditor({
-  value,
-  jiraKey,
-  onSave
-}: {
-  value: string | null | undefined
-  jiraKey: string | null | undefined
-  onSave: (value: string | null) => Promise<void>
-}): React.JSX.Element {
-  const { message } = App.useApp()
-  const [draft, setDraft] = useDraft(value ?? '')
-  const commit = (): void => {
-    const next = draft.trim()
-    if (next === (value ?? '')) return
-    if (next && !isSafeHttpUrl(next)) {
-      message.error('Informe um link http:// ou https://')
-      setDraft(value ?? '')
-      return
-    }
-    void onSave(next || null)
-  }
-  const open = (): void => {
-    window.api.appOpenExternal(draft.trim()).catch((error: unknown) => {
-      message.error(error instanceof Error ? error.message : 'Não foi possível abrir o link')
-    })
-  }
-  return (
-    <Flex vertical gap={8}>
-      <Space.Compact style={{ width: '100%' }}>
-        <Input
-          autoFocus
-          placeholder="https://…"
-          aria-label="Link externo"
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          onBlur={commit}
-          onPressEnter={(event) => event.currentTarget.blur()}
-        />
-        <Button
-          aria-label="Abrir no navegador"
-          icon={<ExternalLink {...ICON} />}
-          disabled={!isSafeHttpUrl(draft.trim())}
-          onClick={open}
-        />
-      </Space.Compact>
-      {jiraKey && (
-        <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-          Link da issue {jiraKey} no Jira.
-        </Typography.Text>
-      )}
-    </Flex>
-  )
-}
-
 interface TaskPropertyBarProps {
   task: Task
   update: (data: UpdateTaskInput) => Promise<void>
@@ -218,15 +71,21 @@ interface TaskPropertyBarProps {
 
 export function TaskPropertyBar(props: TaskPropertyBarProps): React.JSX.Element {
   return (
-    <ReadOnlyContext.Provider value={!!props.task.is_archived}>
+    <PropertyReadOnly readOnly={!!props.task.is_archived}>
       <PropertyBar {...props} />
-    </ReadOnlyContext.Provider>
+    </PropertyReadOnly>
   )
 }
 
+const OPTIONAL: OptionalPill<OptionalKey>[] = [
+  { key: 'programado', label: 'Programado', icon: CalendarClock },
+  { key: 'recorrencia', label: 'Recorrência', icon: Repeat },
+  { key: 'tags', label: 'Tags', icon: Tags },
+  { key: 'link', label: 'Link externo', icon: Link }
+]
+
 function PropertyBar({ task, update }: TaskPropertyBarProps): React.JSX.Element {
   const navigate = useNavigate()
-  const { token } = theme.useToken()
   const { mode } = useThemeSettings()
   const { message } = App.useApp()
   const [projects, setProjects] = useState<Project[]>([])
@@ -242,34 +101,17 @@ function PropertyBar({ task, update }: TaskPropertyBarProps): React.JSX.Element 
 
   useEffect(() => setShown([]), [task.id])
 
-  const contextIds = task.contexts?.map((c) => c.id) ?? []
   const tags = task.tags ?? []
   const dueDate = task.due_date ? task.due_date.split('T')[0] : null
-  const tone = dueTone(dueDate, new Date())
-  const dueColor =
-    tone === 'danger' ? token.colorError : tone === 'warning' ? token.colorWarning : undefined
   const waitingColor = STATUS_COLORS.aguardando[mode].fg
-  const toIso = (value: Dayjs | null): string | null => (value ? value.format(ISO) : null)
-  const clock = (value: string | null | undefined): Dayjs | null =>
-    value ? dayjs(`2000-01-01 ${value}`) : null
 
-  const optional: { key: OptionalKey; label: string; icon: LucideIcon; set: boolean }[] = [
-    { key: 'programado', label: 'Programado', icon: CalendarClock, set: !!task.scheduled_date },
-    { key: 'recorrencia', label: 'Recorrência', icon: Repeat, set: !!task.recurrence_rule },
-    { key: 'tags', label: 'Tags', icon: Tags, set: tags.length > 0 },
-    { key: 'link', label: 'Link externo', icon: Link, set: !!task.external_url }
-  ]
-  const visible = (key: OptionalKey): boolean =>
-    optional.some((o) => o.key === key && o.set) || shown.includes(key)
-  const hidden = optional.filter((o) => !visible(o.key))
-
-  const projectOptions = projects
-    .filter((p) => p.status === 'active' || p.status === 'someday' || p.id === task.project_id)
-    .map((p) => ({
-      value: p.id,
-      title: p.name,
-      label: <ProjectLabel name={p.name} color={p.color} />
-    }))
+  const filled: Record<OptionalKey, boolean> = {
+    programado: !!task.scheduled_date,
+    recorrencia: !!task.recurrence_rule,
+    tags: tags.length > 0,
+    link: !!task.external_url
+  }
+  const visible = (key: OptionalKey): boolean => filled[key] || shown.includes(key)
 
   const saveTags = async (names: string[]): Promise<void> => {
     try {
@@ -287,37 +129,6 @@ function PropertyBar({ task, update }: TaskPropertyBarProps): React.JSX.Element 
       message.error(error instanceof Error ? error.message : 'Não foi possível salvar as tags')
     }
   }
-
-  const saveSchedule = async (start: Dayjs | null, end: Dayjs | null): Promise<void> => {
-    if (!start) {
-      await update({ scheduled_time: null, scheduled_end_time: null })
-      return
-    }
-    if (end && !end.isAfter(start, 'minute')) {
-      message.error('O fim precisa ser depois do início.')
-      end = null
-    }
-    await update({
-      scheduled_time: start.format('HH:mm'),
-      scheduled_end_time: end ? end.format('HH:mm') : null
-    })
-  }
-
-  const contextLabel = contextIds.length ? (
-    <>
-      {(task.contexts ?? []).slice(0, 2).map((c) => (
-        <span key={c.id}>
-          {c.icon ? `${c.icon} ` : ''}
-          {c.name}
-        </span>
-      ))}
-      {contextIds.length > 2 && (
-        <span style={{ color: token.colorTextTertiary }}>+{contextIds.length - 2}</span>
-      )}
-    </>
-  ) : (
-    'Contexto'
-  )
 
   return (
     <Flex wrap="wrap" gap={6} style={{ marginTop: 10 }}>
@@ -337,312 +148,55 @@ function PropertyBar({ task, update }: TaskPropertyBarProps): React.JSX.Element 
           {task.waiting_for ? `Aguardando: ${task.waiting_for}` : 'Aguardando quem?'}
         </PropPill>
       )}
-
-      <PropPill
-        label="Categoria"
-        content={
-          <Flex vertical gap={6}>
-            {CATEGORIES.map((category) => (
-              <Button
-                key={category}
-                autoFocus={category === task.category}
-                type={task.category === category ? 'primary' : 'text'}
-                ghost={task.category === category}
-                aria-pressed={task.category === category}
-                style={{ justifyContent: 'flex-start' }}
-                onClick={() => void update({ category })}
-              >
-                <CategoryChip category={category} />
-              </Button>
-            ))}
-          </Flex>
-        }
-      >
-        {task.category === 'normal' ? (
-          <span style={{ color: token.colorTextSecondary }}>Normal</span>
-        ) : (
-          <CategoryChip category={task.category} />
-        )}
-      </PropPill>
-
-      <PropPill
-        label="Projeto"
-        muted={!task.project_id}
-        content={
-          <Flex vertical gap={8}>
-            <Select
-              autoFocus
-              showSearch
-              allowClear
-              placeholder="Sem projeto"
-              aria-label="Projeto"
-              value={task.project_id ?? undefined}
-              optionFilterProp="title"
-              options={projectOptions}
-              onChange={(value: number | undefined) => void update({ project_id: value ?? null })}
-            />
-            {task.project_id && (
-              <Button
-                type="link"
-                size="small"
-                style={LINK_BUTTON}
-                onClick={() => navigate(`/project/${task.project_id}`)}
-              >
-                Abrir projeto →
-              </Button>
-            )}
-          </Flex>
-        }
-      >
-        {task.project_id && task.project_name ? (
-          <ProjectLabel name={task.project_name} color={task.project_color} />
-        ) : (
-          <>
-            <Folder {...ICON} />
-            Sem projeto
-          </>
-        )}
-      </PropPill>
-
-      <PropPill
-        label="Contextos"
-        icon={contextIds.length ? undefined : MapPin}
-        muted={!contextIds.length}
-        content={
-          contexts.length ? (
-            <Flex gap={4} wrap="wrap">
-              {contexts.map((c) => (
-                <Tag.CheckableTag
-                  key={c.id}
-                  checked={contextIds.includes(c.id)}
-                  onChange={(on) =>
-                    void update({
-                      contextIds: on
-                        ? [...contextIds, c.id]
-                        : contextIds.filter((id) => id !== c.id)
-                    })
-                  }
-                >
-                  {c.icon} {c.name}
-                </Tag.CheckableTag>
-              ))}
-            </Flex>
-          ) : (
-            <Typography.Text type="secondary">Nenhum contexto criado.</Typography.Text>
-          )
-        }
-      >
-        {contextLabel}
-      </PropPill>
-
-      <PropPill
-        label="Prazo"
-        icon={Flag}
-        muted={!dueDate}
-        tone={dueColor}
-        content={
-          <Flex vertical gap={8}>
-            <Flex gap={6}>
-              <DatePicker
-                autoFocus
-                format={DATE_FORMAT}
-                placeholder="Data"
-                aria-label="Data do prazo"
-                value={dueDate ? dayjs(dueDate) : null}
-                onChange={(value) => void update({ due_date: toIso(value) })}
-                style={{ flex: 1 }}
-              />
-              <TimePicker
-                format="HH:mm"
-                placeholder="Hora"
-                aria-label="Hora do prazo"
-                disabled={!dueDate}
-                value={clock(task.due_time)}
-                onChange={(value) =>
-                  void update({ due_time: value ? value.format('HH:mm') : null })
-                }
-                style={{ width: 96 }}
-              />
-            </Flex>
-            {dueDate && (
-              <Button
-                type="link"
-                size="small"
-                style={LINK_BUTTON}
-                onClick={() => void update({ due_date: null })}
-              >
-                Remover prazo
-              </Button>
-            )}
-          </Flex>
-        }
-      >
-        {dueDate ? `Prazo ${formatDueShort(dueDate, task.due_time)}` : 'Prazo'}
-      </PropPill>
-
-      <PropPill
-        label="Energia"
-        muted={!task.energy_level}
-        content={
-          <Flex gap={4}>
-            {ENERGIES.map((level) => (
-              <Button
-                key={level}
-                autoFocus={level === (task.energy_level ?? 'alto')}
-                size="small"
-                type={task.energy_level === level ? 'primary' : 'default'}
-                ghost={task.energy_level === level}
-                aria-pressed={task.energy_level === level}
-                style={{ flex: 1 }}
-                onClick={() =>
-                  void update({ energy_level: task.energy_level === level ? null : level })
-                }
-              >
-                <EnergyMeter level={level} tooltip={false} />
-                {ENERGY_LABELS[level]}
-              </Button>
-            ))}
-          </Flex>
-        }
-      >
-        {task.energy_level ? (
-          <>
-            <EnergyMeter level={task.energy_level} tooltip={false} />
-            Energia {ENERGY_LABELS[task.energy_level].toLowerCase()}
-          </>
-        ) : (
-          'Energia'
-        )}
-      </PropPill>
-
+      <CategoryPill value={task.category} onChange={(category) => update({ category })} />
+      <ProjectPill
+        value={task.project_id ?? null}
+        projects={projects}
+        current={task.project_name ? { name: task.project_name, color: task.project_color } : null}
+        onChange={(project_id) => update({ project_id })}
+        onOpen={(id) => navigate(`/project/${id}`)}
+      />
+      <ContextsPill
+        selected={task.contexts ?? []}
+        contexts={contexts}
+        onChange={(contextIds) => update({ contextIds })}
+        onManage={() => navigate('/contexts')}
+      />
+      <DuePill date={dueDate} time={task.due_time} onChange={(patch) => update(patch)} />
+      <EnergyPill value={task.energy_level} onChange={(energy_level) => update({ energy_level })} />
       {visible('programado') && (
-        <PropPill
-          label="Programado"
-          icon={CalendarClock}
-          muted={!task.scheduled_date}
-          content={
-            <Flex vertical gap={8}>
-              <DatePicker
-                autoFocus
-                format={DATE_FORMAT}
-                placeholder="Data"
-                aria-label="Data programada"
-                value={task.scheduled_date ? dayjs(task.scheduled_date) : null}
-                onChange={(value) => void update({ scheduled_date: toIso(value) })}
-              />
-              <TimePicker.RangePicker
-                format="HH:mm"
-                aria-label="Início e fim"
-                placeholder={['Início', 'Fim']}
-                allowEmpty={[true, true]}
-                order={false}
-                disabled={[!task.scheduled_date, !task.scheduled_date || !task.scheduled_time]}
-                value={
-                  task.scheduled_time
-                    ? [clock(task.scheduled_time), clock(task.scheduled_end_time)]
-                    : null
-                }
-                onChange={(value) => void saveSchedule(value?.[0] ?? null, value?.[1] ?? null)}
-              />
-              {task.scheduled_date && (
-                <Button
-                  type="link"
-                  size="small"
-                  style={LINK_BUTTON}
-                  onClick={() => void update({ scheduled_date: null })}
-                >
-                  Remover agendamento
-                </Button>
-              )}
-            </Flex>
-          }
-        >
-          {task.scheduled_date
-            ? `${formatDueShort(task.scheduled_date, task.scheduled_time)}${
-                task.scheduled_end_time ? `–${task.scheduled_end_time}` : ''
-              }`
-            : 'Programado'}
-        </PropPill>
+        <SchedulePill
+          date={task.scheduled_date}
+          start={task.scheduled_time}
+          end={task.scheduled_end_time}
+          onChange={(patch) => update(patch)}
+        />
       )}
-
       {visible('recorrencia') && (
-        <PropPill
-          label="Recorrência"
-          icon={Repeat}
-          muted={!task.recurrence_rule}
-          content={
-            <Select
-              autoFocus
-              aria-label="Recorrência"
-              value={recurrenceOptionValue(task.recurrence_rule)}
-              options={RECURRENCE_OPTIONS}
-              onChange={(value: string) =>
-                void update({ recurrence_rule: value === 'none' ? null : value })
-              }
-              style={{ width: '100%' }}
-            />
-          }
-        >
-          {recurrenceLabel(task.recurrence_rule)}
-        </PropPill>
+        <RecurrencePill
+          value={task.recurrence_rule}
+          onChange={(recurrence_rule) => update({ recurrence_rule })}
+        />
       )}
-
       {visible('tags') && (
-        <PropPill
-          label="Tags"
-          icon={Tags}
-          muted={!tags.length}
-          content={
-            <Select
-              autoFocus
-              mode="tags"
-              aria-label="Tags"
-              placeholder="Adicionar tag"
-              value={tags.map((t) => t.name)}
-              options={allTags.map((t) => ({ value: t.name, label: t.name }))}
-              onChange={(names: string[]) => void saveTags(names)}
-              style={{ width: '100%' }}
-            />
-          }
-        >
-          {tags.length ? tags.map((t) => `#${t.name}`).join(' ') : 'Tags'}
-        </PropPill>
+        <TagsPill
+          value={tags.map((t) => t.name)}
+          options={allTags.map((t) => t.name)}
+          onChange={saveTags}
+        />
       )}
-
       {visible('link') && (
-        <PropPill
-          label="Link externo"
-          icon={Link}
-          muted={!task.external_url}
-          content={
-            <LinkEditor
-              value={task.external_url}
-              jiraKey={task.jira_key}
-              onSave={(external_url) => update({ external_url })}
-            />
-          }
-        >
-          {task.external_url ? task.external_url.replace(/^https?:\/\//, '').split('/')[0] : 'Link'}
-        </PropPill>
+        <LinkPill
+          value={task.external_url}
+          jiraKey={task.jira_key}
+          onChange={(external_url) => update({ external_url })}
+        />
       )}
-
-      {!task.is_archived && hidden.length > 0 && (
-        <Dropdown
-          trigger={['click']}
-          menu={{
-            items: hidden.map((o) => ({
-              key: o.key,
-              icon: <o.icon {...ICON} />,
-              label: o.label
-            })),
-            onClick: ({ key }) => setShown([...shown, key as OptionalKey])
-          }}
-        >
-          <button type="button" className="ct-prop muted" aria-label="Adicionar propriedade">
-            <Plus {...ICON} />
-            Propriedade
-          </button>
-        </Dropdown>
+      {!task.is_archived && (
+        <AddPropertyButton
+          options={OPTIONAL.filter((o) => !visible(o.key))}
+          onAdd={(key) => setShown([...shown, key])}
+        />
       )}
     </Flex>
   )

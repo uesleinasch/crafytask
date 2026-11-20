@@ -15,7 +15,6 @@ Consomem os tokens CSS (`--primary`, `--border`, `--radius`…) definidos em `as
 | `button` | 6 variantes (`default`, `destructive`, `outline`, `secondary`, `ghost`, `link`) × 4 tamanhos (`default` h-9, `sm` h-8, `lg` h-10, `icon` 36px) |
 | `input` · `textarea` | campos de formulário |
 | `select` | seleção simples (Radix) — usado em status, categoria, recorrência, horizonte |
-| `searchable-select` | **componente próprio**, não do shadcn — ver abaixo |
 | `dialog` | diálogos de criação/edição |
 | `alert-dialog` | confirmações destrutivas |
 | `context-menu` | **importado por nenhuma tela** desde a F7-c: o menu de sessão do terminal e a lista de tarefas usam o `Dropdown` do antd |
@@ -30,19 +29,6 @@ Consomem os tokens CSS (`--primary`, `--border`, `--radius`…) definidos em `as
 > tela**: cada uma reimplementou o mesmo desenho à mão. Padronizá-los é o ganho mais barato de uma
 > refatoração.
 
-### `SearchableSelect`
-
-O select mais usado do app — filtros, seleção de projeto, tarefa, tag. Não é do shadcn.
-
-- **Gatilho:** botão `h-9` com a opção selecionada (bolinha de cor opcional + rótulo truncado) e
-  `ChevronDown` que rotaciona 180° quando aberto.
-- **Dropdown:** campo de busca com ícone e "×" no topo, lista de até 200px rolável, item selecionado
-  com `bg-slate-100 font-medium` e `Check` à direita.
-- **Teclado:** `Esc` fecha; `Enter` seleciona quando resta exatamente **um** resultado. Não há
-  navegação por ↑↓.
-- Fecha ao clicar fora; foca a busca automaticamente ao abrir.
-- Animação de entrada: `fade-in-0 zoom-in-95 slide-in-from-top-2 duration-150`.
-
 ---
 
 ## Componentes de domínio
@@ -55,7 +41,8 @@ O select mais usado do app — filtros, seleção de projeto, tarefa, tag. Não 
 | `tasks/TaskCardViews` | `TaskCardGrid`, `TaskCardGroups`, `TaskKanban` | grade `auto-fill` de 260px; grupos com `GroupHeader`; Kanban em colunas de 260px |
 | `tasks/TaskTable` | lista (modo tabela, com ou sem agrupamento) | `Table` do antd; colunas por breakpoint; subtarefas como linhas filhas; cabeçalho de grupo; time leak em 3 níveis |
 | `tasks/GroupHeader`, `TaskActions`, `ProjectLabel` | tabela e cards | cabeçalho de grupo; Hoje, timer e `⋯`; ponto + nome do projeto |
-| `TaskDialog` | criação de tarefa | 9 campos; navega para a tarefa criada |
+| `tasks/NewTaskModal` | botão Nova tarefa do header, por cima de qualquer tela | `Modal` do antd com as pílulas do detalhe; ver [01](01-lista-de-tarefas.md) |
+| `tasks/propertyPills` | detalhe (`TaskPropertyBar`), modal Nova tarefa, cabeçalho do projeto (`PropPill`) | `PropPill` e as pílulas de Categoria, Projeto, Contextos, Prazo, Energia, Programado, Recorrência, Tags e Link, cada uma com `value`/`onChange` |
 | `tasks/TaskContextMenu` | botão direito em `TaskCard` e nas linhas do `TaskTable`; `⋯` | `Dropdown` do antd: abrir, timer, hoje, status, categoria, projeto, Jira (abrir, transições, campos), contextos, copiar, arquivar, excluir; age sobre a seleção |
 | `tasks/JiraKey` | tabela e cards | chave do Jira em mono discreto, tipo e status no tooltip |
 | `tasks/BulkActionBar` | lista, com seleção | barra flutuante: marcar como, mover para projeto, hoje, arquivar, excluir |
@@ -68,8 +55,6 @@ O select mais usado do app — filtros, seleção de projeto, tarefa, tag. Não 
 | `CategoryChip` | idem para categoria; "Normal" sem cor, só borda e texto secundário (substituiu o `CategoryBadge`) |
 | `EnergyMeter` | três barras na cor primária (cheias = nível), com tooltip "Energia alta/média/baixa"; substituiu o emoji ⚡🔋😴 |
 | `DueDateBadge` | pílula com `Calendar` cujo rótulo e cor derivam da distância até o prazo — ver tabela abaixo |
-| `CategorySelect` | `Select` de 140px com ícone e cor por categoria no próprio gatilho |
-| `RecurrenceSelect` | `Select` com 4 opções; serializa a regra em JSON |
 | `ColorPicker` | 12 círculos de 32px a partir de `DEFAULT_COLORS`; selecionado com `ring-2 ring-offset-2 scale-110` |
 
 #### Lógica do `DueDateBadge`
@@ -89,7 +74,6 @@ primeira vista.
 
 | Componente | Comportamento |
 | --- | --- |
-| `TagInput` | pílulas removíveis + campo livre. Enter cria ou seleciona; Backspace com campo vazio remove a última; ↑↓ navegam nas sugestões; Esc fecha. Sem sugestão, oferece **"Criar tag «x»"**. Cria a tag via `getOrCreateTag` |
 | `TimeEntryList` | sessões encerradas, `max-h-[250px]`, data à esquerda e `+ HH:MM:SS` à direita |
 
 ### Cronômetro
