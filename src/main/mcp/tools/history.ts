@@ -1,12 +1,19 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
-import { addTaskHistory, getTask, getTaskHistory, getTaskLastCheckpoint } from '../../database'
+import {
+  addTaskHistory,
+  getTask,
+  getTaskHistory,
+  getTaskLastCheckpoint,
+  setTaskGitLink
+} from '../../database'
 import {
   TASK_HISTORY_DEFAULT_LIMIT,
   TASK_HISTORY_MAX_LIMIT,
   TASK_HISTORY_TEXT_LIMIT
 } from '../../taskHistoryQueries'
 import { broadcastRefresh } from '../effects'
+import { GIT_BRANCH, SESSION_ID } from '../gitLinkSchema'
 import { fail, ok } from '../reply'
 
 const text = z.string().max(TASK_HISTORY_TEXT_LIMIT)
@@ -31,7 +38,11 @@ export function registerHistoryTools(server: McpServer): void {
         kind: z.enum(['checkpoint', 'operation', 'note']).optional(),
         summary: text.optional(),
         done: text.optional(),
-        remaining: text.optional()
+        remaining: text.optional(),
+        session_id: SESSION_ID.optional().describe(
+          'add: id da sessão do cliente, gravado na entrada.'
+        ),
+        git_branch: GIT_BRANCH.optional().describe('add: branch atual; fica na task.')
       }
     },
     async ({
@@ -43,14 +54,17 @@ export function registerHistoryTools(server: McpServer): void {
       kind,
       summary,
       done,
-      remaining
+      remaining,
+      session_id,
+      git_branch
     }) => {
       const task = getTask(task_id)
       if (!task) return fail('not_found', `Task ${task_id} não existe.`)
 
       if (action === 'add') {
         if (!summary?.trim()) return fail('validation', 'action=add exige summary.')
-        const id = addTaskHistory({ task_id, kind, summary, done, remaining }, 'mcp')
+        const id = addTaskHistory({ task_id, kind, summary, done, remaining, session_id }, 'mcp')
+        if (git_branch !== undefined) setTaskGitLink(task_id, { git_branch })
         broadcastRefresh()
         return ok({ added: id, task_id, kind: kind ?? 'checkpoint', task_status: task.status })
       }

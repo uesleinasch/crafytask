@@ -21,6 +21,8 @@ export interface CompactTask {
   subtasks?: string
   jira_key?: string
   parent_id?: number
+  git_branch?: string
+  pr_url?: string
 }
 
 function filled(value: string | null | undefined): string | undefined {
@@ -51,7 +53,9 @@ export function compactTask(task: Task): CompactTask {
     waiting_for: filled(task.waiting_for),
     subtasks: total > 0 ? `${task.completed_subtask_count ?? 0}/${total}` : undefined,
     jira_key: filled(task.jira_key),
-    parent_id: task.parent_task_id || undefined
+    parent_id: task.parent_task_id || undefined,
+    git_branch: filled(task.git_branch),
+    pr_url: filled(task.pr_url)
   }
   return JSON.parse(JSON.stringify(view)) as CompactTask
 }

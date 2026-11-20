@@ -31,6 +31,7 @@ export interface TaskHistoryItem {
   from_status: TaskStatus | null
   to_status: TaskStatus | null
   created_at: string
+  session_id?: string | null
 }
 
 export interface TaskHistoryView {
@@ -44,6 +45,7 @@ export interface AddTaskHistoryInput {
   kind?: TaskHistoryEntryKind
   done?: string | null
   remaining?: string | null
+  session_id?: string | null
 }
 
 // ===================== TAG =====================
@@ -252,6 +254,8 @@ export interface Task {
   working_dir?: string | null
   project_working_dir?: string | null
   start_command?: string | null
+  git_branch?: string | null
+  pr_url?: string | null
   jira_key?: string | null
   jira_status?: string | null
   jira_space?: string | null

@@ -79,10 +79,16 @@ describe('compactTask', () => {
           waiting_for: 'Revisor',
           is_blocked: true,
           is_running: true,
-          jira_key: 'ABC-1'
+          jira_key: 'ABC-1',
+          parent_task_id: 3,
+          git_branch: 'feature/x',
+          pr_url: 'https://github.com/o/r/pull/1'
         })
       )
     ).toEqual({
+      parent_id: 3,
+      git_branch: 'feature/x',
+      pr_url: 'https://github.com/o/r/pull/1',
       id: 7,
       name: 'Escrever relatório',
       status: 'proximas',
