@@ -705,10 +705,10 @@ async function changeCaptureShortcut(accelerator: unknown): Promise<AppPrefsStat
 
 // ===================== MAIN WINDOW =====================
 
-function revealMainWindow(): void {
+function revealMainWindow(route?: string): void {
   if (!mainWindow || mainWindow.isDestroyed()) {
     startHidden = false
-    createWindow()
+    createWindow(route)
     return
   }
 
@@ -731,7 +731,7 @@ function quitApp(): void {
   app.quit()
 }
 
-function createWindow(): void {
+function createWindow(route?: string): void {
   mainWindow = new BrowserWindow({
     width: 1024,
     height: 700,
@@ -787,9 +787,10 @@ function createWindow(): void {
   })
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+    const url = process.env['ELECTRON_RENDERER_URL']
+    mainWindow.loadURL(route ? `${url}#${route}` : url)
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    mainWindow.loadFile(join(__dirname, '../renderer/index.html'), route ? { hash: route } : {})
   }
 }
 
@@ -1105,10 +1106,7 @@ function setupIpcHandlers(): void {
     if (!Number.isInteger(taskId) || taskId <= 0) return
     const path = `/task/${taskId}`
     if (!mainWindow || mainWindow.isDestroyed()) {
-      revealMainWindow()
-      mainWindow?.webContents.once('did-finish-load', () => {
-        mainWindow?.webContents.send('app:navigate', path)
-      })
+      revealMainWindow(path)
       return
     }
     revealMainWindow()

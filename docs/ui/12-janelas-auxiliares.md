@@ -107,7 +107,7 @@ E emite quatro comandos:
 | Canal | Efeito |
 | --- | --- |
 | `float:restore` | mostra a janela principal (restaura, mostra e foca, mesmo escondida na bandeja) |
-| `float:openTask(taskId)` | mostra a janela principal e manda `app:navigate` com `/task/<id>`; o `useShellEvents` navega |
+| `float:openTask(taskId)` | mostra a janela principal e manda `app:navigate` com `/task/<id>`; o `useShellEvents` navega. Se a janela principal não existe, ela nasce já com `#/task/<id>`, porque o evento chegaria antes de o React montar |
 | `float:stopTimer(taskId)` | pausa o timer da tarefa |
 | `float:stopAll` | pausa todos |
 
