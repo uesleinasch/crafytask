@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { Toaster } from '@renderer/components/ui/sonner'
 import { TerminalPanel } from '@renderer/components/terminal/TerminalPanel'
+import { NewTaskModal } from '@renderer/components/tasks/NewTaskModal'
 import { usePersistedState } from '@renderer/hooks/usePersistedState'
 import { CommandPalette } from './CommandPalette'
 import { RegionBoundary } from './RegionBoundary'
@@ -87,6 +88,7 @@ export function AppShell(): React.JSX.Element {
         <StatusBar />
       </Layout>
       <CommandPalette />
+      <NewTaskModal />
       <Toaster position="bottom-right" />
     </Layout>
   )
