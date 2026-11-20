@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Alert, App, Button, Flex, Space, Table, Typography, theme } from 'antd'
+import { Alert, App, Button, Flex, Space, Switch, Table, Tooltip, Typography, theme } from 'antd'
 import { FolderOpen, RotateCcw, Save } from 'lucide-react'
 import type { BackupCounts, BackupSnapshot, BackupStatus } from '@shared/types'
+import { AUTO_BACKUP_KEEP } from '@shared/appPrefs'
 import { SettingRow, SettingsCard } from './SettingsLayout'
 import { errorMessage } from './settingsStatus'
 
@@ -33,12 +34,40 @@ export function BackupSection(): React.JSX.Element {
   const [busy, setBusy] = useState<'backup' | 'restore' | null>(null)
   const mono = { fontFamily: token.fontFamilyCode, fontVariantNumeric: 'tabular-nums' as const }
 
+  const [autoBackup, setAutoBackup] = useState<boolean | null>(null)
+  const [savingAuto, setSavingAuto] = useState(false)
+
   useEffect(() => {
+    const load = (): void => {
+      window.api
+        .backupGetStatus()
+        .then(setStatus)
+        .catch((error) => message.error(errorMessage(error)))
+    }
+    load()
     window.api
-      .backupGetStatus()
-      .then(setStatus)
+      .getAppPrefs()
+      .then((prefs) => setAutoBackup(prefs.autoBackup))
       .catch((error) => message.error(errorMessage(error)))
+    return window.api.onBackupChanged(load)
   }, [message])
+
+  async function toggleAutoBackup(enabled: boolean): Promise<void> {
+    setSavingAuto(true)
+    try {
+      const prefs = await window.api.setAutoBackup(enabled)
+      setAutoBackup(prefs.autoBackup)
+      message.success(
+        prefs.autoBackup
+          ? 'Backup automático ligado. O primeiro sai hoje, se ainda não houver backup de hoje.'
+          : 'Backup automático desligado'
+      )
+    } catch (error) {
+      message.error(errorMessage(error))
+    } finally {
+      setSavingAuto(false)
+    }
+  }
 
   async function chooseFolder(): Promise<void> {
     try {
@@ -131,6 +160,20 @@ export function BackupSection(): React.JSX.Element {
               Fazer backup agora
             </Button>
           </Space>
+        </SettingRow>
+        <SettingRow
+          title="Backup automático"
+          description={`Diário, mantendo os últimos ${AUTO_BACKUP_KEEP}. Roda com o app aberto e não apaga os backups feitos à mão.`}
+        >
+          <Tooltip title={status?.folder ? undefined : 'Escolha uma pasta primeiro.'}>
+            <Switch
+              aria-label="Backup automático"
+              checked={!!autoBackup}
+              loading={savingAuto || autoBackup === null}
+              disabled={!status?.folder}
+              onChange={(checked) => void toggleAutoBackup(checked)}
+            />
+          </Tooltip>
         </SettingRow>
       </SettingsCard>
 

@@ -20,7 +20,8 @@ MCP são opcionais.
 - **GTD completo** — Inbox, próximas ações, aguardando, someday/maybe, contextos (`@computador`,
   `@telefone`…), projetos com resultado desejado, áreas de foco, metas e os seis horizontes de
   perspectiva.
-- **Captura rápida de qualquer lugar** — `Ctrl + Shift + Space` abre uma janelinha que joga o
+- **Captura rápida de qualquer lugar** — `Ctrl + Shift + Space` (ou o atalho que você escolher em
+  Configurações → Geral) abre uma janelinha que joga o
   pensamento direto no Inbox.
 - **Timer por tarefa** — vários cronômetros ao mesmo tempo, sessões registradas, limite de tempo
   com alerta, timer flutuante sempre no topo quando a janela está minimizada.

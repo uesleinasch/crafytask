@@ -304,6 +304,12 @@ nomes ou rótulos do manifest exige mudar os dois. Restaurar fecha o banco, guar
 em `userData/pre-restore-*/` e reinicia o app. `gcal-config.json` fica de fora de propósito: o
 token é cifrado com `safeStorage` e não abre em outra máquina.
 
+Backup automático (opt-in, `autoBackup` em `app_prefs`): o main confere a cada hora e cria um
+snapshot quando a pasta não tem nenhum de hoje. Os nomes dos automáticos ficam em
+`backup-config.json` (`autoSnapshots`) e só eles são podados (guarda 14); backup manual nunca é
+apagado. `createBackup` não roda duas vezes ao mesmo tempo, e `backup:restore` recusa enquanto um
+backup está em andamento.
+
 ## MCP server
 
 Lives in `src/main/mcp/`, embedded in the main process. It speaks MCP over HTTP on loopback
@@ -315,7 +321,7 @@ confirmation guard in `confirmGuard.ts` (preview + `confirm_token`, then repeat 
 
 ## Windows & shortcuts
 
-`index.ts` manages three `BrowserWindow`s: `mainWindow`, an always-on-top `floatWindow` (the floating timer, route `/float`), and `quickCaptureWindow` (route `/quick-capture`). Global shortcut **`CommandOrControl+Shift+Space`** toggles quick capture. The float and quick-capture windows are `frame: false`; the main window keeps its OS frame with `autoHideMenuBar` and renders its own in-app `TitleBar`. The `window:minimize`/`maximize`/`close` channels exist in the preload but no button in the current UI is wired to them.
+`index.ts` manages three `BrowserWindow`s: `mainWindow`, an always-on-top `floatWindow` (the floating timer, route `/float`), and `quickCaptureWindow` (route `/quick-capture`). Global shortcut **`CommandOrControl+Shift+Space`** (default; user-editable in Settings → Geral, stored as `captureShortcut` in `app_prefs`, validated by `shared/accelerator.ts`, re-registered by `changeCaptureShortcut`, which rolls back if the OS refuses) toggles quick capture. The float and quick-capture windows are `frame: false`; the main window keeps its OS frame with `autoHideMenuBar` and renders its own in-app `TitleBar`. The `window:minimize`/`maximize`/`close` channels exist in the preload but no button in the current UI is wired to them.
 
 The float is driven by `mainWindow` events, not by the renderer: `minimize` **and `close`** show it
 **only when a timer is running**, `restore` and `focus` hide it. Its size is derived from the timer

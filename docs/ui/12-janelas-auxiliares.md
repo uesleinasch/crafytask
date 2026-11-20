@@ -93,7 +93,8 @@ sustenta o "mind like water" do GTD.
 
 ## Como abre
 
-- **Atalho global `Ctrl/Cmd + Shift + Space`**, registrado no sistema inteiro;
+- **Atalho global**, registrado no sistema inteiro: `Ctrl/Cmd + Shift + Space` por padrão, trocado
+  em Configurações → Geral (`app_prefs`, lido na abertura do app);
 - item **"Captura rápida"** no menu da bandeja.
 
 ## Geometria

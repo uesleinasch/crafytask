@@ -136,7 +136,9 @@ import {
   filterGcalSyncedIds,
   getNextRecurrenceIds,
   getWorkflowPrefs,
-  setWorkflowPrefs
+  setWorkflowPrefs,
+  getAppPrefs,
+  setAppPrefs
 } from './database'
 import { mergeTimeBlock, timeBlockError } from './calendarQueries'
 import {
@@ -210,10 +212,14 @@ import {
   createBackup,
   getBackupStatus,
   inspectSnapshot,
-  restoreSnapshot
+  isBackupRunning,
+  restoreSnapshot,
+  runAutoBackupIfDue
 } from './backup'
 import { pickDueNotifications } from './dueNotifications'
 import { localDateString } from '../shared/dueState'
+import { DEFAULT_CAPTURE_SHORTCUT, isValidAccelerator } from '../shared/accelerator'
+import type { AppPrefsStatus } from '../shared/appPrefs'
 import { readMcpConfig, writeMcpConfig } from './mcp/store'
 import { isMcpRunning, startMcpServer, stopMcpServer } from './mcp/transport'
 import { generateToken } from './mcp/config'
@@ -286,8 +292,7 @@ function floatHeightFor(count: number): number {
   return rows * FLOAT_ROW_HEIGHT + FLOAT_FOOTER_HEIGHT + FLOAT_VPADDING
 }
 
-// Atalho global padrão para captura rápida
-const quickCaptureShortcut = 'CommandOrControl+Shift+Space'
+let captureShortcut = DEFAULT_CAPTURE_SHORTCUT
 
 function normalizeTaskIds(ids: number[]): number[] {
   const unique = new Set<number>()
@@ -588,14 +593,50 @@ function createQuickCaptureWindow(): void {
   })
 }
 
-function registerGlobalShortcut(): void {
+function tryRegisterCapture(accelerator: string): boolean {
   try {
-    globalShortcut.register(quickCaptureShortcut, () => {
+    return globalShortcut.register(accelerator, () => {
       createQuickCaptureWindow()
     })
   } catch (error) {
     console.error('Erro ao registrar atalho global:', error)
+    return false
   }
+}
+
+function registerGlobalShortcut(): void {
+  captureShortcut = getAppPrefs().captureShortcut
+  if (!tryRegisterCapture(captureShortcut)) {
+    console.error(`Atalho da captura recusado pelo sistema: ${captureShortcut}`)
+  }
+}
+
+function appPrefsStatus(): AppPrefsStatus {
+  return {
+    ...getAppPrefs(),
+    captureShortcutActive: globalShortcut.isRegistered(captureShortcut)
+  }
+}
+
+function changeCaptureShortcut(accelerator: unknown): AppPrefsStatus {
+  if (!isValidAccelerator(accelerator)) {
+    throw new Error(
+      'Atalho inválido: use Ctrl, Alt ou Super com uma letra, número, F1–F12 ou Espaço.'
+    )
+  }
+  if (accelerator !== captureShortcut) {
+    const previous = captureShortcut
+    if (globalShortcut.isRegistered(previous)) globalShortcut.unregister(previous)
+    if (!tryRegisterCapture(accelerator)) {
+      tryRegisterCapture(previous)
+      throw new Error('O sistema recusou esse atalho. Ele pode estar em uso por outro programa.')
+    }
+    captureShortcut = accelerator
+  } else if (!globalShortcut.isRegistered(accelerator) && !tryRegisterCapture(accelerator)) {
+    throw new Error('O sistema recusou esse atalho. Ele pode estar em uso por outro programa.')
+  }
+  setAppPrefs({ captureShortcut: accelerator })
+  return appPrefsStatus()
 }
 
 // ===================== MAIN WINDOW =====================
@@ -1347,16 +1388,29 @@ function setupIpcHandlers(): void {
     return prefs
   })
 
+  ipcMain.handle('prefs:getApp', () => appPrefsStatus())
+  ipcMain.handle('prefs:setCaptureShortcut', (_, accelerator: unknown) =>
+    changeCaptureShortcut(accelerator)
+  )
+  ipcMain.handle('prefs:setAutoBackup', (_, enabled: unknown) => {
+    if (typeof enabled !== 'boolean') throw new Error('Valor inválido')
+    setAppPrefs({ autoBackup: enabled })
+    if (enabled) void checkAutoBackup()
+    return appPrefsStatus()
+  })
+
   ipcMain.handle('backup:getStatus', () => getBackupStatus())
   ipcMain.handle('backup:chooseFolder', () => chooseBackupFolder(mainWindow))
   ipcMain.handle('backup:create', () => createBackup())
   ipcMain.handle('backup:chooseSnapshot', () => chooseSnapshotFolder(mainWindow))
   ipcMain.handle('backup:inspect', (_, dir: string) => inspectSnapshot(dir))
   ipcMain.handle('backup:restore', async (_, dir: string) => {
+    if (isBackupRunning()) throw new Error('Um backup está em andamento. Espere terminar.')
     await inspectSnapshot(dir)
     isQuitting = true
     destroyTray()
     if (notificationInterval) clearInterval(notificationInterval)
+    if (autoBackupInterval) clearInterval(autoBackupInterval)
     await stopMcpServer()
     closeDatabase()
     try {
@@ -1402,6 +1456,26 @@ function setupIpcHandlers(): void {
 
 const notifiedToday = new Set<string>() // 'taskId-type' keys to avoid spam
 let notificationInterval: NodeJS.Timeout | null = null
+let autoBackupInterval: NodeJS.Timeout | null = null
+
+const AUTO_BACKUP_CHECK_MS = 60 * 60 * 1000
+const AUTO_BACKUP_FIRST_CHECK_MS = 2 * 60 * 1000
+
+async function checkAutoBackup(): Promise<void> {
+  try {
+    const snapshot = await runAutoBackupIfDue()
+    if (snapshot && mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('backup:changed')
+    }
+  } catch (error) {
+    console.error('[backup] backup automático falhou:', error)
+  }
+}
+
+function startAutoBackupScheduler(): void {
+  setTimeout(() => void checkAutoBackup(), AUTO_BACKUP_FIRST_CHECK_MS)
+  autoBackupInterval = setInterval(() => void checkAutoBackup(), AUTO_BACKUP_CHECK_MS)
+}
 
 function checkDueDateNotifications(): void {
   const now = new Date()
@@ -1457,6 +1531,7 @@ app.whenReady().then(() => {
   registerAssetProtocol()
   setupIpcHandlers()
   startNotificationScheduler()
+  startAutoBackupScheduler()
   startJiraScheduler(() => {
     runJiraImport().catch(() => undefined)
   })
@@ -1505,6 +1580,7 @@ app.on('before-quit', () => {
   destroyTray()
   killAllTerminals()
   if (notificationInterval) clearInterval(notificationInterval)
+  if (autoBackupInterval) clearInterval(autoBackupInterval)
   void stopMcpServer()
   closeDatabase()
 })

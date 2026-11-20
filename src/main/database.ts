@@ -65,7 +65,14 @@ import {
   type ContextUsageRow
 } from './contextQueries'
 import { ensureNotebookSchema } from './notebookQueries'
-import { ensurePrefsSchema, readWorkflowPrefs, writeWorkflowPrefs } from './workflowPrefsStore'
+import {
+  ensurePrefsSchema,
+  readAppPrefs,
+  readWorkflowPrefs,
+  writeAppPrefs,
+  writeWorkflowPrefs
+} from './workflowPrefsStore'
+import type { AppPrefs } from '@shared/appPrefs'
 import type { WorkflowPrefs } from '@shared/workflowPrefs'
 import { getProjectQuery, listProjectsQuery } from './projectQueries'
 import { ensureStatusChangedAt, healthIndicatorsQuery } from './healthQueries'
@@ -597,6 +604,14 @@ export function getWorkflowPrefs(): WorkflowPrefs {
 
 export function setWorkflowPrefs(patch: unknown): WorkflowPrefs {
   return writeWorkflowPrefs(tagDb(), patch)
+}
+
+export function getAppPrefs(): AppPrefs {
+  return readAppPrefs(tagDb())
+}
+
+export function setAppPrefs(patch: Partial<AppPrefs>): AppPrefs {
+  return writeAppPrefs(tagDb(), patch)
 }
 
 export function notebookDb(): SqliteLike {

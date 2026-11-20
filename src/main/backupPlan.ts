@@ -39,6 +39,21 @@ export function sortSnapshotNames(names: string[]): string[] {
   return names.filter((name) => parseSnapshotName(name) !== null).sort((a, b) => b.localeCompare(a))
 }
 
+export function isAutoBackupDue(names: string[], now: Date): boolean {
+  const today = snapshotName(now).slice(0, 10)
+  return !names.some((name) => parseSnapshotName(name) !== null && name.startsWith(today))
+}
+
+export function planAutoPrune(
+  autoNames: string[],
+  existing: string[],
+  keep: number
+): { keep: string[]; prune: string[] } {
+  const present = new Set(existing)
+  const sorted = sortSnapshotNames(autoNames.filter((name) => present.has(name)))
+  return { keep: sorted.slice(0, keep), prune: sorted.slice(keep) }
+}
+
 export function preRestoreName(date: Date): string {
   return `pre-restore-${snapshotName(date)}`
 }

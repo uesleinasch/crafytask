@@ -75,8 +75,15 @@ que sai do CrafyTask e o que continua no serviço.
 - Card **Inicialização**: `Switch` "Iniciar o CrafyTask com o sistema". Se o sistema recusar, aviso
   de erro; senão, aviso de confirmação.
 - Card **Janela e bandeja**: "Fechar a janela não encerra o app" (`Tag` "Comportamento fixo") e
-  "Captura rápida" com o atalho em `KeyCombo` (`Ctrl` ou `⌘` conforme a plataforma), só
-  informativo.
+  "Captura rápida" com o atalho atual em `KeyCombo` (`Ctrl` ou `⌘` conforme a plataforma); se o
+  sistema não aceitou o atalho, uma `Tag` de aviso "Não registrado".
+- **Atalho da captura rápida**: **Alterar atalho** põe o botão em modo de gravação ("Pressione as
+  teclas…"); a próxima combinação com Ctrl, Alt ou Super mais uma letra, número, F1–F12, Espaço ou
+  seta vira o atalho (`acceleratorFromEvent` em `shared/accelerator.ts`, puro e testado). `Esc` ou
+  sair do botão cancela. O main desregistra o antigo e registra o novo no `globalShortcut`; se o
+  sistema recusar, volta ao antigo e o erro aparece. **Restaurar padrão** (só fora do padrão) volta
+  a `Ctrl+Shift+Space`. O atalho fica em `app_prefs` (linha `app`, `shared/appPrefs.ts`), lido na
+  abertura do app (IPC `prefs:getApp`/`prefs:setCaptureShortcut`).
 
 ### Aparência
 
@@ -129,6 +136,13 @@ Valores em `localStorage` (`lib/terminalPrefs.ts`).
 
 - Card **Pasta de backup**: a pasta em mono, **Escolher pasta / Trocar** (diálogo do sistema) e
   **Fazer backup agora** (desabilitado sem pasta). A pasta fica em `userData/backup-config.json`.
+- **Backup automático** (`Switch`, desabilitado sem pasta; `autoBackup` em `app_prefs`): o main
+  confere 2 min depois de abrir e depois a cada hora; se não há snapshot de hoje na pasta (manual
+  ou automático), cria um. Os automáticos ficam listados em `backup-config.json`
+  (`autoSnapshots`) e só eles são podados, guardando os 14 mais recentes; backup feito à mão nunca
+  é apagado. Ligar já confere na hora. Dois backups nunca rodam juntos, e restaurar espera o
+  backup em andamento. Quando um automático termina, o main manda `backup:changed` e a lista
+  recarrega. Regras em `backupPlan.ts` (`isAutoBackupDue`, `planAutoPrune`).
 - O backup cria um snapshot `AAAA-MM-DD_HHMMSS/` na pasta: `ticktask.db` copiado com `db.backup()`
   (consistente com o app aberto, já inclui o WAL), `notes-assets/`, `drawings/`,
   `notion-config.json`, `mcp-config.json` e um `MANIFEST.txt` com as contagens e o sha256 de cada
@@ -235,5 +249,4 @@ Card **Versões** (`Descriptions`): CrafyTask (`app:getVersion`), Electron, Chro
 
 ## O que falta
 
-- O atalho global da captura continua fixo (F7-f2).
-- Backup só manual: não há backup automático periódico nem limpeza de snapshots antigos.
+- O backup automático só roda com o app aberto (não há agendamento no sistema).

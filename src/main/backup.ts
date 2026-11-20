@@ -5,7 +5,8 @@ import fs from 'fs'
 import { hostname } from 'os'
 import path from 'path'
 import type { BackupCounts, BackupSnapshot, BackupStatus } from '../shared/types'
-import { backupDatabase } from './database'
+import { AUTO_BACKUP_KEEP } from '../shared/appPrefs'
+import { backupDatabase, getAppPrefs } from './database'
 import {
   ASSET_DIRS,
   CONFIG_FILES,
@@ -15,8 +16,10 @@ import {
   RESTORE_REPLACED_ITEMS,
   SNAPSHOT_ITEMS,
   buildManifest,
+  isAutoBackupDue,
   parseManifestCounts,
   parseSnapshotName,
+  planAutoPrune,
   preRestoreName,
   snapshotName,
   sortSnapshotNames
@@ -24,6 +27,7 @@ import {
 
 interface BackupConfig {
   folder: string | null
+  autoSnapshots: string[]
 }
 
 const dataDir = (): string => app.getPath('userData')
@@ -32,9 +36,14 @@ const configPath = (): string => path.join(dataDir(), 'backup-config.json')
 function readConfig(): BackupConfig {
   try {
     const parsed = JSON.parse(fs.readFileSync(configPath(), 'utf-8')) as Partial<BackupConfig>
-    return { folder: typeof parsed.folder === 'string' ? parsed.folder : null }
+    return {
+      folder: typeof parsed.folder === 'string' ? parsed.folder : null,
+      autoSnapshots: Array.isArray(parsed.autoSnapshots)
+        ? parsed.autoSnapshots.filter((name): name is string => typeof name === 'string')
+        : []
+    }
   } catch {
-    return { folder: null }
+    return { folder: null, autoSnapshots: [] }
   }
 }
 
@@ -140,11 +149,50 @@ export async function chooseBackupFolder(win: BrowserWindow | null): Promise<Bac
     properties: ['openDirectory', 'createDirectory']
   })
   if (!folder) return null
-  writeConfig({ folder })
+  writeConfig({ ...readConfig(), folder })
   return getBackupStatus()
 }
 
-export async function createBackup(): Promise<BackupSnapshot> {
+let running: Promise<BackupSnapshot> | null = null
+
+export function isBackupRunning(): boolean {
+  return running !== null
+}
+
+export function createBackup(): Promise<BackupSnapshot> {
+  if (running) return Promise.reject(new Error('Um backup já está em andamento. Espere terminar.'))
+  running = writeSnapshot().finally(() => {
+    running = null
+  })
+  return running
+}
+
+async function listSnapshotNames(folder: string): Promise<string[]> {
+  const entries = await fs.promises.readdir(folder, { withFileTypes: true })
+  return entries.filter((e) => e.isDirectory()).map((e) => e.name)
+}
+
+export async function runAutoBackupIfDue(now = new Date()): Promise<BackupSnapshot | null> {
+  if (!getAppPrefs().autoBackup || running) return null
+  const { folder } = readConfig()
+  if (!folder || !fs.existsSync(folder)) return null
+  if (!isAutoBackupDue(await listSnapshotNames(folder), now)) return null
+
+  const snapshot = await createBackup()
+  const config = readConfig()
+  const plan = planAutoPrune(
+    [...config.autoSnapshots, snapshot.name],
+    await listSnapshotNames(folder),
+    AUTO_BACKUP_KEEP
+  )
+  for (const name of plan.prune) {
+    await fs.promises.rm(path.join(folder, name), { recursive: true, force: true })
+  }
+  writeConfig({ ...config, autoSnapshots: plan.keep })
+  return snapshot
+}
+
+async function writeSnapshot(): Promise<BackupSnapshot> {
   const { folder } = readConfig()
   if (!folder) throw new Error('Escolha uma pasta de backup primeiro.')
 

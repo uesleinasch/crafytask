@@ -71,6 +71,7 @@ import type {
 } from '../shared/types'
 import type { ThemePreference } from '../shared/themePreference'
 import type { WorkflowPrefs, WorkflowPrefsPatch } from '../shared/workflowPrefs'
+import type { AppPrefsStatus } from '../shared/appPrefs'
 import type { TaskStatusCounts } from '../shared/taskStatusCounts'
 import type { RendererErrorReport } from '../shared/rendererError'
 
@@ -351,6 +352,10 @@ interface API {
   getWorkflowPrefs: () => Promise<WorkflowPrefs>
   setWorkflowPrefs: (patch: WorkflowPrefsPatch) => Promise<WorkflowPrefs>
   onWorkflowPrefsChanged: (callback: (prefs: WorkflowPrefs) => void) => () => void
+  getAppPrefs: () => Promise<AppPrefsStatus>
+  setCaptureShortcut: (accelerator: string) => Promise<AppPrefsStatus>
+  setAutoBackup: (enabled: boolean) => Promise<AppPrefsStatus>
+  onBackupChanged: (callback: () => void) => () => void
   appLogRendererError: (report: RendererErrorReport) => Promise<void>
   onRendererRecovered: (callback: () => void) => () => void
 

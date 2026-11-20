@@ -2059,7 +2059,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
   const SETTINGS_NAV = [
     { group: 'Aplicativo', items: [
       { key: 'geral', label: 'Geral', icon: 'SettingOutlined', keywords: 'iniciar sistema bandeja fechar captura atalho' },
-      { key: 'aparencia', label: 'Aparência', icon: 'BgColorsOutlined', keywords: 'tema escuro claro densidade compacta', isNew: true },
+      { key: 'aparencia', label: 'Aparência', icon: 'BgColorsOutlined', keywords: 'tema escuro claro densidade compacta' },
       { key: 'fluxo', label: 'Fluxo de trabalho', icon: 'FieldTimeOutlined', keywords: 'jornada time leak calendário notificações avisos prazo semana notas notion' },
       { key: 'terminal', label: 'Terminal', icon: 'CodeOutlined', keywords: 'shell timer comando' },
       { key: 'backup', label: 'Backup', icon: 'DatabaseOutlined', keywords: 'restaurar pasta snapshot' }
@@ -2142,7 +2142,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           <${SettingRow} title="Captura rápida" desc="Abre de qualquer lugar do sistema e manda direto para o Inbox.">
             <${Space} size=${4}><kbd className="ct-kbd">Ctrl</kbd><kbd className="ct-kbd">Shift</kbd><kbd className="ct-kbd">Space</kbd><//>
           <//>
-          <${SettingRow} title="Atalho da captura rápida" desc="Hoje o atalho é fixo." isNew=${true}>
+          <${SettingRow} title="Atalho da captura rápida" desc="Troca a combinação que abre a captura.">
             <${Button} onClick=${() => message.info('Pressione a nova combinação de teclas')}>Alterar atalho<//>
           <//>
         <//>
@@ -2226,8 +2226,8 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
               <${Button} type="primary" disabled=${!backupDir} onClick=${() => message.success('Backup criado: 2026-11-17_211530')}>Fazer backup agora<//>
             <//>
           <//>
-          <${SettingRow} title="Backup automático" desc="Diário, mantendo os últimos 14." isNew=${true}>
-            <${Switch} aria-label="Backup automático" />
+          <${SettingRow} title="Backup automático" desc="Diário, mantendo os últimos 14. Roda com o app aberto e não apaga os backups feitos à mão.">
+            <${Tooltip} title=${backupDir ? undefined : 'Escolha uma pasta primeiro.'}><${Switch} aria-label="Backup automático" disabled=${!backupDir} /><//>
           <//>
         <//>
         <${SettingsCard} title="Backups nesta pasta" extra=${html`<${Button} size="small" type="link" onClick=${() => message.info('Escolha a pasta de um snapshot')}>Restaurar de outra pasta…<//>`}>

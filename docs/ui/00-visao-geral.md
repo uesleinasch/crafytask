@@ -223,7 +223,8 @@ Regras de exibição do float, decididas no processo principal (não pelo render
 - Fechar a janela principal não encerra o app: ele fica na bandeja.
 
 O app também registra um **ícone de bandeja** (Abrir CrafyTask · Captura rápida · Sair) e um **atalho
-global `Ctrl/Cmd + Shift + Space`** que abre a captura rápida de qualquer lugar do sistema.
+global** (padrão `Ctrl/Cmd + Shift + Space`, trocado em Configurações → Geral) que abre a captura
+rápida de qualquer lugar do sistema.
 
 ## Padrões que se repetem em toda tela
 

@@ -1,8 +1,15 @@
 import { DatabaseSync } from 'node:sqlite'
 import { beforeEach, describe, expect, it } from 'vitest'
+import { DEFAULT_APP_PREFS } from '@shared/appPrefs'
 import { DEFAULT_WORKFLOW_PREFS } from '@shared/workflowPrefs'
 import type { SqliteLike } from './tagQueries'
-import { ensurePrefsSchema, readWorkflowPrefs, writeWorkflowPrefs } from './workflowPrefsStore'
+import {
+  ensurePrefsSchema,
+  readAppPrefs,
+  readWorkflowPrefs,
+  writeAppPrefs,
+  writeWorkflowPrefs
+} from './workflowPrefsStore'
 
 let raw: DatabaseSync
 let db: SqliteLike
@@ -33,5 +40,15 @@ describe('preferências de fluxo no banco', () => {
   it('JSON corrompido volta aos padrões', () => {
     raw.prepare("INSERT INTO app_prefs (key, value) VALUES ('workflow', '{quebrado')").run()
     expect(readWorkflowPrefs(db)).toEqual(DEFAULT_WORKFLOW_PREFS)
+  })
+})
+
+describe('preferências do app no banco', () => {
+  it('ficam numa linha separada das de fluxo', () => {
+    expect(readAppPrefs(db)).toEqual(DEFAULT_APP_PREFS)
+    writeAppPrefs(db, { autoBackup: true })
+    writeWorkflowPrefs(db, { workdayHours: 6 })
+    expect(readAppPrefs(db)).toEqual({ ...DEFAULT_APP_PREFS, autoBackup: true })
+    expect(readWorkflowPrefs(db).workdayHours).toBe(6)
   })
 })

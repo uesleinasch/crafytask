@@ -575,8 +575,8 @@ Mesmo esqueleto das outras telas, com navegação própria porque são muitas se
   hex, e densidade) e **Fluxo de trabalho** (jornada diária, início da semana, níveis e repetição do
   time leak, faixa de horas do calendário, os quatro avisos de prazo, intervalo do envio das notas
   ao Notion), guardadas no banco (`app_prefs`) e lidas pelo main e pelo renderer. Também novos:
-  alterar o atalho da captura e backup automático (diário, guarda 14), que ainda são fixos no
-  código (E8) e no protótipo levam a etiqueta "novo".
+  alterar o atalho da captura (em Geral, gravando a combinação no próprio botão) e backup
+  automático (em Backup: diário, guarda os 14 automáticos mais recentes e nunca apaga os manuais).
 
 ### Cadernos
 

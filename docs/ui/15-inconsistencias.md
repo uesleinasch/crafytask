@@ -254,8 +254,8 @@ Mover um bloco de 09:00 para 10:00 exige abrir o diálogo e digitar os dois hor�
 
 **Em grande parte resolvida.** A F7-d3 trouxe a Aparência (tema e densidade) e a F7-f1 a seção Fluxo
 de trabalho (jornada, início da semana, níveis e repetição do time leak, faixa do calendário,
-avisos de prazo e intervalo das notas). Ainda fixos: o atalho global da captura e o backup só
-manual (F7-f2). Não há idioma.
+avisos de prazo e intervalo das notas), e a F7-f2 o atalho da captura editável e o backup
+automático. Não há idioma.
 
 ---
 

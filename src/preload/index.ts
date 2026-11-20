@@ -72,6 +72,7 @@ import type {
 } from '../shared/types'
 import type { ThemePreference } from '../shared/themePreference'
 import type { WorkflowPrefs, WorkflowPrefsPatch } from '../shared/workflowPrefs'
+import type { AppPrefsStatus } from '../shared/appPrefs'
 import type { TaskStatusCounts } from '../shared/taskStatusCounts'
 import type { RendererErrorReport } from '../shared/rendererError'
 
@@ -534,6 +535,16 @@ const api = {
   getWorkflowPrefs: (): Promise<WorkflowPrefs> => ipcRenderer.invoke('prefs:getWorkflow'),
   setWorkflowPrefs: (patch: WorkflowPrefsPatch): Promise<WorkflowPrefs> =>
     ipcRenderer.invoke('prefs:setWorkflow', patch),
+  getAppPrefs: (): Promise<AppPrefsStatus> => ipcRenderer.invoke('prefs:getApp'),
+  setCaptureShortcut: (accelerator: string): Promise<AppPrefsStatus> =>
+    ipcRenderer.invoke('prefs:setCaptureShortcut', accelerator),
+  setAutoBackup: (enabled: boolean): Promise<AppPrefsStatus> =>
+    ipcRenderer.invoke('prefs:setAutoBackup', enabled),
+  onBackupChanged: (callback: () => void): (() => void) => {
+    const handler = (): void => callback()
+    ipcRenderer.on('backup:changed', handler)
+    return () => ipcRenderer.removeListener('backup:changed', handler)
+  },
   onWorkflowPrefsChanged: (callback: (prefs: WorkflowPrefs) => void): (() => void) => {
     const handler = (_: unknown, prefs: WorkflowPrefs): void => callback(prefs)
     ipcRenderer.on('prefs:workflowChanged', handler)
