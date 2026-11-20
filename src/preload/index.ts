@@ -70,7 +70,8 @@ import type {
   MovePageInput,
   PageLocation,
   PageSearchResult,
-  FloatTimerData
+  FloatTimerData,
+  TaskHistoryView
 } from '../shared/types'
 import type { ThemePreference } from '../shared/themePreference'
 import type { WorkflowPrefs, WorkflowPrefsPatch } from '../shared/workflowPrefs'
@@ -208,6 +209,10 @@ const api = {
   // Time Entries
   getTimeEntries: (taskId: number): Promise<TimeEntry[]> =>
     ipcRenderer.invoke('task:getTimeEntries', taskId),
+  getTaskHistory: (taskId: number, includeSubtasks: boolean): Promise<TaskHistoryView> =>
+    ipcRenderer.invoke('task:history', taskId, includeSubtasks),
+  addTaskHistory: (taskId: number, summary: string): Promise<number> =>
+    ipcRenderer.invoke('task:addHistory', taskId, summary),
   updateTimeEntry: (id: number, startIso: string, endIso: string): Promise<void> =>
     ipcRenderer.invoke('timeEntry:update', id, startIso, endIso),
   deleteTimeEntry: (id: number): Promise<void> => ipcRenderer.invoke('timeEntry:delete', id),

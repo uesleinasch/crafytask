@@ -33,6 +33,11 @@ export interface TaskHistoryItem {
   created_at: string
 }
 
+export interface TaskHistoryView {
+  entries: TaskHistoryItem[]
+  lastCheckpoint: TaskHistoryItem | null
+}
+
 export interface AddTaskHistoryInput {
   task_id: number
   summary: string

@@ -133,6 +133,9 @@ import {
   // FASE 2
   getSubtasks,
   completeSubtasksCheck,
+  addTaskHistory,
+  getTaskHistory,
+  getTaskLastCheckpoint,
   getTaskDependencies,
   getTaskDependents,
   addTaskDependency,
@@ -240,6 +243,8 @@ import { isMcpRunning, startMcpServer, stopMcpServer } from './mcp/transport'
 import { generateToken } from './mcp/config'
 import { registerWriteEffects } from './mcp/effects'
 import { createDrawingRenderBridge } from './drawingRenderBridge'
+import { TASK_HISTORY_MAX_LIMIT } from './taskHistoryQueries'
+import type { TaskHistoryView } from '@shared/types'
 import type { DrawingRenderResult } from '@shared/drawingRender'
 import {
   applyStatusChange as applyTaskStatusChange,
@@ -1097,6 +1102,16 @@ function setupIpcHandlers(): void {
 
   // Time Entries
   ipcMain.handle('task:getTimeEntries', (_, taskId: number) => getTimeEntries(taskId))
+  ipcMain.handle(
+    'task:history',
+    (_, taskId: number, includeSubtasks: boolean): TaskHistoryView => ({
+      entries: getTaskHistory({ taskId, includeSubtasks, limit: TASK_HISTORY_MAX_LIMIT }),
+      lastCheckpoint: getTaskLastCheckpoint(taskId)
+    })
+  )
+  ipcMain.handle('task:addHistory', (_, taskId: number, summary: string) =>
+    addTaskHistory({ task_id: taskId, kind: 'note', summary: String(summary ?? '') }, 'app')
+  )
   ipcMain.handle('timeEntry:update', (_, id: number, startIso: string, endIso: string) => {
     editTimeEntry(id, startIso, endIso)
   })
