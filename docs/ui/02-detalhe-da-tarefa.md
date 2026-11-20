@@ -61,6 +61,9 @@ na aba Desenho) e cresce com o conteúdo.
 
 ### Barra de propriedades — `TaskPropertyBar`
 
+As pílulas moram em `tasks/propertyPills.tsx`, com `value`/`onChange`, e o modal Nova tarefa usa as
+mesmas. A barra só liga cada uma ao `update` da task (e resolve as tags por id).
+
 Pílulas de 28px (classe `.ct-prop` em `main.css`, sobre as variáveis do antd; vazia fica tracejada e
 apagada) que abrem um `Popover` de edição (`role="dialog"`, foco no primeiro controle, `aria-expanded`
 na pílula). Cada mudança grava na hora; campos de texto gravam ao sair ou com Enter.
