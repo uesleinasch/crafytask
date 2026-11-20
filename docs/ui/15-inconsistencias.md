@@ -135,8 +135,9 @@ no calendário.
 **Em parte resolvida na F1-d e na F7-b2:** o `FloatingTimer` deu lugar à pílula do header e o
 painel do dashboard saiu. Falta a janela flutuante (F8).
 
-`FloatingTimer` (pílula preta fixa), `RunningNowPanel` (painel esmeralda no dashboard) e
-`FloatTimerPage` (janela escura). Mesma informação, três layouts, três conjuntos de ações.
+Eram `FloatingTimer` (pílula preta fixa), `RunningNowPanel` (painel esmeralda no dashboard) e
+`FloatTimerPage` (janela escura): mesma informação, três layouts, três conjuntos de ações. Hoje
+sobra só a `FloatTimerPage`.
 
 ### C3. `/archived` é um filtro promovido a tela
 

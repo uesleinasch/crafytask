@@ -1,12 +1,13 @@
 # Dashboard — `/dashboard`
 
-`src/renderer/src/pages/DashboardPage.tsx` (~850 linhas). Gráficos com **Recharts**.
+`src/renderer/src/pages/DashboardPage.tsx` e `components/dashboard/`. Gráficos com **Recharts**.
 
 ## Função
 
-Analítica retrospectiva: quanto tempo foi para onde, e quão saudável está o sistema GTD. Oito blocos
-empilhados numa coluna de `max-w-6xl`, todos carregados de uma vez ao abrir (`Promise.all` com oito
-consultas). Enquanto carrega: "Carregando estatísticas..." ocupando a tela inteira.
+Analítica retrospectiva: quanto tempo foi para onde, e quão saudável está o sistema GTD. A página
+usa o `PageContainer` (até 1480px). A seção Agora carrega sozinha; os blocos antigos de "No
+período" vêm de um `Promise.all` com sete consultas e mostram "Carregando estatísticas…" sob o
+cabeçalho da seção, sem esconder a Agora.
 
 ## Agora (F7-b2)
 
@@ -27,9 +28,10 @@ barra de status), as métricas GTD antigas e o funil de fluxo.
 
 ## No período (legado até a F7-b3)
 
-Abaixo de um cabeçalho "No período" com **Exportar PDF** (relatório semanal via
-`webContents.printToPDF`), seguem os blocos antigos, que a F7-b3 troca pelos de período
-(`stats:period`).
+Abaixo do cabeçalho "No período", uma linha com **Exportar PDF** (relatório semanal via
+`webContents.printToPDF`, aviso por `App.useApp()`), seguida dos blocos antigos, que a F7-b3 troca
+pelos de período (`stats:period`). A numeração abaixo é a dos blocos originais; os que saíram na
+F7-b2 (0, 2 e 3) não aparecem.
 
 ### 1. Quatro cartões de resumo (`StatCard`)
 

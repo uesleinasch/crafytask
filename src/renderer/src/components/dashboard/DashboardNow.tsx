@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Col, Row, theme } from 'antd'
+import { Col, Flex, Row, Spin, theme } from 'antd'
 import { Gauge, ListTodo } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useErrorBoundary } from 'react-error-boundary'
@@ -52,6 +52,8 @@ export function DashboardNow(): React.JSX.Element {
     }
   }, [showBoundary])
 
+  const mono = { fontFamily: token.fontFamilyCode, fontVariantNumeric: 'tabular-nums' as const }
+
   const statusRows: StatusRow[] = OPEN_STATUSES.map((status) => ({
     status,
     name: STATUS_LABELS[status],
@@ -68,9 +70,12 @@ export function DashboardNow(): React.JSX.Element {
     value: row.count,
     valueText: String(row.count),
     shareText: row.share,
+    ariaValue: `${row.count} ${row.count === 1 ? 'tarefa' : 'tarefas'}`,
     tooltip: (
       <span>
-        <b style={{ fontFamily: token.fontFamilyCode }}>{row.count}</b>{' '}
+        <b style={{ fontFamily: token.fontFamilyCode, fontVariantNumeric: 'tabular-nums' }}>
+          {row.count}
+        </b>{' '}
         {row.count === 1 ? 'tarefa' : 'tarefas'} · {row.share} das abertas
       </span>
     )
@@ -80,7 +85,11 @@ export function DashboardNow(): React.JSX.Element {
     <Section icon={Gauge} title="Agora" extra="estado do sistema, sem filtro">
       <Row gutter={[16, 16]}>
         <Col xs={24} xl={16}>
-          {health && (
+          {!health ? (
+            <Flex align="center" justify="center" style={{ minHeight: 200 }}>
+              <Spin />
+            </Flex>
+          ) : (
             <HealthGrid>
               {healthItems(health, DASHBOARD_HEALTH).map((item) => (
                 <HealthCard
@@ -102,8 +111,20 @@ export function DashboardNow(): React.JSX.Element {
               data: statusRows,
               columns: [
                 { title: 'Status', dataIndex: 'name', key: 'name' },
-                { title: 'Tarefas', dataIndex: 'count', key: 'count', align: 'right' },
-                { title: '%', dataIndex: 'share', key: 'share', align: 'right' }
+                {
+                  title: 'Tarefas',
+                  dataIndex: 'count',
+                  key: 'count',
+                  align: 'right',
+                  render: (value: number) => <span style={mono}>{value}</span>
+                },
+                {
+                  title: '%',
+                  dataIndex: 'share',
+                  key: 'share',
+                  align: 'right',
+                  render: (value: string) => <span style={mono}>{value}</span>
+                }
               ]
             }}
           >

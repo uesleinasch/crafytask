@@ -273,7 +273,6 @@ const api = {
   getHeatmapData: (): Promise<HeatmapData[]> => ipcRenderer.invoke('stats:heatmap'),
   getGeneralStats: (): Promise<GeneralStats> => ipcRenderer.invoke('stats:general'),
   // FASE 4.2: Advanced stats
-  getGtdMetrics: () => ipcRenderer.invoke('stats:gtdMetrics'),
   getEnergyStats: () => ipcRenderer.invoke('stats:energy'),
   getPeriodStats: (period: StatsPeriod): Promise<PeriodStats> =>
     ipcRenderer.invoke('stats:period', period),

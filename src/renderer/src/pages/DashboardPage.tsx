@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { ScrollArea } from '@renderer/components/ui/scroll-area'
 import {
   Clock,
   CheckCircle,
@@ -10,7 +9,8 @@ import {
   Flag,
   Circle,
   Zap,
-  FileDown
+  FileDown,
+  CalendarRange
 } from 'lucide-react'
 import { formatTime } from '@renderer/lib/utils'
 import {
@@ -29,11 +29,10 @@ import {
 import type { EnergyStats } from '@shared/types'
 import { ENERGY_LABELS, ENERGY_COLORS } from '@shared/types'
 import { EnergyMeter } from '@renderer/components/chips/EnergyMeter'
-import { toast } from '@renderer/components/ui/sonner'
-import { Button as AntButton } from 'antd'
-import { CalendarRange } from 'lucide-react'
+import { App, Button as AntButton, Flex, Typography } from 'antd'
 import { RegionBoundary } from '@renderer/components/shell/RegionBoundary'
 import { SectionHeader } from '@renderer/components/shell/SectionHeader'
+import { PageContainer } from '@renderer/components/shell/PageContainer'
 import { DashboardNow } from '@renderer/components/dashboard/DashboardNow'
 
 interface DailyStats {
@@ -120,6 +119,7 @@ const CHART_COLORS = [
 ]
 
 export function DashboardPage(): React.JSX.Element {
+  const { message } = App.useApp()
   const [weeklyStats, setWeeklyStats] = useState<DailyStats[]>([])
   const [taskTimeStats, setTaskTimeStats] = useState<TaskTimeStats[]>([])
   const [statusStats, setStatusStats] = useState<StatusStats[]>([])
@@ -164,13 +164,13 @@ export function DashboardPage(): React.JSX.Element {
     setPdfLoading(true)
     try {
       await window.api.generateWeeklyPDF()
-      toast.success('Relatório gerado com sucesso!')
+      message.success('Relatório gerado com sucesso!')
     } catch {
-      toast.error('Erro ao gerar relatório PDF.')
+      message.error('Erro ao gerar relatório PDF.')
     } finally {
       setPdfLoading(false)
     }
-  }, [])
+  }, [message])
 
   // Agrupar dados por dia da semana
   const weekdayData = useMemo(() => {
@@ -276,36 +276,27 @@ export function DashboardPage(): React.JSX.Element {
     return 'bg-emerald-600'
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full bg-slate-50">
-        <p className="text-slate-400">Carregando estatísticas...</p>
-      </div>
-    )
-  }
-
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-slate-50">
-      <ScrollArea className="flex-1 h-0">
-        <div className="max-w-6xl mx-auto p-6 pb-16 space-y-6">
+    <div className="h-full overflow-y-auto">
+      <PageContainer>
+        <div className="space-y-6">
           <RegionBoundary region="Agora">
             <DashboardNow />
           </RegionBoundary>
 
-          <SectionHeader
-            title="No período"
-            icon={CalendarRange}
-            extra={
-              <AntButton
-                size="small"
-                icon={<FileDown size={16} strokeWidth={1.75} aria-hidden />}
-                loading={pdfLoading}
-                onClick={handleGeneratePDF}
-              >
-                Exportar PDF
-              </AntButton>
-            }
-          />
+          <SectionHeader title="No período" icon={CalendarRange} />
+          <Flex align="center" justify="space-between" gap={8} wrap>
+            <Typography.Text type="secondary">
+              {loading ? 'Carregando estatísticas…' : null}
+            </Typography.Text>
+            <AntButton
+              icon={<FileDown size={16} strokeWidth={1.75} aria-hidden />}
+              loading={pdfLoading}
+              onClick={handleGeneratePDF}
+            >
+              Exportar PDF
+            </AntButton>
+          </Flex>
 
           {/* ==================== STATS CARDS ==================== */}
           {generalStats && (
@@ -623,7 +614,7 @@ export function DashboardPage(): React.JSX.Element {
           </div>
 
         </div>
-      </ScrollArea>
+      </PageContainer>
     </div>
   )
 }

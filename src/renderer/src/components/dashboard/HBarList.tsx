@@ -10,6 +10,7 @@ export interface HBarRow {
   value: number
   valueText: string
   shareText: string
+  ariaValue?: string
   tooltip?: ReactNode
 }
 
@@ -33,8 +34,10 @@ export function HBarList({ rows, onOpen }: HBarListProps): React.JSX.Element {
           title={
             row.tooltip ?? (
               <span>
-                <b style={{ fontFamily: token.fontFamilyCode }}>{row.valueText}</b> ·{' '}
-                {row.shareText} do total
+                <b style={{ fontFamily: token.fontFamilyCode, fontVariantNumeric: 'tabular-nums' }}>
+                  {row.valueText}
+                </b>{' '}
+                · {row.shareText} do total
               </span>
             )
           }
@@ -44,7 +47,7 @@ export function HBarList({ rows, onOpen }: HBarListProps): React.JSX.Element {
             className="ct-hbar"
             disabled={!onOpen}
             onClick={onOpen ? () => onOpen(row) : undefined}
-            aria-label={`${row.label}: ${row.valueText}, ${row.shareText}`}
+            aria-label={`${row.label}: ${row.ariaValue ?? row.valueText}, ${row.shareText}`}
           >
             <span className="ct-hbar-name">{row.lead}</span>
             <span className="ct-hbar-track">
