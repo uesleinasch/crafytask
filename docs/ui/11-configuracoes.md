@@ -15,10 +15,11 @@ item **Configurações** no rodapé da sidebar.
 ┌ [Buscar configuração]  ┬ [▣] Título  (● estado)                         ┐
 │ APLICATIVO             │ frase do que a seção faz                       │
 │ ⚙ Geral                │ ┌ Card "Inicialização" ───────────────────┐    │
-│ ▣ Terminal             │ │ Título da linha          [Switch]       │    │
-│ ▤ Backup               │ │ descrição curta                         │    │
-│ INTEGRAÇÕES            │ ├─────────────────────────────────────────┤    │
-│ 📖 Notion            ● │ │ ...                                     │    │
+│ ◐ Aparência            │ │ Título da linha          [Switch]       │    │
+│ ▣ Terminal             │ │ descrição curta                         │    │
+│ ▤ Backup               │ ├─────────────────────────────────────────┤    │
+│ INTEGRAÇÕES            │ │ ...                                     │    │
+│ 📖 Notion            ● │ │                                         │    │
 │ 📅 Google Calendar   ● │ └─────────────────────────────────────────┘    │
 │ 🔌 Jira              ● │                                    até 780px  │
 │ ⎓ Servidor MCP       ● │                                                │
@@ -27,7 +28,7 @@ item **Configurações** no rodapé da sidebar.
 ```
 
 - **Navegação** de 232px, fixa ao rolar: `Input` "Buscar configuração" (filtra por nome e
-  palavras-chave, como "worklog" ou "porta") e `Menu` agrupado em **Aplicativo**, **Integrações**
+  palavras-chave, como "tema", "worklog" ou "porta") e `Menu` agrupado em **Aplicativo**, **Integrações**
   e Sobre. Integração leva um `Badge` de estado (conectado/rodando, desligado, falha), com o texto no
   tooltip. Abaixo de `md` a navegação vira um `Select` agrupado.
 - A seção aberta persiste em `localStorage` (`settings.section`, via `usePersistedState`).
@@ -75,6 +76,21 @@ que sai do CrafyTask e o que continua no serviço.
 - Card **Janela e bandeja**: "Fechar a janela não encerra o app" (`Tag` "Comportamento fixo") e
   "Captura rápida" com o atalho em `KeyCombo` (`Ctrl` ou `⌘` conforme a plataforma), só
   informativo.
+
+### Aparência
+
+`AppearanceSection.tsx`, lendo e gravando pelo `useThemeSettings()` (as preferências `ticktask:theme`
+e `ticktask:density` do `localStorage`; o evento `storage` leva a troca às outras janelas).
+
+- Card **Tema**: três opções em grade (`.ct-theme-grid`, mínimo 150px por coluna), cada uma um botão
+  com `aria-pressed`, miniatura e ícone + rótulo: **Seguir o sistema** (`Monitor`, padrão), **Claro**
+  (`Sun`) e **Escuro** (`Moon`). A miniatura é montada da `PALETTE` de `theme/tokens.ts` (fundo,
+  sidebar, superfície e primário suave do tema; a de "Seguir o sistema" corta na diagonal entre o
+  fundo claro e o escuro), sem hex no componente. A opção ativa ganha a borda primária.
+- Card **Densidade**: `Segmented` Confortável/Compacta.
+
+As mesmas opções de tema estão no menu de aparência do header e na paleta de comandos
+(`components/shell/themeOptions.ts`, a lista compartilhada).
 
 ### Terminal
 
@@ -194,7 +210,6 @@ Card **Versões** (`Descriptions`): CrafyTask (`app:getVersion`), Electron, Chro
 
 ## O que falta
 
-- A seção **Aparência** (tema e densidade) entra na F7-d3.
 - Nenhuma configuração de **comportamento**: jornada de trabalho (fixa em 8h no plano do dia),
   limiares de time leak (1h/30min/0), janela da grade do calendário (dia inteiro,
   00:00–24:00), intervalo do auto-sync de notas (60s), atalho global (fixo).

@@ -251,6 +251,7 @@ só porque roda de CDN; os nomes lucide de cada lugar estão nas tabelas acima e
 | Legenda do calendário | urgente `Flame` · prioridade `Flag` · time leak `Clock` · no Google `CalendarSync`                                                                                                                                                             |
 | Cadernos              | caderno `BookOpen` · busca `Search` · novo `Plus` · mais `Ellipsis` · sincronizar `RefreshCw` · exportar `Download` · editar `Pencil` · mover `ArrowUp`/`ArrowDown` (abas: `ArrowLeft`/`ArrowRight`) · mover para a seção `ArrowLeftRight` · nova subpágina `FilePlus2` · promover `IndentDecrease` · tornar subpágina `IndentIncrease` · excluir `Trash2` · Páginas (abaixo de `md`) `ListTree` · Notas `FileText` · Desenho `PenTool` · modo foco `Expand`/`Shrink` |
 | Dashboard             | Agora `Gauge` · tarefas abertas `ListTodo` · No período `CalendarRange` · Exportar PDF `FileDown` · alternar gráfico e tabela `ChartColumn`/`Table2` · Tempo focado `Timer` · concluídas `CircleCheck` · sessões `Zap` · média por sessão `History` · para onde foi o tempo `FolderOpen` (área `TrendingUp`) · tarefas com mais tempo `ListOrdered` · categoria `Flag` · energia `Zap` · quando você foca `Clock` · constância `CalendarDays` · diferença `ArrowUp`/`ArrowDown`/`Minus` |
+| Aparência             | Seguir o sistema `Monitor` · Claro `Sun` · Escuro `Moon` · densidade `Rows4` (ir para compacta) / `Rows3` (ir para confortável) |
 | Nova tarefa           | Inbox `Inbox` · Limite de tempo `Timer` · Propriedade `Plus` · Link externo `Link` · as demais pílulas usam os ícones do detalhe |
 | Calendário            | painel A agendar `PanelLeftOpen`/`PanelLeftClose` · gaveta `ListTodo` · alça `GripVertical` · reservar `Plus` · repetir `Copy` · abrir `FileText` · timer `Play` · excluir `Trash2` · tarefa com horário `Calendar` |
 
@@ -327,11 +328,11 @@ ConfigProvider (tema, cssVar) → App (message, modal, notification) → RegionB
 - **Pílula de timers:** ponto ao vivo, tempo do timer mais recente e o contador de timers; clicar
   abre o `Popover` com a lista. Abaixo de `md` ela continua no header, compacta: só o ponto e o
   tempo, sem contador, com o mesmo popover.
-- **Menu de aparência:** até a F7-d3 tem só a densidade (confortável ou compacta). Na F7-d3 entram as
-  opções de tema (Seguir o sistema, Claro, Escuro), no menu do header e em Configurações →
-  Aparência ao mesmo tempo. O protótipo já mostra o estado final.
+- **Menu de aparência:** o grupo Tema (Seguir o sistema, Claro, Escuro, com o atual marcado) e a
+  troca de densidade (confortável ou compacta). O ícone do botão segue o tema escolhido. As mesmas
+  opções ficam em Configurações → Aparência.
 - **Paleta de comandos (`Ctrl+K`):** navegar, buscar tasks, projetos (abre o projeto) e páginas,
-  iniciar timer e, a partir da F7-d3, mudar tema.
+  iniciar timer, mudar tema e densidade.
   Componente próprio sobre `Modal` + `Input` + `List` (o antd não tem um).
 - **Barra de status (28px):** indicadores passivos de integração. Substitui o banner
   `SyncNotification`. Erro de sync vira ponto vermelho com tooltip e ação, não toast.
@@ -866,8 +867,9 @@ tempo?** Toda métrica abre o que ela conta (E4). Base: NN/g (comprimento e posi
 - O terminal embutido é escuro nos dois temas, com paleta fixa tirada dos tokens escuros: fundo
   `#15141D` (`sider`), texto e cursor `#ECEAF6` (`text`), metadado `#8C89A1` (`text3`) e sucesso
   `#4CD69A` (`success`). Ela mora em `theme/semantic.ts` como `TERMINAL` (F7-c).
-- Até a fase F7 o seletor fica escondido (as telas antigas não têm tokens escuros). Na F7-d3 ele
-  aparece no menu de aparência do header, em Configurações → Aparência e na paleta de comandos.
+- O padrão é seguir o sistema. O seletor fica no menu de aparência do header, em Configurações →
+  Aparência e na paleta de comandos. Ele ficou escondido até a F7-d3, enquanto havia tela sem
+  tokens escuros.
 
 ## 10. Componentes: do atual para o antd
 

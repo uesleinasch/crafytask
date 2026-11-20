@@ -1,23 +1,43 @@
 import { Button, Dropdown, Grid, Tooltip, Typography, theme, type MenuProps } from 'antd'
-import { Menu, Palette, Plus, Rows3, Rows4, Search } from 'lucide-react'
+import { Menu, Plus, Rows3, Rows4, Search } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
+import { isThemePreference } from '@shared/themePreference'
 import { requestNewTask } from '@renderer/lib/newTaskRequest'
 import { useThemeSettings } from '@renderer/theme/themeSettings'
 import { HeaderCapture } from './HeaderCapture'
 import { openCommandPalette } from './paletteCommands'
 import { RunningTimersPill } from './RunningTimersPill'
 import { screenTitle } from './navigation'
+import { THEME_OPTIONS, themeOption } from './themeOptions'
 
 interface ShellHeaderProps {
   onOpenMenu?: () => void
 }
 
 function AppearanceMenu(): React.JSX.Element {
-  const { density, setDensity } = useThemeSettings()
+  const { preference, setPreference, density, setDensity } = useThemeSettings()
+  const current = themeOption(preference)
+  const CurrentIcon = current.icon
   const items: MenuProps['items'] = [
     {
+      key: 'theme',
+      type: 'group',
+      label: 'Tema',
+      children: THEME_OPTIONS.map(({ value, label, icon: Icon }) => ({
+        key: value,
+        icon: <Icon size={16} strokeWidth={1.75} aria-hidden />,
+        label
+      }))
+    },
+    { type: 'divider' },
+    {
       key: 'density',
-      icon: density === 'compact' ? <Rows3 size={16} /> : <Rows4 size={16} />,
+      icon:
+        density === 'compact' ? (
+          <Rows3 size={16} strokeWidth={1.75} aria-hidden />
+        ) : (
+          <Rows4 size={16} strokeWidth={1.75} aria-hidden />
+        ),
       label: density === 'compact' ? 'Densidade confortável' : 'Densidade compacta'
     }
   ]
@@ -26,10 +46,18 @@ function AppearanceMenu(): React.JSX.Element {
       trigger={['click']}
       menu={{
         items,
-        onClick: () => setDensity(density === 'compact' ? 'comfortable' : 'compact')
+        selectable: true,
+        selectedKeys: [preference],
+        onClick: ({ key }) => {
+          if (key === 'density') setDensity(density === 'compact' ? 'comfortable' : 'compact')
+          else if (isThemePreference(key)) setPreference(key)
+        }
       }}
     >
-      <Button aria-label="Aparência" icon={<Palette size={16} strokeWidth={1.75} />} />
+      <Button
+        aria-label={`Aparência (tema: ${current.label})`}
+        icon={<CurrentIcon size={16} strokeWidth={1.75} />}
+      />
     </Dropdown>
   )
 }

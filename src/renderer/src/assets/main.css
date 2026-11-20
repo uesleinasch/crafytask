@@ -1718,6 +1718,60 @@ button.ct-health:focus-visible {
   border-radius: 8px;
 }
 
+.ct-theme-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.ct-theme-opt {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--ant-color-border);
+  border-radius: 12px;
+  background: var(--ant-color-bg-container);
+  color: var(--ant-color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.ct-theme-opt:hover {
+  border-color: var(--ant-color-primary-hover);
+}
+
+.ct-theme-opt:focus-visible {
+  outline: 2px solid var(--ant-color-primary);
+  outline-offset: 2px;
+}
+
+.ct-theme-opt.on {
+  border-color: var(--ant-color-primary);
+  box-shadow: 0 0 0 1px var(--ant-color-primary);
+}
+
+.ct-theme-prev {
+  display: grid;
+  grid-template-columns: 28% 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 4px;
+  height: 64px;
+  padding: 4px;
+  border: 1px solid var(--ant-color-border);
+  border-radius: 8px;
+}
+
+.ct-theme-prev span {
+  border-radius: 4px;
+}
+
+.ct-theme-prev span:first-child {
+  grid-row: 1 / 3;
+}
+
 .ct-codeblock {
   margin: 0;
   padding: 10px 12px;
