@@ -16,9 +16,10 @@ item **Configurações** no rodapé da sidebar.
 │ APLICATIVO             │ frase do que a seção faz                       │
 │ ⚙ Geral                │ ┌ Card "Inicialização" ───────────────────┐    │
 │ ◐ Aparência            │ │ Título da linha          [Switch]       │    │
-│ ▣ Terminal             │ │ descrição curta                         │    │
-│ ▤ Backup               │ ├─────────────────────────────────────────┤    │
-│ INTEGRAÇÕES            │ │ ...                                     │    │
+│ ⇄ Fluxo de trabalho    │ │ descrição curta                         │    │
+│ ▣ Terminal             │ ├─────────────────────────────────────────┤    │
+│ ▤ Backup               │ │ ...                                     │    │
+│ INTEGRAÇÕES            │ │                                         │    │
 │ 📖 Notion            ● │ │                                         │    │
 │ 📅 Google Calendar   ● │ └─────────────────────────────────────────┘    │
 │ 🔌 Jira              ● │                                    até 780px  │
@@ -91,6 +92,30 @@ e `ticktask:density` do `localStorage`; o evento `storage` leva a troca às outr
 
 As mesmas opções de tema estão no menu de aparência do header e na paleta de comandos
 (`components/shell/themeOptions.ts`, a lista compartilhada).
+
+### Fluxo de trabalho
+
+`WorkflowSection.tsx`. Os números que o app usava fixos, guardados no banco (tabela `app_prefs`, uma
+linha JSON) pelo main: regras e padrões em `shared/workflowPrefs.ts` (puro, testado), gravação em
+`main/workflowPrefsStore.ts`, IPC `prefs:getWorkflow`/`prefs:setWorkflow`. Cada mudança é salva na
+hora (número ao sair do campo ou com Enter) e o main avisa todas as janelas
+(`prefs:workflowChanged`); o renderer lê por `lib/workflowPrefs.ts`. Valor fora da regra é recusado
+e o campo volta ao valor salvo; a jornada é arredondada à meia hora e os níveis ao minuto. Enquanto
+as preferências carregam, a seção mostra um `Spin`; se a leitura falhar, um `Alert` de erro.
+
+- Card **Plano do dia**: **Jornada diária** (`InputNumber` 1–16 h, passo de meia hora; padrão 8) e
+  **Semana começa em** (`Segmented` Domingo/Segunda; padrão segunda). A jornada é a base da barra de
+  carga de Hoje e do calendário; o início da semana vale para Hoje, o calendário e a revisão.
+- Card **Time leak**: **Níveis de alerta** (três `InputNumber` Âmbar/Laranja/Vermelho em minutos,
+  crescentes; padrão 30, 60 e 120), usados pela tabela, pelos cards e pelo calendário; **Repetir o
+  aviso a cada** (5, 10, 15 ou 30 min). O aviso do sistema começa no nível laranja; ao abrir o app
+  ou mudar essas preferências com um timer rodando, o passo atual é só registrado, sem aviso.
+- Card **Calendário**: **Faixa de horas da grade**, dois `Select` de hora cheia (início 00–23, fim
+  01–24, o fim depois do início; padrão 00:00–24:00).
+- Card **Avisos de prazo**: um `Switch` por aviso (véspera, no dia a partir das 9h, 15 minutos
+  antes e na hora). O main confere a cada minuto (`pickDueNotifications`).
+- Card **Notas**: **Enviar notas ao Notion a cada** (30 s, 1 min ou 5 min; padrão 1 min), o
+  envio automático das notas da tarefa aberta.
 
 ### Terminal
 
@@ -210,7 +235,5 @@ Card **Versões** (`Descriptions`): CrafyTask (`app:getVersion`), Electron, Chro
 
 ## O que falta
 
-- Nenhuma configuração de **comportamento**: jornada de trabalho (fixa em 8h no plano do dia),
-  limiares de time leak (1h/30min/0), janela da grade do calendário (dia inteiro,
-  00:00–24:00), intervalo do auto-sync de notas (60s), atalho global (fixo).
+- O atalho global da captura continua fixo (F7-f2).
 - Backup só manual: não há backup automático periódico nem limpeza de snapshots antigos.

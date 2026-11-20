@@ -1,4 +1,5 @@
 import { localDateString } from '@shared/dueState'
+import { DEFAULT_WORKFLOW_PREFS, type DueNotices } from '@shared/workflowPrefs'
 
 export interface DueTaskLike {
   id: number
@@ -24,7 +25,8 @@ function minutesOfDay(time: string): number {
 export function pickDueNotifications(
   tasks: DueTaskLike[],
   now: Date,
-  sent: Set<string>
+  sent: Set<string>,
+  notices: DueNotices = DEFAULT_WORKFLOW_PREFS.dueNotices
 ): DueNotification[] {
   const today = localDateString(now)
   const tomorrowDate = new Date(now)
@@ -41,8 +43,14 @@ export function pickDueNotifications(
     const dueDate = task.due_date.slice(0, 10)
 
     if (dueDate === today && now.getHours() >= DAY_NOTICE_HOUR) {
-      add({ key: `${task.id}-today`, title: '⏰ Prazo hoje!', body: `"${task.name}" vence hoje.` })
-    } else if (dueDate === tomorrow) {
+      if (notices.day) {
+        add({
+          key: `${task.id}-today`,
+          title: '⏰ Prazo hoje!',
+          body: `"${task.name}" vence hoje.`
+        })
+      }
+    } else if (dueDate === tomorrow && notices.eve) {
       add({
         key: `${task.id}-tomorrow`,
         title: '📅 Prazo amanhã',
@@ -53,12 +61,14 @@ export function pickDueNotifications(
     if (dueDate !== today || !task.due_time) continue
     const until = minutesOfDay(task.due_time) - nowMinutes
     if (until > 0 && until <= LEAD_MINUTES) {
-      add({
-        key: `${task.id}-soon-${dueDate}-${task.due_time}`,
-        title: `⏰ Prazo às ${task.due_time}`,
-        body: `"${task.name}" vence às ${task.due_time}.`
-      })
-    } else if (until <= 0 && until > -LEAD_MINUTES) {
+      if (notices.soon) {
+        add({
+          key: `${task.id}-soon-${dueDate}-${task.due_time}`,
+          title: `⏰ Prazo às ${task.due_time}`,
+          body: `"${task.name}" vence às ${task.due_time}.`
+        })
+      }
+    } else if (until <= 0 && until > -LEAD_MINUTES && notices.atTime) {
       add({
         key: `${task.id}-due-${dueDate}-${task.due_time}`,
         title: '⏰ Prazo agora',

@@ -121,7 +121,7 @@ Fechar a janela esconde o app na bandeja. O único lugar que diz isso é uma not
 
 | Tela | O que oferece que as outras não têm |
 | --- | --- |
-| `/today` plano | carga do dia (blocos de tempo) vs. 8h, ordem automática |
+| `/today` plano | carga do dia (blocos de tempo) vs. jornada, ordem automática |
 | `/today` semana | horas planejadas por dia (blocos de tempo) |
 | `/calendar` semana | grade horária, blocos de tempo, linha do "agora" |
 | `/calendar` mês | arraste para reagendar entre dias |
@@ -252,9 +252,10 @@ Mover um bloco de 09:00 para 10:00 exige abrir o diálogo e digitar os dois hor�
 
 ### E8. `/settings` não tem nenhuma preferência de aplicativo
 
-Além das integrações, só a inicialização com o sistema, a aparência (tema e densidade, desde a
-F7-d3) e a versão (seção Sobre). Não há idioma, jornada de trabalho (fixa em 8h), limiares de
-time leak (1h/30min), faixa horária do calendário (dia inteiro), intervalo de auto-sync (60s), atalho global (fixo) nem backup.
+**Em grande parte resolvida.** A F7-d3 trouxe a Aparência (tema e densidade) e a F7-f1 a seção Fluxo
+de trabalho (jornada, início da semana, níveis e repetição do time leak, faixa do calendário,
+avisos de prazo e intervalo das notas). Ainda fixos: o atalho global da captura e o backup só
+manual (F7-f2). Não há idioma.
 
 ---
 

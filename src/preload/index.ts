@@ -71,6 +71,7 @@ import type {
   PageSearchResult
 } from '../shared/types'
 import type { ThemePreference } from '../shared/themePreference'
+import type { WorkflowPrefs, WorkflowPrefsPatch } from '../shared/workflowPrefs'
 import type { TaskStatusCounts } from '../shared/taskStatusCounts'
 import type { RendererErrorReport } from '../shared/rendererError'
 
@@ -530,6 +531,14 @@ const api = {
     ipcRenderer.invoke('app:setAutostart', enabled),
   appSetThemeSource: (preference: ThemePreference): Promise<void> =>
     ipcRenderer.invoke('app:setThemeSource', preference),
+  getWorkflowPrefs: (): Promise<WorkflowPrefs> => ipcRenderer.invoke('prefs:getWorkflow'),
+  setWorkflowPrefs: (patch: WorkflowPrefsPatch): Promise<WorkflowPrefs> =>
+    ipcRenderer.invoke('prefs:setWorkflow', patch),
+  onWorkflowPrefsChanged: (callback: (prefs: WorkflowPrefs) => void): (() => void) => {
+    const handler = (_: unknown, prefs: WorkflowPrefs): void => callback(prefs)
+    ipcRenderer.on('prefs:workflowChanged', handler)
+    return () => ipcRenderer.removeListener('prefs:workflowChanged', handler)
+  },
   appLogRendererError: (report: RendererErrorReport): Promise<void> =>
     ipcRenderer.invoke('app:logRendererError', report),
   onRendererRecovered: (callback: () => void): (() => void) => {

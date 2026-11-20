@@ -45,8 +45,8 @@ Prioridade/natureza. Independente do status.
 
 **Time Leak** é a categoria mais visualmente carregada do app: identifica tarefas que consomem
 tempo sem gerar valor. O fundo do card/linha muda conforme o tempo acumulado (amarelo → laranja →
-vermelho), e acima de 1h o cronômetro pulsa em vermelho e o sistema dispara notificação a cada 5
-minutos.
+vermelho; níveis em Configurações → Fluxo de trabalho, padrão 30 min, 1 h e 2 h), e a partir do
+nível laranja o sistema dispara notificação a cada 5 minutos (intervalo também configurável).
 
 ### Nível de energia (`EnergyLevel`)
 

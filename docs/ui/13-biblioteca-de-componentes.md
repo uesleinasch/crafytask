@@ -132,8 +132,9 @@ A única store global. Guarda um mapa `taskId → { task, entry, displaySeconds 
 - **Timers paralelos por padrão** — iniciar um não para os outros.
 - Um único `setInterval` de 1s recalcula todos os cronômetros a partir do horário de início gravado
   (não por acumulação), e empurra o estado para a janela flutuante.
-- **Alerta de Time Leak:** para tarefas dessa categoria, acima de 1h dispara notificação do sistema a
-  cada 5 minutos: *"A tarefa X já está em 1h23min. Considere finalizá-la!"*
+- **Alerta de Time Leak:** para tarefas dessa categoria, a partir do nível laranja (padrão 1h)
+  dispara notificação do sistema e repete no intervalo das preferências (padrão 5 minutos;
+  `timeLeakNoticeStep` em `shared/workflowPrefs.ts`): *"A tarefa X já está em 1h23min. Considere finalizá-la!"*
 - `syncWithDatabase()` reconstrói o estado a partir das tarefas com `is_running` — chamado no boot e
   ao entrar numa tarefa que está rodando.
 - **Guarda de janela:** `shouldBootstrapTimerStore(hash)` impede que as janelas `/float` e

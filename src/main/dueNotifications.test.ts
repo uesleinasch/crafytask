@@ -61,4 +61,18 @@ describe('pickDueNotifications', () => {
       '1-soon-2026-10-06-18:30'
     ])
   })
+
+  it('aviso desligado nas preferências não dispara', () => {
+    const notices = { eve: false, day: true, soon: false, atTime: true }
+    expect(
+      pickDueNotifications([task({ due_date: '2026-10-07' })], at('10:00'), new Set(), notices)
+    ).toEqual([])
+    const t = task({ due_time: '18:00' })
+    expect(keys(pickDueNotifications([t], at('17:50'), new Set(['1-today']), notices))).toEqual([])
+    expect(keys(pickDueNotifications([t], at('18:00'), new Set(['1-today']), notices))).toEqual([
+      '1-due-2026-10-06-18:00'
+    ])
+    const off = { eve: true, day: false, soon: true, atTime: false }
+    expect(pickDueNotifications([task({})], at('10:00'), new Set(), off)).toEqual([])
+  })
 })

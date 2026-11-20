@@ -65,6 +65,8 @@ import {
   type ContextUsageRow
 } from './contextQueries'
 import { ensureNotebookSchema } from './notebookQueries'
+import { ensurePrefsSchema, readWorkflowPrefs, writeWorkflowPrefs } from './workflowPrefsStore'
+import type { WorkflowPrefs } from '@shared/workflowPrefs'
 import { getProjectQuery, listProjectsQuery } from './projectQueries'
 import { ensureStatusChangedAt, healthIndicatorsQuery } from './healthQueries'
 import { periodStatsQuery } from './statsQueries'
@@ -454,6 +456,7 @@ export function initDatabase(): void {
   ensureNotebookSchema(tagDb())
   ensureStatusChangedAt(tagDb())
   ensureReviewSchema(tagDb())
+  ensurePrefsSchema(tagDb())
 }
 
 // ===================== MIGRAÇÃO: someday status =====================
@@ -586,6 +589,14 @@ export function listTags(): TagRow[] {
 // Os tipos genéricos por statement do better-sqlite3 não casam estruturalmente com ela.
 function tagDb(): SqliteLike {
   return db as unknown as SqliteLike
+}
+
+export function getWorkflowPrefs(): WorkflowPrefs {
+  return readWorkflowPrefs(tagDb())
+}
+
+export function setWorkflowPrefs(patch: unknown): WorkflowPrefs {
+  return writeWorkflowPrefs(tagDb(), patch)
 }
 
 export function notebookDb(): SqliteLike {

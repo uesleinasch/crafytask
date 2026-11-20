@@ -1,5 +1,6 @@
 import type { TimeBlock } from '@shared/types'
-import { addDays, calendarPrefs, weekStartOf, type WeekStart } from '@shared/calendarPrefs'
+import { addDays, weekStartOf, type WeekStart } from '@shared/calendarPrefs'
+import { DEFAULT_WORKFLOW_PREFS } from '@shared/workflowPrefs'
 
 const WEEKDAY_SHORT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
@@ -27,7 +28,10 @@ export interface WeekDay {
   label: string
 }
 
-export function weekDays(today: Date, weekStart: WeekStart = calendarPrefs().weekStart): WeekDay[] {
+export function weekDays(
+  today: Date,
+  weekStart: WeekStart = DEFAULT_WORKFLOW_PREFS.weekStart
+): WeekDay[] {
   const first = weekStartOf(today, weekStart)
   return Array.from({ length: 7 }, (_, i) => {
     const date = addDays(first, i)

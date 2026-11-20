@@ -114,8 +114,9 @@ Time leak é âmbar em todo lugar. O roxo que ele usa hoje no acento da task e n
 para tarefa da categoria time leak e sobe com o tempo acumulado nela: 30 min ou mais pinta o nível
 1 (âmbar), 1 h ou mais o nível 2 (laranja), 2 h ou mais o nível 3 (vermelho). Cores: `#FFF6DD` →
 `#FFF0E5` → `#FDECEE` no claro, `#2A2412` → `#2E2016` → `#301A1E` no escuro. O texto continua
-`text`. Os três limiares viram preferência na F7-f (Configurações → Fluxo de trabalho); até lá
-ficam em `TIME_LEAK_THRESHOLDS`, e `timeLeakLevel` (ambos em `theme/semantic.ts`) diz o nível.
+`text`. Os três limiares são preferência (Configurações → Fluxo de trabalho, `timeLeakLevels` em
+`shared/workflowPrefs.ts`); `timeLeakLevel` (`theme/semantic.ts`) diz o nível com os limiares de
+`useTimeLeakThresholds()`. O aviso do sistema começa no nível laranja e repete no intervalo escolhido.
 
 **Energia** — não usa cor: um medidor de três barras na cor primária (cheias = nível), com tooltip
 "Energia alta/média/baixa". O emoji atual sai.
@@ -573,8 +574,9 @@ Mesmo esqueleto das outras telas, com navegação própria porque são muitas se
 - **Seções novas:** **Aparência** (tema Sistema/Claro/Escuro com miniaturas montadas dos tokens, sem
   hex, e densidade) e **Fluxo de trabalho** (jornada diária, início da semana, níveis e repetição do
   time leak, faixa de horas do calendário, os quatro avisos de prazo, intervalo do envio das notas
-  ao Notion). Também novos: alterar o atalho da captura e backup automático (diário, guarda 14).
-  Tudo isso hoje é fixo no código (E8) e precisa de backend; no protótipo leva a etiqueta "novo".
+  ao Notion), guardadas no banco (`app_prefs`) e lidas pelo main e pelo renderer. Também novos:
+  alterar o atalho da captura e backup automático (diário, guarda 14), que ainda são fixos no
+  código (E8) e no protótipo levam a etiqueta "novo".
 
 ### Cadernos
 
@@ -670,7 +672,7 @@ fazer hoje e em que ordem.
   planejadas; hoje em negrito; dia acima da jornada em âmbar.
 - **Vazio:** "Nada planejado para hoje." e a dica "Na lista de tarefas, use **Hoje** (botão da linha
   ou do menu ⋯) para trazer tarefas para cá.", com o botão **Ir para Tarefas** (D5).
-- A jornada vem das preferências (F7-f); até lá, 8h.
+- A jornada vem das preferências (Configurações → Fluxo de trabalho; padrão 8h).
 
 ### Calendário
 

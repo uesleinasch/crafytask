@@ -1,4 +1,5 @@
 import type { EnergyLevel, ProjectStatus, TaskCategory, TaskStatus } from '@shared/types'
+import { DEFAULT_WORKFLOW_PREFS, timeLeakThresholds } from '@shared/workflowPrefs'
 import { PALETTE, type ThemeMode } from './tokens'
 
 export interface ChipColors {
@@ -37,7 +38,7 @@ export const TIME_LEAK_SCALE: ByMode<readonly [string, string, string]> = {
   dark: ['#2A2412', '#2E2016', '#301A1E']
 }
 
-export const TIME_LEAK_THRESHOLDS = [30 * 60, 60 * 60, 120 * 60] as const
+export const TIME_LEAK_THRESHOLDS = timeLeakThresholds(DEFAULT_WORKFLOW_PREFS)
 
 export type TimeLeakLevel = 0 | 1 | 2 | 3
 

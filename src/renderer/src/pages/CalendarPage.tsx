@@ -16,7 +16,8 @@ import {
 import dayjs from 'dayjs'
 import { ChevronDown, ChevronLeft, ChevronRight, ListTodo, PanelLeftOpen, Plus } from 'lucide-react'
 import type { CreateTimeBlockInput, TimeBlock } from '@shared/types'
-import { addDays, calendarPrefs } from '@shared/calendarPrefs'
+import { addDays } from '@shared/calendarPrefs'
+import { useCalendarPrefs } from '@renderer/lib/workflowPrefs'
 import { localDateString } from '@shared/dueState'
 import {
   CalendarGrid,
@@ -97,7 +98,7 @@ export function CalendarPage(): React.JSX.Element {
   const navigate = useNavigate()
   const { message } = App.useApp()
   const screens = Grid.useBreakpoint()
-  const prefs = calendarPrefs()
+  const prefs = useCalendarPrefs()
   const { startTimer } = useTimerStore()
   const [view, setView] = useState<CalendarView>(initialView)
   const [cursor, setCursor] = useState(() => localDateString(new Date()))

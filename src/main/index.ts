@@ -134,7 +134,9 @@ import {
   getTasksDueForNotification,
   getTimeBlock,
   filterGcalSyncedIds,
-  getNextRecurrenceIds
+  getNextRecurrenceIds,
+  getWorkflowPrefs,
+  setWorkflowPrefs
 } from './database'
 import { mergeTimeBlock, timeBlockError } from './calendarQueries'
 import {
@@ -1336,6 +1338,15 @@ function setupIpcHandlers(): void {
     nativeTheme.themeSource = preference
   })
 
+  ipcMain.handle('prefs:getWorkflow', () => getWorkflowPrefs())
+  ipcMain.handle('prefs:setWorkflow', (_, patch: unknown) => {
+    const prefs = setWorkflowPrefs(patch)
+    for (const window of BrowserWindow.getAllWindows()) {
+      if (!window.isDestroyed()) window.webContents.send('prefs:workflowChanged', prefs)
+    }
+    return prefs
+  })
+
   ipcMain.handle('backup:getStatus', () => getBackupStatus())
   ipcMain.handle('backup:chooseFolder', () => chooseBackupFolder(mainWindow))
   ipcMain.handle('backup:create', () => createBackup())
@@ -1403,7 +1414,8 @@ function checkDueDateNotifications(): void {
   for (const notification of pickDueNotifications(
     getTasksDueForNotification(),
     now,
-    notifiedToday
+    notifiedToday,
+    getWorkflowPrefs().dueNotices
   )) {
     notifiedToday.add(notification.key)
     new Notification({ title: notification.title, body: notification.body }).show()

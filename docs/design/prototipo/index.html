@@ -2060,7 +2060,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     { group: 'Aplicativo', items: [
       { key: 'geral', label: 'Geral', icon: 'SettingOutlined', keywords: 'iniciar sistema bandeja fechar captura atalho' },
       { key: 'aparencia', label: 'Aparência', icon: 'BgColorsOutlined', keywords: 'tema escuro claro densidade compacta', isNew: true },
-      { key: 'fluxo', label: 'Fluxo de trabalho', icon: 'FieldTimeOutlined', keywords: 'jornada time leak calendário notificações prazo semana', isNew: true },
+      { key: 'fluxo', label: 'Fluxo de trabalho', icon: 'FieldTimeOutlined', keywords: 'jornada time leak calendário notificações avisos prazo semana notas notion' },
       { key: 'terminal', label: 'Terminal', icon: 'CodeOutlined', keywords: 'shell timer comando' },
       { key: 'backup', label: 'Backup', icon: 'DatabaseOutlined', keywords: 'restaurar pasta snapshot' }
     ] },
@@ -2116,7 +2116,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         <${Text} type="secondary">${{
           geral: 'Como o CrafyTask abre, fecha e captura.',
           aparencia: 'Tema e densidade. Valem para as três janelas.',
-          fluxo: 'Números que o app hoje usa fixos: jornada, time leak, calendário e avisos de prazo.',
+          fluxo: 'Jornada, semana, time leak, calendário, avisos de prazo e envio das notas.',
           terminal: 'Shell e comportamento do terminal embutido.',
           backup: 'Cópias do banco, das imagens das notas, dos desenhos e das configurações.',
           notion: 'Envia as tarefas para um banco "GTD APP" no Notion. Só ida: o Notion não altera o app.',
@@ -2169,36 +2169,40 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
 
       fluxo: html`<${Flex} vertical gap=${16}>
         <${SettingsCard} title="Plano do dia">
-          <${SettingRow} title="Jornada diária" desc="Base da barra de carga em Hoje (hoje fixa em 8h)." isNew=${true}>
-            <${InputNumber} defaultValue=${8} min=${1} max=${16} addonAfter="horas" style=${{ width: 140 }} aria-label="Jornada diária" />
+          <${SettingRow} title="Jornada diária" desc="Base da barra de carga em Hoje e no calendário.">
+            <${InputNumber} defaultValue=${8} min=${1} max=${16} step=${0.5} addonAfter="horas" style=${{ width: 150 }} aria-label="Jornada diária" />
           <//>
-          <${SettingRow} title="Semana começa em" isNew=${true}>
+          <${SettingRow} title="Semana começa em" desc="Vale para Hoje, o calendário e a revisão semanal.">
             <${Segmented} defaultValue="seg" options=${[{ value: 'dom', label: 'Domingo' }, { value: 'seg', label: 'Segunda' }]} />
           <//>
         <//>
         <${SettingsCard} title="Time leak">
-          <${SettingRow} title="Níveis de alerta" desc="Tempo acumulado que pinta a linha de âmbar, laranja e vermelho. Padrão: 30 min, 1 h e 2 h." isNew=${true} vertical=${true}>
+          <${SettingRow} title="Níveis de alerta" desc="Tempo acumulado que pinta a linha de âmbar, laranja e vermelho. Padrão: 30 min, 1 h e 2 h." vertical=${true}>
             <${Space} wrap>
-              ${[['Âmbar', 30], ['Laranja', 60], ['Vermelho', 120]].map(([l, v]) => html`<${InputNumber} key=${l} defaultValue=${v} min=${5} addonBefore=${l} addonAfter="min" style=${{ width: 190 }} />`)}
+              ${[['Âmbar', 30], ['Laranja', 60], ['Vermelho', 120]].map(([l, v]) => html`<${InputNumber} key=${l} defaultValue=${v} min=${5} addonBefore=${l} addonAfter="min" style=${{ width: 200 }} />`)}
             <//>
           <//>
-          <${SettingRow} title="Repetir o aviso de time leak a cada" isNew=${true}>
+          <${SettingRow} title="Repetir o aviso de time leak a cada" desc="O aviso do sistema começa no nível laranja.">
             <${Select} defaultValue=${5} style=${{ width: 120 }} options=${[5, 10, 15, 30].map(v => ({ value: v, label: v + ' min' }))} />
           <//>
         <//>
         <${SettingsCard} title="Calendário">
-          <${SettingRow} title="Faixa de horas da grade" desc="Padrão: o dia inteiro, 00:00–24:00." isNew=${true}>
-            <${TimePicker.RangePicker} format="HH:mm" minuteStep=${30} defaultValue=${[dayjs('2026-01-01 07:00'), dayjs('2026-01-01 22:00')]} style=${{ width: 180 }} />
+          <${SettingRow} title="Faixa de horas da grade" desc="Padrão: o dia inteiro, 00:00–24:00.">
+            <${Flex} align="center" gap=${8}>
+              <${Select} aria-label="Início da grade" defaultValue=${0} style=${{ width: 96 }} options=${Array.from({ length: 24 }, (_, h) => ({ value: h, label: String(h).padStart(2, '0') + ':00' }))} />
+              <${Text} type="secondary">até<//>
+              <${Select} aria-label="Fim da grade" defaultValue=${24} style=${{ width: 96 }} options=${Array.from({ length: 24 }, (_, i) => ({ value: i + 1, label: String(i + 1).padStart(2, '0') + ':00' }))} />
+            <//>
           <//>
         <//>
         <${SettingsCard} title="Avisos de prazo">
           <${SettingRow} title="Na véspera"><${Switch} defaultChecked /><//>
-          <${SettingRow} title="No dia"><${Switch} defaultChecked /><//>
+          <${SettingRow} title="No dia" desc="A partir das 9h."><${Switch} defaultChecked /><//>
           <${SettingRow} title="15 minutos antes da hora do prazo"><${Switch} defaultChecked /><//>
           <${SettingRow} title="Na hora do prazo"><${Switch} defaultChecked /><//>
         <//>
         <${SettingsCard} title="Notas">
-          <${SettingRow} title="Enviar notas ao Notion a cada" desc="Intervalo do auto-sync das notas (hoje 60 s)." isNew=${true}>
+          <${SettingRow} title="Enviar notas ao Notion a cada" desc="Intervalo do envio automático das notas da tarefa aberta, com o Notion conectado.">
             <${Select} defaultValue=${60} style=${{ width: 120 }} options=${[30, 60, 300].map(v => ({ value: v, label: v < 60 ? v + ' s' : v / 60 + ' min' }))} />
           <//>
         <//>
