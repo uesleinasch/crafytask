@@ -45,9 +45,10 @@ Jira também são apagados.
 ## Timer flutuante
 
 Quando você **minimiza** ou **fecha** a janela principal com algum timer rodando, aparece uma
-pequena janela escura, sempre no topo, com cada timer ativo, o tempo correndo e um botão de parar.
-No rodapé: **Parar todos** e **Abrir app**. Ela some quando a janela principal volta ao foco. Sem
-timer rodando, o flutuante nunca aparece. Arraste-a para onde quiser.
+pequena janela sempre no topo, no mesmo tema da principal, com cada timer ativo, o tempo correndo e
+um botão de pausar. Clique no nome para abrir a tarefa na janela principal. No rodapé: **Pausar
+todos** (com mais de um timer) e **Abrir CrafyTask**. Ela some quando a janela principal volta ao
+foco. Sem timer rodando, o flutuante nunca aparece. Arraste-a para onde quiser.
 
 ## Time Leak
 
