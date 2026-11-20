@@ -163,6 +163,13 @@ export interface TaskDependency {
   depends_on_task_name?: string
 }
 
+export interface FloatTimerData {
+  taskId: number
+  taskName: string
+  category: TaskCategory
+  seconds: number
+}
+
 // ===================== TASK =====================
 
 export interface Task {

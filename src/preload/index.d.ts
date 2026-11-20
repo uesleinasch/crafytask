@@ -67,19 +67,14 @@ import type {
   CreatePageInput,
   MovePageInput,
   PageLocation,
-  PageSearchResult
+  PageSearchResult,
+  FloatTimerData
 } from '../shared/types'
 import type { ThemePreference } from '../shared/themePreference'
 import type { WorkflowPrefs, WorkflowPrefsPatch } from '../shared/workflowPrefs'
 import type { AppPrefsStatus } from '../shared/appPrefs'
 import type { TaskStatusCounts } from '../shared/taskStatusCounts'
 import type { RendererErrorReport } from '../shared/rendererError'
-
-interface FloatTimerData {
-  taskId: number
-  taskName: string
-  seconds: number
-}
 
 interface NotionConfig {
   apiKey: string
@@ -176,6 +171,7 @@ interface API {
   restoreFromFloat: () => Promise<void>
   stopFromFloat: (taskId: number) => Promise<void>
   stopAllFromFloat: () => Promise<void>
+  openTaskFromFloat: (taskId: number) => Promise<void>
   onFloatUpdate: (callback: (timers: FloatTimerData[]) => void) => () => void
   onFloatClear: (callback: () => void) => () => void
   onTimerStopped: (callback: (taskId: number) => void) => () => void
@@ -358,6 +354,7 @@ interface API {
   onBackupChanged: (callback: () => void) => () => void
   appLogRendererError: (report: RendererErrorReport) => Promise<void>
   onRendererRecovered: (callback: () => void) => () => void
+  onNavigate: (callback: (path: string) => void) => () => void
 
   // Backup
   backupGetStatus: () => Promise<BackupStatus>
