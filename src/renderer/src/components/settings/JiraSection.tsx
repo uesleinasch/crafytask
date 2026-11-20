@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Loader2, LogOut, RefreshCw, Ticket } from 'lucide-react'
+import { Loader2, LogOut, RefreshCw } from 'lucide-react'
 import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
 import { toast } from '@renderer/components/ui/sonner'
@@ -10,8 +10,8 @@ import {
   type Project,
   type TaskStatus
 } from '@shared/types'
-import { SectionHeader, ToggleRow } from './SettingsPrimitives'
-import { errorMessage, jiraStatusInfo } from './settingsStatus'
+import { ToggleRow } from './SettingsPrimitives'
+import { errorMessage } from './settingsStatus'
 
 const LOCAL_STATUSES: TaskStatus[] = [
   'inbox',
@@ -177,13 +177,6 @@ export function JiraSection({
 
   return (
     <div className="space-y-6">
-      <SectionHeader
-        icon={Ticket}
-        title="Jira"
-        description="Carrega as issues atribuídas a você dos boards escolhidos como tasks. O status do Jira fica separado do status da task e muda pelo seletor no card."
-        status={jiraStatusInfo(status)}
-      />
-
       <div className="grid gap-2">
         <label className="text-xs font-medium text-slate-700">
           Site do Jira Cloud

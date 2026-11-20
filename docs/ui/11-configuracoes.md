@@ -1,52 +1,55 @@
 # Configurações — `/settings`
 
-`src/renderer/src/pages/SettingsPage.tsx` (shell, ~170 linhas) + uma seção por arquivo em
-`src/renderer/src/components/settings/`.
+`src/renderer/src/pages/SettingsPage.tsx` (navegação, cabeçalho e conteúdo) + uma seção por
+arquivo em `src/renderer/src/components/settings/`. Desenho no guia (§8 "Configurações") e no
+protótipo (rota `#ajustes`).
 
 ## Função
 
-Preferências do app e as três integrações (Notion, Google Calendar, servidor MCP). Acessível pelo item
-**Configurações** no rodapé da sidebar.
+Preferências do app e as integrações (Notion, Google Calendar, Jira, servidor MCP). Acessível pelo
+item **Configurações** no rodapé da sidebar.
 
 ## Estrutura
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│ ← Voltar              ⚙ Configurações                        │
-├──────────────┬───────────────────────────────────────────────┤
-│ APLICATIVO   │  ┌─────────────────────────────────────────┐  │
-│ ⚙ Geral      │  │ [ícone] Título  (pílula de estado)      │  │
-│ 💾 Backup    │  │                                         │  │
-│ ⓘ Sobre      │  │ descrição                               │  │
-│ INTEGRAÇÕES  │  │ ─────────────────────────────────────── │  │
-│ 📖 Notion  ● │  │ conteúdo da seção                       │  │
-│ 📅 Google  ● │  │                                         │  │
-│ 🎫 Jira    ● │  │                                         │  │
-│ 🖥 MCP     ● │  └─────────────────────────────────────────┘  │
-└──────────────┴───────────────────────────────────────────────┘
+┌ [Buscar configuração]  ┬ [▣] Título  (● estado)                         ┐
+│ APLICATIVO             │ frase do que a seção faz                       │
+│ ⚙ Geral                │ ┌ Card "Inicialização" ───────────────────┐    │
+│ ▣ Terminal             │ │ Título da linha          [Switch]       │    │
+│ ▤ Backup               │ │ descrição curta                         │    │
+│ INTEGRAÇÕES            │ ├─────────────────────────────────────────┤    │
+│ 📖 Notion            ● │ │ ...                                     │    │
+│ 📅 Google Calendar   ● │ └─────────────────────────────────────────┘    │
+│ 🔌 Jira              ● │                                    até 780px  │
+│ ⎓ Servidor MCP       ● │                                                │
+│ ⓘ Sobre                │                                                │
+└────────────────────────┴────────────────────────────────────────────────┘
 ```
 
-- **Barra lateral** de 224px (`w-56`), branca, em dois grupos. O item ativo fica `bg-slate-900
-  text-white`. Integrações levam um ponto de estado à direita: esmeralda (conectado / rodando),
-  slate-300 (desligado / não configurado), vermelho (MCP ligado mas falhou ao iniciar); o rótulo
-  completo vai no `title`.
+- **Navegação** de 232px, fixa ao rolar: `Input` "Buscar configuração" (filtra por nome e
+  palavras-chave, como "worklog" ou "porta") e `Menu` agrupado em **Aplicativo**, **Integrações**
+  e Sobre. Integração leva um `Badge` de estado (conectado/rodando, desligado, falha), com o texto no
+  tooltip. Abaixo de `md` a navegação vira um `Select` agrupado.
 - A seção aberta persiste em `localStorage` (`settings.section`, via `usePersistedState`).
-- **Painel**: `max-w-2xl`, um único cartão branco `rounded-sm` com a seção. Enquanto os estados
-  carregam (`notionGetConfig`, `gcalGetStatus`, `jiraGetStatus`, `mcpGetStatus`, `appGetAutostart` em paralelo), o
-  painel mostra um `Loader2`; a barra lateral já aparece.
+- **Cabeçalho da seção** (`SettingsHeader`): ícone em quadrado `colorPrimaryBg`, título, `Tag` com o
+  ponto do `Badge` (integrações) e uma frase do que a seção faz.
+- **Conteúdo** com largura máxima de 780px, dentro do `PageContainer` e de um `RegionBoundary` por
+  seção. Enquanto os estados carregam (`notionGetConfig`, `gcalGetStatus`, `jiraGetStatus`,
+  `mcpGetStatus`, `appGetAutostart` em paralelo), aparece um `Spin`; a navegação já está lá.
 - A página é dona dos estados e os repassa às seções com um callback de mudança. Por isso o ponto
-  na barra lateral muda no mesmo instante em que a seção conecta ou desliga algo.
+  na navegação muda no mesmo instante em que a seção conecta ou desliga algo.
+- Notion, Google Calendar e Jira ainda usam as peças antigas dentro de um `Card` (migram na F7-d2).
 
 ## Peças compartilhadas (`components/settings/`)
 
 | Peça | Papel |
 | --- | --- |
-| `SectionHeader` | quadrado `bg-slate-900` com ícone, título, `StatusPill` opcional, descrição e borda inferior |
-| `ToggleRow` / `Switch` | linha `bg-slate-50` com rótulo, texto de estado e o switch (`role="switch"`) |
-| `StatusPill` | pílula com ponto: esmeralda / slate / vermelho |
-| `SetupSteps` | linha do tempo vertical de configuração (abaixo) |
-| `OutLink`, `Callout` | link externo (`↗`, abre no navegador do sistema) e aviso âmbar/azul |
-| `settingsStatus.ts` | puro e testado: estado de cada integração, tipo `NotionConfig`, `errorMessage` (tira o prefixo `Error invoking remote method…`) |
+| `SettingsCard` | `Card` pequeno com título, que agrupa linhas relacionadas ("Inicialização", "Servidor") |
+| `SettingRow` | título e descrição à esquerda, controle à direita (`Switch`, `Input`, botão); quebra para baixo quando falta espaço; `vertical` põe o controle embaixo |
+| `SettingsHeader` | cabeçalho da seção, descrito acima |
+| `Kbd` / `KeyCombo` (`components/shell/Kbd.tsx`) | teclas em `<kbd>` mono com borda (guia §11) |
+| `ToggleRow`, `Switch`, `OutLink`, `Callout` (`SettingsPrimitives.tsx`) | peças antigas, só nas integrações até a F7-d2 |
+| `settingsStatus.ts` | puro e testado: estado de cada integração, `STATUS_BADGE`, tipo `NotionConfig`, `errorMessage` (tira o prefixo `Error invoking remote method…`) |
 
 ### `SetupSteps`
 
@@ -60,29 +63,37 @@ reabrir. Lógica em `stepProgress.ts` (pura, testada).
 
 ### Geral
 
-- `ToggleRow` **Iniciar o CrafyTask com o sistema** (texto muda com o estado). Se o sistema recusar,
-  toast vermelho.
-- Bloco "Fechar a janela não encerra o app" — explica a bandeja e o "Sair".
-- Bloco "Captura rápida" com o atalho em `<kbd>` (`Ctrl` ou `⌘` conforme a plataforma) — só
-  informativo, não editável.
+- Card **Inicialização**: `Switch` "Iniciar o CrafyTask com o sistema". Se o sistema recusar, aviso
+  de erro; senão, aviso de confirmação.
+- Card **Janela e bandeja**: "Fechar a janela não encerra o app" (`Tag` "Comportamento fixo") e
+  "Captura rápida" com o atalho em `KeyCombo` (`Ctrl` ou `⌘` conforme a plataforma), só
+  informativo.
+
+### Terminal
+
+Card **Terminal embutido**: shell (`Input` mono, salva ao sair do campo ou no Enter; vazio usa o
+`$SHELL`), `Switch` "Iniciar o timer no primeiro comando" e o atalho do painel (`Ctrl` + `'`).
+Valores em `localStorage` (`lib/terminalPrefs.ts`).
 
 ### Backup
 
 `BackupSection.tsx` carrega o próprio estado (`backupGetStatus`); a página não o conhece.
 
-- **Pasta de backup** + **Escolher pasta / Trocar** (diálogo do sistema). A pasta fica em
-  `userData/backup-config.json`.
-- **Fazer backup agora** (desabilitado sem pasta) cria um snapshot `AAAA-MM-DD_HHMMSS/` na pasta:
-  `ticktask.db` copiado com `db.backup()` (consistente com o app aberto, já inclui o WAL),
-  `notes-assets/`, `drawings/`, `notion-config.json`, `mcp-config.json` e um `MANIFEST.txt` com as
-  contagens e o sha256 de cada arquivo. O snapshot é montado em `.partial` e só ganha o nome final
-  quando termina.
-- Lista **Backups nesta pasta**, do mais recente para o mais antigo, com contagens e tamanho; cada
-  um tem **Restaurar**. **Restaurar de outra pasta…** aceita qualquer pasta com `ticktask.db`.
-- Restaurar sempre passa por `backup:inspect` (abre o banco só leitura e roda `integrity_check`)
-  e por um `DeleteConfirmDialog` com as contagens. Confirmado, o main para o MCP e o agendador,
+- Card **Pasta de backup**: a pasta em mono, **Escolher pasta / Trocar** (diálogo do sistema) e
+  **Fazer backup agora** (desabilitado sem pasta). A pasta fica em `userData/backup-config.json`.
+- O backup cria um snapshot `AAAA-MM-DD_HHMMSS/` na pasta: `ticktask.db` copiado com `db.backup()`
+  (consistente com o app aberto, já inclui o WAL), `notes-assets/`, `drawings/`,
+  `notion-config.json`, `mcp-config.json` e um `MANIFEST.txt` com as contagens e o sha256 de cada
+  arquivo. O snapshot é montado em `.partial` e só ganha o nome final quando termina.
+- Card **Backups nesta pasta**: `Table` do mais recente para o mais antigo (criado em, tarefas,
+  projetos, tamanho, **Restaurar**). **Restaurar de outra pasta…** no cabeçalho do card aceita
+  qualquer pasta com `ticktask.db`.
+- Restaurar sempre passa por `backup:inspect` (abre o banco só leitura e roda `integrity_check`) e
+  por um `modal.confirm` com as contagens, dizendo o que acontece (dados atuais para pre-restore,
+  reinício) e o que não volta (conexão com o Google). Confirmado, o main para o MCP e o agendador,
   fecha o banco, move os dados atuais para `userData/pre-restore-<carimbo>/`, copia o snapshot e
   reinicia com `app.relaunch()` (sem `--hidden`). Se a cópia falhar, os dados antigos voltam.
+- `Alert`s: o que vai no backup e o aviso de que ele contém a API Key do Notion e o token do MCP.
 - O token do Google não entra: ele é cifrado pelo keyring do sistema e não abre em outra máquina.
 - O mesmo formato é lido e gerado por `scripts/ticktask-backup.sh` (`backup`, `list`,
   `restore`), que funciona sem o app.
@@ -152,21 +163,26 @@ reabrir. Lógica em `stepProgress.ts` (pura, testada).
 
 ### Servidor MCP
 
-- `ToggleRow` com o estado: "Desligado", `Rodando em 127.0.0.1:{porta}` (esmeralda) ou falha na
-  porta (vermelho).
-- Comando de registro num `<pre>` escuro + copiar; nota de que ele contém o token.
-- **Regenerar token** pede confirmação (`DeleteConfirmDialog` com `confirmLabel="Regenerar"`)
-  explicando que clientes registrados param de funcionar.
+- Card **Servidor**: `Switch` com o estado na descrição: "Desligado", `Rodando em 127.0.0.1:{porta}`
+  ou a falha na porta (texto de erro).
+- Card **Registrar no Claude Code**: o comando num bloco mono copiável (`Typography.Paragraph
+  copyable`) e a dica para remover o registro antigo `ticktask`. O comando registra a **ponte
+  stdio** (`mcp-bridge`), que lê o token de `mcp-config.json` a cada mensagem: ele não contém o
+  token e continua valendo depois de regenerar.
+- **Regenerar** (perigo) pede confirmação dizendo o que acontece (o token atual deixa de valer e
+  param os clientes configurados à mão por HTTP com ele) e o que não acontece (a ponte registrada
+  continua, as tarefas não mudam).
+- Falhas ao ler o estado de uma integração não derrubam a página: a seção mostra um `Alert` de erro e
+  a navegação, o ponto vermelho "Erro ao ler". Enquanto carrega, nenhum ponto aparece.
 
 ### Sobre
 
-Versões em lista: CrafyTask (`app:getVersion`), Electron, Chromium e Node
-(`window.electron.process.versions`).
+Card **Versões** (`Descriptions`): CrafyTask (`app:getVersion`), Electron, Chromium e Node
+(`window.electron.process.versions`) em mono, e o link da documentação (abre no navegador).
 
 ## O que falta
 
-- Nenhuma preferência de **aparência** (tema claro/escuro, densidade, fonte) — apesar de o CSS já
-  definir a paleta `.dark` completa.
+- A seção **Aparência** (tema e densidade) entra na F7-d3.
 - Nenhuma configuração de **comportamento**: jornada de trabalho (fixa em 8h no plano do dia),
   limiares de time leak (1h/30min/0), janela da grade do calendário (dia inteiro,
   00:00–24:00), intervalo do auto-sync de notas (60s), atalho global (fixo).

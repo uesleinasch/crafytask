@@ -28,7 +28,7 @@ implementado ainda; o plano diz a ordem.
 | Arquivo                            | `#arquivo`              | §8 Arquivo           | F6-b       |
 | Cadernos                           | `#cadernos`             | §8 Cadernos          | F7-a       |
 | Dashboard                          | `#dashboard`            | §8 Dashboard         | F7-b       |
-| Configurações                      | `#ajustes`              | §8 Configurações     | F7-d       |
+| Configurações                      | `#ajustes`              | §8 Configurações     | F7-d1–d3   |
 | Identidade visual (paleta e tipos) | `#identidade`           | §3 e §4              | F0         |
 
 Terminal, timer flutuante e captura rápida não têm protótipo: seguem os tokens, o §7 e os

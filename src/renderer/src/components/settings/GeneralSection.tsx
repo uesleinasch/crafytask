@@ -1,7 +1,8 @@
-import { Settings } from 'lucide-react'
-import { toast } from '@renderer/components/ui/sonner'
-import { SectionHeader, ToggleRow } from './SettingsPrimitives'
-import { TerminalSettings } from './TerminalSettings'
+import { useState } from 'react'
+import { App, Flex, Switch, Tag } from 'antd'
+import { Info } from 'lucide-react'
+import { KeyCombo } from '@renderer/components/shell/Kbd'
+import { SettingRow, SettingsCard } from './SettingsLayout'
 
 export function GeneralSection({
   autostart,
@@ -10,53 +11,54 @@ export function GeneralSection({
   autostart: boolean
   onAutostartChange: (enabled: boolean) => void
 }): React.JSX.Element {
-  async function toggleAutostart(): Promise<void> {
-    const next = await window.api.appSetAutostart(!autostart)
-    onAutostartChange(next)
-    if (next === autostart) toast.error('Não foi possível alterar a inicialização automática')
+  const { message } = App.useApp()
+  const [saving, setSaving] = useState(false)
+
+  async function toggleAutostart(checked: boolean): Promise<void> {
+    setSaving(true)
+    try {
+      const next = await window.api.appSetAutostart(checked)
+      onAutostartChange(next)
+      if (next !== checked) message.error('Não foi possível alterar a inicialização automática')
+      else message.success(next ? 'Vai iniciar com o sistema' : 'Não inicia mais com o sistema')
+    } catch {
+      message.error('Não foi possível alterar a inicialização automática')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
-    <div className="space-y-6">
-      <SectionHeader
-        icon={Settings}
-        title="Geral"
-        description="Como o CrafyTask se comporta no seu sistema."
-      />
-
-      <ToggleRow
-        title="Iniciar o CrafyTask com o sistema"
-        description={
-          autostart
-            ? 'Ativado: o app sobe na bandeja ao fazer login, sem abrir janela.'
-            : 'Desativado: o app só abre quando você mandar.'
-        }
-        checked={autostart}
-        onChange={toggleAutostart}
-      />
-
-      <div className="grid gap-3">
-        <div className="p-4 rounded-sm border border-slate-200">
-          <p className="text-sm font-medium text-slate-700">Fechar a janela não encerra o app</p>
-          <p className="text-xs text-slate-500 mt-1">
-            O CrafyTask continua na bandeja do sistema, com timers e servidor MCP rodando. Para
-            encerrar de vez, use <strong>Sair</strong> no ícone da bandeja.
-          </p>
-        </div>
-        <div className="p-4 rounded-sm border border-slate-200 flex items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-medium text-slate-700">Captura rápida</p>
-            <p className="text-xs text-slate-500 mt-1">
-              Atalho global que abre a janela de captura de qualquer lugar.
-            </p>
-          </div>
-          <kbd className="shrink-0 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-medium text-slate-600">
-            {window.electron.process.platform === 'darwin' ? '⌘' : 'Ctrl'} + Shift + Space
-          </kbd>
-        </div>
-      </div>
-
-      <TerminalSettings />
-    </div>
+    <Flex vertical gap={16}>
+      <SettingsCard title="Inicialização">
+        <SettingRow
+          title="Iniciar o CrafyTask com o sistema"
+          description="Abre direto na bandeja, sem janela."
+        >
+          <Switch
+            checked={autostart}
+            loading={saving}
+            onChange={(checked) => void toggleAutostart(checked)}
+            aria-label="Iniciar com o sistema"
+          />
+        </SettingRow>
+      </SettingsCard>
+      <SettingsCard title="Janela e bandeja">
+        <SettingRow
+          title="Fechar a janela não encerra o app"
+          description="O CrafyTask continua na bandeja, com os timers e o servidor MCP rodando. Para sair de vez, use Sair no menu da bandeja."
+        >
+          <Tag bordered={false} icon={<Info size={12} strokeWidth={1.75} aria-hidden />}>
+            Comportamento fixo
+          </Tag>
+        </SettingRow>
+        <SettingRow
+          title="Captura rápida"
+          description="Abre de qualquer lugar do sistema e manda direto para o Inbox."
+        >
+          <KeyCombo keys={['Ctrl', 'Shift', 'Space']} />
+        </SettingRow>
+      </SettingsCard>
+    </Flex>
   )
 }
