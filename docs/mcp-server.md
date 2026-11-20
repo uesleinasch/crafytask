@@ -75,11 +75,11 @@ Ao subir a ponte com `ELECTRON_RUN_AS_NODE=1`, essa variável é removida do amb
 | `time_entries` | Corrige o tempo registrado: `update` muda início e fim de uma sessão encerrada, `delete` apaga uma sessão, `reset` zera o tempo da task. `delete` e `reset` exigem `confirm_token`. O worklog do Jira acompanha. |
 | `timer` | Inicia, para, consulta status ou lança tempo manual numa task. Iniciar em task bloqueada devolve `app_state`. |
 | `time_report` | Tempo gasto: geral, semanal, por task, registros de uma task, ou `scope=period` (`start`, `end`, `project_id` opcional): as estatísticas do dashboard para o período, com a comparação com o período anterior. |
-| `read_notes` | Devolve as notas de uma task convertidas para Markdown. |
+| `read_notes` | Devolve as notas de uma task convertidas para Markdown; menções saem como `@[Nome](task:123)`. |
 | `read_drawing` | Devolve o desenho (Excalidraw) de uma task como imagem PNG, com um resumo dos elementos e dos textos contidos. |
 | `drawing_guide` | Guia de como montar os elementos de `write_drawing`: formas, texto, setas ligadas por `id`, molduras, cores e um exemplo. |
 | `write_drawing` | Cria ou altera o desenho de uma task (`task_id`) ou página (`page_id`) a partir de elementos simplificados do Excalidraw. `mode=append` (padrão) acrescenta; `mode=replace` sobre desenho existente exige `confirm_token`. O JSON e o PNG são gerados pela janela principal e gravados juntos. |
-| `write_notes` | Grava Markdown nas notas; `mode=append` (recomendado) ou `mode=replace` sobre nota não vazia, que exige `confirm_token`. |
+| `write_notes` | Grava Markdown nas notas (ver [Markdown das notas](#markdown-das-notas)); `mode=append` (recomendado) ou `mode=replace` sobre nota não vazia, que exige `confirm_token`. |
 | `work_session` | Sessão de trabalho numa task. `start` põe a task (e a pai) em `executando`, liga o timer e devolve o último checkpoint, o histórico recente e as subtarefas; `pause` para o timer, grava um checkpoint e move para `aguardando` (com `waiting_for`) ou `proximas`; `finish` para o timer, grava o checkpoint final e move para `finalizada` (recusa com subtarefa aberta); `status` lista o que está em `executando` (subtarefas também) e os timers ligados. Com `directory` no lugar de `task_id`, `start` acha a task pela pasta (`working_dir` da task ou do projeto; a pasta mais específica vence): abre a que está em `executando` (a subtarefa, não a pai), devolve `ambiguous` com as candidatas ou `not_found`; `status` lista só o que é daquela pasta. |
 | `task_history` | Histórico e memória da task. `read` devolve mudanças de status e entradas escritas (mais recentes primeiro, `limit`/`before`) e o último checkpoint; `add` grava `checkpoint` (estado atual, `done`, `remaining`), `operation` ou `note`. `include_subtasks` junta o histórico das subtarefas. |
 | `agenda` | Tasks agendadas e blocos de tempo de um dia, semana ou mês. |
@@ -89,7 +89,7 @@ Ao subir a ponte com `ELECTRON_RUN_AS_NODE=1`, essa variável é removida do amb
 | `search_pages` | Busca páginas de caderno pelo título e pelo texto das notas (até 30, com trecho). |
 | `read_page` | Página em Markdown, com caderno, seção e subpáginas; o PNG do desenho vem junto quando existe. |
 | `create_page` | Cria página numa seção, opcionalmente como subpágina (até 2 níveis) e já com Markdown. |
-| `write_page` | Grava Markdown numa página; mesmas regras e perdas de `write_notes` (`mode=replace` sobre conteúdo exige confirmação). |
+| `write_page` | Grava Markdown numa página; mesmas regras de `write_notes` (`mode=replace` sobre conteúdo exige confirmação). |
 | `delete_page` | Apaga a página e as subpáginas; sempre exige `confirm_token`. |
 | `manage_notebooks` | Estrutura dos cadernos: cria, renomeia e apaga caderno e seção (apagar sempre exige `confirm_token` e leva as páginas junto); renomeia e move página (`section_id`, `parent_page_id`, `index`). |
 | `integrations` | Aciona integrações já configuradas: `gcal_sync` (liga/desliga a task na agenda do Google), `notion_sync`, `jira_import`, `jira_transitions` e `jira_transition` (muda o status no Jira; sempre exige `confirm_token`), `export_task` (regrava o Markdown local) e `backup`. Integração não configurada devolve `app_state`. |
@@ -109,6 +109,24 @@ O servidor também publica prompts (`mcp/prompts.ts`). No Claude Code eles viram
 | `/mcp__crafytask__revisao` | — | Conduz a revisão semanal: abre, mostra os números de cada passo, marca cada um e conclui. |
 | `/mcp__crafytask__capturar` | `texto` | Cria uma task no inbox com o texto, sem perguntas. |
 | `/mcp__crafytask__encerrar` | — | Para cada task em `executando` em que a conversa trabalhou, grava o resumo e pausa ou conclui. |
+
+## Markdown das notas
+
+`read_notes`, `read_page` e o `notes_markdown` de `get_task` escrevem, e `write_notes`,
+`write_page` e `create_page` leem de volta sem perda (`notesMarkdown.ts` e
+`markdownToProsemirror.ts`, com teste de ida e volta):
+
+| Construção | Markdown |
+| --- | --- |
+| Títulos (níveis 1 a 6), parágrafo, citação, linha, bloco de código | `# Título`, texto, `> citação`, `---`, cercas de três crases |
+| Lista, lista numerada | `- item`, `1. item` |
+| Checklist | `- [ ] a fazer`, `- [x] feito` |
+| Tabela | tabela GFM (`\| a \| b \|` e a linha `\| --- \| --- \|`); a primeira linha é o cabeçalho |
+| Negrito, itálico, riscado, destaque, sublinhado, código, link | `**x**`, `*x*`, `~~x~~`, `==x==`, `<u>x</u>`, crase, `[texto](url)` |
+| Menção | `@[Nome](task:123)`, `@[Nome](project:5)`, `@[Nome](page:9)`, `@[Nome](context:2)` |
+
+Menção a um id que não existe entra como texto (`@Nome`). O export local em Markdown continua
+escrevendo a menção só como `@Nome`.
 
 ## Formato compacto
 
@@ -216,8 +234,8 @@ Operações destrutivas ou em massa seguem um fluxo de duas fases (`confirmGuard
 - `search` usa `LIKE` (sem distinguir maiúsculas só em letras sem acento) sobre o texto puro das
   notas (`tasks.notes_text`, `notebook_pages.search_text`). Não há índice de texto: se a busca
   ficar lenta num banco grande, o caminho é FTS5.
-- `write_notes` converte um subconjunto de Markdown; menções `@` a outras tasks, tabelas e imagens
-  do editor Tiptap não sobrevivem à conversão.
+- `write_notes` e `write_page` não representam imagem, quebra de linha dentro do parágrafo, lista
+  aninhada nem tamanho de fonte: `mode=replace` sobre uma nota com isso perde esse conteúdo.
 - Deletar uma task pai apaga as subtarefas em cascata — não há como recuperar depois de confirmado.
 - `write_drawing` depende da janela principal: é ela que converte os elementos e gera o PNG
   (`drawing:renderRequest` → `lib/drawingRender.ts` → `drawing:renderResult`, com limite de 20 s).

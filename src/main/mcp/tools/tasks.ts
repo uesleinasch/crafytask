@@ -30,7 +30,6 @@ import {
 import { currentTime, localDateString } from '@shared/dueState'
 import { mergeTaskTimes, taskTimeError } from '@shared/taskTime'
 import { isSafeHttpUrl } from '@shared/externalUrl'
-import { prosemirrorToMarkdown } from '../../notesMarkdown'
 import { needsConfirmation } from '../confirmGuard'
 import {
   afterCalendarChange,
@@ -51,6 +50,7 @@ import { resolveByName } from '../resolve'
 import { MAX_SUBTASKS, planSubtasks, type SubtaskDraft } from '../subtaskPlan'
 import { compactTask, fullTask, viewTask, type CompactTask } from '../taskView'
 import type { ToolContext } from '../toolContext'
+import { notesToMarkdown } from './notes'
 
 const STATUS = z.enum(['inbox', 'aguardando', 'proximas', 'executando', 'finalizada', 'someday'])
 const CATEGORY = z.enum(['urgente', 'prioridade', 'normal', 'time_leak'])
@@ -201,7 +201,7 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
       const task = getTask(id)
       if (!task) return fail('not_found', `Task ${id} não existe.`)
 
-      const notesMarkdown = task.notes ? prosemirrorToMarkdown(task.notes) : null
+      const notesMarkdown = task.notes ? notesToMarkdown(task.notes) : null
 
       return ok({
         task: fullTask(task),
