@@ -858,6 +858,29 @@ function applyStatusChange(id: number, status: TaskStatus): void {
   applyTaskStatusChange(statusChangeDeps, id, status)
 }
 
+async function setGcalSync(taskId: number, enabled: boolean): Promise<void> {
+  updateTask(taskId, { gcal_sync: enabled })
+  await runGoogleSync(taskId)
+}
+
+async function syncTaskToNotionNow(taskId: number): Promise<unknown> {
+  const task = getTask(taskId)
+  if (!task) throw new Error('Tarefa não encontrada')
+  return syncTaskToNotion(task)
+}
+
+async function transitionJira(taskId: number, transitionId: string): Promise<void> {
+  await transitionJiraIssue(taskId, transitionId)
+  await afterJiraIssueChange(taskId)
+}
+
+async function exportTaskLocal(taskId: number): Promise<boolean> {
+  const task = getTask(taskId)
+  if (!task || !task.local_export_path) return false
+  await exportTaskToLocal(task, task.local_export_path)
+  return true
+}
+
 function resetTaskTime(id: number): void {
   const worklogs = captureJiraWorklogs(id)
   resetTaskTimer(id)
@@ -954,12 +977,7 @@ function setupIpcHandlers(): void {
     return result.filePath
   })
   // Reexporta silenciosamente se a task já tem um caminho local configurado.
-  ipcMain.handle('notes:exportLocal', async (_, taskId: number) => {
-    const task = getTask(taskId)
-    if (!task || !task.local_export_path) return false
-    await exportTaskToLocal(task, task.local_export_path)
-    return true
-  })
+  ipcMain.handle('notes:exportLocal', (_, taskId: number) => exportTaskLocal(taskId))
   ipcMain.handle('task:delete', (_, id: number) => {
     const calendarIds = filterGcalSyncedIds([id, ...getChildTaskIds(id)])
     const config = getNotionConfig()
@@ -1273,11 +1291,7 @@ function setupIpcHandlers(): void {
   ipcMain.handle('notion:saveConfig', (_, config: NotionConfig) => saveNotionConfig(config))
   ipcMain.handle('notion:clearConfig', () => clearNotionConfig())
   ipcMain.handle('notion:testConnection', () => testNotionConnection())
-  ipcMain.handle('notion:syncTask', async (_, taskId: number) => {
-    const task = getTask(taskId)
-    if (!task) throw new Error('Tarefa não encontrada')
-    return syncTaskToNotion(task)
-  })
+  ipcMain.handle('notion:syncTask', (_, taskId: number) => syncTaskToNotionNow(taskId))
   ipcMain.handle('notion:syncTaskNotes', async (_, taskId: number) => {
     const task = getTask(taskId)
     if (!task) throw new Error('Tarefa não encontrada')
@@ -1372,10 +1386,9 @@ function setupIpcHandlers(): void {
   ipcMain.handle('jira:saveOptions', (_, input: JiraOptionsInput) => saveJiraOptions(input))
   ipcMain.handle('jira:disconnect', () => disconnectJira())
   ipcMain.handle('jira:listTransitions', (_, taskId: number) => listJiraTransitions(taskId))
-  ipcMain.handle('jira:transition', async (_, taskId: number, transitionId: string) => {
-    await transitionJiraIssue(taskId, transitionId)
-    await afterJiraIssueChange(taskId)
-  })
+  ipcMain.handle('jira:transition', (_, taskId: number, transitionId: string) =>
+    transitionJira(taskId, transitionId)
+  )
   ipcMain.handle('jira:getFields', (_, taskId: number) => getJiraIssueFields(taskId))
   ipcMain.handle('jira:getChildren', (_, taskId: number) => getJiraChildren(taskId))
   ipcMain.handle(
@@ -1398,10 +1411,9 @@ function setupIpcHandlers(): void {
   ipcMain.handle('gcal:connect', () => connectGcal())
   ipcMain.handle('gcal:disconnect', () => disconnectGcal())
   ipcMain.handle('gcal:setAutoSync', (_, enabled: boolean) => setGcalAutoSync(enabled))
-  ipcMain.handle('gcal:setTaskSync', async (_, taskId: number, enabled: boolean) => {
-    updateTask(taskId, { gcal_sync: enabled })
-    await runGoogleSync(taskId)
-  })
+  ipcMain.handle('gcal:setTaskSync', (_, taskId: number, enabled: boolean) =>
+    setGcalSync(taskId, enabled)
+  )
   ipcMain.handle('gcal:syncTask', (_, taskId: number) => runGoogleSync(taskId))
   ipcMain.handle('gcal:syncAll', async () => {
     mainWindow?.webContents.send('gcal:syncStart')
@@ -1601,6 +1613,15 @@ app.whenReady().then(() => {
     resetTaskTime,
     editTimeEntry,
     removeTimeEntry,
+    integrations: {
+      setGcalSync,
+      syncNotion: syncTaskToNotionNow,
+      jiraImport: () => runJiraImport(),
+      jiraTransitions: (taskId) => listJiraTransitions(taskId),
+      jiraTransition: transitionJira,
+      createBackup: () => createBackup(),
+      exportTask: exportTaskLocal
+    },
     syncTagChange: (ids) => syncTasksAfterTagChange(ids),
     syncCalendar: (ids) => pushToGoogle(ids),
     disposeTerminals: (ids) => disposeTerminalsForTasks(ids),
