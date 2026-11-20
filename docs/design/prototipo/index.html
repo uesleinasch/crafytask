@@ -132,6 +132,12 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
 .ct-theme-prev.light { background: #F6F5FA; } .ct-theme-prev.light span:nth-child(1) { background: #FBFAFE; } .ct-theme-prev.light span:nth-child(2) { background: #FFFFFF; } .ct-theme-prev.light span:nth-child(3) { background: #EFEDFF; }
 .ct-theme-prev.dark { background: #111018; } .ct-theme-prev.dark span:nth-child(1) { background: #15141D; } .ct-theme-prev.dark span:nth-child(2) { background: #1A1923; } .ct-theme-prev.dark span:nth-child(3) { background: #221E3D; }
 .ct-theme-prev.system { background: linear-gradient(135deg, #F6F5FA 50%, #111018 50%); } .ct-theme-prev.system span { background: rgba(127,120,170,.35); }
+.ct-aux-desk { display: grid; place-items: center; min-height: 340px; padding: 24px 16px; border: 1px dashed var(--ct-border-strong); border-radius: 12px; background: repeating-linear-gradient(135deg, var(--ct-bg) 0 14px, color-mix(in srgb, var(--ct-border) 45%, var(--ct-bg)) 14px 15px); overflow: auto; }
+.ct-aux-win { max-width: 100%; display: flex; flex-direction: column; background: var(--ct-elevated); color: var(--ct-text); border: 1px solid var(--ct-border); border-radius: 12px; box-shadow: var(--ct-shadow-float); overflow: hidden; }
+.ct-aux-head { display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 6px 0 14px; cursor: grab; }
+.ct-aux-row { display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 6px 0 12px; border-bottom: 1px solid var(--ct-border); }
+.ct-aux-row:last-child { border-bottom: 0; }
+.ct-aux-foot { display: flex; align-items: center; gap: 4px; height: 44px; padding: 0 6px 0 12px; border-top: 1px solid var(--ct-border); background: var(--ct-surface); }
 .ct-codeblock { font-family: var(--ct-mono); font-size: 12px; background: var(--ct-bg); border: 1px solid var(--ct-border); border-radius: 8px; padding: 10px 12px; margin: 0 !important; word-break: break-all; }
 .ct-hzchip { display: inline-grid; place-items: center; min-width: 30px; height: 22px; padding: 0 6px; border-radius: 6px; font-size: 12px; font-weight: 600; flex: none; }
 .ct-hzsection { scroll-margin-top: 12px; }
@@ -540,8 +546,8 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
   ];
   const ROUTE_DOCS = { calendario: '04-calendario', revisao: '07-revisao-semanal', horizontes: '06-horizontes', rotulos: '09-contextos-e-tags', cadernos: '17-cadernos', dashboard: '08-dashboard', arquivo: '10-arquivadas', ajustes: '11-configuracoes' };
   const ROUTE_OF = Object.fromEntries(NAV.flatMap(g => g.children).concat(NAV_FOOT).map(i => [i.key, i]));
-  const TITLES = { tarefas: 'Tarefas', tarefa: 'Tarefa', hoje: 'Hoje', projetos: 'Projetos', projeto: 'Projeto', ajustes: 'Configurações', horizontes: 'Horizontes', rotulos: 'Contextos e tags', identidade: 'Identidade visual', dashboard: 'Dashboard', revisao: 'Revisão semanal', calendario: 'Calendário', arquivo: 'Arquivo', cadernos: 'Cadernos' };
-  const BUILT = ['tarefas', 'tarefa', 'hoje', 'projetos', 'projeto', 'ajustes', 'horizontes', 'rotulos', 'dashboard', 'revisao', 'calendario', 'arquivo', 'cadernos', 'identidade'];
+  const TITLES = { tarefas: 'Tarefas', tarefa: 'Tarefa', hoje: 'Hoje', projetos: 'Projetos', projeto: 'Projeto', ajustes: 'Configurações', horizontes: 'Horizontes', rotulos: 'Contextos e tags', identidade: 'Identidade visual', janelas: 'Janelas auxiliares', dashboard: 'Dashboard', revisao: 'Revisão semanal', calendario: 'Calendário', arquivo: 'Arquivo', cadernos: 'Cadernos' };
+  const BUILT = ['tarefas', 'tarefa', 'hoje', 'projetos', 'projeto', 'ajustes', 'horizontes', 'rotulos', 'dashboard', 'revisao', 'calendario', 'arquivo', 'cadernos', 'identidade', 'janelas'];
 
   function toMenu(items, collapsed) {
     return items.map(it => it.type === 'group'
@@ -655,6 +661,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       : route === 'revisao' ? html`<${WeeklyReviewPage} mode=${mode} go=${go} isMobile=${isMobile} screens=${screens} openProject=${openProject} />`
       : route === 'dashboard' ? html`<${DashboardPage} mode=${mode} go=${go} isMobile=${isMobile} screens=${screens} openProject=${openProject} />`
       : route === 'identidade' ? html`<${IdentityPage} mode=${mode} />`
+      : route === 'janelas' ? html`<${AuxWindowsPage} mode=${mode} />`
       : html`<${Placeholder} route=${route} go=${go} />`;
 
     return html`<${Layout} className="ct-shell" hasSider=${!isMobile}>
@@ -697,7 +704,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           <span><span className="dot" style=${{ background: 'var(--ct-success)' }}></span>Notion sincronizado há 2 min</span>
           ${screens.md ? html`<span><span className="dot" style=${{ background: 'var(--ct-border-strong)' }}></span>Google Calendar não conectado</span>` : null}
           ${screens.md ? html`<span><${I.ApiOutlined} /> MCP em 127.0.0.1:7432</span>` : null}
-          <span style=${{ marginInlineStart: 'auto' }}>Protótipo · dados de exemplo · <a onClick=${() => go('identidade')}>identidade visual</a></span>
+          <span style=${{ marginInlineStart: 'auto' }}>Protótipo · dados de exemplo · <a onClick=${() => go('identidade')}>identidade visual</a> · <a onClick=${() => go('janelas')}>janelas auxiliares</a></span>
         </div>
       <//>
       <${Drawer} placement="bottom" height=${260} mask=${false} open=${term} onClose=${() => setTerm(false)}
@@ -851,7 +858,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const [q, setQ] = useState('');
     const cmds = [
       { k: 'tarefas', t: 'Ir para Tarefas', i: 'CheckSquareOutlined' }, { k: 'hoje', t: 'Ir para Hoje', i: 'ScheduleOutlined' },
-      { k: 'projetos', t: 'Ir para Projetos', i: 'FolderOutlined' }, { k: 'identidade', t: 'Abrir identidade visual', i: 'BgColorsOutlined' },
+      { k: 'projetos', t: 'Ir para Projetos', i: 'FolderOutlined' }, { k: 'identidade', t: 'Abrir identidade visual', i: 'BgColorsOutlined' }, { k: 'janelas', t: 'Abrir janelas auxiliares', i: 'BlockOutlined' },
       { k: 'tarefa', t: '#711 Criação de projeto para refatoração visual', i: 'FileTextOutlined' },
       { k: 'tarefa', t: '#731 Corrigir rolagem do terminal ao redimensionar', i: 'FileTextOutlined' }
     ].filter(c => c.t.toLowerCase().includes(q.toLowerCase()));
@@ -2034,6 +2041,88 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
             <${Col} xs=${24} md=${8}><${Alert} type="success" showIcon message="Sincronizado com o Notion" /><//>
             <${Col} xs=${24} md=${8}><${Alert} type="warning" showIcon message="Projeto sem próxima ação" /><//>
             <${Col} xs=${24} md=${8}><${Alert} type="error" showIcon message="Falha ao enviar worklog" /><//>
+          <//>
+        <//>
+      <//>
+    </div>`;
+  }
+
+  function AuxWindowsPage({ mode }) {
+    const { message } = AntApp.useApp();
+    const [capture, setCapture] = useState('vazio');
+    const [text, setText] = useState('');
+    const [floatSample, setFloatSample] = useState('tres');
+    const shownText = capture === 'vazio' ? text : text || 'Ligar para o contador sobre o IR';
+    const ALL = [
+      { id: 711, name: 'Criação de projeto para refatoração visual', secs: 9130 },
+      { id: 705, name: 'Reunião diária', secs: 4380, leak: 2 },
+      { id: 731, name: 'Corrigir rolagem do terminal ao redimensionar', secs: 1860 },
+      { id: 702, name: 'Planejar sprint 48 com o time', secs: 640 },
+      { id: 708, name: 'Traduzir capítulo 3 do playbook', secs: 312 },
+      { id: 740, name: 'Ajustar sincronização de pedidos com o ERP', secs: 95 }
+    ];
+    const timers = floatSample === 'um' ? ALL.slice(0, 1) : floatSample === 'tres' ? ALL.slice(0, 3) : ALL;
+    const kbd = k => html`<kbd key=${k} className="ct-kbd">${k}</kbd>`;
+
+    const captureWin = html`<div className="ct-aux-win" style=${{ width: 400 }} role="dialog" aria-label="Captura rápida">
+      <div className="ct-aux-head">
+        ${createElement(I.InboxOutlined, { style: { color: 'var(--ct-text-3)' } })}
+        <${Text} strong style=${{ fontSize: 13, flex: 1 }}>Capturar para o Inbox<//>
+        <${Tooltip} title="Fechar (Esc)"><${Button} type="text" size="small" aria-label="Fechar" icon=${html`<${I.CloseOutlined} />`} onClick=${() => message.info('Fecha a janela')} /><//>
+      </div>
+      ${capture === 'capturado' ? html`
+        <div style=${{ display: 'flex', alignItems: 'center', gap: 10, padding: '18px 16px 22px' }} role="status">
+          ${createElement(I.CheckCircleFilled, { style: { color: 'var(--ct-success)', fontSize: 20 } })}
+          <div style=${{ minWidth: 0 }}>
+            <${Text} strong style=${{ display: 'block' }}>Capturado no Inbox<//>
+            <${Text} type="secondary" ellipsis style=${{ fontSize: 12, display: 'block', maxWidth: 320 }}>${shownText}<//>
+          </div>
+        </div>` : html`
+        <div key="campo" style=${{ padding: '2px 14px 0' }}>
+          <${Input} size="large" autoFocus placeholder="O que precisa ser feito?" aria-label="O que precisa ser feito?" value=${capture === 'vazio' ? text : shownText} onChange=${e => { setText(e.target.value); if (capture === 'erro') setCapture('digitando'); }} status=${capture === 'erro' ? 'error' : undefined} onPressEnter=${() => { if (shownText.trim()) setCapture('capturado'); }} />
+          ${capture === 'erro' ? html`<${Text} type="danger" style=${{ fontSize: 12, display: 'block', marginTop: 4 }}>Não foi possível capturar. O texto continua aqui; tente de novo.<//>` : null}
+        </div>
+        <div key="rodape" style=${{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px 12px' }}>
+          <${Text} type="secondary" style=${{ fontSize: 12, flex: 1, display: 'inline-flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>${kbd('Enter')} captura · ${kbd('Esc')} fecha<//>
+          <${Button} type="primary" size="small" disabled=${!shownText.trim()} onClick=${() => setCapture('capturado')}>Capturar<//>
+        </div>`}
+    </div>`;
+
+    const floatWin = html`<div className="ct-aux-win" style=${{ width: 300 }} role="dialog" aria-label="Timers em andamento">
+      <div style=${{ maxHeight: 44 * 5, overflowY: timers.length > 5 ? 'auto' : 'hidden' }}>
+        ${timers.map(t => html`<div key=${t.id} className=${'ct-aux-row' + (t.leak ? ' ct-leak-' + t.leak : '')}>
+          <span className="ct-live"></span>
+          <${Tooltip} title="Abrir a tarefa no CrafyTask"><a style=${{ flex: 1, minWidth: 0, fontSize: 13, color: 'var(--ct-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} onClick=${() => message.info('Abre o CrafyTask na tarefa #' + t.id)}>${t.name}</a><//>
+          <span className="ct-mono" style=${{ fontSize: 14, fontWeight: 600 }}>${fmt(t.secs)}</span>
+          <${Tooltip} title="Pausar"><${Button} type="text" size="small" aria-label=${'Pausar ' + t.name} icon=${html`<${I.PauseOutlined} />`} onClick=${() => message.info('Pausa o timer')} /><//>
+        </div>`)}
+      </div>
+      <div className="ct-aux-foot">
+        <${Text} type="secondary" style=${{ fontSize: 12, flex: 1 }}>${timers.length === 1 ? '1 em andamento' : timers.length + ' em andamento'}<//>
+        ${timers.length > 1 ? html`<${Button} type="text" size="small" icon=${html`<${I.PauseOutlined} />`} onClick=${() => message.info('Pausa todos')}>Pausar todos<//>` : null}
+        <${Tooltip} title="Abrir CrafyTask"><${Button} type="text" size="small" aria-label="Abrir CrafyTask" icon=${html`<${I.ExpandAltOutlined} />`} onClick=${() => message.info('Mostra a janela principal')} /><//>
+      </div>
+    </div>`;
+
+    return html`<div className="ct-page">
+      <${Flex} vertical gap=${24}>
+        <div>
+          <div className="ct-eyebrow">Fora da janela principal</div>
+          <${Title} level=${3} style=${{ margin: '4px 0 8px' }}>Janelas auxiliares<//>
+          <${Paragraph} type="secondary" style=${{ maxWidth: '72ch', margin: 0 }}>Captura rápida e timer flutuante seguem o tema e a densidade da janela principal. As duas são sem moldura e ficam sempre no topo; o fundo listrado aqui só simula a área de trabalho.<//>
+        </div>
+        <${Row} gutter=${[24, 24]}>
+          <${Col} xs=${24} xl=${13}>
+            <${Card} size="small" title="Captura rápida" extra=${html`<${Flex} align="center" gap=${6} wrap="wrap"><${Text} type="secondary" style=${{ fontSize: 12 }}>Exemplo:<//><${Segmented} size="small" value=${capture} onChange=${setCapture} options=${[{ value: 'vazio', label: 'Vazia' }, { value: 'digitando', label: 'Digitando' }, { value: 'capturado', label: 'Capturado' }, { value: 'erro', label: 'Erro' }]} /><//>`}>
+              <div className="ct-aux-desk">${captureWin}</div>
+              <${Paragraph} type="secondary" style=${{ fontSize: 13, margin: '12px 0 0' }}>Abre pelo atalho (Configurações → Geral) ou pela bandeja, centrada a 1/3 da altura. Cria a tarefa só com o nome, no Inbox. Capturado mostra a confirmação e fecha sozinha em 1,2 s; erro mantém o texto. Perder o foco ou Esc fecha.<//>
+            <//>
+          <//>
+          <${Col} xs=${24} xl=${11}>
+            <${Card} size="small" title="Timer flutuante" extra=${html`<${Flex} align="center" gap=${6} wrap="wrap"><${Text} type="secondary" style=${{ fontSize: 12 }}>Exemplo:<//><${Segmented} size="small" value=${floatSample} onChange=${setFloatSample} options=${[{ value: 'um', label: '1 timer' }, { value: 'tres', label: '3 timers' }, { value: 'seis', label: '6 timers' }]} /><//>`}>
+              <div className="ct-aux-desk" style=${{ placeItems: 'start end' }}>${floatWin}</div>
+              <${Paragraph} type="secondary" style=${{ fontSize: 13, margin: '12px 0 0' }}>Aparece quando a janela principal é minimizada ou fechada com timer rodando, no canto superior direito. 300px de largura, 44px por linha, até 5 linhas (depois rola). A linha de time leak ganha o fundo do nível, como na lista. A janela inteira arrasta, menos os botões.<//>
+            <//>
           <//>
         <//>
       <//>

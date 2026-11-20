@@ -30,9 +30,9 @@ implementado ainda; o plano diz a ordem.
 | Dashboard                          | `#dashboard`            | §8 Dashboard         | F7-b       |
 | Configurações                      | `#ajustes`              | §8 Configurações     | F7-d1–d3   |
 | Identidade visual (paleta e tipos) | `#identidade`           | §3 e §4              | F0         |
+| Janelas auxiliares                 | `#janelas`              | §8 Janelas auxiliares | F8-a      |
 
-Terminal, timer flutuante e captura rápida não têm protótipo: seguem os tokens, o §7 e os
-padrões das outras telas.
+O terminal não tem protótipo: segue os tokens, o §7 e os padrões das outras telas.
 
 ## Conferir o progresso
 

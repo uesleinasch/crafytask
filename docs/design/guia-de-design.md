@@ -862,6 +862,27 @@ tempo?** Toda métrica abre o que ela conta (E4). Base: NN/g (comprimento e posi
   lado a partir de `xl` (16/8) e os dois heatmaps em 14/10 a partir de `xl`. No celular os filtros
   ocupam a largura toda e os heatmaps rolam na horizontal dentro do card.
 
+### Janelas auxiliares
+
+Captura rápida e timer flutuante (protótipo: `#janelas`). Seguem o tema e a densidade da janela
+principal, com os mesmos tokens e fontes; nada de cor fixa (o timer era sempre escuro, a captura
+sempre branca com uma tarja verde). As duas são um cartão `elevated` com borda `border`, raio 12 e a
+sombra flutuante, sobre a janela transparente sem moldura e sempre no topo.
+
+- **Captura rápida** (400px, centrada a 1/3 da altura): cabeçalho de 36px que arrasta a janela,
+  com `Inbox` + "Capturar para o Inbox" e o fechar (`X`, tooltip "Fechar (Esc)"); `Input` grande
+  "O que precisa ser feito?" com foco ao abrir; rodapé com `Kbd` "Enter captura · Esc fecha" e o
+  primário "Capturar" (desabilitado vazio). Capturado troca o corpo por `CheckCircle` em `success`,
+  "Capturado no Inbox" e o texto em cinza, e fecha sozinha em 1,2 s. Erro mantém o texto, marca o
+  campo em `error` e diz "Não foi possível capturar. O texto continua aqui; tente de novo." Perder
+  o foco ou `Esc` fecha. Cria só o nome, no Inbox.
+- **Timer flutuante** (300px, canto superior direito, aparece ao minimizar ou fechar a janela
+  principal com timer rodando): uma linha de 44px por timer, até 5 (depois rola), com o ponto ao
+  vivo (`LiveDot`), o nome (clicar abre a tarefa na janela principal), o tempo em Geist Mono
+  tabular 14/600 e "Pausar" (`Pause`, texto, sem vermelho). A linha de time leak ganha o fundo do
+  nível, como na lista. Rodapé de 44px em `surface`: "N em andamento", "Pausar todos" (só com mais
+  de um) e "Abrir CrafyTask" (`Maximize2`). A janela inteira arrasta, menos os botões.
+
 ## 9. Modo escuro
 
 - Preferência Sistema / Claro / Escuro, aplicada no main por `nativeTheme.themeSource`, para as

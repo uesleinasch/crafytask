@@ -177,10 +177,10 @@ Sem mudança visível nas telas atuais, exceto a fonte.
 
 ## F8 — Janelas auxiliares
 
-| Subtarefa                             | Entrega                                                                                     | Fecha |
-| ------------------------------------- | ------------------------------------------------------------------------------------------- | ----- |
-| F8-a Timer flutuante e captura rápida | Mesmo tema (claro/escuro) e mesma fonte da janela principal, mantendo as geometrias atuais. | F8.1  |
-| F8-b Conferir                         | Usuário confere as duas janelas.                                                            | F8.2  |
+| Subtarefa                             | Entrega | Fecha |
+| ------------------------------------- | ------- | ----- |
+| F8-a Timer flutuante e captura rápida | Redesenho no tema (guia §8 "Janelas auxiliares", protótipo `#janelas`), claro/escuro e densidade da janela principal, sem cor fixa. Captura: cartão com "Capturar para o Inbox", `Input` grande, `Kbd` Enter/Esc, "Capturar"; confirmação "Capturado no Inbox" que fecha em 1,2 s e erro que mantém o texto. Timer: linhas com `LiveDot`, nome que abre a tarefa na janela principal, tempo mono, "Pausar", fundo de time leak; rodapé "N em andamento", "Pausar todos", "Abrir CrafyTask". Geometrias atuais (300px e 400px). | F8.1, F8.3, F8.4, F8.5 |
+| F8-b Conferir                         | Usuário confere as duas janelas. | F8.2 |
 
 ## F9 — Limpeza do legado
 
