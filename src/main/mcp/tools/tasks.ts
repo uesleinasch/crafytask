@@ -7,7 +7,7 @@ import {
   archiveTask,
   countTasks,
   countTimeBlocksForTask,
-  createTask,
+  createTaskWithSubtasks,
   deleteTasks,
   filterGcalSyncedIds,
   getChildTaskIds,
@@ -41,6 +41,7 @@ import {
 } from '../effects'
 import { fail, ok } from '../reply'
 import { resolveByName } from '../resolve'
+import { MAX_SUBTASKS, planSubtasks, type SubtaskDraft } from '../subtaskPlan'
 import { compactTask, fullTask, viewTask, type CompactTask } from '../taskView'
 import type { ToolContext } from '../toolContext'
 
@@ -211,7 +212,7 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
     {
       title: 'Criar task',
       description:
-        'Cria uma task. Projeto e contextos aceitam nome ou id e falham com candidatos se não forem encontrados; tags são criadas se não existirem. Use parent_task_id para criar subtarefa.',
+        'Cria uma task. Projeto e contextos aceitam nome ou id e falham com candidatos se não forem encontrados; tags são criadas se não existirem. Use parent_task_id para criar subtarefa, ou subtasks para criar a task e as subtarefas dela numa chamada só (tudo ou nada).',
       inputSchema: {
         name: z.string().min(1),
         description: z.string().optional(),
@@ -229,6 +230,24 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
           'Fim do agendamento (exige scheduled_time). Sem fim, o Google Calendar usa o limite de tempo da task ou 1h.'
         ),
         parent_task_id: z.number().int().positive().optional(),
+        subtasks: z
+          .array(
+            z.object({
+              name: z.string().min(1),
+              description: z.string().optional(),
+              status: STATUS.optional(),
+              category: CATEGORY.optional(),
+              energy: ENERGY.optional(),
+              due_date: DATE.optional(),
+              project: z.union([z.string(), z.number()]).optional(),
+              tags: z.array(z.string()).optional()
+            })
+          )
+          .max(MAX_SUBTASKS)
+          .optional()
+          .describe(
+            `Subtarefas criadas junto (até ${MAX_SUBTASKS}). Herdam projeto e tags da task quando não informados. Não combina com parent_task_id.`
+          ),
         external_url: EXTERNAL_URL.optional(),
         time_limit_minutes: TIME_LIMIT.optional(),
         recurrence: RECURRENCE.optional(),
@@ -243,6 +262,12 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
     async (args) => {
       if (args.parent_task_id !== undefined && !getTask(args.parent_task_id)) {
         return fail('not_found', `Task pai ${args.parent_task_id} não existe.`)
+      }
+      if (args.parent_task_id !== undefined && args.subtasks?.length) {
+        return fail(
+          'validation',
+          'subtasks não combina com parent_task_id: não existe subtarefa de subtarefa.'
+        )
       }
       const timeError = taskTimeError(args)
       if (timeError) return fail('validation', timeError)
@@ -280,7 +305,25 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
         input.tagNames = args.tags
       }
 
-      const task = createTask(input)
+      const drafts: SubtaskDraft[] = []
+      for (const subtask of args.subtasks ?? []) {
+        const draft: SubtaskDraft = {
+          name: subtask.name,
+          description: subtask.description,
+          category: subtask.category,
+          energy: subtask.energy,
+          due_date: subtask.due_date,
+          tags: subtask.tags
+        }
+        if (subtask.project !== undefined) {
+          const project = resolveProject(subtask.project)
+          if (!project.ok) return project.response
+          draft.project_id = project.id
+        }
+        drafts.push(draft)
+      }
+
+      const { parent: task, subtasks } = createTaskWithSubtasks(input, planSubtasks(input, drafts))
 
       // afterTaskWrite precisa rodar mesmo se o backfill de status falhar — a task já foi
       // persistida e não pode ficar sem sync no Notion nem tasks:refresh.
@@ -298,7 +341,32 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
         afterTaskWrite(task.id)
       }
 
-      return ok({ created: task.id, task: viewTask(getTask(task.id)!, args.detail) })
+      if (subtasks.length === 0) {
+        return ok({ created: task.id, task: viewTask(getTask(task.id)!, args.detail) })
+      }
+
+      const refused: { id: number; reason: string }[] = []
+      subtasks.forEach((subtask, index) => {
+        const status = args.subtasks![index].status
+        if (status !== undefined && status !== subtask.status) {
+          try {
+            changeTaskStatus(subtask.id, status)
+          } catch (error) {
+            refused.push({
+              id: subtask.id,
+              reason: error instanceof Error ? error.message : String(error)
+            })
+          }
+        }
+        afterTaskWrite(subtask.id)
+      })
+
+      return ok({
+        created: task.id,
+        task: viewTask(getTask(task.id)!, args.detail),
+        subtasks: getSubtasks(task.id).map(({ id, name, status }) => ({ id, name, status })),
+        ...(refused.length > 0 && { status_refused: refused })
+      })
     }
   )
 
