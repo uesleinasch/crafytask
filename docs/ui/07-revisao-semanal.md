@@ -189,6 +189,12 @@ A consulta traz oito indicadores; a revisão mostra seis (`REVIEW_HEALTH`) e o d
 `tasks.status_changed_at`, mantida por dois gatilhos do SQLite (`ensureStatusChangedAt`), então vale
 para tudo que grava status (telas, MCP, Jira). Em bancos antigos a coluna nasce com `updated_at`.
 
+A mesma consulta traz a **taxa do Inbox processada na semana** (`inboxProcessedWeek` e
+`inboxProcessedRate`): tarefas que saíram do Inbox nos últimos 7 dias sobre essas mais as que ainda
+estão lá. Vem de `task_status_events`, o histórico gravado por gatilho a cada mudança de status;
+por isso só conta a partir da versão que criou a tabela. O texto aparece no cartão Inbox do
+dashboard (F7-b2).
+
 Tons (ícone num quadrado tingido, valor em Geist 20/600): **em dia** com as cores de Executando e
 `CircleCheck` no lugar do ícone; **atenção** com as de Aguardando e o ícone do indicador; **erro**
 com as de Urgente, só para prazo vencido; **neutro** com as de Inbox, para Someday, que só informa.

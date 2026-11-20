@@ -68,6 +68,7 @@ import {
   getGeneralStats,
   getGtdMetrics,
   getEnergyStats,
+  getPeriodStats,
   // Tags
   createTag,
   listTags,
@@ -189,7 +190,8 @@ import type {
   NotesOwner,
   ReviewCounterKey,
   ReviewStepKey,
-  ReviewStepStatus
+  ReviewStepStatus,
+  StatsPeriod
 } from '@shared/types'
 import type { StatusMapping } from './jiraPlan'
 import {
@@ -1024,6 +1026,13 @@ function setupIpcHandlers(): void {
   // FASE 4.2: Advanced stats
   ipcMain.handle('stats:gtdMetrics', () => getGtdMetrics())
   ipcMain.handle('stats:energy', () => getEnergyStats())
+  ipcMain.handle('stats:period', (_, period: StatsPeriod) =>
+    getPeriodStats({
+      start: String(period?.start ?? ''),
+      end: String(period?.end ?? ''),
+      projectId: Number.isInteger(period?.projectId) ? Number(period.projectId) : null
+    })
+  )
   ipcMain.handle('report:weeklyPDF', async () => {
     if (!mainWindow) return
     const { filePath } = await dialog.showSaveDialog(mainWindow, {

@@ -57,6 +57,41 @@ describe('ensureStatusChangedAt', () => {
   })
 })
 
+describe('task_status_events', () => {
+  it('registra a criação e cada troca de status, não as edições', () => {
+    ensureStatusChangedAt(db)
+    seed(`INSERT INTO tasks (id, status) VALUES (1, 'inbox')`)
+    seed(`UPDATE tasks SET name = 'x' WHERE id = 1`)
+    seed(`UPDATE tasks SET status = 'proximas' WHERE id = 1`)
+    const events = raw
+      .prepare('SELECT from_status, to_status FROM task_status_events ORDER BY id')
+      .all()
+    expect(events).toEqual([
+      { from_status: null, to_status: 'inbox' },
+      { from_status: 'inbox', to_status: 'proximas' }
+    ])
+  })
+
+  it('a taxa da semana é o processado sobre o que passou pelo inbox', () => {
+    ensureStatusChangedAt(db)
+    seed(
+      `INSERT INTO tasks (id, status) VALUES (1, 'inbox'), (2, 'inbox'), (3, 'inbox'), (4, 'inbox')`
+    )
+    seed(`UPDATE tasks SET status = 'proximas' WHERE id IN (1, 2, 3)`)
+    seed(`INSERT INTO task_status_events (task_id, from_status, to_status, changed_at)
+          VALUES (4, 'inbox', 'someday', '2026-11-01 10:00:00')`)
+    const now = new Date()
+    const result = healthIndicatorsQuery(db, now)
+    expect(result.inboxProcessedWeek).toBe(3)
+    expect(result.inboxProcessedRate).toBe(75)
+  })
+
+  it('sem nada passando pelo inbox a taxa fica nula', () => {
+    ensureStatusChangedAt(db)
+    expect(healthIndicatorsQuery(db, NOW).inboxProcessedRate).toBeNull()
+  })
+})
+
 describe('healthIndicatorsQuery', () => {
   beforeEach(() => ensureStatusChangedAt(db))
 
@@ -70,7 +105,9 @@ describe('healthIndicatorsQuery', () => {
       staleNextTasks: 0,
       overdueTasks: 0,
       somedayCount: 0,
-      daysSinceLastReview: null
+      daysSinceLastReview: null,
+      inboxProcessedWeek: 0,
+      inboxProcessedRate: null
     })
   })
 
