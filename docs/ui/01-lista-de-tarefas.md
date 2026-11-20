@@ -315,8 +315,9 @@ por `lib/newTaskRequest.ts`); não navega para a lista. Desenho no guia §7 "Nov
   `createTask` só: tags por `tagNames` (nada é criado se cancelar), hora do prazo só com data, fim
   do agendamento só com início.
 - **Rodapé:** "Criar outra em seguida" (fica ligado enquanto o app está aberto), "Vai para o Inbox",
-  `Ctrl` `Enter` em `KeyCombo` (a partir de `sm`), Cancelar e "Criar tarefa" (tooltip com o atalho
-  ou com o problema do rascunho; `loading` enquanto grava).
+  `Ctrl` `Enter` em `KeyCombo` (a partir de `sm`), Cancelar e "Criar tarefa" (tooltip "Ctrl+Enter",
+  desabilitado sem nome ou com limite ou link inválido; `loading` enquanto grava). No modal o link
+  grava a cada tecla, para o `Ctrl+Enter` dentro do popover não perder o que foi digitado.
 - **Criar:** Enter no nome ou `Ctrl+Enter` em qualquer campo, com trava contra envio duplo. Sem
   "Criar outra", fecha e navega para `/task/{id}`; com ele, mantém categoria, projeto e contextos,
   limpa o resto, esconde as pílulas opcionais e volta o foco ao nome. `task:create` emite

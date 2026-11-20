@@ -256,7 +256,7 @@ export function ContextsPill({
             style={{ margin: 0 }}
           >
             {onManage && (
-              <Button size="small" onClick={onManage}>
+              <Button type="link" size="small" onClick={onManage}>
                 Criar em Contextos e tags
               </Button>
             )}
@@ -530,10 +530,12 @@ export function TagsPill({
 function LinkEditor({
   value,
   jiraKey,
+  live,
   onSave
 }: {
   value: string | null | undefined
   jiraKey: string | null | undefined
+  live?: boolean
   onSave: Change<string | null>
 }): React.JSX.Element {
   const { message } = App.useApp()
@@ -562,8 +564,11 @@ function LinkEditor({
           placeholder="https://…"
           aria-label="Link externo"
           value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          onBlur={commit}
+          onChange={(event) => {
+            setDraft(event.target.value)
+            if (live) void onSave(event.target.value.trim() || null)
+          }}
+          onBlur={live ? undefined : commit}
           onPressEnter={(event) => event.currentTarget.blur()}
         />
         <Button
@@ -585,10 +590,12 @@ function LinkEditor({
 export function LinkPill({
   value,
   jiraKey,
+  live,
   onChange
 }: {
   value: string | null | undefined
   jiraKey?: string | null
+  live?: boolean
   onChange: Change<string | null>
 }): React.JSX.Element {
   return (
@@ -596,7 +603,7 @@ export function LinkPill({
       label="Link externo"
       icon={Link}
       muted={!value}
-      content={<LinkEditor value={value} jiraKey={jiraKey} onSave={onChange} />}
+      content={<LinkEditor value={value} jiraKey={jiraKey} live={live} onSave={onChange} />}
     >
       {value ? value.replace(/^https?:\/\//, '').split('/')[0] : 'Link'}
     </PropPill>

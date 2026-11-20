@@ -88,7 +88,9 @@ export function AppShell(): React.JSX.Element {
         <StatusBar />
       </Layout>
       <CommandPalette />
-      <NewTaskModal />
+      <RegionBoundary region="nova tarefa">
+        <NewTaskModal />
+      </RegionBoundary>
       <Toaster position="bottom-right" />
     </Layout>
   )

@@ -149,7 +149,7 @@ export function NewTaskModal(): React.JSX.Element {
           </span>
         )}
         <Button onClick={close}>Cancelar</Button>
-        <Tooltip title={problem && draft.name.trim() ? problem : 'Ctrl+Enter'}>
+        <Tooltip title="Ctrl+Enter">
           <Button
             type="primary"
             loading={saving}
@@ -277,6 +277,7 @@ export function NewTaskModal(): React.JSX.Element {
           {visible('link') && (
             <LinkPill
               value={draft.externalUrl || null}
+              live
               onChange={(url) => set({ externalUrl: url ?? '' })}
             />
           )}
@@ -295,7 +296,7 @@ export function NewTaskModal(): React.JSX.Element {
                     status={limitValid ? undefined : 'error'}
                     value={draft.timeLimit}
                     onChange={(event) => set({ timeLimit: event.target.value })}
-                    style={{ fontFamily: token.fontFamilyCode }}
+                    style={{ fontFamily: token.fontFamilyCode, fontVariantNumeric: 'tabular-nums' }}
                   />
                   <Typography.Text
                     type={limitValid ? 'secondary' : 'danger'}

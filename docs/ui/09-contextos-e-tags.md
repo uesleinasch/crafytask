@@ -14,7 +14,7 @@ nas duas.
   filtro por contexto na lista é o que torna o conceito útil. Oito são criados na primeira execução
   (`@computador` 💻, `@telefone` 📱, `@reunião` 👥, `@email` 📧, `@leitura` 📖, `@compras` 🛒,
   `@casa` 🏠, `@escritório` 🏢).
-- **Tags** — rótulos livres que nascem enquanto se digita na pílula Tags (detalhe e modal Nova tarefa), então variações de grafia
+- **Tags** — rótulos livres que nascem enquanto se digita na pílula Tags do detalhe (no modal Nova tarefa, só ao criar a tarefa), então variações de grafia
   viram tags diferentes. A tela serve para limpar e **mesclar**.
 
 ## Dados
