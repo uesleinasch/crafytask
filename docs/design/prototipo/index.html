@@ -679,7 +679,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
                 <${RunningPill} go=${go} compact=${!screens.md} />
                 <${Tooltip} title="Buscar e comandos (Ctrl+K)"><${Button} aria-label="Buscar" icon=${html`<${I.SearchOutlined} />`} onClick=${() => setPalette(true)}>${screens.xxl ? html`<span>Buscar <${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12, marginInlineStart: 6 }}>Ctrl K<//></span>` : null}<//><//>
                 <${Dropdown} menu=${prefsMenu} trigger=${['click']}><${Button} aria-label="Aparência" icon=${createElement(themeIcon)} /><//>
-                <${Button} type="primary" aria-label="Nova tarefa" icon=${html`<${I.PlusOutlined} />`} onClick=${() => setNewTask(true)}>${screens.lg ? 'Nova tarefa' : null}<//>
+                <${Tooltip} title=${screens.lg ? '' : 'Nova tarefa'}><${Button} type="primary" aria-label="Nova tarefa" icon=${html`<${I.PlusOutlined} />`} onClick=${() => setNewTask(true)}>${screens.lg ? 'Nova tarefa' : null}<//><//>
               </div>
             </div>
           <//>
@@ -736,7 +736,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
 
   function NewTaskModal({ open, onClose, mode, screens, go }) {
     const { message } = AntApp.useApp();
-    const blank = { name: '', desc: '', category: 'normal', project: null, ctxs: [], due: null, energy: null, sched: null, recurrence: 'none', tags: [], limit: '' };
+    const blank = { name: '', desc: '', category: 'normal', project: null, ctxs: [], due: null, energy: null, sched: null, recurrence: 'none', tags: [], limit: '', url: '' };
     const [d, setD] = useState(blank);
     const [shown, setShown] = useState([]);
     const [another, setAnother] = useState(false);
@@ -752,6 +752,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       if (another) {
         message.success('Tarefa criada: ' + d.name.trim());
         setD({ ...blank, category: d.category, project: d.project, ctxs: d.ctxs });
+        setShown([]);
         if (nameRef.current) nameRef.current.focus();
         return;
       }
@@ -763,6 +764,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       { key: 'programado', label: 'Programado', icon: 'ScheduleOutlined', set: !!d.sched },
       { key: 'recorrencia', label: 'Recorrência', icon: 'SyncOutlined', set: d.recurrence !== 'none' },
       { key: 'tags', label: 'Tags', icon: 'TagsOutlined', set: d.tags.length > 0 },
+      { key: 'link', label: 'Link externo', icon: 'LinkOutlined', set: !!d.url },
       { key: 'limite', label: 'Limite de tempo', icon: 'ClockCircleOutlined', set: !!d.limit.trim() }
     ];
     const visible = k => optional.find(o => o.key === k).set || shown.includes(k);
@@ -807,6 +809,9 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       ${visible('tags') ? html`<${PropPill} label="Tags" icon="TagsOutlined" muted=${!d.tags.length} content=${html`<${Select} mode="tags" value=${d.tags} onChange=${v => set({ tags: v })} placeholder="Adicionar ou criar tag" style=${{ width: '100%' }} options=${['refactor', 'design', 'jira', 'bug'].map(v => ({ value: v, label: v }))} />`}>
         ${d.tags.length ? d.tags.map(x => '#' + x).join(' ') : 'Tags'}
       <//>` : null}
+      ${visible('link') ? html`<${PropPill} label="Link externo" icon="LinkOutlined" muted=${!d.url} content=${html`<${Input} autoFocus placeholder="https://…" aria-label="Link externo" value=${d.url} onChange=${e => set({ url: e.target.value })} />`}>
+        ${d.url ? d.url.replace(/^https?:\/\//, '').split('/')[0] : 'Link'}
+      <//>` : null}
       ${visible('limite') ? html`<${PropPill} label="Limite de tempo" icon="ClockCircleOutlined" muted=${!d.limit.trim()} tone=${limitOk ? null : PALETTE[mode].error} content=${html`<${Flex} vertical gap=${6}>
           <${Input} autoFocus className="ct-mono" placeholder="HH:MM:SS" aria-label="Limite de tempo" status=${limitOk ? '' : 'error'} value=${d.limit} onChange=${e => set({ limit: e.target.value })} />
           <${Text} type=${limitOk ? 'secondary' : 'danger'} style=${{ fontSize: 12 }}>${limitOk ? 'Avisa quando o tempo da tarefa chegar perto. Ex.: 1:30:00 ou 45.' : 'Use HH:MM:SS, MM:SS ou só os minutos.'}<//>
@@ -826,14 +831,14 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       <${Flex} align="center" gap=${8}>
         ${screens.sm ? html`<${Space} size=${4} aria-hidden="true"><kbd className="ct-kbd">Ctrl</kbd><kbd className="ct-kbd">Enter</kbd><//>` : null}
         <${Button} onClick=${onClose}>Cancelar<//>
-        <${Button} type="primary" disabled=${!canCreate} onClick=${create}>Criar tarefa<//>
+        <${Tooltip} title="Ctrl+Enter"><${Button} type="primary" disabled=${!canCreate} onClick=${create}>Criar tarefa<//><//>
       <//>
     <//>`;
 
     return html`<${Modal} open=${open} onCancel=${onClose} title="Nova tarefa" width=${640} footer=${footer} destroyOnClose>
       <div onKeyDown=${e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); create(); } }}>
         <${Input} ref=${nameRef} variant="borderless" autoFocus placeholder="Nome da tarefa" aria-label="Nome da tarefa" maxLength=${300}
-          value=${d.name} onChange=${e => set({ name: e.target.value })} onPressEnter=${create} style=${{ fontSize: 18, fontWeight: 600, paddingInline: 0 }} />
+          value=${d.name} onChange=${e => set({ name: e.target.value })} onPressEnter=${e => { if (!e.ctrlKey && !e.metaKey) create(); }} style=${{ fontSize: 18, fontWeight: 600, paddingInline: 0 }} />
         <${Input.TextArea} variant="borderless" placeholder="Descrição (opcional)" aria-label="Descrição" autoSize=${{ minRows: 2, maxRows: 6 }}
           value=${d.desc} onChange=${e => set({ desc: e.target.value })} style=${{ paddingInline: 0 }} />
         ${propBar}
