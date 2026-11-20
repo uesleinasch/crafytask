@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { ConfirmStore } from './confirmGuard'
 import { MCP_INSTRUCTIONS } from './instructions'
+import { registerPrompts } from './prompts'
 import { ok } from './reply'
 import { registerAppTools } from './tools/app'
 import { registerBriefingTools } from './tools/briefing'
@@ -43,6 +44,7 @@ export function createMcpServer(bulkThreshold: number, confirmStore: ConfirmStor
   registerIntegrationTools(server, ctx)
   registerAppTools(server)
   registerBriefingTools(server)
+  registerPrompts(server)
 
   return server
 }
