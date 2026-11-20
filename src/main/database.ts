@@ -79,6 +79,13 @@ import type { AppPrefs } from '@shared/appPrefs'
 import type { WorkflowPrefs } from '@shared/workflowPrefs'
 import { getProjectQuery, listProjectsQuery } from './projectQueries'
 import { ensureStatusChangedAt, healthIndicatorsQuery } from './healthQueries'
+import { notesPlainText } from './notesPlainText'
+import {
+  ensureTaskNotesText,
+  searchAll,
+  type SearchOptions,
+  type SearchResult
+} from './searchQueries'
 import {
   addTaskHistoryEntry,
   ensureTaskHistorySchema,
@@ -474,6 +481,7 @@ export function initDatabase(): void {
   ensureNotebookSchema(tagDb())
   ensureStatusChangedAt(tagDb())
   ensureTaskHistorySchema(tagDb())
+  ensureTaskNotesText(tagDb())
   ensureReviewSchema(tagDb())
   ensurePrefsSchema(tagDb())
 }
@@ -636,6 +644,10 @@ export function addTaskHistory(input: AddTaskHistoryInput, origin: TaskHistoryOr
 
 export function getTaskHistory(query: TaskHistoryQuery): TaskHistoryItem[] {
   return listTaskHistory(tagDb(), query)
+}
+
+export function searchEverything(query: string, options?: SearchOptions): SearchResult[] {
+  return searchAll(tagDb(), query, options)
 }
 
 export function getLastCheckpointsFor(taskIds: number[]): Map<number, TaskHistoryItem> {
@@ -1293,8 +1305,10 @@ export function updateTask(id: number, data: UpdateTaskInput): void {
 }
 
 export function updateTaskNotes(id: number, notes: string | null): void {
-  const stmt = db.prepare('UPDATE tasks SET notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-  stmt.run(notes, id)
+  const stmt = db.prepare(
+    'UPDATE tasks SET notes = ?, notes_text = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+  )
+  stmt.run(notes, notesPlainText(notes), id)
 }
 
 export function updateTaskDrawing(id: number, drawing: string | null): void {

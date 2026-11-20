@@ -62,6 +62,7 @@ Ao subir a ponte com `ELECTRON_RUN_AS_NODE=1`, essa variável é removida do amb
 | --- | --- |
 | `server_info` | Confirma que o CrafyTask está aberto e respondendo (`app: 'CrafyTask'`). |
 | `search_tasks` | Lista tasks com filtros (status, categoria, energia, projeto, contexto, busca, datas), no [formato compacto](#formato-compacto); `detail=full` devolve a task inteira. Não inclui subtarefas. |
+| `search` | Busca geral por texto (`query`, mínimo 2 caracteres): tasks (nome, descrição e corpo das notas), páginas de caderno, histórico das tasks e projetos. Cada resultado traz `kind`, `id`, `title`, `snippet`, `updated_at` e, no histórico, `task_id`; título que casa vem antes (`title_match`), depois o mais recente. `kinds` limita as fontes, `limit` vai até 50 (padrão 20), `include_archived` inclui tasks arquivadas. |
 | `get_task` | Detalhe completo de uma task: campos, notas em Markdown, subtarefas (compactas), dependências, registros de tempo. |
 | `create_task` | Cria uma task; projeto/contexto por nome ou id, tags criadas se não existirem. Aceita `scheduled_time`/`scheduled_end_time` (exigem `scheduled_date`) e `due_time` (exige `due_date`), em `HH:MM`, `external_url` (`http(s)`), `waiting_for` (quem ou o quê a task aguarda, até 120 caracteres), `time_limit_minutes`, `recurrence` (`daily`/`weekly`/`monthly`), `working_dir` (caminho absoluto) e `start_command` (terminal da task). Com `subtasks` (até 30; `name`, `description`, `status`, `category`, `energy`, `due_date`, `project`, `tags`) cria a task e as subtarefas numa transação só: falhou uma, nada é criado. Subtarefa herda projeto e tags da task; não combina com `parent_task_id` nem pede `confirm_token`. A resposta traz a task compacta (`detail=full` para inteira) e, com `subtasks`, a lista `{id, name, status}`. |
 | `update_task` | Altera campos de uma task; passar `tags`/`contexts` substitui a lista inteira. Horários em `HH:MM`, `null` remove; limpar a data remove a hora dela, limpar o início remove o fim. `external_url` aceita `http(s)` ou `null` (remove); `waiting_for` aceita texto ou `null`. Fim ≤ início ou hora sem data → erro `validation`. Também aceita `time_limit_minutes`, `recurrence` (`null` remove), `working_dir` e `start_command` (`null` remove). A resposta traz a task compacta (`detail=full` para inteira). |
@@ -131,6 +132,7 @@ O que a tela faz e por onde o MCP faz o mesmo.
 
 | Recurso do app | Pelo MCP |
 | --- | --- |
+| Achar um texto em qualquer lugar (tasks, notas, páginas, histórico, projetos) | `search` |
 | Listar, ver, criar, editar e apagar tasks; subtarefas | `search_tasks`, `get_task`, `create_task` (`parent_task_id`, `subtasks`), `update_task`, `bulk_update_tasks`, `delete_tasks` |
 | Status, com as regras de bloqueio e recorrência | `update_task`, `bulk_update_tasks`, `work_session` |
 | Timer, tempo manual, corrigir e zerar sessões | `timer`, `time_entries` |
@@ -211,6 +213,9 @@ Operações destrutivas ou em massa seguem um fluxo de duas fases (`confirmGuard
 - O app agora vive na bandeja: fechar a janela não encerra o processo, então o servidor continua
   de pé. Encerrar de verdade é pelo item "Sair" no ícone da bandeja.
 - `search_tasks` não retorna subtarefas — use `get_task` para o detalhe de uma task específica.
+- `search` usa `LIKE` (sem distinguir maiúsculas só em letras sem acento) sobre o texto puro das
+  notas (`tasks.notes_text`, `notebook_pages.search_text`). Não há índice de texto: se a busca
+  ficar lenta num banco grande, o caminho é FTS5.
 - `write_notes` converte um subconjunto de Markdown; menções `@` a outras tasks, tabelas e imagens
   do editor Tiptap não sobrevivem à conversão.
 - Deletar uma task pai apaga as subtarefas em cascata — não há como recuperar depois de confirmado.
