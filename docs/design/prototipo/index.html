@@ -3695,6 +3695,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
   ];
 
   const NB_COLORS = ['#E5484D', '#A84803', '#A15C00', '#0B7A50', '#0F6E7A', '#2A62D6', '#5B47EB', '#7647B0', '#B8327A', '#5D6B82'];
+  const NB_COLOR_NAMES = { '#E5484D': 'vermelho', '#A84803': 'laranja', '#A15C00': 'âmbar', '#0B7A50': 'verde', '#0F6E7A': 'azul-petróleo', '#2A62D6': 'azul', '#5B47EB': 'violeta', '#7647B0': 'roxo', '#B8327A': 'magenta', '#5D6B82': 'ardósia' };
   const NB_MAX_DEPTH = 2;
   const NB_UNTITLED = 'Página sem título';
   const NB_SEED = {
@@ -3746,7 +3747,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     return html`<${Modal} open=${!!value} title=${value ? value.title : ''} okText="Salvar" cancelText="Cancelar" onCancel=${onCancel} onOk=${ok} okButtonProps=${{ disabled: !draft || !draft.name.trim() }} width=${420}>
       ${draft ? html`<${Form} layout="vertical" requiredMark=${false}>
         <${Form.Item} label="Nome" required><${Input} autoFocus value=${draft.name} placeholder=${value.placeholder} onChange=${e => setDraft({ ...draft, name: e.target.value })} onPressEnter=${ok} /><//>
-        <${Form.Item} label="Cor" style=${{ marginBottom: 0 }}><${Flex} gap=${8} wrap="wrap" role="radiogroup" aria-label="Cor">${NB_COLORS.map(c => html`<button key=${c} type="button" role="radio" aria-checked=${draft.color === c} aria-label=${'Cor ' + c} onClick=${() => setDraft({ ...draft, color: c })}
+        <${Form.Item} label="Cor" style=${{ marginBottom: 0 }}><${Flex} gap=${8} wrap="wrap" role="radiogroup" aria-label="Cor">${NB_COLORS.map(c => html`<button key=${c} type="button" role="radio" aria-checked=${draft.color === c} aria-label=${'Cor ' + NB_COLOR_NAMES[c]} title=${NB_COLOR_NAMES[c]} onClick=${() => setDraft({ ...draft, color: c })}
           style=${{ width: 26, height: 26, borderRadius: '50%', background: c, border: 'none', cursor: 'pointer', boxShadow: draft.color === c ? '0 0 0 2px var(--ct-surface), 0 0 0 4px var(--ct-text)' : 'none' }}></button>`)}<//><//>
       <//>` : null}
     <//>`;
@@ -3769,6 +3770,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const [treeDrawer, setTreeDrawer] = useState(false);
     const [tabOver, setTabOver] = useState(null);
     const dragRef = React.useRef(null);
+    const reorderRef = React.useRef(null);
 
     const wide = screens.lg;
     const nb = notebooks.find(n => n.id === nbId) || null;
@@ -3805,24 +3807,39 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const syncNotebook = n => { setSyncing(n.id); setTimeout(() => { setSyncing(null); message.success(`Caderno ${n.name} sincronizado com o Notion`); }, 1200); };
 
     const confirmDelete = (kind, item) => {
-      const sub = kind === 'page' ? nbSubtree(pages, item.id).length - 1 : 0;
-      const copy = {
-        notebook: { title: `Excluir o caderno "${item.name}"?`, content: 'Apaga todas as seções e páginas dele, com notas, imagens e desenhos. No Notion, as páginas vão para o arquivo. Não dá para desfazer.' },
-        section: { title: `Excluir a seção "${item.name}"?`, content: 'Apaga todas as páginas da seção, com notas, imagens e desenhos. No Notion, as páginas vão para o arquivo. Não dá para desfazer.' },
-        page: { title: `Excluir "${item.title || NB_UNTITLED}"?`, content: (sub ? `Apaga a página e ${sub === 1 ? 'a subpágina' : 'as ' + sub + ' subpáginas'} dela` : 'Apaga a página') + ', com notas, imagens e desenho. No Notion, ela vai para o arquivo. Não dá para desfazer.' }
-      }[kind];
+      const plural = (n, one, many) => n + ' ' + (n === 1 ? one : many);
+      const notion = 'Com o envio automático ao Notion ligado, as páginas vão para o arquivo de lá; desligado, o Notion fica como está.';
+      const keep = 'As tarefas não mudam; menções @ a essas páginas ficam sem destino.';
+      let copy;
+      if (kind === 'notebook') { const sids = sections.filter(s => s.nb === item.id).map(s => s.id); const n = pages.filter(p => sids.includes(p.sec)).length;
+        copy = { title: `Excluir o caderno "${item.name}"?`, content: `Apaga ${plural(sids.length, 'seção', 'seções')} e ${plural(n, 'página', 'páginas')}, com notas, imagens e desenhos. ${keep} ${notion} Não dá para desfazer.` }; }
+      if (kind === 'section') { const n = pages.filter(p => p.sec === item.id).length;
+        copy = { title: `Excluir a seção "${item.name}"?`, content: `Apaga ${plural(n, 'página', 'páginas')}, com notas, imagens e desenhos. ${keep} ${notion} Não dá para desfazer.` }; }
+      if (kind === 'page') { const sub = nbSubtree(pages, item.id).length - 1;
+        copy = { title: `Excluir "${item.title || NB_UNTITLED}"?`, content: (sub ? `Apaga a página e ${plural(sub, 'subpágina', 'subpáginas')}` : 'Apaga a página') + `, com notas, imagens e desenho. ${keep} ${notion} Não dá para desfazer.` }; }
       modal.confirm({ ...copy, okText: 'Excluir', okButtonProps: { danger: true }, cancelText: 'Cancelar', onOk: () => {
-        if (kind === 'notebook') { const sids = sections.filter(s => s.nb === item.id).map(s => s.id); setPages(ps => ps.filter(p => !sids.includes(p.sec))); setSections(ss => ss.filter(s => s.nb !== item.id)); setNotebooks(ns => ns.filter(n => n.id !== item.id)); const next = notebooks.find(n => n.id !== item.id); if (next) openNotebook(next.id); else { setNbId(null); setSecId(null); setPageId(null); } }
-        if (kind === 'section') { setPages(ps => ps.filter(p => p.sec !== item.id)); setSections(ss => ss.filter(s => s.id !== item.id)); const next = secs.find(s => s.id !== item.id); setSecId(next ? next.id : null); setPageId(next ? firstPage(next.id) : null); }
+        if (kind === 'notebook') { const sids = sections.filter(s => s.nb === item.id).map(s => s.id); setPages(ps => ps.filter(p => !sids.includes(p.sec))); setSections(ss => ss.filter(s => s.nb !== item.id)); setNotebooks(ns => ns.filter(n => n.id !== item.id));
+          if (item.id === nbId) { const next = notebooks.find(n => n.id !== item.id); if (next) openNotebook(next.id); else { setNbId(null); setSecId(null); setPageId(null); } } }
+        if (kind === 'section') { setPages(ps => ps.filter(p => p.sec !== item.id)); setSections(ss => ss.filter(s => s.id !== item.id));
+          if (item.id === secId) { const next = secs.find(s => s.id !== item.id); setSecId(next ? next.id : null); setPageId(next ? firstPage(next.id) : null); } }
         if (kind === 'page') { const ids = nbSubtree(pages, item.id); setPages(ps => ps.filter(p => !ids.includes(p.id))); if (ids.includes(pageId)) setPageId(null); }
         message.success(kind === 'page' ? 'Página excluída' : kind === 'section' ? 'Seção excluída' : 'Caderno excluído');
       } });
     };
+    const shift = (list, setList, id, delta) => setList(all => { const i = all.findIndex(x => x.id === id); const peers = list.map(x => x.id); const k = peers.indexOf(id) + delta; if (k < 0 || k >= peers.length) return all; const j = all.findIndex(x => x.id === peers[k]); const next = all.slice(); [next[i], next[j]] = [next[j], next[i]]; return next; });
+    const reorderProps = (kind, id, list, setList) => ({
+      draggable: true,
+      onDragStart: e => { reorderRef.current = { kind, id }; try { e.dataTransfer.setData('text/plain', String(id)); e.dataTransfer.effectAllowed = 'move'; } catch (err) {} },
+      onDragEnd: () => { reorderRef.current = null; },
+      onDragOver: e => { const r = reorderRef.current; if (r && r.kind === kind && r.id !== id) e.preventDefault(); },
+      onDrop: e => { const r = reorderRef.current; reorderRef.current = null; if (!r || r.kind !== kind || r.id === id) return; e.preventDefault(); e.stopPropagation();
+        setList(all => { const from = all.findIndex(x => x.id === r.id); const moved = all[from]; const rest = all.filter(x => x.id !== r.id); const to = rest.findIndex(x => x.id === id) + (list.findIndex(x => x.id === r.id) < list.findIndex(x => x.id === id) ? 1 : 0); return rest.slice(0, to).concat([moved], rest.slice(to)); }); }
+    });
 
     const saveDialog = draft => {
       const { kind, target } = dialog;
       if (kind === 'notebook' && target) setNotebooks(ns => ns.map(n => n.id === target.id ? { ...n, ...draft } : n));
-      if (kind === 'notebook' && !target) { const id = Date.now(); setNotebooks(ns => ns.concat([{ id, ...draft }])); setSections(ss => ss.concat([{ id: id + 1, nb: id, name: 'Geral', color: '#5D6B82' }])); setNbId(id); setSecId(id + 1); setPageId(null); }
+      if (kind === 'notebook' && !target) { const id = Date.now(); setNotebooks(ns => ns.concat([{ id, ...draft }])); setSections(ss => ss.concat([{ id: id + 1, nb: id, name: 'Geral', color: NB_COLORS[9] }])); setNbId(id); setSecId(id + 1); setPageId(null); }
       if (kind === 'section' && target) setSections(ss => ss.map(s => s.id === target.id ? { ...s, ...draft } : s));
       if (kind === 'section' && !target) { const id = Date.now(); setSections(ss => ss.concat([{ id, nb: nb.id, ...draft }])); setSecId(id); setPageId(null); }
       setDialog(null);
@@ -3833,30 +3850,40 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const nbMenu = n => ({ items: [
       { key: 'sync', icon: createElement(I.SyncOutlined), label: 'Sincronizar com o Notion', disabled: syncing !== null },
       { key: 'export', icon: createElement(I.DownloadOutlined), label: 'Exportar em Markdown…' },
-      { key: 'edit', icon: createElement(I.EditOutlined), label: 'Renomear e mudar a cor…' },
+      { key: 'edit', icon: createElement(I.EditOutlined), label: 'Editar…' },
+      { key: 'up', icon: createElement(I.ArrowUpOutlined), label: 'Mover para cima', disabled: notebooks[0] && notebooks[0].id === n.id },
+      { key: 'down', icon: createElement(I.ArrowDownOutlined), label: 'Mover para baixo', disabled: notebooks.length > 0 && notebooks[notebooks.length - 1].id === n.id },
       { type: 'divider' },
       { key: 'del', icon: createElement(I.DeleteOutlined), label: 'Excluir caderno…', danger: true }
     ], onClick: ({ key, domEvent }) => { domEvent.stopPropagation();
+      if (key === 'up' || key === 'down') shift(notebooks, setNotebooks, n.id, key === 'up' ? -1 : 1);
       if (key === 'sync') syncNotebook(n);
       if (key === 'export') message.success(`Caderno ${n.name} exportado em ~/Documentos/${n.name}`);
       if (key === 'edit') editNotebook(n);
       if (key === 'del') confirmDelete('notebook', n); } });
 
     const secMenu = s => ({ items: [
-      { key: 'edit', icon: createElement(I.EditOutlined), label: 'Renomear e mudar a cor…' },
+      { key: 'edit', icon: createElement(I.EditOutlined), label: 'Editar…' },
+      { key: 'left', icon: createElement(I.ArrowLeftOutlined), label: 'Mover para a esquerda', disabled: secs[0] && secs[0].id === s.id },
+      { key: 'right', icon: createElement(I.ArrowRightOutlined), label: 'Mover para a direita', disabled: secs.length > 0 && secs[secs.length - 1].id === s.id },
       { type: 'divider' },
       { key: 'del', icon: createElement(I.DeleteOutlined), label: 'Excluir seção…', danger: true }
-    ], onClick: ({ key }) => { if (key === 'edit') editSection(s); if (key === 'del') confirmDelete('section', s); } });
+    ], onClick: ({ key }) => { if (key === 'left' || key === 'right') shift(secs, setSections, s.id, key === 'left' ? -1 : 1); if (key === 'edit') editSection(s); if (key === 'del') confirmDelete('section', s); } });
 
     const canIndent = p => { const sibs = nbKids(pages, p.sec, p.parent); const prev = sibs[sibs.findIndex(x => x.id === p.id) - 1]; return !!prev && nbFits(pages, p.id, prev.id); };
     const pageMenu = p => ({ items: [
       nbDepth(pages, p.id) < NB_MAX_DEPTH ? { key: 'sub', icon: createElement(I.FileAddOutlined), label: 'Nova subpágina' } : null,
       p.parent ? { key: 'out', icon: createElement(I.MenuFoldOutlined), label: 'Promover (sobe um nível)' } : null,
       canIndent(p) ? { key: 'in', icon: createElement(I.MenuUnfoldOutlined), label: 'Tornar subpágina da anterior' } : null,
+      { key: 'up', icon: createElement(I.ArrowUpOutlined), label: 'Mover para cima', disabled: nbKids(pages, p.sec, p.parent)[0].id === p.id },
+      { key: 'down', icon: createElement(I.ArrowDownOutlined), label: 'Mover para baixo', disabled: nbKids(pages, p.sec, p.parent).slice(-1)[0].id === p.id },
+      secs.length > 1 ? { key: 'move', icon: createElement(I.SwapOutlined), label: 'Mover para a seção', children: secs.filter(s => s.id !== p.sec).map(s => ({ key: 'move:' + s.id, icon: html`<span className="ct-dot" style=${{ background: s.color }}></span>`, label: s.name })) } : null,
       { type: 'divider' },
       { key: 'del', icon: createElement(I.DeleteOutlined), label: 'Excluir página…', danger: true }
     ].filter(Boolean), onClick: ({ key, domEvent }) => { if (domEvent) domEvent.stopPropagation();
       if (key === 'sub') newPage(p.id);
+      if (key === 'up' || key === 'down') { const sibs = nbKids(pages, p.sec, p.parent); const i = sibs.findIndex(x => x.id === p.id); const other = sibs[key === 'up' ? i - 1 : i + 1]; const after = sibs[i + 2]; setPages(ps => nbMove(ps, p.id, { sec: p.sec, parent: p.parent, beforeId: key === 'up' ? other.id : (after ? after.id : null) })); }
+      if (key.startsWith('move:')) moveToSection(p.id, Number(key.slice(5)));
       if (key === 'out') { const parent = pages.find(x => x.id === p.parent); const sibs = nbKids(pages, p.sec, parent.parent).filter(x => x.id !== p.id); const after = sibs[sibs.findIndex(x => x.id === parent.id) + 1]; setPages(ps => nbMove(ps, p.id, { sec: p.sec, parent: parent.parent, beforeId: after ? after.id : null })); }
       if (key === 'in') { const sibs = nbKids(pages, p.sec, p.parent); const prev = sibs[sibs.findIndex(x => x.id === p.id) - 1]; setPages(ps => nbMove(ps, p.id, { sec: p.sec, parent: prev.id, beforeId: null })); setExpanded(e => e.concat(String(prev.id))); }
       if (key === 'del') confirmDelete('page', p); } });
@@ -3874,11 +3901,16 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       setPages(ps => nbMove(ps, dragId, dest));
       if (dest.parent) setExpanded(e => Array.from(new Set(e.concat(String(dest.parent)))));
     };
+    const moveToSection = (id, sid) => {
+      const s = sections.find(x => x.id === sid);
+      setPages(ps => nbMove(ps, id, { sec: sid, parent: null, beforeId: null }));
+      if (nbSubtree(pages, id).includes(pageId)) setSecId(sid);
+      message.success(`Página movida para ${s.name}`);
+    };
     const dropOnSection = s => {
       const id = dragRef.current; dragRef.current = null; setTabOver(null);
       if (!id || s.id === secId) return;
-      setPages(ps => nbMove(ps, id, { sec: s.id, parent: null, beforeId: null }));
-      message.success(`Página movida para ${s.name}`);
+      moveToSection(id, s.id);
     };
 
     const nodeTitle = node => { const p = node.page; const depth = nbDepth(pages, p.id);
@@ -3923,7 +3955,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
 
     const notebookItems = notebooks.map(n => ({ key: String(n.id), icon: html`<${I.BookOutlined} style=${{ color: n.color }} />`,
       label: html`<${Dropdown} menu=${nbMenu(n)} trigger=${['contextMenu']}>
-        <div className=${'ct-nb-node' + (n.id === nbId ? ' on' : '')}>
+        <div className=${'ct-nb-node' + (n.id === nbId ? ' on' : '')} ...${reorderProps('notebook', n.id, notebooks, setNotebooks)}>
           <span className="ct-ellipsis" style=${{ flex: 1 }}>${n.name}</span>
           ${syncing === n.id ? html`<${Tooltip} title="Sincronizando com o Notion"><${I.SyncOutlined} spin style=${{ color: 'var(--ct-text-3)' }} /><//>` : null}
           <span className="ct-nb-act"><${Dropdown} menu=${nbMenu(n)} trigger=${['click']} placement="bottomRight"><${Button} size="small" type="text" aria-label=${'Ações de ' + n.name} icon=${html`<${I.EllipsisOutlined} />`} onClick=${e => e.stopPropagation()} /><//></span>
@@ -3955,8 +3987,9 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       tabBarStyle=${{ margin: 0 }} tabBarExtraContent=${sec ? html`<${Dropdown} menu=${secMenu(sec)} trigger=${['click']} placement="bottomRight"><${Button} size="small" type="text" aria-label=${'Ações da seção ' + sec.name} icon=${html`<${I.EllipsisOutlined} />`} style=${{ marginLeft: 4 }} /><//>` : null}
       items=${secs.map(s => ({ key: String(s.id), closable: false, label: html`<${Dropdown} menu=${secMenu(s)} trigger=${['contextMenu']}>
         <span className=${'ct-nb-tab' + (tabOver === s.id ? ' over' : '')} title=${tabOver === s.id ? 'Mover para ' + s.name : undefined}
-          onDragOver=${e => { if (dragRef.current && s.id !== secId) { e.preventDefault(); setTabOver(s.id); } }}
-          onDragLeave=${() => setTabOver(o => o === s.id ? null : o)} onDrop=${e => { e.preventDefault(); dropOnSection(s); }}>
+          draggable=${true} onDragStart=${reorderProps('section', s.id, secs, setSections).onDragStart} onDragEnd=${() => { reorderRef.current = null; }}
+          onDragOver=${e => { if (dragRef.current && s.id !== secId) { e.preventDefault(); setTabOver(s.id); } else reorderProps('section', s.id, secs, setSections).onDragOver(e); }}
+          onDragLeave=${() => setTabOver(o => o === s.id ? null : o)} onDrop=${e => { if (dragRef.current) { e.preventDefault(); dropOnSection(s); } else reorderProps('section', s.id, secs, setSections).onDrop(e); }}>
           <span className="ct-dot" style=${{ background: s.color }}></span>${s.name}
         </span>
       <//>` }))} />`;
@@ -4010,8 +4043,8 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       : html`<div className="ct-nb-main">
         ${sectionTabs}
         <div className="ct-nb-body">
-          ${screens.md && sec ? html`<${Card} size="small" className="ct-nb-tree" styles=${{ body: { padding: 0, height: '100%' } }}>${tree}<//>` : null}
-          <div style=${{ flex: 1, minWidth: 0, minHeight: 0 }}>${workspace}</div>
+          ${screens.md && sec ? html`<${Card} size="small" className="ct-nb-tree" styles=${{ body: { padding: 0, height: '100%' } }}><${Boundary} region="páginas" resetKey=${sec.id}>${tree}<//><//>` : null}
+          <div style=${{ flex: 1, minWidth: 0, minHeight: 0 }}><${Boundary} region="página" resetKey=${pageId}>${workspace}<//></div>
         </div>
       </div>`;
 
