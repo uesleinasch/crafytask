@@ -1533,7 +1533,7 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/pages/QuickCapturePage.tsx",
-        "padroes": ["Capturar para o Inbox", "Capturado no Inbox", "<Input", "O texto continua aqui"]
+        "padroes": ["Capturar para o Inbox", "Capturado no Inbox", "<Input", "Tente de novo"]
       }
     },
     {
@@ -1553,7 +1553,7 @@
       "check": {
         "tipo": "ausente",
         "arquivos": "src/renderer/src/pages/{FloatTimerPage,QuickCapturePage}.tsx",
-        "padrao": "\\b(bg|text|border|ring)-(white|black|slate|emerald|red|gray)\\b"
+        "padrao": "\\b(bg|text|border|ring|fill|stroke)-(white|black|slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)\\b"
       }
     },
     {

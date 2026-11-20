@@ -242,6 +242,7 @@ só porque roda de CDN; os nomes lucide de cada lugar estão nas tabelas acima e
 | Detalhe da task       | Finalizar `Check` · terminal `SquareTerminal` · campos do Jira `SlidersHorizontal` · painel `PanelRightOpen`/`PanelRightClose` · mais `Ellipsis` · zerar tempo `RotateCcw` · desarquivar `ArchiveRestore` · modo foco `Expand`/`Shrink` · Notas `FileText` · Desenho `PenTool` · bloqueada `Lock` · pílulas: aguardando `Hourglass`, projeto vazio `Folder`, contextos vazios `MapPin`, prazo `Flag`, programado `CalendarClock`, recorrência `Repeat`, tags `Tags`, link `Link` (abrir no navegador `ExternalLink`), + Propriedade `Plus` · editar sessão `Pencil`, excluir sessão `Trash2` · seções do inspetor: sessões `History`, ajustes `PencilLine`, Jira `Plug`, Google Calendar `Calendar`, Ambiente `SquareTerminal`, Subtarefas `ListChecks`, Depende de `Lock`, Issues filhas `ListTree` |
 | Abas do inspetor      | Tempo `Timer` · Detalhes `FileText` · Relações `Network`                                                                                                                                                                                       |
 | `HealthCard`          | em dia `CircleCheck` · Inbox `Inbox` · sem próxima ação `CircleArrowRight` · projetos parados `CirclePause` · aguardando `Hourglass` · próximas paradas `Clock` · prazos vencidos `CalendarX` · revisão `ClipboardCheck` · someday `Lightbulb` |
+| Janelas auxiliares    | Captura `Inbox` · Fechar `X` · Capturado `CircleCheck` · Pausar `Pause` · Abrir CrafyTask `Maximize2` |
 | Configurações         | Geral `Settings` · Aparência `Palette` · Fluxo de trabalho `Workflow` · Terminal `SquareTerminal` · Backup `DatabaseBackup` · Notion `BookOpen` · Google Calendar `Calendar` · Jira `Plug` · Servidor MCP `Cable` · Sobre `Info`               |
 | Passos da revisão     | `collect` `Download` · `inbox` `Inbox` · `mind` `Brain` · `next` `CircleArrowRight` · `past` `History` · `upcoming` `CalendarDays` · `waiting` `Hourglass` · `projects` `FolderKanban` · `someday` `Lightbulb` · `creative` `Rocket`           |
 | Menu da tarefa e ações em massa | Abrir `FileText` · timer `Play`/`Pause` · hoje `CalendarDays` · marcar como `CircleCheck` · categoria `Flag` · projeto `Folder` · contextos `MapPin` · copiar `Copy` · Jira `Plug` · abrir no Jira `ExternalLink` · campos do Jira `SlidersHorizontal` · arquivar `Archive` · excluir `Trash2` |
@@ -866,22 +867,27 @@ tempo?** Toda métrica abre o que ela conta (E4). Base: NN/g (comprimento e posi
 
 Captura rápida e timer flutuante (protótipo: `#janelas`). Seguem o tema e a densidade da janela
 principal, com os mesmos tokens e fontes; nada de cor fixa (o timer era sempre escuro, a captura
-sempre branca com uma tarja verde). As duas são um cartão `elevated` com borda `border`, raio 12 e a
-sombra flutuante, sobre a janela transparente sem moldura e sempre no topo.
+sempre branca com uma tarja verde). As duas são um cartão `elevated` com borda `borderStrong` e
+raio 12 ocupando a janela transparente inteira, sem moldura e sempre no topo. **Sem sombra:** a
+janela não tem sobra em volta do cartão para desenhá-la; a borda separa do que está atrás.
 
-- **Captura rápida** (400px, centrada a 1/3 da altura): cabeçalho de 36px que arrasta a janela,
-  com `Inbox` + "Capturar para o Inbox" e o fechar (`X`, tooltip "Fechar (Esc)"); `Input` grande
-  "O que precisa ser feito?" com foco ao abrir; rodapé com `Kbd` "Enter captura · Esc fecha" e o
-  primário "Capturar" (desabilitado vazio). Capturado troca o corpo por `CheckCircle` em `success`,
-  "Capturado no Inbox" e o texto em cinza, e fecha sozinha em 1,2 s. Erro mantém o texto, marca o
-  campo em `error` e diz "Não foi possível capturar. O texto continua aqui; tente de novo." Perder
-  o foco ou `Esc` fecha. Cria só o nome, no Inbox.
+- **Captura rápida** (400×140, centrada a 1/3 da altura): cabeçalho de 36px que arrasta a janela,
+  com `Inbox` + "Capturar para o Inbox" e o fechar (`X`, botão `text` só com ícone, tooltip
+  "Fechar (Esc)"); `Input` "O que precisa ser feito?" (grande; médio na densidade compacta) com
+  foco ao abrir; rodapé com `Kbd` "Enter captura · Esc fecha" e o primário "Capturar"
+  (desabilitado vazio). Capturado troca o corpo por `CircleCheck` em `success`, "Capturado no
+  Inbox" e o texto em cinza (`role="status"`), e fecha sozinha em 1,2 s. Erro mantém o texto no
+  campo e troca as teclas do rodapé por "Não foi possível capturar. Tente de novo." em `error`
+  (`role="alert"`), sem mudar a altura. Perder o foco ou `Esc` fecha. Cria só o nome, no Inbox.
 - **Timer flutuante** (300px, canto superior direito, aparece ao minimizar ou fechar a janela
   principal com timer rodando): uma linha de 44px por timer, até 5 (depois rola), com o ponto ao
-  vivo (`LiveDot`), o nome (clicar abre a tarefa na janela principal), o tempo em Geist Mono
-  tabular 14/600 e "Pausar" (`Pause`, texto, sem vermelho). A linha de time leak ganha o fundo do
-  nível, como na lista. Rodapé de 44px em `surface`: "N em andamento", "Pausar todos" (só com mais
-  de um) e "Abrir CrafyTask" (`Maximize2`). A janela inteira arrasta, menos os botões.
+  vivo (`LiveDot`), o nome (um botão sem moldura, focável, que abre a tarefa na janela principal),
+  o tempo em Geist Mono tabular 14/600 e pausar (`Pause`, botão `text` só com ícone, tooltip e
+  `aria-label` "Pausar <nome>", sem vermelho, como na pílula do header). A linha de time leak ganha
+  o fundo do nível, como na lista. Rodapé de 44px em `surface`: "N em andamento", "Pausar todos"
+  (só com mais de um) e "Abrir CrafyTask" (`Maximize2`). Antes do primeiro dado, uma linha
+  "Carregando os timers…". Arrasta pelo rodapé e pelos espaços das linhas; o nome e os botões são
+  `no-drag` (no Electron, clique em região de arraste não chega ao elemento).
 
 ## 9. Modo escuro
 
