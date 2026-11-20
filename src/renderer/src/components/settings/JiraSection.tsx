@@ -86,8 +86,11 @@ export function JiraSection({
   const otherBusy = (own: typeof busy): boolean => busy !== null && busy !== own
 
   useEffect(() => {
-    window.api.listProjects().then(setProjects).catch(console.error)
-  }, [])
+    window.api
+      .listProjects()
+      .then(setProjects)
+      .catch((error) => message.error(`Erro ao carregar os projetos: ${errorMessage(error)}`))
+  }, [message])
 
   async function save(patch: Parameters<typeof window.api.jiraSaveOptions>[0]): Promise<void> {
     try {
@@ -127,18 +130,17 @@ export function JiraSection({
 
   async function handleImport(): Promise<void> {
     setBusy('import')
+    const result = await window.api.jiraImportNow().catch(() => null)
+    setBusy(null)
+    if (result) {
+      message.success(
+        `Jira: ${result.created} novas, ${result.updated} atualizadas, ${result.unchanged} sem mudança.`
+      )
+    }
     try {
-      const result = await window.api.jiraImportNow()
-      if (result) {
-        message.success(
-          `Jira: ${result.created} novas, ${result.updated} atualizadas, ${result.unchanged} sem mudança.`
-        )
-      }
-    } catch {
-      /* o erro já aparece pelo evento jira:syncError */
-    } finally {
       onStatusChange(await window.api.jiraGetStatus())
-      setBusy(null)
+    } catch (error) {
+      message.error(errorMessage(error))
     }
   }
 
@@ -285,7 +287,7 @@ export function JiraSection({
               <Button
                 size="small"
                 type="link"
-                icon={<RefreshCw size={14} strokeWidth={1.75} aria-hidden />}
+                icon={<RefreshCw {...ICON} />}
                 loading={busy === 'boards'}
                 disabled={otherBusy('boards')}
                 onClick={handleLoadBoards}
@@ -329,8 +331,8 @@ export function JiraSection({
               title="Importar agora"
               description={
                 status.lastImportAt
-                  ? `Issues atribuídas a você nos boards marcados. Última tentativa em ${new Date(status.lastImportAt).toLocaleString('pt-BR')}.`
-                  : 'Issues atribuídas a você nos boards marcados. Ainda não importado.'
+                  ? `Issues atribuídas a você nos boards marcados (abertas, ou concluídas e atualizadas nos últimos 30 dias). Última tentativa em ${new Date(status.lastImportAt).toLocaleString('pt-BR')}.`
+                  : 'Issues atribuídas a você nos boards marcados (abertas, ou concluídas e atualizadas nos últimos 30 dias). Ainda não importado.'
               }
             >
               <Button
@@ -363,6 +365,7 @@ export function JiraSection({
               <Table
                 size="small"
                 pagination={false}
+                scroll={{ x: 'max-content' }}
                 rowKey="key"
                 dataSource={spaceRows}
                 columns={[
@@ -423,6 +426,7 @@ export function JiraSection({
                 <Table
                   size="small"
                   pagination={false}
+                  scroll={{ x: 'max-content' }}
                   rowKey="name"
                   dataSource={status.knownStatuses}
                   columns={[

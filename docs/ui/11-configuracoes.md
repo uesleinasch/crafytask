@@ -54,7 +54,9 @@ item **Configurações** no rodapé da sidebar.
 
 `Steps` vertical do antd. Cada passo é **manual** (botão "Marcar como feito" / "Desmarcar"; os ids
 ficam no `localStorage` sob a chave da seção) ou **automático** (`autoDone`, derivado do estado
-real — ex.: credenciais salvas, conta conectada). O **primeiro passo não feito** é o atual
+real — ex.: credenciais salvas, conta conectada). Passo manual antes de um automático já feito conta como
+feito e perde o botão: com a integração conectada, o guia abre concluído mesmo sem nada salvo no
+`localStorage`. O **primeiro passo não feito** é o atual
 (`process`); os feitos ficam `finish`. O conteúdo de todos os passos fica aberto, com os campos
 dentro do passo (largura até 420px). Avisos são `Alert` (`warning`/`info`). Lógica em
 `stepProgress.ts` (pura, testada).

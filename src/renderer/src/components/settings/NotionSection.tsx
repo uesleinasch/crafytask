@@ -263,7 +263,7 @@ export function NotionSection({
         </SettingRow>
         <SettingRow
           title="Sincronizar todas as tarefas"
-          description="Envia de novo todas as tarefas ao banco."
+          description="Envia de novo tudo o que não está arquivado."
         >
           <Button
             icon={<RefreshCw {...ICON} />}

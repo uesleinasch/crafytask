@@ -13,11 +13,29 @@ describe('resolveSteps', () => {
       ['api']
     )
     expect(steps.map((s) => [s.id, s.done])).toEqual([
-      ['projeto', false],
+      ['projeto', true],
       ['api', true],
       ['client', true],
       ['conectar', false]
     ])
+  })
+
+  it('passos manuais antes de um automático verdadeiro ficam feitos e sem botão', () => {
+    const steps = resolveSteps(
+      [{ id: 'a' }, { id: 'b', autoDone: true }, { id: 'c' }, { id: 'd', autoDone: false }],
+      []
+    )
+    expect(steps.map((s) => [s.id, s.done, s.manual])).toEqual([
+      ['a', true, false],
+      ['b', true, false],
+      ['c', false, true],
+      ['d', false, false]
+    ])
+  })
+
+  it('manual salvo continua valendo quando nenhum automático depois dele está feito', () => {
+    const steps = resolveSteps([{ id: 'a' }, { id: 'b' }, { id: 'c', autoDone: false }], ['a'])
+    expect(steps.map((s) => s.done)).toEqual([true, false, false])
   })
 
   it('o passo atual é o primeiro não feito', () => {
