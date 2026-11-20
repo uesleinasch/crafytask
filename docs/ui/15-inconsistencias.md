@@ -248,7 +248,7 @@ comportamento certo para o caso de uso; desde a F2-e a lista avisa isso ao agrup
 
 - **Botão "Hoje" em toda listagem** — agendar sem navegar, com alternância imediata.
 - **Expansão de subtarefas inline**, em card e em tabela, com carregamento sob demanda.
-- **Escala visual do Time Leak** — a única semântica que colore o fundo inteiro.
+- **Escala visual do Time leak** — a única semântica que colore o fundo inteiro.
 - **Modo foco com timer embutido** (`FocusOverlay`) — escrever sem perder o cronômetro de vista, e
   `Esc` para sair.
 - **Confirmação de exclusão que cita o efeito** — o modelo da tag virou a regra (guia §11).

@@ -50,9 +50,9 @@ um botão de pausar. Clique no nome para abrir a tarefa na janela principal. No 
 todos** (com mais de um timer) e **Abrir CrafyTask**. Ela some quando a janela principal volta ao
 foco. Sem timer rodando, o flutuante nunca aparece. Arraste-a para onde quiser.
 
-## Time Leak
+## Time leak
 
-A categoria **Time Leak** marca tarefas que drenam tempo sem gerar valor. O fundo da tarefa muda de
+A categoria **Time leak** marca tarefas que drenam tempo sem gerar valor. O fundo da tarefa muda de
 cor conforme o tempo acumulado (amarelo → laranja → vermelho); acima de 1 h o cronômetro pulsa em
 vermelho e o sistema avisa a cada 5 minutos.
 

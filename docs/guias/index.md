@@ -6,7 +6,7 @@ Passo a passo para usar o CrafyTask no dia a dia. Se é sua primeira vez, comece
 | Guia | O que você aprende |
 | --- | --- |
 | [Fluxo GTD no CrafyTask](fluxo-gtd.md) | capturar → esclarecer → organizar → revisar → executar |
-| [Timer e controle de tempo](timer.md) | cronômetro por tarefa, limite, timer flutuante, Time Leak |
+| [Timer e controle de tempo](timer.md) | cronômetro por tarefa, limite, timer flutuante, Time leak |
 | [Plano do dia e calendário](plano-do-dia.md) | agendar para hoje, horários, *time blocking*, prazos |
 | [Revisão semanal](revisao-semanal.md) | o checklist de 8 passos e os indicadores de saúde |
 | [Notas e desenho](notas-e-desenho.md) | editor rico, comandos `/`, menções `@`, Excalidraw |

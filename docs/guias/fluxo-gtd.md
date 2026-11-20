@@ -17,7 +17,7 @@ O **status** da tarefa é a etapa do GTD em que ela está. Uma tarefa tem exatam
 | **Finalizada** | concluída |
 
 Independente do status, cada tarefa tem uma **categoria** (Urgente, Prioridade, Normal ou
-**Time Leak** — tarefa que consome tempo sem gerar valor), um **nível de energia** opcional
+**Time leak** — tarefa que consome tempo sem gerar valor), um **nível de energia** opcional
 (alta, média, baixa), **contextos** (`@computador`, `@telefone`…), **tags** livres e, se fizer
 parte de algo maior, um **projeto**.
 

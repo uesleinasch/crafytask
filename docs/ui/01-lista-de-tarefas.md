@@ -328,7 +328,7 @@ por `lib/newTaskRequest.ts`); não navega para a lista. Desenho no guia §7 "Nov
 - **Botão "Hoje" onipresente** — agendar/desagendar para hoje sem sair da lista, em card e tabela.
   Alterna: se já está agendada para hoje, o clique remove.
 - **Expandir subtarefas na própria linha** — sem navegar, com carregamento sob demanda.
-- **Time Leak visualmente agressivo** — é a única semântica do app que colore o fundo inteiro da
+- **Time leak visualmente agressivo** — é a única semântica do app que colore o fundo inteiro da
   linha/card.
 - **Recarga por evento** — a tela escuta `tasks:refresh` e se atualiza quando algo é criado pela
   captura rápida ou pelo servidor MCP.

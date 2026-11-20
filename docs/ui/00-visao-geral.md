@@ -56,7 +56,7 @@ Prioridade/natureza. Independente do status.
 O `CategoryChip` lê `CATEGORY_COLORS` de `theme/semantic.ts`; chip e menus usam o mesmo
 `CATEGORY_LABELS` de `shared/types.ts`.
 
-**Time Leak** é a categoria mais visualmente carregada do app: identifica tarefas que consomem
+**Time leak** é a categoria mais visualmente carregada do app: identifica tarefas que consomem
 tempo sem gerar valor. O fundo do card/linha muda conforme o tempo acumulado (amarelo → laranja →
 vermelho; níveis em Configurações → Fluxo de trabalho, padrão 30 min, 1 h e 2 h), e a partir do
 nível laranja o sistema dispara notificação a cada 5 minutos (intervalo também configurável).
