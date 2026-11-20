@@ -7,6 +7,9 @@ interface WriteEffectDeps {
   autoSync: (id: number) => void
   changeStatus: (id: number, status: TaskStatus) => void
   renderDrawing: (payload: DrawingRenderPayload) => Promise<DrawingRenderResult>
+  resetTaskTime: (id: number) => void
+  editTimeEntry: (entryId: number, startIso: string, endIso: string) => number
+  removeTimeEntry: (entryId: number) => number
   syncTagChange: (taskIds: number[]) => void
   syncCalendar: (taskIds: number[]) => void
   disposeTerminals: (taskIds: number[]) => void
@@ -56,6 +59,28 @@ export function renderDrawing(payload: DrawingRenderPayload): Promise<DrawingRen
     return Promise.resolve({ ok: false, error: 'O CrafyTask ainda está iniciando.' })
   }
   return deps.renderDrawing(payload)
+}
+
+function ready(): WriteEffectDeps {
+  if (!deps) throw new Error('O CrafyTask ainda está iniciando; tente de novo em instantes.')
+  return deps
+}
+
+export function resetTaskTime(id: number): void {
+  ready().resetTaskTime(id)
+  broadcastRefresh()
+}
+
+export function editTimeEntry(entryId: number, startIso: string, endIso: string): number {
+  const taskId = ready().editTimeEntry(entryId, startIso, endIso)
+  broadcastRefresh()
+  return taskId
+}
+
+export function removeTimeEntry(entryId: number): number {
+  const taskId = ready().removeTimeEntry(entryId)
+  broadcastRefresh()
+  return taskId
 }
 
 export function afterTagChange(taskIds: number[]): void {

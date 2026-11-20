@@ -30,7 +30,7 @@ export function createMcpServer(bulkThreshold: number, confirmStore: ConfirmStor
 
   registerTaskTools(server, ctx)
   registerStructureTools(server, ctx)
-  registerTimerTools(server)
+  registerTimerTools(server, ctx)
   registerNotesTools(server, ctx)
   registerHistoryTools(server)
   registerWorkSessionTools(server)

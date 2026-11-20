@@ -63,15 +63,17 @@ Ao subir a ponte com `ELECTRON_RUN_AS_NODE=1`, essa variável é removida do amb
 | `server_info` | Confirma que o CrafyTask está aberto e respondendo (`app: 'CrafyTask'`). |
 | `search_tasks` | Lista tasks com filtros (status, categoria, energia, projeto, contexto, busca, datas). Não inclui subtarefas. |
 | `get_task` | Detalhe completo de uma task: campos, notas em Markdown, subtarefas, dependências, registros de tempo. |
-| `create_task` | Cria uma task; projeto/contexto por nome ou id, tags criadas se não existirem. Aceita `scheduled_time`/`scheduled_end_time` (exigem `scheduled_date`) e `due_time` (exige `due_date`), em `HH:MM`, `external_url` (`http(s)`) e `waiting_for` (quem ou o quê a task aguarda, até 120 caracteres). |
-| `update_task` | Altera campos de uma task; passar `tags`/`contexts` substitui a lista inteira. Horários em `HH:MM`, `null` remove; limpar a data remove a hora dela, limpar o início remove o fim. `external_url` aceita `http(s)` ou `null` (remove); `waiting_for` aceita texto ou `null`. Fim ≤ início ou hora sem data → erro `validation`. |
+| `create_task` | Cria uma task; projeto/contexto por nome ou id, tags criadas se não existirem. Aceita `scheduled_time`/`scheduled_end_time` (exigem `scheduled_date`) e `due_time` (exige `due_date`), em `HH:MM`, `external_url` (`http(s)`), `waiting_for` (quem ou o quê a task aguarda, até 120 caracteres), `time_limit_minutes`, `recurrence` (`daily`/`weekly`/`monthly`), `working_dir` (caminho absoluto) e `start_command` (terminal da task). |
+| `update_task` | Altera campos de uma task; passar `tags`/`contexts` substitui a lista inteira. Horários em `HH:MM`, `null` remove; limpar a data remove a hora dela, limpar o início remove o fim. `external_url` aceita `http(s)` ou `null` (remove); `waiting_for` aceita texto ou `null`. Fim ≤ início ou hora sem data → erro `validation`. Também aceita `time_limit_minutes`, `recurrence` (`null` remove), `working_dir` e `start_command` (`null` remove). |
 | `bulk_update_tasks` | Altera status/projeto/arquivamento de várias tasks; acima do `bulkThreshold` exige `confirm_token`. O status segue as regras de status abaixo; as tasks recusadas voltam em `status_refused`, e as demais mudam. |
 | `delete_tasks` | Deleta tasks permanentemente, incluindo subtarefas em cascata; sempre exige `confirm_token`. |
 | `organize_overview` | Retrato GTD: inbox, sem projeto, atrasadas, bloqueadas, someday, métricas. Atrasada = prazo antes de `today`, ou em `today` com `due_time` já passado. |
 | `list_structure` | Projetos, contextos, tags (com uso), áreas e metas num só payload. |
 | `manage_structure` | Cria/atualiza/remove projeto, contexto, tag, área ou meta; remover e mesclar tag exigem `confirm_token`. |
+| `task_dependencies` | `add` faz uma task depender de outra (fica bloqueada até a outra ser finalizada) e recusa ciclo; `remove` desfaz. |
+| `time_entries` | Corrige o tempo registrado: `update` muda início e fim de uma sessão encerrada, `delete` apaga uma sessão, `reset` zera o tempo da task. `delete` e `reset` exigem `confirm_token`. O worklog do Jira acompanha. |
 | `timer` | Inicia, para, consulta status ou lança tempo manual numa task. Iniciar em task bloqueada devolve `app_state`. |
-| `time_report` | Tempo gasto: geral, semanal, por task, ou registros de uma task. |
+| `time_report` | Tempo gasto: geral, semanal, por task, registros de uma task, ou `scope=period` (`start`, `end`, `project_id` opcional): as estatísticas do dashboard para o período, com a comparação com o período anterior. |
 | `read_notes` | Devolve as notas de uma task convertidas para Markdown. |
 | `read_drawing` | Devolve o desenho (Excalidraw) de uma task como imagem PNG, com um resumo dos elementos e dos textos contidos. |
 | `drawing_guide` | Guia de como montar os elementos de `write_drawing`: formas, texto, setas ligadas por `id`, molduras, cores e um exemplo. |
@@ -118,8 +120,8 @@ Operações destrutivas ou em massa seguem um fluxo de duas fases (`confirmGuard
    operação diferente, mesmo que pareça similar, e é descartado no primeiro uso.
 
 `delete_tasks`, `manage_structure` (delete/merge_tag), `delete_page`, `write_notes`/`write_page`
-(`mode=replace` sobre nota não vazia) e `write_drawing` (`mode=replace` sobre desenho existente)
-sempre exigem confirmação. `bulk_update_tasks` e `plan_day` só exigem acima do
+(`mode=replace` sobre nota não vazia), `write_drawing` (`mode=replace` sobre desenho existente) e
+`time_entries` (`delete` e `reset`) sempre exigem confirmação. `bulk_update_tasks` e `plan_day` só exigem acima do
 `bulkThreshold` configurado (padrão 5 itens).
 
 ## Limitações conhecidas

@@ -858,6 +858,27 @@ function applyStatusChange(id: number, status: TaskStatus): void {
   applyTaskStatusChange(statusChangeDeps, id, status)
 }
 
+function resetTaskTime(id: number): void {
+  const worklogs = captureJiraWorklogs(id)
+  resetTaskTimer(id)
+  deleteJiraWorklogs(worklogs)
+  autoSyncTask(id)
+}
+
+function editTimeEntry(id: number, startIso: string, endIso: string): number {
+  const { taskId, worklogId } = updateTimeEntry(id, startIso, endIso)
+  syncEditedTimeEntry(taskId, id, worklogId)
+  autoSyncTask(taskId)
+  return taskId
+}
+
+function removeTimeEntry(id: number): number {
+  const { taskId, worklogId } = deleteTimeEntry(id)
+  syncDeletedTimeEntry(taskId, worklogId)
+  autoSyncTask(taskId)
+  return taskId
+}
+
 function setupIpcHandlers(): void {
   registerTerminalIpc(() => mainWindow)
   registerNotebookIpc(() => mainWindow)
@@ -1041,12 +1062,7 @@ function setupIpcHandlers(): void {
     return result
   })
   ipcMain.handle('task:updateTimer', (_, id: number, seconds: number) => updateTimer(id, seconds))
-  ipcMain.handle('task:reset', (_, id: number) => {
-    const worklogs = captureJiraWorklogs(id)
-    resetTaskTimer(id)
-    deleteJiraWorklogs(worklogs)
-    autoSyncTask(id)
-  })
+  ipcMain.handle('task:reset', (_, id: number) => resetTaskTime(id))
   ipcMain.handle('task:addManualTime', (_, id: number, seconds: number) => {
     addManualTimeEntry(id, seconds)
     autoSyncTask(id)
@@ -1064,17 +1080,13 @@ function setupIpcHandlers(): void {
   // Time Entries
   ipcMain.handle('task:getTimeEntries', (_, taskId: number) => getTimeEntries(taskId))
   ipcMain.handle('timeEntry:update', (_, id: number, startIso: string, endIso: string) => {
-    const { taskId, worklogId } = updateTimeEntry(id, startIso, endIso)
-    syncEditedTimeEntry(taskId, id, worklogId)
-    autoSyncTask(taskId)
+    editTimeEntry(id, startIso, endIso)
   })
   ipcMain.handle('timeEntry:listRange', (_, fromIso: string, toIso: string) =>
     listTimeEntriesRange(fromIso, toIso)
   )
   ipcMain.handle('timeEntry:delete', (_, id: number) => {
-    const { taskId, worklogId } = deleteTimeEntry(id)
-    syncDeletedTimeEntry(taskId, worklogId)
-    autoSyncTask(taskId)
+    removeTimeEntry(id)
   })
   ipcMain.handle('task:getActiveTimeEntry', (_, taskId: number) => getActiveTimeEntry(taskId))
 
@@ -1586,6 +1598,9 @@ app.whenReady().then(() => {
     autoSync: (id) => autoSyncTask(id),
     changeStatus: (id, status) => applyStatusChange(id, status),
     renderDrawing: (payload) => drawingRenderBridge.request(payload),
+    resetTaskTime,
+    editTimeEntry,
+    removeTimeEntry,
     syncTagChange: (ids) => syncTasksAfterTagChange(ids),
     syncCalendar: (ids) => pushToGoogle(ids),
     disposeTerminals: (ids) => disposeTerminalsForTasks(ids),
