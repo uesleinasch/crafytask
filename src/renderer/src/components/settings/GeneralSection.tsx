@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { App, Button, Flex, Space, Switch, Tag, Tooltip, Typography } from 'antd'
-import { Info, TriangleAlert } from 'lucide-react'
+import { App, Button, Flex, Popconfirm, Space, Switch, Tag, Tooltip, Typography } from 'antd'
+import { Info, Monitor, TriangleAlert } from 'lucide-react'
 import {
   ACCELERATOR_RULE,
   DEFAULT_CAPTURE_SHORTCUT,
@@ -36,6 +36,20 @@ function CaptureShortcutRows(): React.JSX.Element {
   }, [message])
 
   const shortcut = prefs?.captureShortcut ?? DEFAULT_CAPTURE_SHORTCUT
+  const gnome = prefs?.captureShortcutMode === 'gnome'
+
+  async function removeFromGnome(): Promise<void> {
+    setSaving(true)
+    try {
+      setPrefs(await window.api.removeGnomeShortcut())
+      message.success('Atalho removido do GNOME')
+    } catch (error) {
+      message.error(errorMessage(error))
+    } finally {
+      setSaving(false)
+      recordRef.current?.focus()
+    }
+  }
 
   function startRecording(): void {
     setInvalid(false)
@@ -91,7 +105,37 @@ function CaptureShortcutRows(): React.JSX.Element {
       : 'Pressione a nova combinação. Esc cancela.'
     : failed
       ? 'Não foi possível ler o atalho salvo.'
-      : 'Troca a combinação que abre a captura.'
+      : gnome
+        ? 'No GNOME com Wayland o app não registra atalho sozinho: ele fica nos atalhos personalizados do sistema. Gravar aqui cria ou atualiza lá.'
+        : 'Troca a combinação que abre a captura.'
+
+  const status = !prefs
+    ? null
+    : gnome
+      ? prefs.captureShortcutActive
+        ? {
+            warn: false,
+            label: 'No GNOME',
+            tip: 'Atalho personalizado do GNOME criado pelo CrafyTask.'
+          }
+        : prefs.gnomeKeybindingExists
+          ? {
+              warn: true,
+              label: 'Diferente no GNOME',
+              tip: 'O atalho no GNOME não bate com o salvo aqui. Atualize para usar este.'
+            }
+          : {
+              warn: true,
+              label: 'Não criado no GNOME',
+              tip: 'Ainda não existe atalho no GNOME. Crie para a combinação funcionar.'
+            }
+      : prefs.captureShortcutActive
+        ? null
+        : {
+            warn: true,
+            label: 'Não registrado',
+            tip: 'O sistema não aceitou este atalho. Escolha outro.'
+          }
 
   return (
     <>
@@ -101,15 +145,21 @@ function CaptureShortcutRows(): React.JSX.Element {
       >
         <Flex align="center" gap={8} wrap>
           <KeyCombo keys={acceleratorKeys(shortcut)} />
-          {prefs && !prefs.captureShortcutActive && (
-            <Tooltip title="O sistema não aceitou este atalho. Escolha outro.">
+          {status && (
+            <Tooltip title={status.tip}>
               <Tag
                 bordered={false}
-                color="warning"
-                icon={<TriangleAlert size={12} strokeWidth={1.75} aria-hidden />}
+                color={status.warn ? 'warning' : undefined}
+                icon={
+                  status.warn ? (
+                    <TriangleAlert size={12} strokeWidth={1.75} aria-hidden />
+                  ) : (
+                    <Monitor size={12} strokeWidth={1.75} aria-hidden />
+                  )
+                }
                 style={{ margin: 0 }}
               >
-                Não registrado
+                {status.label}
               </Tag>
             </Tooltip>
           )}
@@ -128,6 +178,24 @@ function CaptureShortcutRows(): React.JSX.Element {
         }
       >
         <Space wrap>
+          {gnome && prefs?.gnomeKeybindingExists && !recording && (
+            <Popconfirm
+              title="Remover o atalho do GNOME?"
+              description="Some dos atalhos personalizados do sistema. A combinação salva aqui continua, e você pode criar de novo."
+              okText="Remover"
+              cancelText="Cancelar"
+              onConfirm={() => removeFromGnome()}
+            >
+              <Button type="link" disabled={saving}>
+                Remover do GNOME
+              </Button>
+            </Popconfirm>
+          )}
+          {gnome && !prefs?.captureShortcutActive && !recording && (
+            <Button disabled={saving} onClick={() => void save(shortcut)}>
+              {prefs?.gnomeKeybindingExists ? 'Atualizar no GNOME' : 'Criar no GNOME'}
+            </Button>
+          )}
           {shortcut !== DEFAULT_CAPTURE_SHORTCUT && !recording && (
             <Button
               type="link"

@@ -15,7 +15,17 @@ import { copyFileSync } from 'fs'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/512.png?asset'
-import { HIDDEN_FLAG, shouldStartHidden } from './launchArgs'
+import { HIDDEN_FLAG, QUICK_CAPTURE_FLAG, shouldStartHidden, wantsQuickCapture } from './launchArgs'
+import { execFile } from 'child_process'
+import {
+  isGnomeKeybindingCurrent,
+  readGnomeKeybinding,
+  removeGnomeKeybinding,
+  shellQuote,
+  writeGnomeKeybinding,
+  type GnomeKeybinding,
+  type GsettingsRun
+} from './gnomeKeybinding'
 import { createTray, destroyTray } from './tray'
 import { isAutostartEnabled, setAutostartEnabled } from './autostart'
 import { isSafeHttpUrl } from '@shared/externalUrl'
@@ -284,7 +294,7 @@ let quickCaptureWindow: BrowserWindow | null = null
 type FloatTimerData = { taskId: number; taskName: string; seconds: number }
 let currentTimers: FloatTimerData[] = []
 let isQuitting = false
-let startHidden = shouldStartHidden(process.argv)
+let startHidden = shouldStartHidden(process.argv) || wantsQuickCapture(process.argv)
 
 // Dimensões da janela flutuante (lista com altura dinâmica)
 const FLOAT_WIDTH = 300
@@ -610,36 +620,99 @@ function tryRegisterCapture(accelerator: string): boolean {
   }
 }
 
+function usesGnomeKeybinding(): boolean {
+  return (
+    process.platform === 'linux' &&
+    process.env.XDG_SESSION_TYPE === 'wayland' &&
+    /gnome/i.test(process.env.XDG_CURRENT_DESKTOP ?? '')
+  )
+}
+
+const runGsettings: GsettingsRun = (args) =>
+  new Promise((resolve, reject) => {
+    execFile('gsettings', args, { timeout: 5000 }, (error, stdout, stderr) => {
+      if (error) reject(new Error(stderr.trim() || error.message))
+      else resolve(stdout)
+    })
+  })
+
+function quickCaptureCommand(): string {
+  const parts = app.isPackaged
+    ? [shellQuote(process.env.APPIMAGE || process.execPath)]
+    : [
+        'env',
+        'ELECTRON_DISABLE_SANDBOX=1',
+        shellQuote(process.execPath),
+        shellQuote(app.getAppPath())
+      ]
+  return [...parts, QUICK_CAPTURE_FLAG].join(' ')
+}
+
 function registerGlobalShortcut(): void {
   captureShortcut = getAppPrefs().captureShortcut
+  if (usesGnomeKeybinding()) return
   if (!tryRegisterCapture(captureShortcut)) {
     console.error(`Atalho da captura recusado pelo sistema: ${captureShortcut}`)
   }
 }
 
-function appPrefsStatus(): AppPrefsStatus {
+async function appPrefsStatus(): Promise<AppPrefsStatus> {
+  const prefs = getAppPrefs()
+  if (!usesGnomeKeybinding()) {
+    return {
+      ...prefs,
+      captureShortcutMode: 'app',
+      captureShortcutActive: globalShortcut.isRegistered(captureShortcut),
+      gnomeKeybindingExists: false
+    }
+  }
+  let current: GnomeKeybinding | null = null
+  try {
+    current = await readGnomeKeybinding(runGsettings)
+  } catch (error) {
+    console.error('[atalho] não foi possível ler os atalhos do GNOME:', error)
+  }
   return {
-    ...getAppPrefs(),
-    captureShortcutActive: globalShortcut.isRegistered(captureShortcut)
+    ...prefs,
+    captureShortcutMode: 'gnome',
+    captureShortcutActive: isGnomeKeybindingCurrent(
+      current,
+      prefs.captureShortcut,
+      quickCaptureCommand()
+    ),
+    gnomeKeybindingExists: current !== null
   }
 }
 
-function changeCaptureShortcut(accelerator: unknown): AppPrefsStatus {
+async function changeCaptureShortcut(accelerator: unknown): Promise<AppPrefsStatus> {
   if (!isValidAccelerator(accelerator)) {
     throw new Error(`Atalho inválido. ${ACCELERATOR_RULE}`)
   }
-  if (accelerator !== captureShortcut) {
+  if (usesGnomeKeybinding()) {
+    try {
+      await writeGnomeKeybinding(runGsettings, accelerator, quickCaptureCommand())
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error)
+      throw new Error(`Não foi possível gravar o atalho no GNOME: ${detail}`)
+    }
+  } else if (accelerator !== captureShortcut) {
     const previous = captureShortcut
     if (globalShortcut.isRegistered(previous)) globalShortcut.unregister(previous)
     if (!tryRegisterCapture(accelerator)) {
       tryRegisterCapture(previous)
       throw new Error('O sistema recusou esse atalho. Ele pode estar em uso por outro programa.')
     }
-    captureShortcut = accelerator
   } else if (!globalShortcut.isRegistered(accelerator) && !tryRegisterCapture(accelerator)) {
     throw new Error('O sistema recusou esse atalho. Ele pode estar em uso por outro programa.')
   }
+  captureShortcut = accelerator
   setAppPrefs({ captureShortcut: accelerator })
+  return appPrefsStatus()
+}
+
+async function removeCaptureFromGnome(): Promise<AppPrefsStatus> {
+  if (!usesGnomeKeybinding()) throw new Error('O atalho só fica no GNOME numa sessão Wayland.')
+  await removeGnomeKeybinding(runGsettings)
   return appPrefsStatus()
 }
 
@@ -1393,6 +1466,7 @@ function setupIpcHandlers(): void {
   })
 
   ipcMain.handle('prefs:getApp', () => appPrefsStatus())
+  ipcMain.handle('prefs:removeGnomeShortcut', () => removeCaptureFromGnome())
   ipcMain.handle('prefs:setCaptureShortcut', (_, accelerator: unknown) =>
     changeCaptureShortcut(accelerator)
   )
@@ -1576,8 +1650,11 @@ app.whenReady().then(() => {
   // Registrar atalho global para captura rápida
   registerGlobalShortcut()
 
-  app.on('second-instance', () => {
-    revealMainWindow()
+  if (wantsQuickCapture(process.argv)) createQuickCaptureWindow()
+
+  app.on('second-instance', (_, argv) => {
+    if (wantsQuickCapture(argv)) createQuickCaptureWindow()
+    else revealMainWindow()
   })
 
   app.on('activate', function () {

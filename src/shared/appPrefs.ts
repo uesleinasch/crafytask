@@ -6,7 +6,9 @@ export interface AppPrefs {
 }
 
 export interface AppPrefsStatus extends AppPrefs {
+  captureShortcutMode: 'app' | 'gnome'
   captureShortcutActive: boolean
+  gnomeKeybindingExists: boolean
 }
 
 export const DEFAULT_APP_PREFS: AppPrefs = {

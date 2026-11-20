@@ -538,6 +538,8 @@ const api = {
   getAppPrefs: (): Promise<AppPrefsStatus> => ipcRenderer.invoke('prefs:getApp'),
   setCaptureShortcut: (accelerator: string): Promise<AppPrefsStatus> =>
     ipcRenderer.invoke('prefs:setCaptureShortcut', accelerator),
+  removeGnomeShortcut: (): Promise<AppPrefsStatus> =>
+    ipcRenderer.invoke('prefs:removeGnomeShortcut'),
   setAutoBackup: (enabled: boolean): Promise<AppPrefsStatus> =>
     ipcRenderer.invoke('prefs:setAutoBackup', enabled),
   onBackupChanged: (callback: () => void): (() => void) => {
