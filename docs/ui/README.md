@@ -23,9 +23,9 @@ qual uma refatoração de interface pode ser desenhada sem perder funcionalidade
 | [10-arquivadas.md](10-arquivadas.md) | Rota `/archived` — o arquivo morto |
 | [11-configuracoes.md](11-configuracoes.md) | Rota `/settings` — barra lateral com Geral, Sobre, Notion, Google Calendar e servidor MCP |
 | [12-janelas-auxiliares.md](12-janelas-auxiliares.md) | Timer flutuante, captura rápida e ícone de bandeja |
-| [13-biblioteca-de-componentes.md](13-biblioteca-de-componentes.md) | Todo componente reutilizável, com props e comportamento |
-| [14-design-tokens.md](14-design-tokens.md) | Cores, tipografia, raios, espaçamentos e animações realmente usados no código |
-| [15-inconsistencias.md](15-inconsistencias.md) | Divergências, duplicações e pontos de atrito — insumo direto para a refatoração |
+| [13-biblioteca-de-componentes.md](13-biblioteca-de-componentes.md) | Base antd e componentes próprios por pasta: para que serve e onde é usado |
+| [14-design-tokens.md](14-design-tokens.md) | Onde cada token mora em `theme/` (paleta, cores semânticas, tema, densidade, fontes) |
+| [15-inconsistencias.md](15-inconsistencias.md) | Divergências do legado e onde cada uma foi resolvida; o que ainda está aberto |
 | [16-terminal.md](16-terminal.md) | Terminal embutido por task: painel no rodapé, grupos e divisão, atalho e ciclo de vida das sessões |
 | [17-cadernos.md](17-cadernos.md) | Rota `/notebooks` — Caderno → Seção → Página, com as abas Notas e Desenho da task |
 
@@ -46,4 +46,4 @@ qual uma refatoração de interface pode ser desenhada sem perder funcionalidade
 - [`CLAUDE.md`](https://github.com/uesleinasch/crafytask/blob/production/CLAUDE.md) — arquitetura, comandos, convenções de código
   (resumo em [Arquitetura](../desenvolvimento/arquitetura.md))
 - [`ui-ux/TickTask - Design System & Guia de Estilo.md`](https://github.com/uesleinasch/crafytask/blob/production/ui-ux/TickTask%20-%20Design%20System%20%26%20Guia%20de%20Estilo.md) —
-  guia de estilo original, **parcialmente defasado** (ver [15-inconsistencias.md](15-inconsistencias.md))
+  guia de estilo original, de antes do antd; a direção atual está em [docs/design](../design/index.md)

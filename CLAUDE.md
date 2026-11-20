@@ -11,7 +11,7 @@ CrafyTask (antigo TickTask) is an Electron desktop app for personal task and tim
 O nome visível é **CrafyTask** (título das janelas, sidebar, bandeja, autostart, notificações,
 textos de Configurações, nome do atalho no menu do Linux e dos pacotes `crafytask-<versão>.*`). A
 logo é só texto, na fonte **Denk One** (`@fontsource/denk-one`, empacotada — o app é offline e a CSP
-não deixa buscar fonte remota), classes `font-brand` e `text-brand` (`#705EFF`) em `main.css`.
+não deixa buscar fonte remota), classe `font-brand` em `main.css` e cor `PALETTE[mode].brand` (`theme/tokens.ts`).
 
 Por compatibilidade com instalações e dados existentes, **não renomeie**: `name: ticktask` (define a
 pasta de dados `~/.config/ticktask` e o pacote deb que faz upgrade do antigo) e `productName: "TickTask

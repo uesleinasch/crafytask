@@ -122,7 +122,7 @@ copiado em `LabelEditModal`, `ProjectHeader`, `NewProjectModal` e `NameColorDial
 | `FocusOverlay` | modo foco do `TaskWorkspace` (tarefa e página de caderno): camada fixa sobre o shell com barra de 48px (sair, nome, cronômetro e iniciar/pausar só na tarefa, Notas/Desenho, ações da nota); `Esc` sai |
 | `TaskDrawingEditor` | Excalidraw em `pt-BR`; auto-save com debounce de 800ms; grava JSON + PNG derivado |
 | `imageUpload` | seleção/colagem de imagem → `notesAssets` → `ticktask-asset://` |
-| `suggestionPopup` | infraestrutura compartilhada dos popups de `/` e `@`; marca `[data-suggestion-popup]` para que o `Esc` da página não interfira; o popup roda numa raiz React própria e é anexado ao `[data-popup-root]` (o `Layout` do `AppShell`) para herdar as variáveis CSS do antd |
+| `suggestionPopup` | infraestrutura compartilhada dos popups de `/` e `@`; marca `[data-suggestion-popup]` para que o `Esc` da página não interfira; o popup roda numa raiz React própria e é anexado ao `[data-popup-root]` (o `Layout` do `AppShell`), ou ao `body` fora dele |
 | `notesFormat.ts` | ProseMirror ↔ formato legado do Editor.js (unitário) |
 | `drawingAssetPath.ts` | resolve as fontes do Excalidraw pelo esquema `ticktask-asset://` (host `excalidraw`) |
 

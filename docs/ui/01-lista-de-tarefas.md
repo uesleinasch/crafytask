@@ -125,7 +125,7 @@ rolável (`position: sticky; bottom: 12px`). É uma faixa flutuante (`colorBgEle
 As ações vêm de `useTaskBulkActions` (`components/tasks/`), o mesmo do menu de contexto. No main,
 `task:updateStatus` e `task:bulkUpdateStatus` passam pela mesma `applyStatusChange` (bloqueio,
 subtarefa de pai bloqueado, recorrência, fechar o pai, aviso de desbloqueio); o lote aplica a cada
-tarefa e, se alguma for recusada, devolve um erro com os ids. Cada ação mostra um toast com a
+tarefa e, se alguma for recusada, devolve um erro com os ids. Cada ação mostra uma `message` com a
 quantidade e recarrega a lista, mesmo quando parte falha. "Selecionar todas" soma as visíveis à
 seleção atual (subtarefas marcadas continuam). A seleção é podada quando os filtros mudam: ids que
 saíram do resultado (e não são subtarefas carregadas) deixam de estar selecionados. Quando a barra

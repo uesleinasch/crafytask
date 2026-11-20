@@ -60,7 +60,7 @@ No componente, a cor vem de `theme.useToken()`; quando depende do tema e não é
 | `USER_COLORS`, `USER_COLOR_NAMES`, `userColorTint` | as dez cores que o usuário escolhe para projeto, contexto, tag, caderno e aba do terminal, com nome legível e o tom claro de fundo |
 | `TERMINAL` | paleta fixa do terminal, escuro nos dois temas, tirada de `PALETTE.dark` |
 
-Todas, menos `USER_COLORS` e `TERMINAL`, têm uma versão por tema.
+As cores, menos `USER_COLORS` e `TERMINAL`, têm uma versão por tema.
 
 ## 4. Tema e densidade
 
@@ -109,8 +109,8 @@ guia (§5).
 
 - `@layer theme, base, antd, components, utilities` e o `@import 'tailwindcss'` (Tailwind só para
   layout);
-- `@theme inline` com as fontes (`--font-sans`, `--font-mono`, `--font-brand`) e `--color-brand`
-  (`text-brand`);
+- `@theme inline` com as fontes (`--font-sans`, `--font-mono`, `--font-brand`); a cor da logo vem
+  de `PALETTE[mode].brand`;
 - a camada `base`: fundo e texto do `body` por `var(--ant-color-bg-layout)` e
   `var(--ant-color-text)`, e o contorno de foco em `--ant-color-primary`.
 

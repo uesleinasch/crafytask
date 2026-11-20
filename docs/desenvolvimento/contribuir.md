@@ -41,7 +41,7 @@ no app de verdade — testes verdes no jsdom não garantem o comportamento no na
   Tailwind nem hex solto.
 - Textos da interface em português.
 - Antes de inventar cor, raio ou espaçamento, consulte os
-  [design tokens](../ui/14-design-tokens.md) — eles descrevem o que o código usa de fato.
+  [design tokens](../ui/14-design-tokens.md), que mostram onde cada um mora em `theme/`; as regras estão no [guia de design](../design/guia-de-design.md).
 - Antes de mexer numa tela, leia o documento dela no [Mapa da interface](../ui/README.md).
 - Lógica nova que dependa de `electron` ou `better-sqlite3`: extraia a parte pura para um módulo
   ao lado e teste esse módulo.

@@ -15,7 +15,7 @@ Esta skill constrói e mantém a identidade visual do CrafyTask. Ela vale só pa
 4. `docs/design/prototipo/checklist.json` — o que do protótipo precisa existir no código, conferido por `npm run design:audit`.
 5. `docs/design/index.md` e `docs/adr/0002-ant-design.md` — visão geral e a decisão de usar o antd.
 6. `docs/design/pesquisa/` — por que cada regra existe. Leia ao propor mudança de regra.
-7. `docs/ui/` — como a interface **atual** funciona (legado). Leia a tela antes de mexer nela; `docs/ui/14-design-tokens.md` descreve as cores antigas, não as novas.
+7. `docs/ui/` — como a interface atual funciona, tela por tela. Leia a tela antes de mexer nela; `docs/ui/14-design-tokens.md` mostra onde cada token mora em `theme/`.
 
 Desempate: guia e protótipo discordando, vale o protótipo e o guia é corrigido no mesmo PR. Código e guia discordando, vale o guia.
 

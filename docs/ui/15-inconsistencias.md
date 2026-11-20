@@ -33,8 +33,7 @@ fundo claro, texto na cor, ícone e rótulo. Antes, o de projeto era pílula só
 ### A4. Cinco raios de borda sem regra — resolvida
 
 **F0-b e a migração de cada tela (F1–F8).** O raio vem dos tokens do antd (4, 6, 8 e 12) e nenhum
-componente usa classe `rounded-*`. A armadilha do `--radius` do Tailwind continua no CSS; ver
-[14](14-design-tokens.md), seção 7.
+componente usa classe `rounded-*`, e a escala `--radius` do Tailwind saiu na F9-a.
 
 ### A5. Sombras sobreviveram à migração "flat" — resolvida
 
@@ -63,8 +62,9 @@ O bloco `.dark` antigo saiu do CSS na F9-a (A10).
 
 ### A10. Variáveis do shadcn no `main.css` — resolvida
 
-**F9-a.** O bloco `:root`/`.dark` com `--background`, `--primary`, `--chart-*`, `--sidebar-*` e o
-`@theme inline` que as expunha ao Tailwind saíram. A camada `base` pinta o `body` com
+**F9-a.** O bloco `:root`/`.dark` com `--background`, `--primary`, `--chart-*`, `--sidebar-*` e os
+mapeamentos do `@theme inline` que as expunham ao Tailwind saíram; o `@theme inline` ficou só com as
+fontes. A camada `base` pinta o `body` com
 `var(--ant-color-bg-layout)` e `var(--ant-color-text)`.
 
 ### A11. Seletor de cor copiado em quatro lugares — aberta

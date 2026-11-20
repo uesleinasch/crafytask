@@ -68,11 +68,14 @@ Quanto de disposição a tarefa exige. Usado como filtro mental e alimenta o gr�
 O `EnergyMeter` desenha três barras na cor primária; o nível é quantas estão cheias, e o tooltip
 diz "Energia alta/média/baixa". Não há emoji nem cor própria por nível.
 
-| Valor | Rótulo (`ENERGY_LABELS`) | Barras cheias |
-| --- | --- | --- |
-| `alto` | Alta Energia | 3 |
-| `medio` | Energia Média | 2 |
-| `baixo` | Baixa Energia | 1 |
+| Valor | Rótulo curto (`theme/semantic.ts`) | Rótulo longo (`shared/types.ts`) | Barras cheias |
+| --- | --- | --- | --- |
+| `alto` | Alta | Alta Energia | 3 |
+| `medio` | Média | Energia Média | 2 |
+| `baixo` | Baixa | Baixa Energia | 1 |
+
+Há dois `ENERGY_LABELS`: o curto vai no `EnergyMeter` e nas pílulas do detalhe; o longo, nos filtros
+da lista e no dashboard. Unificar é a A12 de [15](15-inconsistencias.md).
 
 ### Demais entidades
 
@@ -362,6 +365,9 @@ Chaves em `localStorage`, quase todas via `usePersistedState`:
 | `ticktask:projects-sort` | `'due'` | Ordenação de Projetos |
 | `ticktask:labelsView` | `'cards'` | Cards ou tabela em Contextos e tags |
 | `ticktask:taskInspectorOpen` | `true` | Inspetor aberto no detalhe da tarefa (a partir de `xl`) |
+| `ticktask:calendar-show` | todas | O que o Calendário mostra (menu Mostrar) |
+| `ticktask:projects-by-area` | `false` | Agrupar Projetos por área |
+| `ticktask:review-active` | — | Id da revisão semanal aberta (em `sessionStorage`) |
 | `ticktask.notebooks.notebook` / `.section` / `.page` / `.tab` | — | Último caderno, seção, página e aba abertos |
 | `settings.section` | `'geral'` | Seção aberta em Configurações |
 | `terminal.shell` / `terminal.autoTimer` / `terminal.height` | — / `true` / 280 | Shell, timer no primeiro comando e altura do painel |
