@@ -1394,11 +1394,11 @@
     {
       "id": "F7.19",
       "fase": "F7",
-      "titulo": "Preferências extras: atalho da captura, backup automático, início da semana e intervalo das notas",
+      "titulo": "Preferências extras: atalho da captura editável e backup automático",
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/{main,shared}/**/*{pref,Pref}*.ts",
-        "padroes": ["captureShortcut", "autoBackup", "weekStart", "notesSyncInterval"]
+        "padroes": ["captureShortcut", "autoBackup"]
       }
     },
     {

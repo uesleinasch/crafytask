@@ -2189,9 +2189,9 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         <${SettingsCard} title="Calendário">
           <${SettingRow} title="Faixa de horas da grade" desc="Padrão: o dia inteiro, 00:00–24:00.">
             <${Flex} align="center" gap=${8}>
-              <${Select} aria-label="Início da grade" defaultValue=${7} style=${{ width: 96 }} options=${Array.from({ length: 24 }, (_, h) => ({ value: h, label: String(h).padStart(2, '0') + ':00' }))} />
+              <${Select} aria-label="Início da grade" defaultValue=${0} style=${{ width: 96 }} options=${Array.from({ length: 24 }, (_, h) => ({ value: h, label: String(h).padStart(2, '0') + ':00' }))} />
               <${Text} type="secondary">até<//>
-              <${Select} aria-label="Fim da grade" defaultValue=${22} style=${{ width: 96 }} options=${Array.from({ length: 24 }, (_, i) => ({ value: i + 1, label: String(i + 1).padStart(2, '0') + ':00' }))} />
+              <${Select} aria-label="Fim da grade" defaultValue=${24} style=${{ width: 96 }} options=${Array.from({ length: 24 }, (_, i) => ({ value: i + 1, label: String(i + 1).padStart(2, '0') + ':00' }))} />
             <//>
           <//>
         <//>

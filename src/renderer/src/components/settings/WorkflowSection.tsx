@@ -1,5 +1,16 @@
-import { useEffect, useState } from 'react'
-import { App, Flex, InputNumber, Segmented, Select, Space, Switch, Typography } from 'antd'
+import { useEffect, useRef, useState } from 'react'
+import {
+  Alert,
+  App,
+  Flex,
+  InputNumber,
+  Segmented,
+  Select,
+  Space,
+  Spin,
+  Switch,
+  Typography
+} from 'antd'
 import type { WeekStart } from '@shared/calendarPrefs'
 import {
   NOTES_SYNC_INTERVAL_OPTIONS,
@@ -10,7 +21,12 @@ import {
   type WorkflowPrefs,
   type WorkflowPrefsPatch
 } from '@shared/workflowPrefs'
-import { updateWorkflowPrefs, useWorkflowPrefs } from '@renderer/lib/workflowPrefs'
+import {
+  updateWorkflowPrefs,
+  useWorkflowPrefs,
+  useWorkflowPrefsStatus
+} from '@renderer/lib/workflowPrefs'
+import { errorMessage } from './settingsStatus'
 import { SettingRow, SettingsCard } from './SettingsLayout'
 
 const LEAK_LABELS = ['Âmbar', 'Laranja', 'Vermelho'] as const
@@ -48,17 +64,30 @@ function CommitNumber({
   before?: string
   addon: string
   width: number
-  onCommit: (value: number) => void
+  onCommit: (value: number) => Promise<number>
 }): React.JSX.Element {
   const [draft, setDraft] = useState<number | null>(value)
-  useEffect(() => setDraft(value), [value])
+  const latest = useRef<number | null>(value)
+  useEffect(() => {
+    latest.current = value
+    setDraft(value)
+  }, [value])
+
+  const change = (next: number | null): void => {
+    latest.current = next
+    setDraft(next)
+  }
 
   const commit = (): void => {
-    if (draft === null || draft === value) {
-      setDraft(value)
-      return
-    }
-    onCommit(draft)
+    window.setTimeout(() => {
+      const typed = latest.current
+      const next = typed === null ? null : step ? Math.round(typed / step) * step : typed
+      if (next === null || next === value) {
+        change(value)
+        return
+      }
+      void onCommit(next).then(change)
+    })
   }
 
   return (
@@ -69,8 +98,9 @@ function CommitNumber({
         min={min}
         max={max}
         step={step}
+        precision={step ? 1 : 0}
         value={draft}
-        onChange={setDraft}
+        onChange={change}
         onBlur={commit}
         onPressEnter={commit}
         style={{ width: '100%', fontVariantNumeric: 'tabular-nums' }}
@@ -83,20 +113,40 @@ function CommitNumber({
 export function WorkflowSection(): React.JSX.Element {
   const { message } = App.useApp()
   const prefs = useWorkflowPrefs()
+  const status = useWorkflowPrefsStatus()
 
-  const save = (patch: WorkflowPrefsPatch): void => {
-    updateWorkflowPrefs(patch).catch((error: unknown) =>
-      message.error(error instanceof Error ? error.message : 'Não foi possível salvar')
-    )
-  }
+  const save = (patch: WorkflowPrefsPatch): Promise<WorkflowPrefs> =>
+    updateWorkflowPrefs(patch).catch((error: unknown) => {
+      message.error(`Não foi possível salvar: ${errorMessage(error)}`)
+      return prefs
+    })
 
-  const setLeakLevel = (index: number, minutes: number): void => {
+  const setLeakLevel = async (index: number, minutes: number): Promise<number> => {
     const levels = [...prefs.timeLeakLevels] as WorkflowPrefs['timeLeakLevels']
     levels[index] = minutes
-    save({ timeLeakLevels: levels })
+    const next = await save({ timeLeakLevels: levels })
+    return next.timeLeakLevels[index]
   }
 
   const levels = prefs.timeLeakLevels
+
+  if (status === 'loading') {
+    return (
+      <Flex justify="center" style={{ padding: 48 }}>
+        <Spin />
+      </Flex>
+    )
+  }
+  if (status === 'error') {
+    return (
+      <Alert
+        type="error"
+        showIcon
+        title="Não foi possível ler as preferências de fluxo de trabalho."
+        description="Feche e abra Configurações de novo. Se continuar, veja o log do app."
+      />
+    )
+  }
 
   return (
     <Flex vertical gap={16}>
@@ -113,7 +163,7 @@ export function WorkflowSection(): React.JSX.Element {
             min={WORKDAY_HOURS_RANGE.min}
             max={WORKDAY_HOURS_RANGE.max}
             step={WORKDAY_HOURS_RANGE.step}
-            onCommit={(workdayHours) => save({ workdayHours })}
+            onCommit={async (workdayHours) => (await save({ workdayHours })).workdayHours}
           />
         </SettingRow>
         <SettingRow

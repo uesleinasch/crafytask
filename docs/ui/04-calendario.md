@@ -31,7 +31,7 @@ até a hora atual. Colunas de no mínimo 96px (Semana) ou 140px; em tela estreit
 
 - **Cabeçalho do dia:** dia da semana e número (hoje em círculo da cor primária) num botão que abre
   a visão Dia; embaixo, um medidor de 4px das horas em blocos contra a jornada
-  (`journeyMinutes`), âmbar quando passa, com tooltip "Xh em blocos de 8h da jornada
+  (`journeyMinutes`), âmbar quando passa, com tooltip "Xh em blocos de Yh da jornada
   · passa da jornada".
 - **Faixa Dia:** agendadas sem horário (chip com o ponto do projeto) e prazos abertos (bandeira,
   borda tracejada; bandeira âmbar no dia, vermelha se venceu; hora do prazo em mono). Até 2 por dia
