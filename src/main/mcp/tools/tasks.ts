@@ -23,6 +23,7 @@ import {
   listTasks,
   moveTasksToProject,
   removeTaskDependency,
+  setTaskGitLink,
   setTaskWorkspace,
   unarchiveTask,
   updateTask
@@ -47,6 +48,7 @@ import {
 } from '../operationSummary'
 import { fail, ok } from '../reply'
 import { resolveByName } from '../resolve'
+import { GIT_BRANCH } from '../gitLinkSchema'
 import { MAX_SUBTASKS, planSubtasks, type SubtaskDraft } from '../subtaskPlan'
 import { compactTask, fullTask, viewTask, type CompactTask } from '../taskView'
 import type { ToolContext } from '../toolContext'
@@ -78,6 +80,10 @@ const WORKING_DIR = z
   .refine((value) => value.startsWith('/'), 'Use um caminho absoluto.')
   .describe('Pasta de trabalho do terminal da task.')
 const START_COMMAND = z.string().describe('Comando que o terminal da task roda ao abrir.')
+const PR_URL = z
+  .string()
+  .refine(isSafeHttpUrl, 'Use um link http:// ou https://.')
+  .describe('Link do pull request da task.')
 
 function recurrenceRule(value: z.infer<typeof RECURRENCE>): string {
   return JSON.stringify({
@@ -260,6 +266,8 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
         recurrence: RECURRENCE.optional(),
         working_dir: WORKING_DIR.optional(),
         start_command: START_COMMAND.optional(),
+        git_branch: GIT_BRANCH.optional(),
+        pr_url: PR_URL.optional(),
         waiting_for: WAITING_FOR.optional().describe(
           'Quem ou o quê a task aguarda (ex.: "Revisor externo"), até 120 caracteres. Aparece na lista de tarefas.'
         ),
@@ -341,6 +349,9 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
             start_command: args.start_command
           })
         }
+        if (args.git_branch !== undefined || args.pr_url !== undefined) {
+          setTaskGitLink(task.id, { git_branch: args.git_branch, pr_url: args.pr_url })
+        }
         if (args.status !== undefined) {
           updateTask(task.id, { status: args.status })
         }
@@ -421,6 +432,8 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
         recurrence: z.union([RECURRENCE, z.null()]).optional().describe('null remove a repetição.'),
         working_dir: z.union([WORKING_DIR, z.null()]).optional(),
         start_command: z.union([START_COMMAND, z.null()]).optional(),
+        git_branch: z.union([GIT_BRANCH, z.null()]).optional().describe('null remove.'),
+        pr_url: z.union([PR_URL, z.null()]).optional().describe('null remove.'),
         detail: DETAIL.optional()
       }
     },
@@ -483,6 +496,10 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
           working_dir: args.working_dir,
           start_command: args.start_command
         })
+      }
+
+      if (args.git_branch !== undefined || args.pr_url !== undefined) {
+        setTaskGitLink(args.id, { git_branch: args.git_branch, pr_url: args.pr_url })
       }
 
       recordOperation(args.id, fieldsChangedSummary(args))

@@ -143,7 +143,9 @@ header, and the extra height can be scrolled by a programmatic `scrollIntoView` 
   (`taskHistoryQueries.ts`, pure, tested) merges them with `task_status_events`, so status moves are
   never copied into it. MCP tools that write to a task append an `operation` entry by themselves
   (`recordOperation` in `mcp/effects.ts`, texts in `mcp/operationSummary.ts`); the table is not
-  pruned. The MCP tool `task_history` reads and appends; the task screen shows it in
+  pruned. An entry may carry `session_id`, the client session that wrote it; `work_session start`
+  returns the last one (`getLastSession`) so the agent can resume that conversation. The MCP tool
+  `task_history` reads and appends; the task screen shows it in
   the Histórico tab (`TaskHistoryPanel`, IPC `task:history`/`task:addHistory`).
 - Dashboard period stats (`stats:period`, `StatsPeriod` → `PeriodStats`) come from
   `statsQueries.ts` (pure, tested): sessions clipped to the period and to now, split per local day
@@ -233,7 +235,8 @@ Notas e Desenho da task. Decisões em `docs/adr/0001-cadernos.md`; tela em `docs
 
 ## Terminal embutido
 
-Cada task pode ter `working_dir` e `start_command` (colunas locais: não vão ao Notion nem ao Jira); sem
+Cada task pode ter `working_dir` e `start_command` (colunas locais: não vão ao Notion nem ao Jira;
+`git_branch` e `pr_url`, gravadas pelo MCP com `setTaskGitLink`, seguem a mesma regra); sem
 `working_dir`, a task herda `projects.working_dir` (`effectiveWorkingDir` em `shared/workingDir.ts`). O
 painel (`components/terminal/`, montado em `App.tsx`) usa `@xterm/xterm`; o PTY é `node-pty`, só no
 main. `terminalSessions.ts` é puro e testado (sessões, ring buffer de ~200 KB, coalescência de

@@ -33,6 +33,10 @@ export function ensureTaskHistorySchema(db: SqliteLike): void {
   db.prepare(
     'CREATE INDEX IF NOT EXISTS idx_task_history_task ON task_history(task_id, created_at)'
   ).run()
+  const columns = db.prepare("PRAGMA table_info('task_history')").all() as { name: string }[]
+  if (!columns.some((column) => column.name === 'session_id')) {
+    db.prepare('ALTER TABLE task_history ADD COLUMN session_id TEXT').run()
+  }
 }
 
 function clean(value: string | null | undefined): string | null {
@@ -49,8 +53,9 @@ export function addTaskHistoryEntry(
   if (!summary) throw new Error('O resumo da entrada de histórico não pode ser vazio.')
   const result = db
     .prepare(
-      `INSERT INTO task_history (task_id, kind, origin, summary, done, remaining, task_status)
-       SELECT id, ?, ?, ?, ?, ?, status FROM tasks WHERE id = ?`
+      `INSERT INTO task_history
+         (task_id, kind, origin, summary, done, remaining, session_id, task_status)
+       SELECT id, ?, ?, ?, ?, ?, ?, status FROM tasks WHERE id = ?`
     )
     .run(
       input.kind ?? 'checkpoint',
@@ -58,6 +63,7 @@ export function addTaskHistoryEntry(
       summary,
       clean(input.done),
       clean(input.remaining),
+      clean(input.session_id),
       input.task_id
     ) as { changes: number | bigint; lastInsertRowid: number | bigint }
   if (Number(result.changes) === 0) throw new Error(`Task ${input.task_id} não existe.`)
@@ -91,17 +97,17 @@ export function listTaskHistory(db: SqliteLike, query: TaskHistoryQuery): TaskHi
   return db
     .prepare(
       `SELECT id, task_id, task_name, kind, origin, summary, done, remaining,
-              from_status, to_status, created_at
+              from_status, to_status, created_at, session_id
        FROM (
          SELECT h.id AS id, h.task_id AS task_id, t.name AS task_name, h.kind AS kind,
                 h.origin AS origin, h.summary AS summary, h.done AS done,
                 h.remaining AS remaining, NULL AS from_status, h.task_status AS to_status,
-                h.created_at AS created_at, 1 AS source_order
+                h.created_at AS created_at, 1 AS source_order, h.session_id AS session_id
          FROM task_history h JOIN tasks t ON t.id = h.task_id
          WHERE ${scope}
          UNION ALL
          SELECT e.id, e.task_id, t.name, 'status', NULL, NULL, NULL, NULL,
-                e.from_status, e.to_status, e.changed_at, 0
+                e.from_status, e.to_status, e.changed_at, 0, NULL
          FROM task_status_events e JOIN tasks t ON t.id = e.task_id
          WHERE ${scope}
        )
@@ -124,7 +130,7 @@ export function getLastCheckpoint(
       `SELECT h.id AS id, h.task_id AS task_id, t.name AS task_name, h.kind AS kind,
               h.origin AS origin, h.summary AS summary, h.done AS done,
               h.remaining AS remaining, NULL AS from_status, h.task_status AS to_status,
-              h.created_at AS created_at
+              h.created_at AS created_at, h.session_id AS session_id
        FROM task_history h JOIN tasks t ON t.id = h.task_id
        WHERE h.kind = 'checkpoint' AND ${scope}
        ORDER BY h.created_at DESC, h.id DESC
@@ -145,7 +151,7 @@ export function lastCheckpointsFor(
       `SELECT h.id AS id, h.task_id AS task_id, t.name AS task_name, h.kind AS kind,
               h.origin AS origin, h.summary AS summary, h.done AS done,
               h.remaining AS remaining, NULL AS from_status, h.task_status AS to_status,
-              h.created_at AS created_at
+              h.created_at AS created_at, h.session_id AS session_id
        FROM task_history h JOIN tasks t ON t.id = h.task_id
        WHERE h.task_id IN (${ids.map(() => '?').join(', ')})
          AND h.id = (
@@ -157,4 +163,30 @@ export function lastCheckpointsFor(
     )
     .all(...ids) as TaskHistoryItem[]
   return new Map(rows.map((row) => [row.task_id, row]))
+}
+
+export interface LastSession {
+  session_id: string
+  task_id: number
+  created_at: string
+}
+
+/** A sessão do cliente que por último escreveu no histórico da task (ou de uma subtarefa). */
+export function getLastSession(
+  db: SqliteLike,
+  taskId: number,
+  includeSubtasks = false
+): LastSession | null {
+  const scope = includeSubtasks ? SCOPE_WITH_SUBTASKS : SCOPE_SELF
+  const params: SqliteParam[] = includeSubtasks ? [taskId, taskId] : [taskId]
+  const row = db
+    .prepare(
+      `SELECT h.session_id AS session_id, h.task_id AS task_id, h.created_at AS created_at
+       FROM task_history h JOIN tasks t ON t.id = h.task_id
+       WHERE h.session_id IS NOT NULL AND ${scope}
+       ORDER BY h.created_at DESC, h.id DESC
+       LIMIT 1`
+    )
+    .get(...params)
+  return (row as LastSession | undefined) ?? null
 }

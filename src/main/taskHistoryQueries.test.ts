@@ -7,6 +7,7 @@ import {
   addTaskHistoryEntry,
   ensureTaskHistorySchema,
   getLastCheckpoint,
+  getLastSession,
   lastCheckpointsFor,
   listTaskHistory
 } from './taskHistoryQueries'
@@ -177,5 +178,38 @@ describe('lastCheckpointsFor', () => {
 
   it('lista vazia não consulta nada', () => {
     expect(lastCheckpointsFor(db, []).size).toBe(0)
+  })
+})
+
+describe('sessão do cliente no histórico', () => {
+  it('a migração da coluna session_id é idempotente e serve banco antigo', () => {
+    raw.exec('ALTER TABLE task_history DROP COLUMN session_id')
+    ensureTaskHistorySchema(db)
+    ensureTaskHistorySchema(db)
+    const columns = raw.prepare("PRAGMA table_info('task_history')").all() as { name: string }[]
+    expect(columns.filter((column) => column.name === 'session_id')).toHaveLength(1)
+  })
+
+  it('grava a sessão na entrada e devolve na leitura', () => {
+    addTaskHistoryEntry(db, { task_id: 1, summary: 'com sessão', session_id: ' abc-123 ' }, 'mcp')
+    addTaskHistoryEntry(db, { task_id: 1, summary: 'sem sessão' }, 'mcp')
+    const entries = listTaskHistory(db, { taskId: 1 }).filter((entry) => entry.kind !== 'status')
+    expect(entries.map((entry) => entry.session_id).sort()).toEqual([null, 'abc-123'].sort())
+    expect(
+      listTaskHistory(db, { taskId: 1 }).find((entry) => entry.kind === 'status')?.session_id
+    ).toBeNull()
+  })
+
+  it('getLastSession pega a sessão mais recente, da task ou das subtarefas', () => {
+    expect(getLastSession(db, 1)).toBeNull()
+    const old = addTaskHistoryEntry(db, { task_id: 1, summary: 'a', session_id: 'antiga' }, 'mcp')
+    const child = addTaskHistoryEntry(db, { task_id: 2, summary: 'b', session_id: 'filha' }, 'mcp')
+    const none = addTaskHistoryEntry(db, { task_id: 1, summary: 'c' }, 'mcp')
+    stamp(old, '2026-11-20 10:00:00')
+    stamp(child, '2026-11-20 11:00:00')
+    stamp(none, '2026-11-20 12:00:00')
+
+    expect(getLastSession(db, 1)).toMatchObject({ session_id: 'antiga', task_id: 1 })
+    expect(getLastSession(db, 1, true)).toMatchObject({ session_id: 'filha', task_id: 2 })
   })
 })
