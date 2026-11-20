@@ -36,13 +36,13 @@ function fromSqlite(value: string): Date {
 }
 
 function formatStamp(date: Date): string {
-  return date.toLocaleString('pt-BR', {
+  const day = date.toLocaleDateString('pt-BR', {
     day: '2-digit',
     month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
+    year: 'numeric'
   })
+  const time = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  return `${day} ${time}`
 }
 
 export const PageEditor = forwardRef<PageEditorHandle, PageEditorProps>(function PageEditor(

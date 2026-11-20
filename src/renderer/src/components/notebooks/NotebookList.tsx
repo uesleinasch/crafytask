@@ -6,12 +6,12 @@ import {
   Dropdown,
   Menu,
   Select,
-  Spin,
+  theme,
   Tooltip,
   Typography,
   type MenuProps
 } from 'antd'
-import { BookOpen, Ellipsis, Plus } from 'lucide-react'
+import { BookOpen, Ellipsis, Plus, RefreshCw } from 'lucide-react'
 import type { Notebook } from '@shared/types'
 
 const ICON = { size: 16, strokeWidth: 1.75, 'aria-hidden': true } as const
@@ -42,6 +42,7 @@ export function NotebookList({
   menuFor,
   onReorder
 }: NotebookListProps): React.JSX.Element {
+  const { token } = theme.useToken()
   const dragging = useRef<number | null>(null)
   const [over, setOver] = useState<number | null>(null)
 
@@ -85,7 +86,13 @@ export function NotebookList({
           </span>
           {syncingId === notebook.id && (
             <Tooltip title="Sincronizando com o Notion">
-              <Spin size="small" aria-label="Sincronizando com o Notion" />
+              <RefreshCw
+                {...ICON}
+                aria-label="Sincronizando com o Notion"
+                aria-hidden={false}
+                className="animate-spin motion-reduce:animate-none"
+                style={{ color: token.colorTextTertiary, flex: 'none' }}
+              />
             </Tooltip>
           )}
           <span className="ct-nb-act">

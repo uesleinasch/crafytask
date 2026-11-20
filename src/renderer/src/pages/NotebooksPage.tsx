@@ -203,6 +203,7 @@ export function NotebooksPage(): React.JSX.Element {
     try {
       await leavePage()
       await window.api.syncNotebookToNotion(notebook.id)
+      message.success(`Caderno ${notebook.name} sincronizado com o Notion`)
     } catch (error) {
       console.error('Falha ao sincronizar o caderno com o Notion:', error)
     } finally {
@@ -495,7 +496,7 @@ export function NotebooksPage(): React.JSX.Element {
     )
 
   return (
-    <div className={screens.md ? 'ct-nb' : 'ct-nb narrow'}>
+    <div className={screens.md ? 'ct-nb' : 'ct-nb ct-nb-narrow'}>
       {!screens.lg && (
         <Flex gap={8} wrap align="center">
           <NotebookSelect

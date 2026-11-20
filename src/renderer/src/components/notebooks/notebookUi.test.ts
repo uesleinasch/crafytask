@@ -25,8 +25,9 @@ describe('shiftId', () => {
 
 describe('rótulos', () => {
   it('toda cor da paleta tem nome', () => {
-    for (const color of USER_COLORS) expect(colorName(color)).not.toBe(color)
-    expect(colorName('#123456')).toBe('#123456')
+    for (const color of USER_COLORS) expect(colorName(color.toLowerCase())).not.toBe('atual')
+    expect(colorName('#2a62d6')).toBe('azul')
+    expect(colorName('#123456')).toBe('atual')
   })
 
   it('plural', () => {

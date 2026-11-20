@@ -1,25 +1,13 @@
-import { USER_COLORS } from '@renderer/theme/semantic'
+import { USER_COLORS, USER_COLOR_NAMES } from '@renderer/theme/semantic'
 
 export { UNTITLED_PAGE } from '@shared/notebookTree'
-
-const COLOR_NAMES: Record<string, string> = {
-  '#e5484d': 'vermelho',
-  '#a84803': 'laranja',
-  '#a15c00': 'âmbar',
-  '#0b7a50': 'verde',
-  '#0f6e7a': 'azul-petróleo',
-  '#2a62d6': 'azul',
-  '#5b47eb': 'violeta',
-  '#7647b0': 'roxo',
-  '#b8327a': 'magenta',
-  '#5d6b82': 'ardósia'
-}
 
 export const DEFAULT_NOTEBOOK_COLOR = USER_COLORS[5]
 export const DEFAULT_SECTION_COLOR = USER_COLORS[9]
 
 export function colorName(color: string): string {
-  return COLOR_NAMES[color.toLowerCase()] ?? color
+  const match = USER_COLORS.find((c) => c.toLowerCase() === color.toLowerCase())
+  return match ? USER_COLOR_NAMES[match] : 'atual'
 }
 
 export function moveIdOnto(ids: number[], id: number, targetId: number): number[] | null {

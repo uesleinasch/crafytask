@@ -46,9 +46,10 @@ export function SectionTabs({
       }}
       addIcon={
         <Tooltip title="Nova seção">
-          <Plus {...ICON} aria-label="Nova seção" />
+          <Plus {...ICON} />
         </Tooltip>
       }
+      locale={{ addAriaLabel: 'Nova seção' }}
       tabBarStyle={{ margin: 0 }}
       tabBarExtraContent={
         active && (

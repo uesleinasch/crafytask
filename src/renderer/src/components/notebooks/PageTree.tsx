@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { App, Button, Dropdown, Empty, Flex, Tooltip, Tree, theme, type MenuProps } from 'antd'
 import type { TreeDataNode, TreeProps } from 'antd'
 import {
@@ -56,6 +56,17 @@ function buildNodes(pages: NotebookPageSummary[], parentId: number | null): Page
 
 const titleOf = (page: NotebookPageSummary): string => page.title || UNTITLED_PAGE
 
+function ancestorKeys(pages: NotebookPageSummary[], id: number | null): string[] {
+  const keys: string[] = []
+  let current = pages.find((p) => p.id === id)
+  while (current?.parent_page_id) {
+    const parentId = current.parent_page_id
+    keys.push(String(parentId))
+    current = pages.find((p) => p.id === parentId)
+  }
+  return keys
+}
+
 export function PageTree({
   pages,
   sections,
@@ -81,12 +92,25 @@ export function PageTree({
     [pages, collapsed]
   )
 
+  const expand = (keys: string[]): void =>
+    setCollapsed((current) =>
+      keys.some((key) => current.has(key))
+        ? new Set([...current].filter((key) => !keys.includes(key)))
+        : current
+    )
+
+  const selectedAncestors = ancestorKeys(pages, selectedId).join(',')
+  useEffect(() => {
+    if (selectedAncestors) expand(selectedAncestors.split(','))
+  }, [selectedAncestors])
+
   const place = (id: number, placement: PagePlacement | null): void => {
     if (!placement) return
     if (!canPlaceUnder(pages, id, placement.parent_page_id)) {
       message.warning('Subpáginas vão até 2 níveis.')
       return
     }
+    if (placement.parent_page_id !== null) expand([String(placement.parent_page_id)])
     onPlace(id, placement)
   }
 
@@ -194,7 +218,11 @@ export function PageTree({
 
   const allowDrop: TreeProps['allowDrop'] = ({ dragNode, dropNode, dropPosition }) => {
     const target = (dropNode as PageNode).page
-    const parentId = dropPosition === 0 ? target.id : target.parent_page_id
+    const firstChild =
+      dropPosition === 1 &&
+      expandedKeys.includes(String(target.id)) &&
+      (dropNode as PageNode).children.length > 0
+    const parentId = dropPosition === 0 || firstChild ? target.id : target.parent_page_id
     return canPlaceUnder(pages, (dragNode as PageNode).page.id, parentId)
   }
 
