@@ -320,7 +320,11 @@ Lives in `src/main/mcp/`, embedded in the main process. It speaks MCP over HTTP 
 (`127.0.0.1`), authenticated with a Bearer token, toggled from Settings. Tools are thin adapters
 reusing `database.ts` directly — task-write tools call `afterTaskWrite(id)`, non-task-specific
 writes call `broadcastRefresh()`. Destructive or bulk operations go through the two-phase
-confirmation guard in `confirmGuard.ts` (preview + `confirm_token`, then repeat the call). See
+confirmation guard in `confirmGuard.ts` (preview + `confirm_token`, then repeat the call). Status
+changes never write the column directly: IPC and MCP both go through `applyStatusChange` in
+`taskStatusService.ts` (pure, tested; MCP reaches it via `changeTaskStatus` in `effects.ts`), which
+holds the blocking, recurrence, parent-closing and unblock rules. `mcp/instructions.ts` is the
+text sent to the client on `initialize` with the task movement rules. See
 `docs/mcp-server.md` for the tool list and known limitations.
 
 ## Windows & shortcuts

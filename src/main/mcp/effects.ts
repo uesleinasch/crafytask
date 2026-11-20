@@ -1,8 +1,10 @@
 import type { BrowserWindow } from 'electron'
+import type { TaskStatus } from '@shared/types'
 
 interface WriteEffectDeps {
   getMainWindow: () => BrowserWindow | null
   autoSync: (id: number) => void
+  changeStatus: (id: number, status: TaskStatus) => void
   syncTagChange: (taskIds: number[]) => void
   syncCalendar: (taskIds: number[]) => void
   disposeTerminals: (taskIds: number[]) => void
@@ -38,6 +40,12 @@ export function afterTaskWrite(id: number): void {
     return
   }
   deps.autoSync(id)
+  broadcastRefresh()
+}
+
+export function changeTaskStatus(id: number, status: TaskStatus): void {
+  if (!deps) throw new Error('O CrafyTask ainda está iniciando; tente de novo em instantes.')
+  deps.changeStatus(id, status)
   broadcastRefresh()
 }
 

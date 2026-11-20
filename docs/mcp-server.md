@@ -65,16 +65,17 @@ Ao subir a ponte com `ELECTRON_RUN_AS_NODE=1`, essa variável é removida do amb
 | `get_task` | Detalhe completo de uma task: campos, notas em Markdown, subtarefas, dependências, registros de tempo. |
 | `create_task` | Cria uma task; projeto/contexto por nome ou id, tags criadas se não existirem. Aceita `scheduled_time`/`scheduled_end_time` (exigem `scheduled_date`) e `due_time` (exige `due_date`), em `HH:MM`, `external_url` (`http(s)`) e `waiting_for` (quem ou o quê a task aguarda, até 120 caracteres). |
 | `update_task` | Altera campos de uma task; passar `tags`/`contexts` substitui a lista inteira. Horários em `HH:MM`, `null` remove; limpar a data remove a hora dela, limpar o início remove o fim. `external_url` aceita `http(s)` ou `null` (remove); `waiting_for` aceita texto ou `null`. Fim ≤ início ou hora sem data → erro `validation`. |
-| `bulk_update_tasks` | Altera status/projeto/arquivamento de várias tasks; acima do `bulkThreshold` exige `confirm_token`. |
+| `bulk_update_tasks` | Altera status/projeto/arquivamento de várias tasks; acima do `bulkThreshold` exige `confirm_token`. O status segue as regras de status abaixo; as tasks recusadas voltam em `status_refused`, e as demais mudam. |
 | `delete_tasks` | Deleta tasks permanentemente, incluindo subtarefas em cascata; sempre exige `confirm_token`. |
 | `organize_overview` | Retrato GTD: inbox, sem projeto, atrasadas, bloqueadas, someday, métricas. Atrasada = prazo antes de `today`, ou em `today` com `due_time` já passado. |
 | `list_structure` | Projetos, contextos, tags (com uso), áreas e metas num só payload. |
 | `manage_structure` | Cria/atualiza/remove projeto, contexto, tag, área ou meta; remover e mesclar tag exigem `confirm_token`. |
-| `timer` | Inicia, para, consulta status ou lança tempo manual numa task. |
+| `timer` | Inicia, para, consulta status ou lança tempo manual numa task. Iniciar em task bloqueada devolve `app_state`. |
 | `time_report` | Tempo gasto: geral, semanal, por task, ou registros de uma task. |
 | `read_notes` | Devolve as notas de uma task convertidas para Markdown. |
 | `read_drawing` | Devolve o desenho (Excalidraw) de uma task como imagem PNG, com um resumo dos elementos e dos textos contidos. |
 | `write_notes` | Grava Markdown nas notas; `mode=append` (recomendado) ou `mode=replace` sobre nota não vazia, que exige `confirm_token`. |
+| `work_session` | Sessão de trabalho numa task. `start` põe a task (e a pai) em `executando`, liga o timer e devolve o último checkpoint, o histórico recente e as subtarefas; `pause` para o timer, grava um checkpoint e move para `aguardando` (com `waiting_for`) ou `proximas`; `finish` para o timer, grava o checkpoint final e move para `finalizada` (recusa com subtarefa aberta); `status` lista o que está em `executando` e os timers ligados. |
 | `task_history` | Histórico e memória da task. `read` devolve mudanças de status e entradas escritas (mais recentes primeiro, `limit`/`before`) e o último checkpoint; `add` grava `checkpoint` (estado atual, `done`, `remaining`), `operation` ou `note`. `include_subtasks` junta o histórico das subtarefas. |
 | `agenda` | Tasks agendadas e blocos de tempo de um dia, semana ou mês. |
 | `plan_day` | Agenda tasks numa data (itens de `schedule` aceitam `start_time`/`end_time`, gravados como horário da task), ordena o dia (a `order` só pesa entre as tasks sem horário e sem prazo de hoje com hora), cria/remove blocos de tempo; acima do `bulkThreshold` exige `confirm_token`. |
@@ -85,6 +86,24 @@ Ao subir a ponte com `ELECTRON_RUN_AS_NODE=1`, essa variável é removida do amb
 | `create_page` | Cria página numa seção, opcionalmente como subpágina (até 2 níveis) e já com Markdown. |
 | `write_page` | Grava Markdown numa página; mesmas regras e perdas de `write_notes` (`mode=replace` sobre conteúdo exige confirmação). |
 | `delete_page` | Apaga a página e as subpáginas; sempre exige `confirm_token`. |
+
+## Regras de status
+
+Toda mudança de status pelo MCP (`update_task`, `bulk_update_tasks`, `work_session`) passa por
+`taskStatusService.ts`, o mesmo caminho do app:
+
+- `executando` em task bloqueada por dependência é recusado (`app_state`);
+- concluir subtarefa de pai bloqueado é recusado;
+- finalizar task recorrente cria a próxima ocorrência; reabrir desfaz;
+- concluir a última subtarefa fecha a task pai;
+- concluir uma task avisa o app das dependentes que ficaram livres.
+
+## Instruções ao cliente
+
+O servidor envia `instructions` no `initialize` (`mcp/instructions.ts`): o que está sendo feito fica
+em `executando`, nada fica em `executando` sem trabalho em curso, e cada etapa vira um checkpoint
+no histórico. O cliente lê esse texto uma vez por sessão, então mudar as regras exige reiniciar a
+sessão do cliente.
 
 ## Guard de confirmação
 
