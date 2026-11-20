@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   App,
   Button,
@@ -38,6 +38,7 @@ import {
   fromMin,
   isWeekend,
   monthCells,
+  calendarUrlState,
   periodLabel,
   snapSlot,
   stepCursor,
@@ -100,8 +101,10 @@ export function CalendarPage(): React.JSX.Element {
   const screens = Grid.useBreakpoint()
   const prefs = useCalendarPrefs()
   const { startTimer } = useTimerStore()
-  const [view, setView] = useState<CalendarView>(initialView)
-  const [cursor, setCursor] = useState(() => localDateString(new Date()))
+  const [searchParams] = useSearchParams()
+  const fromUrl = useMemo(() => calendarUrlState(searchParams), [searchParams])
+  const [view, setView] = useState<CalendarView>(() => fromUrl.view ?? initialView())
+  const [cursor, setCursor] = useState(() => fromUrl.cursor ?? localDateString(new Date()))
   const [now, setNow] = useState(() => new Date())
   const [storedShow, setStoredShow] = usePersistedState<ShowKey[]>(SHOW_KEY, SHOW_KEYS)
   const show = useMemo(() => new Set(storedShow), [storedShow])
@@ -110,6 +113,11 @@ export function CalendarPage(): React.JSX.Element {
   const [panel, setPanel] = useState(() => window.innerWidth >= 1200)
   const [drawer, setDrawer] = useState(false)
   const changed = useCallback(() => setVersion((v) => v + 1), [])
+
+  useEffect(() => {
+    if (fromUrl.view) setView(fromUrl.view)
+    if (fromUrl.cursor) setCursor(fromUrl.cursor)
+  }, [fromUrl])
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 60_000)

@@ -3,6 +3,7 @@ import type { ReviewHealthIndicators, WeeklyReview } from '@shared/types'
 import { emptyReviewCounters, REVIEW_STEP_KEYS } from '@shared/reviewSteps'
 import {
   REVIEW_STEP_META,
+  reviewStepRoute,
   chaseText,
   elapsedMinutes,
   ideaLines,
@@ -130,5 +131,19 @@ describe('shortDuration', () => {
     expect(shortDuration(900)).toBe('15 min')
     expect(shortDuration(9130)).toBe('2h 32min')
     expect(shortDuration(7200)).toBe('2h')
+  })
+})
+
+describe('reviewStepRoute', () => {
+  const route = (key: 'past' | 'upcoming' | 'inbox'): string =>
+    reviewStepRoute(REVIEW_STEP_META[key].open!, '2026-11-20')
+
+  it('abre o calendário na semana passada e na agenda de hoje', () => {
+    expect(route('past')).toBe('/calendar?visao=semana&semana=2026-11-13')
+    expect(route('upcoming')).toBe('/calendar?visao=agenda&semana=2026-11-20')
+  })
+
+  it('mantém as rotas fixas', () => {
+    expect(route('inbox')).toBe('/?status=inbox')
   })
 })
