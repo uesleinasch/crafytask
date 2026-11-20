@@ -13,7 +13,7 @@ O **status** da tarefa é a etapa do GTD em que ela está. Uma tarefa tem exatam
 | **Próximas** | próxima ação clara, pronta para ser feita |
 | **Executando** | em andamento agora |
 | **Aguardando** | delegada ou esperando outra pessoa |
-| **Someday/Maybe** | talvez um dia; fora do radar ativo |
+| **Someday** | talvez um dia (o *Someday/Maybe* do GTD); fora do radar ativo |
 | **Finalizada** | concluída |
 
 Independente do status, cada tarefa tem uma **categoria** (Urgente, Prioridade, Normal ou
@@ -39,7 +39,7 @@ Tire da cabeça tudo o que chamar sua atenção, sem decidir nada ainda.
 Abra a aba **Inbox** da lista de tarefas e processe item por item. Para cada um, pergunte "isso
 exige ação?":
 
-- **Não** → exclua, ou mova para **Someday/Maybe** se quiser guardar a ideia.
+- **Não** → exclua, ou mova para **Someday** se quiser guardar a ideia.
 - **Sim, e leva mais de um passo** → crie (ou escolha) um **projeto** e defina a primeira ação.
 - **Sim, eu mesmo faço** → mude para **Próximas**.
 - **Sim, mas depende de alguém** → mude para **Aguardando**.

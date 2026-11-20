@@ -87,6 +87,7 @@ o antd está no guia de design, §10.
 | Componente | Para que serve | Onde é usado |
 | --- | --- | --- |
 | `SortableGroups` (`components/`) | grupos reordenáveis por arraste | cards agrupados e Kanban |
+| `color/ColorSwatches` | seletor de cor de `USER_COLORS` (`radiogroup`, cor anunciada pelo nome; a cor atual fora da paleta vira mais uma opção) | rótulo, projeto (criar e cabeçalho), caderno e seção |
 | `health/HealthCard`, `HealthGrid` | indicador de saúde clicável que abre a lista filtrada | dashboard (Agora) e entrada da revisão |
 | `dashboard/ChartCard`, `HBarList` | cartão de gráfico com "Ver como tabela" e vazio; barras horizontais em HTML com `CHART_COLORS` | dashboard |
 | `projects/ProjectCells` (`ProjectProgress`, `NextActionCell`, `ProjectDue`, `ProjectGroupHeader`, `ProjectTabLabel`) | peças comuns de cartão e linha de projeto | Projetos, Horizontes |
@@ -100,10 +101,6 @@ o antd está no guia de design, §10.
 | `settings/SetupGuide` (`GuideLink`, `GuideField`) | guia de conexão em `Steps` | Notion, Google Calendar |
 | `jira/JiraStatusSelect`, `JiraFieldsSheet`, `JiraFieldEditor` | transição de status e campos do Jira | inspetor da tarefa |
 | `terminal/TerminalTaskButton`, `TerminalProjectButton` | abre o terminal no diretório da tarefa ou do projeto | cabeçalho da tarefa e do projeto |
-
-O seletor de cor (círculos de `USER_COLORS` com anel na escolhida) não tem componente próprio: está
-copiado em `LabelEditModal`, `ProjectHeader`, `NewProjectModal` e `NameColorDialog` (ver
-[15](15-inconsistencias.md)).
 
 ---
 
