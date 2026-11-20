@@ -129,7 +129,7 @@ header, and the extra height can be scrolled by a programmatic `scrollIntoView` 
 ## Database
 
 - File: `app.getPath('userData')/ticktask.db` (em dev, `ticktask-dev/` — ver **Commands**). Opened with `journal_mode = WAL` and `foreign_keys = ON`. `initDatabase()` runs at startup.
-- 18 tables: `tasks`, `time_entries`, `tags`, `task_tags`, `projects`, `contexts`, `task_contexts`, `weekly_reviews`, `task_dependencies`, `areas`, `goals`, `time_blocks`, `note_assets`, `notebooks`, `notebook_sections`, `notebook_pages`, `task_status_events`, `app_prefs`.
+- 19 tables: `tasks`, `time_entries`, `tags`, `task_tags`, `projects`, `contexts`, `task_contexts`, `weekly_reviews`, `task_dependencies`, `areas`, `goals`, `time_blocks`, `note_assets`, `notebooks`, `notebook_sections`, `notebook_pages`, `task_status_events`, `task_history`, `app_prefs`.
 - **Migrations are imperative, inline in `initDatabase()`** — `CREATE TABLE IF NOT EXISTS` plus guarded `ALTER TABLE`s. Changing a `CHECK` constraint requires the create-new-table-and-copy dance (see the `tasks_new` rebuild around `src/main/database.ts:375`, used to widen the task `status` CHECK). There is no migration framework — follow the existing pattern.
 - All queries use better-sqlite3 prepared statements; multi-step writes use `db.transaction(...)`.
 - `tasks.status_changed_at` (when the status last changed, used by the health indicators in
@@ -138,6 +138,10 @@ header, and the extra height can be scrolled by a programmatic `scrollIntoView` 
   `task_status_events` (`from_status`, `to_status`, `changed_at`), the history behind the weekly
   Inbox rate; it only starts when the triggers are installed. A `tasks` rebuild drops triggers:
   `ensureStatusChangedAt` runs at the end of `initDatabase()` and recreates all four.
+- `task_history` holds the written entries of a task's history (`checkpoint`, `operation`, `note`;
+  origin `app` or `mcp`), with the task status at that moment. `listTaskHistory`
+  (`taskHistoryQueries.ts`, pure, tested) merges them with `task_status_events`, so status moves are
+  never copied into it. The MCP tool `task_history` reads and appends.
 - Dashboard period stats (`stats:period`, `StatsPeriod` → `PeriodStats`) come from
   `statsQueries.ts` (pure, tested): sessions clipped to the period and to now, split per local day
   and hour, compared with the previous period of the same length, project filter in SQL.

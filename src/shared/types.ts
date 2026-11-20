@@ -13,6 +13,34 @@ export type TaskCategory = 'urgente' | 'prioridade' | 'normal' | 'time_leak'
 export type ProjectStatus = 'active' | 'someday' | 'done' | 'archived'
 export type EnergyLevel = 'alto' | 'medio' | 'baixo'
 
+// ===================== TASK HISTORY =====================
+
+export type TaskHistoryEntryKind = 'checkpoint' | 'operation' | 'note'
+export type TaskHistoryKind = TaskHistoryEntryKind | 'status'
+export type TaskHistoryOrigin = 'app' | 'mcp'
+
+export interface TaskHistoryItem {
+  id: number
+  task_id: number
+  task_name: string
+  kind: TaskHistoryKind
+  origin: TaskHistoryOrigin | null
+  summary: string | null
+  done: string | null
+  remaining: string | null
+  from_status: TaskStatus | null
+  to_status: TaskStatus | null
+  created_at: string
+}
+
+export interface AddTaskHistoryInput {
+  task_id: number
+  summary: string
+  kind?: TaskHistoryEntryKind
+  done?: string | null
+  remaining?: string | null
+}
+
 // ===================== TAG =====================
 
 export interface Tag {
