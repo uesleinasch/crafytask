@@ -18,7 +18,9 @@ const CLEAN: ReviewHealthIndicators = {
   staleNextTasks: 0,
   overdueTasks: 0,
   somedayCount: 0,
-  daysSinceLastReview: 2
+  daysSinceLastReview: 2,
+  inboxProcessedWeek: 0,
+  inboxProcessedRate: null
 }
 
 describe('healthItems', () => {

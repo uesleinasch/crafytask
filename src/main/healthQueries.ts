@@ -5,6 +5,7 @@ import type { SqliteLike, SqliteParam } from './tagQueries'
 import { PROJECT_ACTIVITY_JULIAN } from './projectQueries'
 
 const DAY_MS = 24 * 60 * 60 * 1000
+const INBOX_RATE_DAYS = 7
 
 export function ensureStatusChangedAt(db: SqliteLike): void {
   const columns = db.prepare("PRAGMA table_info('tasks')").all() as { name: string }[]
@@ -27,6 +28,34 @@ export function ensureStatusChangedAt(db: SqliteLike): void {
      WHEN NEW.status IS NOT OLD.status
      BEGIN
        UPDATE tasks SET status_changed_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+     END`
+  ).run()
+  db.prepare(
+    `CREATE TABLE IF NOT EXISTS task_status_events (
+       id INTEGER PRIMARY KEY AUTOINCREMENT,
+       task_id INTEGER NOT NULL,
+       from_status TEXT,
+       to_status TEXT NOT NULL,
+       changed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+       FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+     )`
+  ).run()
+  db.prepare(
+    'CREATE INDEX IF NOT EXISTS idx_task_status_events_changed ON task_status_events(changed_at)'
+  ).run()
+  db.prepare(
+    `CREATE TRIGGER IF NOT EXISTS tasks_status_event_insert AFTER INSERT ON tasks
+     BEGIN
+       INSERT INTO task_status_events (task_id, from_status, to_status)
+       VALUES (NEW.id, NULL, NEW.status);
+     END`
+  ).run()
+  db.prepare(
+    `CREATE TRIGGER IF NOT EXISTS tasks_status_event_update AFTER UPDATE OF status ON tasks
+     WHEN NEW.status IS NOT OLD.status
+     BEGIN
+       INSERT INTO task_status_events (task_id, from_status, to_status)
+       VALUES (NEW.id, OLD.status, NEW.status);
      END`
   ).run()
 }
@@ -59,6 +88,16 @@ export function healthIndicatorsQuery(db: SqliteLike, now: Date): ReviewHealthIn
        ORDER BY julianday(completed_at) DESC LIMIT 1`
     )
     .get() as { completed_at: string } | undefined
+
+  const processedWeek = count(
+    db,
+    `SELECT COUNT(DISTINCT e.task_id) AS n FROM task_status_events e
+     JOIN tasks t ON t.id = e.task_id
+     WHERE e.from_status = 'inbox' AND t.parent_task_id IS NULL
+       AND julianday(e.changed_at) >= julianday(?)`,
+    cutoff(INBOX_RATE_DAYS)
+  )
+  const passedThrough = processedWeek + inbox.n
 
   return {
     inboxCount: inbox.n,
@@ -104,6 +143,8 @@ export function healthIndicatorsQuery(db: SqliteLike, now: Date): ReviewHealthIn
       db,
       "SELECT COUNT(*) AS n FROM tasks WHERE status = 'someday' AND COALESCE(is_archived, 0) = 0 AND parent_task_id IS NULL"
     ),
-    daysSinceLastReview: lastReview ? calendarDaysSince(lastReview.completed_at, now) : null
+    daysSinceLastReview: lastReview ? calendarDaysSince(lastReview.completed_at, now) : null,
+    inboxProcessedWeek: processedWeek,
+    inboxProcessedRate: passedThrough > 0 ? Math.round((processedWeek / passedThrough) * 100) : null
   }
 }

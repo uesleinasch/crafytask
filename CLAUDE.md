@@ -129,13 +129,18 @@ header, and the extra height can be scrolled by a programmatic `scrollIntoView` 
 ## Database
 
 - File: `app.getPath('userData')/ticktask.db` (em dev, `ticktask-dev/` — ver **Commands**). Opened with `journal_mode = WAL` and `foreign_keys = ON`. `initDatabase()` runs at startup.
-- 16 tables: `tasks`, `time_entries`, `tags`, `task_tags`, `projects`, `contexts`, `task_contexts`, `weekly_reviews`, `task_dependencies`, `areas`, `goals`, `time_blocks`, `note_assets`, `notebooks`, `notebook_sections`, `notebook_pages`.
+- 17 tables: `tasks`, `time_entries`, `tags`, `task_tags`, `projects`, `contexts`, `task_contexts`, `weekly_reviews`, `task_dependencies`, `areas`, `goals`, `time_blocks`, `note_assets`, `notebooks`, `notebook_sections`, `notebook_pages`, `task_status_events`.
 - **Migrations are imperative, inline in `initDatabase()`** — `CREATE TABLE IF NOT EXISTS` plus guarded `ALTER TABLE`s. Changing a `CHECK` constraint requires the create-new-table-and-copy dance (see the `tasks_new` rebuild around `src/main/database.ts:375`, used to widen the task `status` CHECK). There is no migration framework — follow the existing pattern.
 - All queries use better-sqlite3 prepared statements; multi-step writes use `db.transaction(...)`.
 - `tasks.status_changed_at` (when the status last changed, used by the health indicators in
   `healthQueries.ts`) is kept by two SQLite triggers, not by the handlers, so every writer (IPC, MCP,
-  Jira import) is covered. A `tasks` rebuild drops triggers: `ensureStatusChangedAt` runs at the end
-  of `initDatabase()` and recreates them.
+  Jira import) is covered. Two more triggers append every status change (and the creation) to
+  `task_status_events` (`from_status`, `to_status`, `changed_at`), the history behind the weekly
+  Inbox rate; it only starts when the triggers are installed. A `tasks` rebuild drops triggers:
+  `ensureStatusChangedAt` runs at the end of `initDatabase()` and recreates all four.
+- Dashboard period stats (`stats:period`, `StatsPeriod` → `PeriodStats`) come from
+  `statsQueries.ts` (pure, tested): sessions clipped to the period and to now, split per local day
+  and hour, compared with the previous period of the same length, project filter in SQL.
 
 ### Task listings
 

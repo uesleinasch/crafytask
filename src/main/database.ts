@@ -18,6 +18,8 @@ import type {
   WeeklyReview,
   ReviewCounterKey,
   ReviewPastWeek,
+  PeriodStats,
+  StatsPeriod,
   ReviewStepKey,
   ReviewStepStatus,
   ReviewHealthIndicators,
@@ -67,6 +69,7 @@ import {
 import { ensureNotebookSchema } from './notebookQueries'
 import { getProjectQuery, listProjectsQuery } from './projectQueries'
 import { ensureStatusChangedAt, healthIndicatorsQuery } from './healthQueries'
+import { periodStatsQuery } from './statsQueries'
 import {
   bumpReviewCounter,
   completeReview,
@@ -1781,6 +1784,10 @@ export function bumpWeeklyReviewCounter(
 
 export function completeWeeklyReview(id: number, notes?: string): WeeklyReview {
   return completeReview(tagDb(), id, new Date(), notes)
+}
+
+export function getPeriodStats(period: StatsPeriod): PeriodStats {
+  return periodStatsQuery(tagDb(), period, new Date())
 }
 
 export function getReviewPastWeek(): ReviewPastWeek {

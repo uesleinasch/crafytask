@@ -33,6 +33,8 @@ import type {
   ReviewHealthIndicators,
   ReviewCounterKey,
   ReviewPastWeek,
+  PeriodStats,
+  StatsPeriod,
   ReviewStepKey,
   ReviewStepStatus,
   TaskDependency,
@@ -273,6 +275,8 @@ const api = {
   // FASE 4.2: Advanced stats
   getGtdMetrics: () => ipcRenderer.invoke('stats:gtdMetrics'),
   getEnergyStats: () => ipcRenderer.invoke('stats:energy'),
+  getPeriodStats: (period: StatsPeriod): Promise<PeriodStats> =>
+    ipcRenderer.invoke('stats:period', period),
   generateWeeklyPDF: () => ipcRenderer.invoke('report:weeklyPDF'),
 
   // Tags

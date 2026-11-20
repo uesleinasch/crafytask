@@ -32,6 +32,8 @@ import type {
   ReviewHealthIndicators,
   ReviewCounterKey,
   ReviewPastWeek,
+  PeriodStats,
+  StatsPeriod,
   ReviewStepKey,
   ReviewStepStatus,
   TaskDependency,
@@ -227,6 +229,7 @@ interface API {
   // FASE 4.2: Advanced stats
   getGtdMetrics: () => Promise<GtdMetrics>
   getEnergyStats: () => Promise<EnergyStats[]>
+  getPeriodStats: (period: StatsPeriod) => Promise<PeriodStats>
   generateWeeklyPDF: () => Promise<void>
 
   // Tags

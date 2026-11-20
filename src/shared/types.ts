@@ -531,6 +531,82 @@ export interface ReviewHealthIndicators {
   overdueTasks: number
   somedayCount: number
   daysSinceLastReview: number | null
+  inboxProcessedWeek: number
+  inboxProcessedRate: number | null
+}
+
+// ===================== STATS POR PERÍODO (dashboard) =====================
+
+export interface StatsPeriod {
+  start: string
+  end: string
+  projectId: number | null
+}
+
+export type StatsGranularity = 'day' | 'week' | 'month'
+
+export interface StatsBucket {
+  key: string
+  seconds: number
+  current: boolean
+}
+
+export interface StatsComparison {
+  value: number
+  previous: number
+}
+
+export interface StatsTimeRow {
+  id: number | null
+  name: string
+  color: string | null
+  seconds: number
+}
+
+export interface StatsTaskRow {
+  taskId: number
+  name: string
+  projectColor: string | null
+  seconds: number
+}
+
+export interface StatsCategoryRow {
+  category: TaskCategory
+  seconds: number
+  taskCount: number
+}
+
+export interface StatsEnergyRow {
+  energy: EnergyLevel
+  seconds: number
+  taskCount: number
+  avgSeconds: number
+}
+
+export interface StatsHourCell {
+  weekday: number
+  hour: number
+  seconds: number
+}
+
+export interface PeriodStats {
+  period: StatsPeriod
+  previous: { start: string; end: string }
+  granularity: StatsGranularity
+  focusSeconds: StatsComparison
+  workdayAvgSeconds: number
+  buckets: StatsBucket[]
+  completedTasks: StatsComparison
+  sessions: StatsComparison
+  avgSessionSeconds: StatsComparison
+  byProject: StatsTimeRow[]
+  byArea: StatsTimeRow[]
+  byContext: StatsTimeRow[]
+  topTasks: StatsTaskRow[]
+  byCategory: StatsCategoryRow[]
+  byEnergy: StatsEnergyRow[]
+  hourly: StatsHourCell[]
+  daily: { date: string; seconds: number }[]
 }
 
 // ===================== TIME BLOCK (GTD Time Blocking) =====================
