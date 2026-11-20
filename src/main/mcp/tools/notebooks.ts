@@ -31,12 +31,17 @@ import {
   removeNotebookNode
 } from '../../notebookService'
 import { readDrawingPreview } from '../../drawingAssets'
-import { markdownToProsemirror, type PMDoc } from '../../markdownToProsemirror'
-import { prosemirrorToMarkdown } from '../../notesMarkdown'
+import type { PMDoc } from '../../markdownToProsemirror'
 import { needsConfirmation } from '../confirmGuard'
 import { fail, ok, okImage } from '../reply'
 import type { ToolContext } from '../toolContext'
-import { hasRealContent, parseNotes } from './notes'
+import {
+  MARKDOWN_SUPPORT,
+  hasRealContent,
+  markdownToNotes,
+  notesToMarkdown,
+  parseNotes
+} from './notes'
 import { describeElements } from './drawing'
 
 function pageTree(sectionId: number): { id: number; title: string; depth: number }[] {
@@ -114,9 +119,7 @@ export function registerNotebookTools(server: McpServer, ctx: ToolContext): void
         subpage_ids: listPageSubtree(db, page_id).slice(1),
         updated_at: page.updated_at,
         markdown:
-          parsed.kind === 'doc' || parsed.kind === 'empty'
-            ? prosemirrorToMarkdown(page.notes)
-            : null,
+          parsed.kind === 'doc' || parsed.kind === 'empty' ? notesToMarkdown(page.notes) : null,
         drawing: { elements: drawing.count, kinds: drawing.kinds, texts: drawing.texts }
       }
       if (drawing.count === 0) return ok(data)
@@ -146,7 +149,7 @@ export function registerNotebookTools(server: McpServer, ctx: ToolContext): void
       } catch (error) {
         return fail('validation', error instanceof Error ? error.message : String(error))
       }
-      if (markdown) updatePageNotes(db, page.id, JSON.stringify(markdownToProsemirror(markdown)))
+      if (markdown) updatePageNotes(db, page.id, JSON.stringify(markdownToNotes(markdown)))
       afterNotebookStructureChange({ kind: 'page', id: page.id })
       return ok({ page_id: page.id, section_id, parent_page_id: page.parent_page_id })
     }
@@ -156,8 +159,7 @@ export function registerNotebookTools(server: McpServer, ctx: ToolContext): void
     'write_page',
     {
       title: 'Escrever numa página de caderno',
-      description:
-        'Grava Markdown nas notas de uma página. Mesma conversão e mesmas perdas de write_notes (menções, destaques, tabelas, checklist e imagens não sobrevivem). Prefira mode=append; mode=replace sobre página com conteúdo exige confirm_token.',
+      description: `Grava Markdown nas notas de uma página. ${MARKDOWN_SUPPORT} Prefira mode=append; mode=replace sobre página com conteúdo exige confirm_token.`,
       inputSchema: {
         page_id: z.number().int().positive(),
         markdown: z.string().min(1),
@@ -172,7 +174,7 @@ export function registerNotebookTools(server: McpServer, ctx: ToolContext): void
 
       const effectiveMode = mode ?? 'append'
       const parsed = parseNotes(page.notes)
-      const incoming = markdownToProsemirror(markdown)
+      const incoming = markdownToNotes(markdown)
       const destructive = effectiveMode === 'replace' || parsed.kind !== 'doc'
 
       if (
@@ -187,7 +189,7 @@ export function registerNotebookTools(server: McpServer, ctx: ToolContext): void
             'Substituir apaga as notas atuais da página, incluindo o que o Markdown não representa. Mostre o conteúdo atual ao usuário antes de confirmar.',
             {
               confirm_token: ctx.confirmStore.issue(operation),
-              current_markdown: parsed.kind === 'doc' ? prosemirrorToMarkdown(page.notes) : null
+              current_markdown: parsed.kind === 'doc' ? notesToMarkdown(page.notes) : null
             }
           )
         }

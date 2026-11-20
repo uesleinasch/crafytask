@@ -15,6 +15,23 @@ interface PMNode {
 
 export type MarkdownImageResolver = (assetId: string) => string
 
+export interface MarkdownRenderOptions {
+  /** Escreve a menção como @[Nome](task:123), que markdownToProsemirror lê de volta. */
+  mentionLinks?: boolean
+}
+
+const MENTION_TYPES = new Set(['task', 'project', 'page', 'context'])
+
+function mentionToMarkdown(node: PMNode, options: MarkdownRenderOptions): string {
+  const label = String(node.attrs?.label ?? '')
+  const entityType = String(node.attrs?.entityType ?? '')
+  const id = Number(node.attrs?.id)
+  if (!options.mentionLinks || !MENTION_TYPES.has(entityType) || !Number.isInteger(id) || id <= 0) {
+    return '@' + label
+  }
+  return `@[${label.replace(/[[\]]/g, '')}](${entityType}:${id})`
+}
+
 function applyMarks(text: string, marks: PMMark[] | undefined): string {
   if (!marks || !marks.length) return text
   const has = (t: string): boolean => marks.some((m) => m.type === t)
@@ -31,7 +48,7 @@ function applyMarks(text: string, marks: PMMark[] | undefined): string {
   return s
 }
 
-function renderInline(nodes: PMNode[] | undefined): string {
+function renderInline(nodes: PMNode[] | undefined, options: MarkdownRenderOptions): string {
   let out = ''
   for (const node of nodes ?? []) {
     if (node.type === 'hardBreak') {
@@ -39,7 +56,7 @@ function renderInline(nodes: PMNode[] | undefined): string {
       continue
     }
     if (node.type === 'mention') {
-      out += '@' + String(node.attrs?.label ?? '')
+      out += mentionToMarkdown(node, options)
       continue
     }
     if (node.type !== 'text') continue
@@ -53,31 +70,36 @@ function firstParagraphInline(node: PMNode): PMNode[] {
   return para?.content ?? []
 }
 
-function listToMarkdown(node: PMNode, ordered: boolean): string {
+function listToMarkdown(node: PMNode, ordered: boolean, options: MarkdownRenderOptions): string {
   const items = (node.content ?? []).filter((c) => c.type === 'listItem')
   return items
-    .map((li, i) => (ordered ? `${i + 1}. ` : '- ') + renderInline(firstParagraphInline(li)))
+    .map(
+      (li, i) => (ordered ? `${i + 1}. ` : '- ') + renderInline(firstParagraphInline(li), options)
+    )
     .join('\n')
 }
 
-function taskListToMarkdown(node: PMNode): string {
+function taskListToMarkdown(node: PMNode, options: MarkdownRenderOptions): string {
   const items = (node.content ?? []).filter((c) => c.type === 'taskItem')
   return items
-    .map((ti) => `- ${ti.attrs?.checked ? '[x]' : '[ ]'} ` + renderInline(firstParagraphInline(ti)))
+    .map(
+      (ti) =>
+        `- ${ti.attrs?.checked ? '[x]' : '[ ]'} ` + renderInline(firstParagraphInline(ti), options)
+    )
     .join('\n')
 }
 
-function cellText(cell: PMNode): string {
-  return renderInline(firstParagraphInline(cell)).replace(/\n/g, ' ').replace(/\|/g, '\\|')
+function cellText(cell: PMNode, options: MarkdownRenderOptions): string {
+  return renderInline(firstParagraphInline(cell), options).replace(/\n/g, ' ').replace(/\|/g, '\\|')
 }
 
-function tableToMarkdown(node: PMNode): string {
+function tableToMarkdown(node: PMNode, options: MarkdownRenderOptions): string {
   const rows = (node.content ?? []).filter((r) => r.type === 'tableRow')
   if (!rows.length) return ''
   const width = (rows[0].content ?? []).length
   const lines: string[] = []
   rows.forEach((row, i) => {
-    const cells = (row.content ?? []).map(cellText)
+    const cells = (row.content ?? []).map((cell) => cellText(cell, options))
     while (cells.length < width) cells.push('')
     lines.push('| ' + cells.join(' | ') + ' |')
     if (i === 0) lines.push('| ' + Array(width).fill('---').join(' | ') + ' |')
@@ -85,24 +107,28 @@ function tableToMarkdown(node: PMNode): string {
   return lines.join('\n')
 }
 
-function blockToMarkdown(node: PMNode, resolveImage: MarkdownImageResolver): string {
+function blockToMarkdown(
+  node: PMNode,
+  resolveImage: MarkdownImageResolver,
+  options: MarkdownRenderOptions
+): string {
   switch (node.type) {
     case 'paragraph':
-      return renderInline(node.content)
+      return renderInline(node.content, options)
     case 'heading': {
       const level = Math.min(6, Math.max(1, Number(node.attrs?.level ?? 1)))
-      return '#'.repeat(level) + ' ' + renderInline(node.content)
+      return '#'.repeat(level) + ' ' + renderInline(node.content, options)
     }
     case 'bulletList':
-      return listToMarkdown(node, false)
+      return listToMarkdown(node, false, options)
     case 'orderedList':
-      return listToMarkdown(node, true)
+      return listToMarkdown(node, true, options)
     case 'taskList':
-      return taskListToMarkdown(node)
+      return taskListToMarkdown(node, options)
     case 'blockquote':
       return (node.content ?? [])
         .filter((c) => c.type === 'paragraph')
-        .map((c) => '> ' + renderInline(c.content))
+        .map((c) => '> ' + renderInline(c.content, options))
         .join('\n')
     case 'codeBlock': {
       const text = (node.content ?? []).map((c) => String(c.text ?? '')).join('')
@@ -112,7 +138,7 @@ function blockToMarkdown(node: PMNode, resolveImage: MarkdownImageResolver): str
     case 'horizontalRule':
       return '---'
     case 'table':
-      return tableToMarkdown(node)
+      return tableToMarkdown(node, options)
     case 'image': {
       const alt = String(node.attrs?.alt ?? '')
       const assetId = String(node.attrs?.assetId ?? '')
@@ -128,7 +154,8 @@ const defaultResolver: MarkdownImageResolver = (id) => `assets/${id}`
 
 export function prosemirrorToMarkdown(
   json: string | null | undefined,
-  resolveImage: MarkdownImageResolver = defaultResolver
+  resolveImage: MarkdownImageResolver = defaultResolver,
+  options: MarkdownRenderOptions = {}
 ): string {
   if (!json) return ''
   let doc: PMNode
@@ -139,7 +166,7 @@ export function prosemirrorToMarkdown(
   }
   if (!doc || doc.type !== 'doc') return ''
   return (doc.content ?? [])
-    .map((n) => blockToMarkdown(n, resolveImage))
+    .map((n) => blockToMarkdown(n, resolveImage, options))
     .filter((s) => s.length > 0)
     .join('\n\n')
 }
