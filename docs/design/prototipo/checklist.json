@@ -728,7 +728,7 @@
       "titulo": "Barra de propriedades com pílulas editáveis em Popover",
       "check": {
         "tipo": "contem",
-        "arquivos": "src/renderer/src/components/tasks/TaskPropertyBar.tsx",
+        "arquivos": "src/renderer/src/components/tasks/{TaskPropertyBar,propertyPills}.tsx",
         "padrao": "<Popover"
       }
     },
@@ -788,7 +788,7 @@
       "titulo": "Todas as pílulas da barra de propriedades",
       "check": {
         "tipo": "contem-todos",
-        "arquivos": "src/renderer/src/components/tasks/TaskPropertyBar.tsx",
+        "arquivos": "src/renderer/src/components/tasks/{TaskPropertyBar,propertyPills}.tsx",
         "padroes": [
           "label=\"Aguardando\"",
           "label=\"Categoria\"",
