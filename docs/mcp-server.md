@@ -90,6 +90,8 @@ Ao subir a ponte com `ELECTRON_RUN_AS_NODE=1`, essa variável é removida do amb
 | `create_page` | Cria página numa seção, opcionalmente como subpágina (até 2 níveis) e já com Markdown. |
 | `write_page` | Grava Markdown numa página; mesmas regras e perdas de `write_notes` (`mode=replace` sobre conteúdo exige confirmação). |
 | `delete_page` | Apaga a página e as subpáginas; sempre exige `confirm_token`. |
+| `manage_notebooks` | Estrutura dos cadernos: cria, renomeia e apaga caderno e seção (apagar sempre exige `confirm_token` e leva as páginas junto); renomeia e move página (`section_id`, `parent_page_id`, `index`). |
+| `integrations` | Aciona integrações já configuradas: `gcal_sync` (liga/desliga a task na agenda do Google), `notion_sync`, `jira_import`, `jira_transitions` e `jira_transition` (muda o status no Jira; sempre exige `confirm_token`), `export_task` (regrava o Markdown local) e `backup`. Integração não configurada devolve `app_state`. |
 
 ## Regras de status
 
@@ -121,7 +123,8 @@ Operações destrutivas ou em massa seguem um fluxo de duas fases (`confirmGuard
 
 `delete_tasks`, `manage_structure` (delete/merge_tag), `delete_page`, `write_notes`/`write_page`
 (`mode=replace` sobre nota não vazia), `write_drawing` (`mode=replace` sobre desenho existente) e
-`time_entries` (`delete` e `reset`) sempre exigem confirmação. `bulk_update_tasks` e `plan_day` só exigem acima do
+`time_entries` (`delete` e `reset`), `manage_notebooks` (`delete`) e `integrations`
+(`jira_transition`) sempre exigem confirmação. `bulk_update_tasks` e `plan_day` só exigem acima do
 `bulkThreshold` configurado (padrão 5 itens).
 
 ## Limitações conhecidas

@@ -3,8 +3,12 @@ import { z } from 'zod'
 import { UNTITLED_PAGE, flattenPageTree } from '@shared/notebookTree'
 import { notebookDb } from '../../database'
 import {
+  createNotebook,
   createPage,
+  createSection,
+  deleteNotebook,
   deletePage,
+  deleteSection,
   getNotebook,
   getPage,
   getSection,
@@ -12,11 +16,17 @@ import {
   listPageSubtree,
   listPages,
   listSections,
+  listNotebookPageIds,
+  movePage,
   searchPages,
-  updatePageNotes
+  updateNotebook,
+  updatePageNotes,
+  updatePageTitle,
+  updateSection
 } from '../../notebookQueries'
 import {
   afterNotebookStructureChange,
+  afterPageMoved,
   autoSyncNotebook,
   removeNotebookNode
 } from '../../notebookService'
@@ -226,6 +236,114 @@ export function registerNotebookTools(server: McpServer, ctx: ToolContext): void
 
       const deleted = await removeNotebookNode('page', page_id, (id) => deletePage(db, id))
       return ok({ deleted })
+    }
+  )
+
+  server.registerTool(
+    'manage_notebooks',
+    {
+      title: 'Organizar cadernos',
+      description:
+        'Estrutura dos cadernos (ids em list_notebooks). entity=notebook ou section: action=create (name; a seção exige notebook_id), update (id, name) e delete (id; apaga tudo que está dentro e sempre exige confirm_token). entity=page: action=update renomeia (id, name) e action=move leva a página para outra seção ou página pai (id, section_id, parent_page_id opcional, index opcional). Para criar e apagar página use create_page e delete_page.',
+      inputSchema: {
+        entity: z.enum(['notebook', 'section', 'page']),
+        action: z.enum(['create', 'update', 'delete', 'move']),
+        id: z.number().int().positive().optional(),
+        name: z.string().min(1).max(200).optional(),
+        notebook_id: z.number().int().positive().optional(),
+        section_id: z.number().int().positive().optional(),
+        parent_page_id: z.union([z.number().int().positive(), z.null()]).optional(),
+        index: z.number().int().min(0).optional(),
+        confirm_token: z.string().optional()
+      }
+    },
+    async ({
+      entity,
+      action,
+      id,
+      name,
+      notebook_id,
+      section_id,
+      parent_page_id,
+      index,
+      confirm_token
+    }) => {
+      const db = notebookDb()
+      const exists = (kind: typeof entity, nodeId: number): boolean =>
+        kind === 'notebook'
+          ? Boolean(getNotebook(db, nodeId))
+          : kind === 'section'
+            ? Boolean(getSection(db, nodeId))
+            : Boolean(getPage(db, nodeId))
+
+      try {
+        if (action === 'create') {
+          if (entity === 'page') return fail('validation', 'Para criar página use create_page.')
+          if (!name) return fail('validation', 'action=create exige name.')
+          if (entity === 'notebook') {
+            const notebook = createNotebook(db, { name })
+            afterNotebookStructureChange({ kind: 'notebook', id: notebook.id })
+            return ok({ created: notebook.id, entity, name: notebook.name })
+          }
+          if (notebook_id === undefined) return fail('validation', 'Seção nova exige notebook_id.')
+          if (!getNotebook(db, notebook_id)) {
+            return fail('not_found', `Caderno ${notebook_id} não existe.`)
+          }
+          const section = createSection(db, { notebook_id, name })
+          afterNotebookStructureChange({ kind: 'section', id: section.id })
+          return ok({ created: section.id, entity, name: section.name })
+        }
+
+        if (id === undefined) return fail('validation', `action=${action} exige id.`)
+        if (!exists(entity, id)) return fail('not_found', `${entity} ${id} não existe.`)
+
+        if (action === 'update') {
+          if (!name) return fail('validation', 'action=update exige name.')
+          if (entity === 'notebook') updateNotebook(db, id, { name })
+          else if (entity === 'section') updateSection(db, id, { name })
+          else updatePageTitle(db, id, name)
+          afterNotebookStructureChange({ kind: entity, id })
+          return ok({ updated: id, entity, name })
+        }
+
+        if (action === 'move') {
+          if (entity !== 'page') return fail('validation', 'Só página pode ser movida.')
+          if (section_id === undefined) return fail('validation', 'action=move exige section_id.')
+          if (!getSection(db, section_id))
+            return fail('not_found', `Seção ${section_id} não existe.`)
+          const parent = parent_page_id ?? null
+          const siblings = listPages(db, section_id).filter(
+            (page) => (page.parent_page_id ?? null) === parent && page.id !== id
+          )
+          movePage(db, id, {
+            section_id,
+            parent_page_id: parent,
+            index: Math.min(index ?? siblings.length, siblings.length)
+          })
+          afterPageMoved(id)
+          return ok({ moved: id, section_id, parent_page_id: parent })
+        }
+
+        if (entity === 'page') return fail('validation', 'Para apagar página use delete_page.')
+        const pages =
+          entity === 'notebook' ? listNotebookPageIds(db, id).length : listPages(db, id).length
+        const operation = { kind: `delete_${entity}`, payload: { id } }
+        if (!confirm_token) {
+          return fail(
+            'needs_confirmation',
+            `Apagar ${entity === 'notebook' ? 'o caderno' : 'a seção'} apaga ${pages} página(s) junto, para sempre. Confirme com o usuário.`,
+            { confirm_token: ctx.confirmStore.issue(operation), pages }
+          )
+        }
+        const consumed = ctx.confirmStore.consume(confirm_token, operation)
+        if (!consumed.ok) return fail(consumed.code, consumed.message)
+        await removeNotebookNode(entity, id, (nodeId) =>
+          entity === 'notebook' ? deleteNotebook(db, nodeId) : deleteSection(db, nodeId)
+        )
+        return ok({ deleted: id, entity, pages })
+      } catch (error) {
+        return fail('validation', error instanceof Error ? error.message : String(error))
+      }
     }
   )
 }

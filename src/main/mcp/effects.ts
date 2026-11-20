@@ -2,6 +2,16 @@ import type { BrowserWindow } from 'electron'
 import type { DrawingRenderPayload, DrawingRenderResult } from '@shared/drawingRender'
 import type { TaskStatus } from '@shared/types'
 
+export interface IntegrationActions {
+  setGcalSync: (taskId: number, enabled: boolean) => Promise<void>
+  syncNotion: (taskId: number) => Promise<unknown>
+  jiraImport: () => Promise<unknown>
+  jiraTransitions: (taskId: number) => Promise<unknown>
+  jiraTransition: (taskId: number, transitionId: string) => Promise<void>
+  createBackup: () => Promise<unknown>
+  exportTask: (taskId: number) => Promise<boolean>
+}
+
 interface WriteEffectDeps {
   getMainWindow: () => BrowserWindow | null
   autoSync: (id: number) => void
@@ -10,6 +20,7 @@ interface WriteEffectDeps {
   resetTaskTime: (id: number) => void
   editTimeEntry: (entryId: number, startIso: string, endIso: string) => number
   removeTimeEntry: (entryId: number) => number
+  integrations: IntegrationActions
   syncTagChange: (taskIds: number[]) => void
   syncCalendar: (taskIds: number[]) => void
   disposeTerminals: (taskIds: number[]) => void
@@ -64,6 +75,10 @@ export function renderDrawing(payload: DrawingRenderPayload): Promise<DrawingRen
 function ready(): WriteEffectDeps {
   if (!deps) throw new Error('O CrafyTask ainda está iniciando; tente de novo em instantes.')
   return deps
+}
+
+export function integrations(): IntegrationActions {
+  return ready().integrations
 }
 
 export function resetTaskTime(id: number): void {

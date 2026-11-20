@@ -4,6 +4,7 @@ import { MCP_INSTRUCTIONS } from './instructions'
 import { ok } from './reply'
 import { registerDrawingTools } from './tools/drawing'
 import { registerHistoryTools } from './tools/history'
+import { registerIntegrationTools } from './tools/integrations'
 import { registerNotebookTools } from './tools/notebooks'
 import { registerNotesTools } from './tools/notes'
 import { registerPlanningTools } from './tools/planning'
@@ -37,6 +38,7 @@ export function createMcpServer(bulkThreshold: number, confirmStore: ConfirmStor
   registerDrawingTools(server, ctx)
   registerNotebookTools(server, ctx)
   registerPlanningTools(server, ctx)
+  registerIntegrationTools(server, ctx)
 
   return server
 }
