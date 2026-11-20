@@ -3,6 +3,7 @@ import type { ConfirmStore } from './confirmGuard'
 import { MCP_INSTRUCTIONS } from './instructions'
 import { ok } from './reply'
 import { registerAppTools } from './tools/app'
+import { registerBriefingTools } from './tools/briefing'
 import { registerDrawingTools } from './tools/drawing'
 import { registerHistoryTools } from './tools/history'
 import { registerIntegrationTools } from './tools/integrations'
@@ -41,6 +42,7 @@ export function createMcpServer(bulkThreshold: number, confirmStore: ConfirmStor
   registerPlanningTools(server, ctx)
   registerIntegrationTools(server, ctx)
   registerAppTools(server)
+  registerBriefingTools(server)
 
   return server
 }

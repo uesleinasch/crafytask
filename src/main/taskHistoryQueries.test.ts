@@ -7,6 +7,7 @@ import {
   addTaskHistoryEntry,
   ensureTaskHistorySchema,
   getLastCheckpoint,
+  lastCheckpointsFor,
   listTaskHistory
 } from './taskHistoryQueries'
 
@@ -150,5 +151,31 @@ describe('getLastCheckpoint', () => {
 
     expect(getLastCheckpoint(db, 1)?.summary).toBe('pai')
     expect(getLastCheckpoint(db, 1, true)?.summary).toBe('filha')
+  })
+})
+
+describe('lastCheckpointsFor', () => {
+  it('devolve o checkpoint mais recente de cada task numa consulta só', () => {
+    const old = addTaskHistoryEntry(db, { task_id: 1, summary: 'antigo' }, 'mcp')
+    const recent = addTaskHistoryEntry(db, { task_id: 1, summary: 'recente' }, 'mcp')
+    const note = addTaskHistoryEntry(db, { task_id: 1, summary: 'nota', kind: 'note' }, 'app')
+    const other = addTaskHistoryEntry(db, { task_id: 2, summary: 'da parte A' }, 'mcp')
+    stamp(old, '2026-11-20 10:00:00')
+    stamp(recent, '2026-11-20 11:00:00')
+    stamp(note, '2026-11-20 12:00:00')
+    stamp(other, '2026-11-20 09:00:00')
+
+    const result = lastCheckpointsFor(db, [1, 2, 3, 1])
+    expect([...result.keys()].sort()).toEqual([1, 2])
+    expect(result.get(1)).toMatchObject({
+      summary: 'recente',
+      kind: 'checkpoint',
+      task_name: 'Épico'
+    })
+    expect(result.get(2)?.summary).toBe('da parte A')
+  })
+
+  it('lista vazia não consulta nada', () => {
+    expect(lastCheckpointsFor(db, []).size).toBe(0)
   })
 })
