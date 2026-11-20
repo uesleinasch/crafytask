@@ -3,6 +3,8 @@ import type { Task, TimeBlock, TimeEntrySpan } from '@shared/types'
 import {
   DRAG_TYPE,
   agendaDays,
+  calendarRoute,
+  calendarUrlState,
   allDayOf,
   chipAlreadyOn,
   itemName,
@@ -263,5 +265,29 @@ describe('mês e agenda', () => {
     expect(chipAlreadyOn(task, 'due', '2026-11-20')).toBe(true)
     expect(chipAlreadyOn(task, 'due', '2026-11-18')).toBe(false)
     expect(chipAlreadyOn(undefined, 'due', '2026-11-18')).toBe(false)
+  })
+})
+
+describe('calendarUrlState', () => {
+  const read = (query: string): ReturnType<typeof calendarUrlState> =>
+    calendarUrlState(new URLSearchParams(query))
+
+  it('lê a visão e a data da URL', () => {
+    expect(read('visao=agenda&semana=2026-11-13')).toEqual({ view: 'agenda', cursor: '2026-11-13' })
+    expect(read('visao=3dias')).toEqual({ view: '3days' })
+    expect(read('semana=2026-02-28')).toEqual({ cursor: '2026-02-28' })
+  })
+
+  it('ignora visão desconhecida e data inválida', () => {
+    expect(read('')).toEqual({})
+    expect(read('visao=ano&semana=2026-02-30')).toEqual({})
+    expect(read('semana=13/11/2026')).toEqual({})
+  })
+
+  it('faz ida e volta com calendarRoute', () => {
+    const route = calendarRoute('week', '2026-11-13')
+    expect(route).toBe('/calendar?visao=semana&semana=2026-11-13')
+    expect(read(route.split('?')[1])).toEqual({ view: 'week', cursor: '2026-11-13' })
+    expect(calendarRoute('agenda')).toBe('/calendar?visao=agenda')
   })
 })

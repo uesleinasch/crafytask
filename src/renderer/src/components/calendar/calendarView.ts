@@ -20,6 +20,32 @@ export const VIEW_OPTIONS: { value: CalendarView; label: string }[] = [
 
 export const AGENDA_DAYS = 14
 
+const VIEW_PARAMS: Record<string, CalendarView> = {
+  dia: 'day',
+  '3dias': '3days',
+  semana: 'week',
+  mes: 'month',
+  agenda: 'agenda'
+}
+
+export function calendarRoute(view: CalendarView, date?: string): string {
+  const param = Object.keys(VIEW_PARAMS).find((key) => VIEW_PARAMS[key] === view)
+  const params = new URLSearchParams({ visao: param ?? 'semana' })
+  if (date) params.set('semana', date)
+  return `/calendar?${params.toString()}`
+}
+
+export function calendarUrlState(params: URLSearchParams): {
+  view?: CalendarView
+  cursor?: string
+} {
+  const view = VIEW_PARAMS[params.get('visao') ?? '']
+  const date = params.get('semana') ?? ''
+  const valid =
+    /^\d{4}-\d{2}-\d{2}$/.test(date) && localDateString(new Date(`${date}T12:00:00`)) === date
+  return { ...(view && { view }), ...(valid && { cursor: date }) }
+}
+
 export function toMin(time: string): number {
   const [h, m] = time.split(':').map(Number)
   return h * 60 + m

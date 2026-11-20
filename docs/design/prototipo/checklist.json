@@ -928,6 +928,16 @@
       }
     },
     {
+      "id": "F4.13",
+      "fase": "F4",
+      "titulo": "Calendário abre na visão e na semana da URL, usado pela revisão semanal",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/{pages/CalendarPage.tsx,components/review/reviewFlowState.ts}",
+        "padroes": ["calendarUrlState\\(", "calendarRoute\\('week'", "calendarRoute\\('agenda'"]
+      }
+    },
+    {
       "id": "F4.11",
       "fase": "F4",
       "titulo": "Blocos de time leak do calendário na escala de três níveis",

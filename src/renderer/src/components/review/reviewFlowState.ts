@@ -1,13 +1,19 @@
 import type { ReviewHealthIndicators, ReviewStepKey, Task, WeeklyReview } from '@shared/types'
 import { calendarDaysSince, parseSqlTime } from '@shared/healthLimits'
 import { REVIEW_STEP_KEYS } from '@shared/reviewSteps'
+import { addDays } from '@shared/calendarPrefs'
+import { calendarRoute } from '@renderer/components/calendar/calendarView'
 import { REVIEW_PHASES, REVIEW_STEP_LABELS, type ReviewPhase } from './reviewEntryState'
 
 export type ReviewView = ReviewStepKey | 'finish'
 
 export interface ReviewStepMeta {
   question: string
-  open?: { route: string; text: string }
+  open?: { route: string | ((today: string) => string); text: string }
+}
+
+export function reviewStepRoute(open: NonNullable<ReviewStepMeta['open']>, today: string): string {
+  return typeof open.route === 'function' ? open.route(today) : open.route
 }
 
 export const REVIEW_STEP_META: Record<ReviewStepKey, ReviewStepMeta> = {
@@ -32,11 +38,17 @@ export const REVIEW_STEP_META: Record<ReviewStepKey, ReviewStepMeta> = {
   past: {
     question:
       'Reuniões, sessões e entregas dos últimos 7 dias. Alguma gerou ação, recado ou pendência?',
-    open: { route: '/calendar', text: 'Abre o Calendário' }
+    open: {
+      route: (today) => calendarRoute('week', addDays(today, -3)),
+      text: 'Abre o Calendário na semana passada'
+    }
   },
   upcoming: {
     question: 'Prazos e compromissos que vêm aí. Algum pede preparação? Anote a ação agora.',
-    open: { route: '/calendar', text: 'Abre o Calendário' }
+    open: {
+      route: (today) => calendarRoute('agenda', today),
+      text: 'Abre o Calendário nas próximas duas semanas'
+    }
   },
   waiting: {
     question: 'Alguém respondeu? O que está parado há mais de 7 dias precisa de cobrança.',

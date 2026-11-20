@@ -18,6 +18,11 @@ como `DatePicker` sem borda ("16–22 de novembro de 2026"), a visão (`Segmente
 `md`), **Mostrar** e **Novo bloco** (primário). A visão inicial sai da largura da janela: Semana a
 partir de `lg`, 3 dias em `md`, Dia abaixo.
 
+A URL pode escolher a visão e a data: `?visao=dia|3dias|semana|mes|agenda` e `?semana=AAAA-MM-DD`
+(qualquer dia da semana desejada; na Agenda, o primeiro dia). Valor desconhecido ou data inválida é
+ignorado (`calendarUrlState`, em `calendarView.ts`); `calendarRoute` monta o link. A revisão semanal
+usa os dois.
+
 **Mostrar** (`Popover` com `Checkbox`) é filtro e legenda: Blocos de tempo, Tarefas com horário,
 Agendadas sem horário, Prazos, Sessões registradas e Fins de semana, cada um com a amostra, e a chave
 dos ícones (`Flame` urgente, `Flag` prioridade, `Clock` time leak, `CalendarSync` no Google). A

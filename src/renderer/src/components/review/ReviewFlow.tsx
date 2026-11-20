@@ -51,9 +51,11 @@ import { useThemeSettings } from '@renderer/theme/themeSettings'
 import { RegionBoundary } from '@renderer/components/shell/RegionBoundary'
 import { useErrorBoundary } from 'react-error-boundary'
 import { parseSqlTime } from '@shared/healthLimits'
+import { localDateString } from '@shared/dueState'
 import { REVIEW_PHASES, REVIEW_STEP_LABELS } from './reviewEntryState'
 import {
   REVIEW_STEP_META,
+  reviewStepRoute,
   elapsedMinutes,
   markedCount,
   phaseOf,
@@ -235,7 +237,7 @@ export function ReviewFlow({
     if (!target) return
     await flushNotes()
     message.info(`${target.text}. A revisão continua aqui.`)
-    navigate(target.route)
+    navigate(reviewStepRoute(target, localDateString(new Date())))
   }
 
   const unmarked = unmarkedSteps(review)
