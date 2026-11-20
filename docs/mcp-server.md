@@ -79,7 +79,7 @@ Ao subir a ponte com `ELECTRON_RUN_AS_NODE=1`, essa variável é removida do amb
 | `drawing_guide` | Guia de como montar os elementos de `write_drawing`: formas, texto, setas ligadas por `id`, molduras, cores e um exemplo. |
 | `write_drawing` | Cria ou altera o desenho de uma task (`task_id`) ou página (`page_id`) a partir de elementos simplificados do Excalidraw. `mode=append` (padrão) acrescenta; `mode=replace` sobre desenho existente exige `confirm_token`. O JSON e o PNG são gerados pela janela principal e gravados juntos. |
 | `write_notes` | Grava Markdown nas notas; `mode=append` (recomendado) ou `mode=replace` sobre nota não vazia, que exige `confirm_token`. |
-| `work_session` | Sessão de trabalho numa task. `start` põe a task (e a pai) em `executando`, liga o timer e devolve o último checkpoint, o histórico recente e as subtarefas; `pause` para o timer, grava um checkpoint e move para `aguardando` (com `waiting_for`) ou `proximas`; `finish` para o timer, grava o checkpoint final e move para `finalizada` (recusa com subtarefa aberta); `status` lista o que está em `executando` e os timers ligados. Com `directory` no lugar de `task_id`, `start` acha a task pela pasta (`working_dir` da task ou do projeto; a pasta mais específica vence): abre a que está em `executando` (a subtarefa, não a pai), devolve `ambiguous` com as candidatas ou `not_found`; `status` lista só o que é daquela pasta. |
+| `work_session` | Sessão de trabalho numa task. `start` põe a task (e a pai) em `executando`, liga o timer e devolve o último checkpoint, o histórico recente e as subtarefas; `pause` para o timer, grava um checkpoint e move para `aguardando` (com `waiting_for`) ou `proximas`; `finish` para o timer, grava o checkpoint final e move para `finalizada` (recusa com subtarefa aberta); `status` lista o que está em `executando` (subtarefas também) e os timers ligados. Com `directory` no lugar de `task_id`, `start` acha a task pela pasta (`working_dir` da task ou do projeto; a pasta mais específica vence): abre a que está em `executando` (a subtarefa, não a pai), devolve `ambiguous` com as candidatas ou `not_found`; `status` lista só o que é daquela pasta. |
 | `task_history` | Histórico e memória da task. `read` devolve mudanças de status e entradas escritas (mais recentes primeiro, `limit`/`before`) e o último checkpoint; `add` grava `checkpoint` (estado atual, `done`, `remaining`), `operation` ou `note`. `include_subtasks` junta o histórico das subtarefas. |
 | `agenda` | Tasks agendadas e blocos de tempo de um dia, semana ou mês. |
 | `plan_day` | Agenda tasks numa data (itens de `schedule` aceitam `start_time`/`end_time`, gravados como horário da task), ordena o dia (a `order` só pesa entre as tasks sem horário e sem prazo de hoje com hora), cria/remove blocos de tempo; acima do `bulkThreshold` exige `confirm_token`. |
@@ -92,20 +92,22 @@ Ao subir a ponte com `ELECTRON_RUN_AS_NODE=1`, essa variável é removida do amb
 | `delete_page` | Apaga a página e as subpáginas; sempre exige `confirm_token`. |
 | `manage_notebooks` | Estrutura dos cadernos: cria, renomeia e apaga caderno e seção (apagar sempre exige `confirm_token` e leva as páginas junto); renomeia e move página (`section_id`, `parent_page_id`, `index`). |
 | `integrations` | Aciona integrações já configuradas: `gcal_sync` (liga/desliga a task na agenda do Google), `notion_sync`, `jira_import`, `jira_transitions` e `jira_transition` (muda o status no Jira; sempre exige `confirm_token`), `export_task` (regrava o Markdown local) e `backup`. Integração não configurada devolve `app_state`. |
+| `briefing` | Retrato do momento numa chamada: `running` (timers), `executando` (com o último checkpoint: `summary`, `remaining`, `at`), `today` (tasks do dia e `time_blocks`), `overdue` (mesma regra de `organize_overview`), `waiting` (com `waiting_days`), `inbox_count` e `warnings` (timer em task fora de `executando`; task em `executando` sem timer e sem checkpoint há mais de 1 dia). Com `directory`, traz `here` (projeto e tasks da pasta). Cada seção tem `total` e até 10 itens compactos; `date` troca o dia de referência. |
 | `notify` | Notificação do sistema (`title` até 80, `body` até 300 caracteres), mesmo com o app na bandeja. Com `task_id`, o clique abre a task. No máximo uma a cada 10 s; antes disso devolve `app_state` com `retry_after_seconds`. |
 | `open_in_app` | Mostra e foca a janela principal numa task, projeto ou página (`target` + `id`) ou numa tela (`target=screen` + `screen`, lista fechada: as telas da barra lateral). |
 
 ## Formato compacto
 
-As listagens de tasks (`search_tasks`, `organize_overview`, `agenda`, `timer` e `work_session` com
+As listagens de tasks (`search_tasks`, `briefing`, `organize_overview`, `agenda`, `timer` e `work_session` com
 `status`, as subtarefas de `get_task`) e as respostas de `create_task` e `update_task` devolvem cada
 task assim (`mcp/taskView.ts`):
 
 `id`, `name`, `status`, `category`, `energy`, `project` (nome), `due_date`, `due_time`,
 `scheduled_date`, `scheduled_time`, `tags` (nomes), `contexts` (nomes), `is_blocked`, `is_running`,
-`waiting_for`, `subtasks` (`"feitas/total"`) e `jira_key`.
+`waiting_for`, `subtasks` (`"feitas/total"`), `jira_key` e `parent_id` (quando é subtarefa).
 
-Campo nulo, vazio ou `false` não aparece: ausência de `is_blocked` quer dizer "não bloqueada".
+Campo nulo, vazio ou `false` não aparece: ausência de `is_blocked` quer dizer "não bloqueada", e
+ausência de `category` quer dizer `normal`.
 Descrição, datas de criação, tempo acumulado e os demais campos vêm com `detail=full`
 (`search_tasks`, `create_task`, `update_task`) ou com `get_task`. O corpo das notas só sai em
 `read_notes` e no `notes_markdown` de `get_task`.
@@ -129,6 +131,7 @@ O que a tela faz e por onde o MCP faz o mesmo.
 | Projetos, contextos, tags, áreas e metas | `list_structure`, `manage_structure` |
 | Hoje, calendário e blocos de tempo | `agenda`, `plan_day` |
 | Revisão semanal e indicadores de saúde | `weekly_review`, `organize_overview` |
+| Visão do momento (o que roda, hoje, atrasos, onde parou) | `briefing` |
 | Cadernos, seções e páginas | `list_notebooks`, `search_pages`, `read_page`, `create_page`, `write_page`, `delete_page`, `manage_notebooks`, `write_drawing` (`page_id`) |
 | Google Calendar, Notion, Jira, export local, backup | `integrations` |
 | Notificação do sistema e abrir uma tela | `notify`, `open_in_app` |

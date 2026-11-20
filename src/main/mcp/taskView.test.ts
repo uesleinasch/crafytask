@@ -37,8 +37,7 @@ describe('compactTask', () => {
     expect(compactTask(row)).toEqual({
       id: 7,
       name: 'Escrever relatório',
-      status: 'proximas',
-      category: 'normal'
+      status: 'proximas'
     })
   })
 
@@ -71,6 +70,7 @@ describe('compactTask', () => {
     expect(
       compactTask(
         task({
+          category: 'urgente',
           energy_level: 'alto',
           due_date: '2026-11-25',
           due_time: '18:00',
@@ -86,7 +86,7 @@ describe('compactTask', () => {
       id: 7,
       name: 'Escrever relatório',
       status: 'proximas',
-      category: 'normal',
+      category: 'urgente',
       energy: 'alto',
       due_date: '2026-11-25',
       due_time: '18:00',

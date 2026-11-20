@@ -13,7 +13,7 @@ import {
   listOpenTasksWithWorkingDir,
   listProjects,
   listRunningTasks,
-  listTasks,
+  listTasksInProgress,
   startTask,
   stopTask,
   updateTask
@@ -109,7 +109,7 @@ export function registerWorkSessionTools(server: McpServer): void {
       }
       if (action === 'status') {
         return ok({
-          executando: listTasks({ status: 'executando', archived: false }).map(compactTask),
+          executando: listTasksInProgress().map(compactTask),
           timers: listRunningTasks().map(compactTask)
         })
       }

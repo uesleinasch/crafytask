@@ -6,7 +6,7 @@ export interface CompactTask {
   id: number
   name: string
   status: TaskStatus
-  category: TaskCategory
+  category?: TaskCategory
   energy?: EnergyLevel
   project?: string
   due_date?: string
@@ -20,6 +20,7 @@ export interface CompactTask {
   waiting_for?: string
   subtasks?: string
   jira_key?: string
+  parent_id?: number
 }
 
 function filled(value: string | null | undefined): string | undefined {
@@ -36,7 +37,7 @@ export function compactTask(task: Task): CompactTask {
     id: task.id,
     name: task.name,
     status: task.status,
-    category: task.category,
+    category: task.category === 'normal' ? undefined : task.category,
     energy: task.energy_level ?? undefined,
     project: filled(task.project_name),
     due_date: filled(task.due_date),
@@ -49,7 +50,8 @@ export function compactTask(task: Task): CompactTask {
     is_running: task.is_running ? true : undefined,
     waiting_for: filled(task.waiting_for),
     subtasks: total > 0 ? `${task.completed_subtask_count ?? 0}/${total}` : undefined,
-    jira_key: filled(task.jira_key)
+    jira_key: filled(task.jira_key),
+    parent_id: task.parent_task_id || undefined
   }
   return JSON.parse(JSON.stringify(view)) as CompactTask
 }

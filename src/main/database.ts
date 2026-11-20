@@ -83,6 +83,7 @@ import {
   addTaskHistoryEntry,
   ensureTaskHistorySchema,
   getLastCheckpoint,
+  lastCheckpointsFor,
   listTaskHistory,
   type TaskHistoryQuery
 } from './taskHistoryQueries'
@@ -637,6 +638,10 @@ export function getTaskHistory(query: TaskHistoryQuery): TaskHistoryItem[] {
   return listTaskHistory(tagDb(), query)
 }
 
+export function getLastCheckpointsFor(taskIds: number[]): Map<number, TaskHistoryItem> {
+  return lastCheckpointsFor(tagDb(), taskIds)
+}
+
 export function getTaskLastCheckpoint(
   taskId: number,
   includeSubtasks = false
@@ -1134,6 +1139,21 @@ export function listRunningTasks(): Task[] {
     ORDER BY t.updated_at DESC
   `)
   const rows = stmt.all() as (Task & { project_name?: string })[]
+  return enrichTasks(rows)
+}
+
+export function listTasksInProgress(): Task[] {
+  const rows = db
+    .prepare(
+      `
+    SELECT ${TASK_LIST_COLUMNS}
+    FROM tasks t
+    LEFT JOIN projects p ON t.project_id = p.id
+    WHERE t.status = 'executando' AND t.is_archived = 0
+    ORDER BY t.updated_at DESC
+  `
+    )
+    .all() as (Task & { project_name?: string })[]
   return enrichTasks(rows)
 }
 

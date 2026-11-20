@@ -133,3 +133,28 @@ export function getLastCheckpoint(
     .get(...params)
   return (row as TaskHistoryItem | undefined) ?? null
 }
+
+export function lastCheckpointsFor(
+  db: SqliteLike,
+  taskIds: number[]
+): Map<number, TaskHistoryItem> {
+  const ids = [...new Set(taskIds)]
+  if (ids.length === 0) return new Map()
+  const rows = db
+    .prepare(
+      `SELECT h.id AS id, h.task_id AS task_id, t.name AS task_name, h.kind AS kind,
+              h.origin AS origin, h.summary AS summary, h.done AS done,
+              h.remaining AS remaining, NULL AS from_status, h.task_status AS to_status,
+              h.created_at AS created_at
+       FROM task_history h JOIN tasks t ON t.id = h.task_id
+       WHERE h.task_id IN (${ids.map(() => '?').join(', ')})
+         AND h.id = (
+           SELECT last.id FROM task_history last
+           WHERE last.task_id = h.task_id AND last.kind = 'checkpoint'
+           ORDER BY last.created_at DESC, last.id DESC
+           LIMIT 1
+         )`
+    )
+    .all(...ids) as TaskHistoryItem[]
+  return new Map(rows.map((row) => [row.task_id, row]))
+}
