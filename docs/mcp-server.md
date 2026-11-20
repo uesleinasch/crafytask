@@ -93,6 +93,36 @@ Ao subir a ponte com `ELECTRON_RUN_AS_NODE=1`, essa variável é removida do amb
 | `manage_notebooks` | Estrutura dos cadernos: cria, renomeia e apaga caderno e seção (apagar sempre exige `confirm_token` e leva as páginas junto); renomeia e move página (`section_id`, `parent_page_id`, `index`). |
 | `integrations` | Aciona integrações já configuradas: `gcal_sync` (liga/desliga a task na agenda do Google), `notion_sync`, `jira_import`, `jira_transitions` e `jira_transition` (muda o status no Jira; sempre exige `confirm_token`), `export_task` (regrava o Markdown local) e `backup`. Integração não configurada devolve `app_state`. |
 
+## Mapa de cobertura
+
+O que a tela faz e por onde o MCP faz o mesmo.
+
+| Recurso do app | Pelo MCP |
+| --- | --- |
+| Listar, ver, criar, editar e apagar tasks; subtarefas | `search_tasks`, `get_task`, `create_task` (`parent_task_id`), `update_task`, `bulk_update_tasks`, `delete_tasks` |
+| Status, com as regras de bloqueio e recorrência | `update_task`, `bulk_update_tasks`, `work_session` |
+| Timer, tempo manual, corrigir e zerar sessões | `timer`, `time_entries` |
+| Relatórios e estatísticas do dashboard | `time_report` |
+| Dependências entre tasks | `task_dependencies` |
+| Recorrência, limite de tempo, aguardando, link externo | `create_task`, `update_task` |
+| Terminal da task (pasta e comando) | `update_task` (`working_dir`, `start_command`); abrir o terminal é só na tela |
+| Notas | `read_notes`, `write_notes` |
+| Desenho | `read_drawing`, `write_drawing`, `drawing_guide` |
+| Histórico e memória da task | `task_history`, `work_session` |
+| Projetos, contextos, tags, áreas e metas | `list_structure`, `manage_structure` |
+| Hoje, calendário e blocos de tempo | `agenda`, `plan_day` |
+| Revisão semanal e indicadores de saúde | `weekly_review`, `organize_overview` |
+| Cadernos, seções e páginas | `list_notebooks`, `search_pages`, `read_page`, `create_page`, `write_page`, `delete_page`, `manage_notebooks`, `write_drawing` (`page_id`) |
+| Google Calendar, Notion, Jira, export local, backup | `integrations` |
+
+Fica só na tela, de propósito:
+
+- configurar integrações (credenciais, boards, mapeamento, opções) e o próprio servidor MCP;
+- restaurar backup, que fecha o banco e reinicia o app;
+- preferências (aparência, fluxo de trabalho, atalho de captura, autostart);
+- editar campos do Jira e reordenar cadernos e seções;
+- janelas e terminal: captura rápida, timer flutuante, sessões de terminal.
+
 ## Regras de status
 
 Toda mudança de status pelo MCP (`update_task`, `bulk_update_tasks`, `work_session`) passa por
