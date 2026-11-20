@@ -1526,7 +1526,8 @@
       "titulo": "Janelas auxiliares conferidas",
       "check": {
         "tipo": "manual"
-      }
+      },
+      "validado": "2026-11-20"
     },
     {
       "id": "F8.3",
