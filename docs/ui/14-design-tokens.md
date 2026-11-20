@@ -57,7 +57,7 @@ nome das classes sugere.
 | `rounded-full` | 82 | pílulas de status, abas, bolinhas de cor, avatares |
 | `rounded-sm` | 65 | cartões de superfície, cabeçalhos de seção, contêineres de página |
 | `rounded-md` | 36 | primitivos do shadcn (botões, inputs, popovers) |
-| `rounded-2xl` | 2 | apenas a janela de captura rápida |
+| `rounded-2xl` | 2 | apenas a janela de captura rápida (até a F8-a, que a pôs no raio 12 do tema) |
 
 Cinco raios diferentes em circulação, sem regra explícita de qual usar quando.
 
