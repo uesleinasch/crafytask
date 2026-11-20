@@ -1527,6 +1527,36 @@
       }
     },
     {
+      "id": "F8.3",
+      "fase": "F8",
+      "titulo": "Captura rápida redesenhada: Capturar para o Inbox, Input, confirmação e erro",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/pages/QuickCapturePage.tsx",
+        "padroes": ["Capturar para o Inbox", "Capturado no Inbox", "<Input", "Tente de novo"]
+      }
+    },
+    {
+      "id": "F8.4",
+      "fase": "F8",
+      "titulo": "Timer flutuante redesenhado: ponto ao vivo, pausar, time leak e abrir tarefa",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/pages/FloatTimerPage.tsx",
+        "padroes": ["LiveDot", "Pausar todos", "Abrir CrafyTask", "timeLeakBackground", "em andamento"]
+      }
+    },
+    {
+      "id": "F8.5",
+      "fase": "F8",
+      "titulo": "Janelas auxiliares sem cor fixa do Tailwind",
+      "check": {
+        "tipo": "ausente",
+        "arquivos": "src/renderer/src/pages/{FloatTimerPage,QuickCapturePage}.tsx",
+        "padrao": "\\b(bg|text|border|ring|fill|stroke)-(white|black|slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)\\b"
+      }
+    },
+    {
       "id": "F9.1",
       "fase": "F9",
       "titulo": "Sem cores de paleta do Tailwind no renderer e no shared",
