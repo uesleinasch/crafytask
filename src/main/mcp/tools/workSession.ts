@@ -18,6 +18,7 @@ import {
 import { TASK_HISTORY_TEXT_LIMIT } from '../../taskHistoryQueries'
 import { afterTaskWrite, changeTaskStatus } from '../effects'
 import { fail, ok } from '../reply'
+import { compactTask } from '../taskView'
 
 const RESUME_ENTRIES = 15
 const text = z.string().max(TASK_HISTORY_TEXT_LIMIT)
@@ -63,8 +64,8 @@ export function registerWorkSessionTools(server: McpServer): void {
     async ({ action, task_id, timer, summary, done, remaining, waiting_for }) => {
       if (action === 'status') {
         return ok({
-          executando: listTasks({ status: 'executando', archived: false }).map(brief),
-          timers: listRunningTasks().map(brief)
+          executando: listTasks({ status: 'executando', archived: false }).map(compactTask),
+          timers: listRunningTasks().map(compactTask)
         })
       }
 

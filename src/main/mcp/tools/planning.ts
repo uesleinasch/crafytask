@@ -28,6 +28,7 @@ import { mergeTaskTimes, taskTimeError } from '@shared/taskTime'
 import { needsConfirmation } from '../confirmGuard'
 import { afterCalendarChange, afterTaskWrite, broadcastRefresh } from '../effects'
 import { fail, ok } from '../reply'
+import { compactTask } from '../taskView'
 import type { ToolContext } from '../toolContext'
 
 const DATE = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use o formato AAAA-MM-DD.')
@@ -48,12 +49,19 @@ export function registerPlanningTools(server: McpServer, ctx: ToolContext): void
     },
     async ({ range, date }) => {
       if (range === 'day') {
-        return ok({ date, tasks: getTasksForDate(date), time_blocks: getTimeBlocksForDate(date) })
+        return ok({
+          date,
+          tasks: getTasksForDate(date).map(compactTask),
+          time_blocks: getTimeBlocksForDate(date)
+        })
       }
       if (range === 'week') {
         return ok({
           date,
-          schedule: getWeeklySchedule(date),
+          schedule: getWeeklySchedule(date).map((day) => ({
+            date: day.date,
+            tasks: day.tasks.map(compactTask)
+          })),
           time_blocks: getTimeBlocksForWeek(date)
         })
       }

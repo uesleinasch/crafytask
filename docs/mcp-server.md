@@ -61,10 +61,10 @@ Ao subir a ponte com `ELECTRON_RUN_AS_NODE=1`, essa variável é removida do amb
 | Tool | Descrição |
 | --- | --- |
 | `server_info` | Confirma que o CrafyTask está aberto e respondendo (`app: 'CrafyTask'`). |
-| `search_tasks` | Lista tasks com filtros (status, categoria, energia, projeto, contexto, busca, datas). Não inclui subtarefas. |
-| `get_task` | Detalhe completo de uma task: campos, notas em Markdown, subtarefas, dependências, registros de tempo. |
-| `create_task` | Cria uma task; projeto/contexto por nome ou id, tags criadas se não existirem. Aceita `scheduled_time`/`scheduled_end_time` (exigem `scheduled_date`) e `due_time` (exige `due_date`), em `HH:MM`, `external_url` (`http(s)`), `waiting_for` (quem ou o quê a task aguarda, até 120 caracteres), `time_limit_minutes`, `recurrence` (`daily`/`weekly`/`monthly`), `working_dir` (caminho absoluto) e `start_command` (terminal da task). |
-| `update_task` | Altera campos de uma task; passar `tags`/`contexts` substitui a lista inteira. Horários em `HH:MM`, `null` remove; limpar a data remove a hora dela, limpar o início remove o fim. `external_url` aceita `http(s)` ou `null` (remove); `waiting_for` aceita texto ou `null`. Fim ≤ início ou hora sem data → erro `validation`. Também aceita `time_limit_minutes`, `recurrence` (`null` remove), `working_dir` e `start_command` (`null` remove). |
+| `search_tasks` | Lista tasks com filtros (status, categoria, energia, projeto, contexto, busca, datas), no [formato compacto](#formato-compacto); `detail=full` devolve a task inteira. Não inclui subtarefas. |
+| `get_task` | Detalhe completo de uma task: campos, notas em Markdown, subtarefas (compactas), dependências, registros de tempo. |
+| `create_task` | Cria uma task; projeto/contexto por nome ou id, tags criadas se não existirem. Aceita `scheduled_time`/`scheduled_end_time` (exigem `scheduled_date`) e `due_time` (exige `due_date`), em `HH:MM`, `external_url` (`http(s)`), `waiting_for` (quem ou o quê a task aguarda, até 120 caracteres), `time_limit_minutes`, `recurrence` (`daily`/`weekly`/`monthly`), `working_dir` (caminho absoluto) e `start_command` (terminal da task). A resposta traz a task compacta (`detail=full` para inteira). |
+| `update_task` | Altera campos de uma task; passar `tags`/`contexts` substitui a lista inteira. Horários em `HH:MM`, `null` remove; limpar a data remove a hora dela, limpar o início remove o fim. `external_url` aceita `http(s)` ou `null` (remove); `waiting_for` aceita texto ou `null`. Fim ≤ início ou hora sem data → erro `validation`. Também aceita `time_limit_minutes`, `recurrence` (`null` remove), `working_dir` e `start_command` (`null` remove). A resposta traz a task compacta (`detail=full` para inteira). |
 | `bulk_update_tasks` | Altera status/projeto/arquivamento de várias tasks; acima do `bulkThreshold` exige `confirm_token`. O status segue as regras de status abaixo; as tasks recusadas voltam em `status_refused`, e as demais mudam. |
 | `delete_tasks` | Deleta tasks permanentemente, incluindo subtarefas em cascata; sempre exige `confirm_token`. |
 | `organize_overview` | Retrato GTD: inbox, sem projeto, atrasadas, bloqueadas, someday, métricas. Atrasada = prazo antes de `today`, ou em `today` com `due_time` já passado. |
@@ -92,6 +92,21 @@ Ao subir a ponte com `ELECTRON_RUN_AS_NODE=1`, essa variável é removida do amb
 | `delete_page` | Apaga a página e as subpáginas; sempre exige `confirm_token`. |
 | `manage_notebooks` | Estrutura dos cadernos: cria, renomeia e apaga caderno e seção (apagar sempre exige `confirm_token` e leva as páginas junto); renomeia e move página (`section_id`, `parent_page_id`, `index`). |
 | `integrations` | Aciona integrações já configuradas: `gcal_sync` (liga/desliga a task na agenda do Google), `notion_sync`, `jira_import`, `jira_transitions` e `jira_transition` (muda o status no Jira; sempre exige `confirm_token`), `export_task` (regrava o Markdown local) e `backup`. Integração não configurada devolve `app_state`. |
+
+## Formato compacto
+
+As listagens de tasks (`search_tasks`, `organize_overview`, `agenda`, `timer` e `work_session` com
+`status`, as subtarefas de `get_task`) e as respostas de `create_task` e `update_task` devolvem cada
+task assim (`mcp/taskView.ts`):
+
+`id`, `name`, `status`, `category`, `energy`, `project` (nome), `due_date`, `due_time`,
+`scheduled_date`, `scheduled_time`, `tags` (nomes), `contexts` (nomes), `is_blocked`, `is_running`,
+`waiting_for`, `subtasks` (`"feitas/total"`) e `jira_key`.
+
+Campo nulo, vazio ou `false` não aparece: ausência de `is_blocked` quer dizer "não bloqueada".
+Descrição, datas de criação, tempo acumulado e os demais campos vêm com `detail=full`
+(`search_tasks`, `create_task`, `update_task`) ou com `get_task`. O corpo das notas só sai em
+`read_notes` e no `notes_markdown` de `get_task`.
 
 ## Mapa de cobertura
 
