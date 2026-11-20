@@ -1,12 +1,11 @@
 import { useState } from 'react'
-import { Button, Card, Checkbox, Flex, Progress, Tooltip, Typography, theme } from 'antd'
+import { App, Button, Card, Checkbox, Flex, Progress, Tooltip, Typography, theme } from 'antd'
 import { Circle, CircleCheck, Lock } from 'lucide-react'
 import type { Context, Task } from '@shared/types'
 import { StatusChip } from '@renderer/components/chips/StatusChip'
 import { CategoryChip } from '@renderer/components/chips/CategoryChip'
 import { LiveDot } from '@renderer/components/chips/LiveDot'
 import { TaskContextMenu } from './TaskContextMenu'
-import { toast } from '@renderer/components/ui/sonner'
 import { useLiveSeconds } from '@renderer/hooks/useLiveSeconds'
 import { CATEGORY_COLORS, timeLeakBackground, timeLeakLevel } from '@renderer/theme/semantic'
 import { useThemeSettings } from '@renderer/theme/themeSettings'
@@ -42,6 +41,7 @@ export function TaskCard({
   showContexts = true,
   contexts
 }: TaskCardProps): React.JSX.Element {
+  const { message } = App.useApp()
   const { token } = theme.useToken()
   const { mode } = useThemeSettings()
   const leakThresholds = useTimeLeakThresholds()
@@ -63,7 +63,7 @@ export function TaskCard({
         setSubtasks(await window.api.listSubtasks(task.id))
       } catch (error) {
         console.error('[TaskCard] subtarefas', error)
-        toast.error('Não foi possível carregar as subtarefas')
+        message.error('Não foi possível carregar as subtarefas')
         return
       }
     }

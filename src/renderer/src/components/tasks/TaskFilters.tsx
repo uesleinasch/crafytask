@@ -69,7 +69,7 @@ export function TaskFilters({
         onChange={(energy: EnergyLevel | undefined) => onChange({ energy: energy ?? null })}
         options={ENERGIES.map((energy) => ({
           value: energy,
-          label: `Energia ${ENERGY_LABELS[energy].toLowerCase()}`
+          label: ENERGY_LABELS[energy]
         }))}
       />
       <Select

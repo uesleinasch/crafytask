@@ -1,5 +1,5 @@
 import { useContext, useRef, useState } from 'react'
-import { Dropdown, type MenuProps } from 'antd'
+import { App, Dropdown, type MenuProps } from 'antd'
 import {
   Archive,
   CalendarDays,
@@ -25,7 +25,6 @@ import {
 } from '@shared/types'
 import { localDateString } from '@shared/dueState'
 import { TaskMenuChangedContext, TaskMenuDataContext } from '@renderer/components/taskMenuContext'
-import { toast } from '@renderer/components/ui/sonner'
 import { CATEGORY_CHIP_LABELS } from '@renderer/components/chips/categoryMeta'
 import { STATUS_ICONS } from '@renderer/components/chips/statusMeta'
 import { useTimerStore } from '@renderer/stores/timerStore'
@@ -55,6 +54,7 @@ export function TaskContextMenu({
   trigger = ['contextMenu'],
   children
 }: TaskContextMenuProps): React.JSX.Element {
+  const { message } = App.useApp()
   const onChanged = useContext(TaskMenuChangedContext)
   const { projects, contexts, selectedIds, taskById } = useContext(TaskMenuDataContext)
   const { mode } = useThemeSettings()
@@ -83,10 +83,10 @@ export function TaskContextMenu({
   const run = async (action: () => Promise<unknown>, success: string): Promise<void> => {
     try {
       await action()
-      toast.success(success)
+      message.success(success)
     } catch (error) {
       console.error('[TaskContextMenu]', error)
-      toast.error(error instanceof Error ? error.message : 'Não foi possível concluir a ação')
+      message.error(error instanceof Error ? error.message : 'Não foi possível concluir a ação')
     } finally {
       onChanged()
     }
@@ -273,7 +273,7 @@ export function TaskContextMenu({
     if (kind === 'jira' && value === 'open' && jiraUrl) {
       void window.api
         .appOpenExternal(jiraUrl)
-        .catch(() => toast.error('Não foi possível abrir o link'))
+        .catch(() => message.error('Não foi possível abrir o link'))
     }
     if (kind === 'jira' && value === 'fields') setFieldsOpen(true)
     if (kind === 'jirast') {
@@ -288,8 +288,8 @@ export function TaskContextMenu({
     if (kind === 'copy') {
       void navigator.clipboard
         .writeText(String(task.id))
-        .then(() => toast.success(`#${task.id} copiado`))
-        .catch(() => toast.error('Não foi possível copiar'))
+        .then(() => message.success(`#${task.id} copiado`))
+        .catch(() => message.error('Não foi possível copiar'))
     }
     if (kind === 'archive') void bulk.archive(ids)
     if (kind === 'delete') bulk.confirmDelete(ids)

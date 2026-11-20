@@ -1,11 +1,10 @@
 import { useContext } from 'react'
-import { Button, Flex, Tooltip } from 'antd'
+import { App, Button, Flex, Tooltip } from 'antd'
 import { CalendarDays, Ellipsis, Pause, Play } from 'lucide-react'
 import type { Task } from '@shared/types'
 import { localDateString } from '@shared/dueState'
 import { TaskContextMenu } from './TaskContextMenu'
 import { TaskMenuChangedContext } from '@renderer/components/taskMenuContext'
-import { toast } from '@renderer/components/ui/sonner'
 import { useTimerStore } from '@renderer/stores/timerStore'
 
 import { blockedLabel } from './taskTableFormat'
@@ -27,6 +26,7 @@ export function TaskActions({
   showToday = true,
   showTimer = true
 }: TaskActionsProps): React.JSX.Element {
+  const { message } = App.useApp()
   const onChanged = useContext(TaskMenuChangedContext)
   const startTimer = useTimerStore((s) => s.startTimer)
   const stopTimer = useTimerStore((s) => s.stopTimer)
@@ -41,11 +41,11 @@ export function TaskActions({
     try {
       if (task.is_running) await stopTimer(task.id)
       else await startTimer(task.id)
-      toast.success(task.is_running ? 'Timer pausado' : 'Timer iniciado')
+      message.success(task.is_running ? 'Timer pausado' : 'Timer iniciado')
       onChanged()
     } catch (error) {
       console.error('[TaskActions]', error)
-      toast.error(error instanceof Error ? error.message : 'Não foi possível mexer no timer')
+      message.error(error instanceof Error ? error.message : 'Não foi possível mexer no timer')
     }
   }
 

@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import {
+  App,
   Button,
   Checkbox,
   Flex,
@@ -20,7 +21,6 @@ import { EnergyMeter } from '@renderer/components/chips/EnergyMeter'
 import { LiveDot } from '@renderer/components/chips/LiveDot'
 import { TaskContextMenu } from './TaskContextMenu'
 import { TaskMenuChangedContext } from '@renderer/components/taskMenuContext'
-import { toast } from '@renderer/components/ui/sonner'
 import type { GroupBy, TaskGroup } from '@renderer/lib/taskGrouping'
 import { liveSeconds } from '@renderer/lib/liveSeconds'
 import { useTimerStore } from '@renderer/stores/timerStore'
@@ -136,6 +136,7 @@ export function TaskTable({
   onToggleGroup,
   hideProject
 }: TaskTableProps): React.JSX.Element {
+  const { message } = App.useApp()
   const { token } = theme.useToken()
   const { mode } = useThemeSettings()
   const leakThresholds = useTimeLeakThresholds()
@@ -153,18 +154,21 @@ export function TaskTable({
     fontVariantNumeric: 'tabular-nums'
   }
 
-  const loadSubtasks = useCallback(async (parentIds: number[]): Promise<void> => {
-    if (parentIds.length === 0) return
-    try {
-      const entries = await Promise.all(
-        parentIds.map(async (id) => [id, await window.api.listSubtasks(id)] as const)
-      )
-      setSubtasks((current) => ({ ...current, ...Object.fromEntries(entries) }))
-    } catch (error) {
-      console.error('[TaskTable] subtarefas', error)
-      toast.error('Não foi possível carregar as subtarefas')
-    }
-  }, [])
+  const loadSubtasks = useCallback(
+    async (parentIds: number[]): Promise<void> => {
+      if (parentIds.length === 0) return
+      try {
+        const entries = await Promise.all(
+          parentIds.map(async (id) => [id, await window.api.listSubtasks(id)] as const)
+        )
+        setSubtasks((current) => ({ ...current, ...Object.fromEntries(entries) }))
+      } catch (error) {
+        console.error('[TaskTable] subtarefas', error)
+        message.error('Não foi possível carregar as subtarefas')
+      }
+    },
+    [message]
+  )
 
   useEffect(() => {
     void loadSubtasks([...expandedRef.current])
@@ -188,11 +192,11 @@ export function TaskTable({
   const run = async (action: () => Promise<unknown>, success: string): Promise<void> => {
     try {
       await action()
-      toast.success(success)
+      message.success(success)
       onChanged()
     } catch (error) {
       console.error('[TaskTable]', error)
-      toast.error(error instanceof Error ? error.message : 'Não foi possível concluir a ação')
+      message.error(error instanceof Error ? error.message : 'Não foi possível concluir a ação')
     }
   }
 

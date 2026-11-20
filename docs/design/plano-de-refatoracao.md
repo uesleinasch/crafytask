@@ -187,7 +187,7 @@ Sem mudança visível nas telas atuais, exceto a fonte.
 | Subtarefa             | Entrega                                                                                                                                                                      | Fecha     |
 | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
 | F9-a Remover o legado | Sai shadcn, Radix, `class-variance-authority`, `sonner`, `components/ui/`, `Timer.tsx` e `Versions.tsx`; nenhuma classe de cor do Tailwind e nenhum hex solto em componente. | F9.1–F9.6 |
-| F9-b Documentação     | `docs/ui/` reescrito para a interface nova, `docs/ui/14-design-tokens.md` passa a apontar para `theme/`, guias do site com capturas novas, notas de release.                 | F9.7      |
+| F9-b Documentação     | `docs/ui/` reescrito para a interface nova, `docs/ui/14-design-tokens.md` passa a apontar para `theme/`, guias do site sem texto do legado (não têm capturas), notas na próxima release.                 | F9.7      |
 
 ## Riscos
 

@@ -11,7 +11,7 @@ CrafyTask (antigo TickTask) is an Electron desktop app for personal task and tim
 O nome visível é **CrafyTask** (título das janelas, sidebar, bandeja, autostart, notificações,
 textos de Configurações, nome do atalho no menu do Linux e dos pacotes `crafytask-<versão>.*`). A
 logo é só texto, na fonte **Denk One** (`@fontsource/denk-one`, empacotada — o app é offline e a CSP
-não deixa buscar fonte remota), classes `font-brand` e `text-brand` (`#705EFF`) em `main.css`.
+não deixa buscar fonte remota), classe `font-brand` em `main.css` e cor `PALETTE[mode].brand` (`theme/tokens.ts`).
 
 Por compatibilidade com instalações e dados existentes, **não renomeie**: `name: ticktask` (define a
 pasta de dados `~/.config/ticktask` e o pacote deb que faz upgrade do antigo) e `productName: "TickTask
@@ -33,7 +33,7 @@ fala com o assistente, e o antigo `ticktask` confundia.
   interactive element, plus the component library, the real design tokens and a catalogue of
   inconsistencies. Start at `docs/ui/README.md`. **Read the relevant screen doc before touching a
   page** — it records behaviour that isn't obvious from the JSX (persisted preferences, why the float
-  appears, which colors disagree with which).
+  appears).
 - **Design review is mandatory.** Every change to a screen, visual component, theme, tokens or
   design docs loads the project skill `design-crafytask` before starting and runs the project
   agent `design-reviewer` (`.claude/agents/`) on the branch diff before opening the PR; fix what it
@@ -45,7 +45,7 @@ fala com o assistente, e o antigo `ticktask` confundia.
   audited by `npm run design:audit`. Before touching any screen, load the project skill
   `design-crafytask` (`.claude/skills/`); it lists the sources of truth and the checks.
 - **`docs/mcp-server.md`** — embedded MCP server: tool list and known limitations.
-- **`ui-ux/`** — original design system and mockups; see the caveat under **Conventions**.
+- **`ui-ux/`** — original (pre-antd) design system and mockups, superseded by `docs/design/`.
 
 ## Commands
 
@@ -104,7 +104,7 @@ renderer (React)  →  preload (window.api)  →  main (ipcMain.handle)  →  da
 
 - **src/main/** — Node side. `index.ts` (windows, lifecycle, ~130 `ipcMain.handle` registrations in `setupIpcHandlers()`, global shortcut, PDF export via `webContents.printToPDF`). `database.ts` owns the schema + every query as an exported function. `notion.ts` is the Notion client/sync. Around it sit the pure/leaf modules: `taskQuery.ts` (WHERE/ORDER builder), `tagQueries.ts` (tag CRUD/merge over an injected `SqliteLike`), `notesMarkdown.ts` (ProseMirror JSON ↔ Markdown), `notionBlocks.ts` (ProseMirror → Notion blocks), `notionFileUpload.ts` (image upload to Notion), `notesAssets.ts` (local image store + `ticktask-asset://` protocol), `localExport.ts` (task → Markdown file with YAML frontmatter + copied assets).
 - **src/preload/index.ts** — exposes a single `api` object on `window.api` via `contextBridge` (and `@electron-toolkit/preload`'s `electron`). Every method is a thin `ipcRenderer.invoke('domain:action', …)` wrapper. `index.d.ts` types `window.api` for the renderer.
-- **src/renderer/src/** — React 19 app. `main.tsx` → `App.tsx` (uses **`HashRouter`** — required because Electron loads the renderer over `file://`). Pages in `pages/`, reusable components in `components/` (shadcn/Radix primitives under `components/ui/`), data-fetching logic in `hooks/` (one hook per domain: `useTasks`, `useProjects`, `useLabels`, `useCalendar`, `useWeeklyReview`, `useTaskDetail`, `useTimer`, `useNotification`, plus the UI-only `useIncrementalList` — IntersectionObserver paging of an already-loaded array — and `usePersistedState` for view preferences), Zustand `stores/timerStore.ts` for the live timer.
+- **src/renderer/src/** — React 19 app. `main.tsx` → `App.tsx` (uses **`HashRouter`** — required because Electron loads the renderer over `file://`). Pages in `pages/`, reusable components in `components/` (antd is the component base; own pieces such as `chips/` and `shell/` sit on its tokens), data-fetching logic in `hooks/` (one hook per domain: `useTasks`, `useProjects`, `useLabels`, `useCalendar`, `useWeeklyReview`, `useTaskDetail`, `useTimer`, `useNotification`, plus the UI-only `useIncrementalList` — IntersectionObserver paging of an already-loaded array — and `usePersistedState` for view preferences), Zustand `stores/timerStore.ts` for the live timer.
 - **src/shared/types.ts** — the single source of truth for domain types (`Task`, `Project`, `Context`, `Area`, `Goal`, `TimeBlock`, `WeeklyReview`, the `Create*/Update*Input` variants, and the status/category/energy unions). Imported by all three contexts.
 
 ### IPC conventions
@@ -360,15 +360,13 @@ Defined in `electron.vite.config.ts` and the tsconfigs:
 
 ## Conventions
 
-- Pages: `*Page.tsx`; hooks: `useX.ts`; stores: `xStore.ts`. shadcn config in `components.json` (new-york style, lucide icons, `@renderer/components/ui`).
+- Pages: `*Page.tsx`; hooks: `useX.ts`; stores: `xStore.ts`. Components come from Ant Design; icons from `lucide-react`. shadcn, Radix and sonner were removed in F9-a: feedback goes through `App.useApp()` (`message`, `modal`).
 - No global app store beyond the timer — screen data is fetched on demand inside hooks via `window.api`; cross-screen freshness comes from the `tasks:refresh` event, not shared state.
 - Visual language: new UI work follows **`docs/design/guia-de-design.md`** and the prototype (skill
-  `design-crafytask`); no new hex or Tailwind color classes. **`docs/ui/14-design-tokens.md` describes
-  what the legacy code actually uses** — read it to understand a screen before migrating it, not as
-  the target.
-  `ui-ux/TickTask - Design System & Guia de Estilo.md` is the original intent and is partly stale
-  (it prescribes `rounded-xl` + shadows; the app moved to `rounded-sm` and dropped `shadow-sm`).
-  Gotcha: `--radius: 0.75rem` makes `rounded-sm` resolve to **8px**, not Tailwind's 2px.
+  `design-crafytask`); no hex or Tailwind color classes (Tailwind stays for layout only).
+  `docs/ui/14-design-tokens.md` maps where each token lives in `theme/`.
+  `ui-ux/TickTask - Design System & Guia de Estilo.md` is the pre-antd intent, superseded by
+  `docs/design/`.
   Fonts are Geist and Geist Mono from `@fontsource-variable/*` (`--font-sans`/`--font-mono`).
   `main.css` declares `@layer theme, base, antd, components, utilities` and `main.tsx` wraps the app
   in `StyleProvider layer`, so antd styles sit in their own layer above Tailwind's preflight.
@@ -379,8 +377,7 @@ Defined in `electron.vite.config.ts` and the tsconfigs:
   Aparência, the header's appearance menu and the command palette) and `ticktask:density` live
   in `localStorage`; the main window sends the theme to `app:setThemeSource` (`nativeTheme.themeSource`). Use `App.useApp()` for message/modal.
   Status, category and energy render through `components/chips/` (`StatusChip`, `CategoryChip`,
-  `EnergyMeter`: icon + text, never color alone). `CalendarPage` still keeps local color copies
-  that **disagree** — check `docs/ui/14-design-tokens.md` until it migrates. The dashboard
+  `EnergyMeter`: icon + text, never color alone). The dashboard
   (`components/dashboard/`) draws bars, columns and heatmaps in HTML with `CHART_COLORS`.
 - Carried over from `.github/copilot-instructions.md`: change only what the task requires, keep the
   code simple over clever, and reserve inline comments for genuinely non-obvious constraints.

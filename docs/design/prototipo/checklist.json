@@ -1656,7 +1656,7 @@
       "check": {
         "tipo": "ausente",
         "arquivos": "docs/ui/*.md",
-        "padrao": "bg-slate-900"
+        "padrao": "\\b(bg|text|border)-slate-\\d|<Toaster|@renderer/components/ui/"
       }
     }
   ]

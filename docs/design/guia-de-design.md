@@ -31,7 +31,7 @@ Cada princípio vem de uma conclusão da pesquisa ([lista completa](pesquisa/REA
 | Planejar libera a mente               | Processar o inbox pede próxima ação, contexto e quando em poucos cliques; o plano do dia tem lugar fixo na navegação | Masicampo e Baumeister 2011       |
 | O app é memória externa               | Inbox, executando e aguardando sempre visíveis (contadores na navegação e nas abas)                                  | Heylighen e Vidal 2008            |
 | Retomar precisa de pista              | Timers rodando no header em toda tela; a task mostra a última nota, a sessão e o terminal                            | Iqbal e Horvitz 2007              |
-| Notificação custa atenção             | Toast só para o que pede ação; sync e integrações ficam na barra de status, sem interromper                          | Stothart 2015; Mark 2008          |
+| Notificação custa atenção             | `message` só como retorno da ação de quem clicou; sync e integrações ficam na barra de status, sem interromper     | Stothart 2015; Mark 2008          |
 | Cor guia, cor sozinha exclui          | Status sempre com ícone e texto; vermelho só para erro, prazo vencido e urgente                                      | Wolfe e Horowitz 2004; WCAG 1.4.1 |
 | Teclado primeiro                      | `Ctrl+K` em todo lugar, captura global, atalhos visíveis nos tooltips                                                | Linear, Things, Akiflow           |
 
