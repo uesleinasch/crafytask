@@ -1760,7 +1760,7 @@ button.ct-health:focus-visible {
   gap: 4px;
   height: 64px;
   padding: 4px;
-  border: 1px solid;
+  border: 1px solid var(--ant-color-border);
   border-radius: 8px;
 }
 

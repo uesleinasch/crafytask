@@ -154,7 +154,8 @@ export function CommandPalette(): React.JSX.Element {
     for (const option of THEME_OPTIONS) {
       if (option.value === preference) continue
       const label = `Tema: ${option.label}`
-      if (!matchesQuery(`${label} aparência ${option.keywords}`, term)) continue
+      const searchText = `${label} tema ${option.label} aparência ${option.keywords}`
+      if (!matchesQuery(searchText, term)) continue
       list.push({
         id: `theme-${option.value}`,
         group: 'Ações',

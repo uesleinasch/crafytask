@@ -9,9 +9,9 @@ export interface ThemeOption {
 }
 
 export const THEME_OPTIONS: ThemeOption[] = [
-  { value: 'system', label: 'Seguir o sistema', icon: Monitor, keywords: 'automático sistema' },
-  { value: 'light', label: 'Claro', icon: Sun, keywords: 'light dia' },
-  { value: 'dark', label: 'Escuro', icon: Moon, keywords: 'dark noite' }
+  { value: 'system', label: 'Seguir o sistema', icon: Monitor, keywords: 'automático' },
+  { value: 'light', label: 'Claro', icon: Sun, keywords: 'modo claro light dia' },
+  { value: 'dark', label: 'Escuro', icon: Moon, keywords: 'modo escuro dark noite' }
 ]
 
 export function themeOption(value: ThemePreference): ThemeOption {

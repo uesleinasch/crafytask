@@ -16,7 +16,8 @@ interface ShellHeaderProps {
 
 function AppearanceMenu(): React.JSX.Element {
   const { preference, setPreference, density, setDensity } = useThemeSettings()
-  const CurrentIcon = themeOption(preference).icon
+  const current = themeOption(preference)
+  const CurrentIcon = current.icon
   const items: MenuProps['items'] = [
     {
       key: 'theme',
@@ -31,7 +32,12 @@ function AppearanceMenu(): React.JSX.Element {
     { type: 'divider' },
     {
       key: 'density',
-      icon: density === 'compact' ? <Rows3 size={16} /> : <Rows4 size={16} />,
+      icon:
+        density === 'compact' ? (
+          <Rows3 size={16} strokeWidth={1.75} aria-hidden />
+        ) : (
+          <Rows4 size={16} strokeWidth={1.75} aria-hidden />
+        ),
       label: density === 'compact' ? 'Densidade confortável' : 'Densidade compacta'
     }
   ]
@@ -48,7 +54,10 @@ function AppearanceMenu(): React.JSX.Element {
         }
       }}
     >
-      <Button aria-label="Aparência" icon={<CurrentIcon size={16} strokeWidth={1.75} />} />
+      <Button
+        aria-label={`Aparência (tema: ${current.label})`}
+        icon={<CurrentIcon size={16} strokeWidth={1.75} />}
+      />
     </Dropdown>
   )
 }

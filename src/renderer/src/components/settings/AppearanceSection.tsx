@@ -15,16 +15,13 @@ function previewStyles(preference: ThemePreference): { frame: CSSProperties; par
   if (preference === 'system') {
     const { light, dark } = PALETTE
     return {
-      frame: {
-        background: `linear-gradient(135deg, ${light.bg} 50%, ${dark.bg} 50%)`,
-        borderColor: light.border
-      },
-      parts: [light.sider, dark.surface, dark.primarySoft]
+      frame: { background: `linear-gradient(135deg, ${light.bg} 50%, ${dark.bg} 50%)` },
+      parts: Array(3).fill(`color-mix(in srgb, ${light.text3} 40%, transparent)`)
     }
   }
   const c = PALETTE[preference as ThemeMode]
   return {
-    frame: { background: c.bg, borderColor: c.border },
+    frame: { background: c.bg },
     parts: [c.sider, c.surface, c.primarySoft]
   }
 }
