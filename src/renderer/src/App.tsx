@@ -20,22 +20,8 @@ function App(): React.JSX.Element {
   return (
     <HashRouter>
       <Routes>
-        <Route
-          path="/float"
-          element={
-            <div className="w-full h-full p-1">
-              <FloatTimerPage />
-            </div>
-          }
-        />
-        <Route
-          path="/quick-capture"
-          element={
-            <div className="w-full h-full">
-              <QuickCapturePage />
-            </div>
-          }
-        />
+        <Route path="/float" element={<FloatTimerPage />} />
+        <Route path="/quick-capture" element={<QuickCapturePage />} />
         <Route element={<AppShell />}>
           <Route path="/" element={<TaskListPage />} />
           <Route path="/task/:id" element={<SingleTaskPage />} />

@@ -706,11 +706,93 @@ body:has(.ct-shell) {
   overflow: hidden;
 }
 
-/* Float Timer - Janela transparente */
-body.float-window,
-body.float-window #root {
+body.aux-window,
+body.aux-window #root {
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
   background: transparent !important;
-  min-height: auto;
+}
+
+.ct-aux-win {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--ant-color-border);
+  border-radius: 12px;
+  background: var(--ant-color-bg-elevated);
+  color: var(--ant-color-text);
+}
+
+.ct-aux-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  flex: none;
+  padding: 0 6px 0 14px;
+  -webkit-app-region: drag;
+}
+
+.ct-aux-rows {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.ct-aux-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 6px 0 12px;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+  -webkit-app-region: drag;
+}
+
+.ct-aux-row:last-child {
+  border-bottom: 0;
+}
+
+.ct-aux-foot {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 44px;
+  flex: none;
+  padding: 0 6px 0 12px;
+  border-top: 1px solid var(--ant-color-border-secondary);
+  background: var(--ant-color-bg-container);
+  -webkit-app-region: drag;
+}
+
+.ct-aux-head button,
+.ct-aux-row button,
+.ct-aux-foot button {
+  -webkit-app-region: no-drag;
+}
+
+.ct-aux-name {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--ant-color-text);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ct-aux-name:hover {
+  color: var(--ant-color-primary);
 }
 
 /* Editor de notas (Tiptap/ProseMirror) — restaura estilos achatados pelo Preflight
