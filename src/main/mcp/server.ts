@@ -34,7 +34,7 @@ export function createMcpServer(bulkThreshold: number, confirmStore: ConfirmStor
   registerNotesTools(server, ctx)
   registerHistoryTools(server)
   registerWorkSessionTools(server)
-  registerDrawingTools(server)
+  registerDrawingTools(server, ctx)
   registerNotebookTools(server, ctx)
   registerPlanningTools(server, ctx)
 

@@ -1,4 +1,5 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
+import type { DrawingRenderPayload, DrawingRenderResult } from '@shared/drawingRender'
 import type {
   GcalStatus,
   TerminalBuffer,
@@ -353,6 +354,10 @@ interface API {
   setAutoBackup: (enabled: boolean) => Promise<AppPrefsStatus>
   onBackupChanged: (callback: () => void) => () => void
   appLogRendererError: (report: RendererErrorReport) => Promise<void>
+  onDrawingRenderRequest: (
+    callback: (requestId: string, payload: DrawingRenderPayload) => void
+  ) => () => void
+  sendDrawingRenderResult: (requestId: string, result: DrawingRenderResult) => Promise<void>
   onRendererRecovered: (callback: () => void) => () => void
   onNavigate: (callback: (path: string) => void) => () => void
 

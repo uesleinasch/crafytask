@@ -13,6 +13,16 @@ import App from './App'
 import { ThemeProvider } from './theme/ThemeProvider'
 import { RegionBoundary } from './components/shell/RegionBoundary'
 import { toErrorReport } from './components/shell/regionError'
+import { renderDrawingSkeleton } from './lib/drawingRender'
+import { shouldBootstrapTimerStore } from './stores/timerWindow'
+
+if (shouldBootstrapTimerStore(window.location.hash)) {
+  window.api.onDrawingRenderRequest((requestId, payload) => {
+    void renderDrawingSkeleton(payload).then((result) =>
+      window.api.sendDrawingRenderResult(requestId, result)
+    )
+  })
+}
 
 const reportError =
   (kind: 'caught' | 'uncaught') =>

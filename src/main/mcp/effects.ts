@@ -1,10 +1,12 @@
 import type { BrowserWindow } from 'electron'
+import type { DrawingRenderPayload, DrawingRenderResult } from '@shared/drawingRender'
 import type { TaskStatus } from '@shared/types'
 
 interface WriteEffectDeps {
   getMainWindow: () => BrowserWindow | null
   autoSync: (id: number) => void
   changeStatus: (id: number, status: TaskStatus) => void
+  renderDrawing: (payload: DrawingRenderPayload) => Promise<DrawingRenderResult>
   syncTagChange: (taskIds: number[]) => void
   syncCalendar: (taskIds: number[]) => void
   disposeTerminals: (taskIds: number[]) => void
@@ -47,6 +49,13 @@ export function changeTaskStatus(id: number, status: TaskStatus): void {
   if (!deps) throw new Error('O CrafyTask ainda está iniciando; tente de novo em instantes.')
   deps.changeStatus(id, status)
   broadcastRefresh()
+}
+
+export function renderDrawing(payload: DrawingRenderPayload): Promise<DrawingRenderResult> {
+  if (!deps) {
+    return Promise.resolve({ ok: false, error: 'O CrafyTask ainda está iniciando.' })
+  }
+  return deps.renderDrawing(payload)
 }
 
 export function afterTagChange(taskIds: number[]): void {

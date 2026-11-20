@@ -1,3 +1,4 @@
+import type { DrawingRenderPayload, DrawingRenderResult } from '@shared/drawingRender'
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import type {
@@ -549,6 +550,19 @@ const api = {
   },
   appLogRendererError: (report: RendererErrorReport): Promise<void> =>
     ipcRenderer.invoke('app:logRendererError', report),
+  onDrawingRenderRequest: (
+    callback: (requestId: string, payload: DrawingRenderPayload) => void
+  ): (() => void) => {
+    const listener = (
+      _: Electron.IpcRendererEvent,
+      requestId: string,
+      payload: DrawingRenderPayload
+    ): void => callback(requestId, payload)
+    ipcRenderer.on('drawing:renderRequest', listener)
+    return () => ipcRenderer.removeListener('drawing:renderRequest', listener)
+  },
+  sendDrawingRenderResult: (requestId: string, result: DrawingRenderResult): Promise<void> =>
+    ipcRenderer.invoke('drawing:renderResult', requestId, result),
   onRendererRecovered: (callback: () => void): (() => void) => {
     const listener = (): void => callback()
     ipcRenderer.on('app:rendererRecovered', listener)
