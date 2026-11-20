@@ -18,7 +18,6 @@ import type { TableColumnsType } from 'antd'
 import dayjs, { type Dayjs } from 'dayjs'
 import {
   ArrowDown,
-  ArrowRight,
   ArrowUp,
   CalendarDays,
   CalendarRange,
@@ -28,7 +27,9 @@ import {
   Flag,
   FolderOpen,
   History,
+  Minus,
   ListOrdered,
+  Timer,
   TrendingUp,
   Zap
 } from 'lucide-react'
@@ -45,6 +46,7 @@ import type {
 import { CATEGORY_LABELS, ENERGY_LABELS } from '@shared/types'
 import { localDateString } from '@shared/dueState'
 import { Section } from '@renderer/components/shell/SectionHeader'
+import { RegionBoundary } from '@renderer/components/shell/RegionBoundary'
 import { CategoryChip } from '@renderer/components/chips/CategoryChip'
 import { EnergyMeter } from '@renderer/components/chips/EnergyMeter'
 import { ChartCard } from './ChartCard'
@@ -61,6 +63,7 @@ import {
   calendarWeeks,
   delta,
   formatCount,
+  formatDayLong,
   formatHM,
   hourGrid,
   percent,
@@ -71,13 +74,14 @@ import {
 
 const ICON = { size: 16, strokeWidth: 1.75, 'aria-hidden': true } as const
 const TIME_LEAK_NOTICE = 0.1
+const MAX_RANGE_DAYS = 365
 type Dimension = 'project' | 'area' | 'context'
 
 function Dot({ color }: { color: string | null }): React.JSX.Element {
   const { token } = theme.useToken()
   return (
     <span
-      className="ct-nb-dot"
+      className="ct-dot"
       aria-hidden
       style={
         color
@@ -116,15 +120,14 @@ function DeltaText({
 }): React.JSX.Element | null {
   const result = delta(current, previous, format)
   if (!result) return null
-  const Icon =
-    result.direction === 'up' ? ArrowUp : result.direction === 'down' ? ArrowDown : ArrowRight
+  const Icon = result.direction === 'up' ? ArrowUp : result.direction === 'down' ? ArrowDown : Minus
   return (
     <Typography.Text
       type="secondary"
       style={{ fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}
     >
       <Icon size={12} strokeWidth={1.75} aria-hidden />
-      {result.direction === 'same' ? 'igual' : result.text} vs {period} anteriores
+      {result.text} vs {period} anteriores
     </Typography.Text>
   )
 }
@@ -244,7 +247,10 @@ export function DashboardPeriod(): React.JSX.Element {
         format="DD/MM/YYYY"
         allowClear
         placeholder={['Início', 'Fim']}
-        disabledDate={(date) => date.isAfter(dayjs(), 'day')}
+        disabledDate={(date, info) =>
+          date.isAfter(dayjs(), 'day') ||
+          (!!info?.from && Math.abs(date.diff(info.from, 'day')) >= MAX_RANGE_DAYS)
+        }
         onChange={(value) => setRange(value && value[0] && value[1] ? [value[0], value[1]] : null)}
         style={{ width: screens.md ? 240 : '100%' }}
       />
@@ -319,12 +325,15 @@ export function DashboardPeriod(): React.JSX.Element {
 
   return (
     <Section
-      icon={TrendingUp}
+      icon={CalendarRange}
       title="No período"
       extra={projectName ? `${name} · ${projectName}` : name}
     >
       {filters}
-      <div style={{ opacity: busy ? 0.55 : 1, transition: 'opacity .16s' }} aria-busy={busy}>
+      <div
+        style={{ opacity: busy ? 0.55 : 1, transition: `opacity ${token.motionDurationMid}` }}
+        aria-busy={busy}
+      >
         {content}
       </div>
     </Section>
@@ -387,10 +396,10 @@ function PeriodContent({
       valueText: formatHM(row.seconds),
       shareText: share(row.seconds),
       open:
-        row.id === null
-          ? undefined
-          : kind === 'project'
-            ? () => onOpen(`/project/${row.id}`)
+        kind === 'project'
+          ? () => onOpen(row.id === null ? '/?projeto=sem' : `/project/${row.id}`)
+          : row.id === null
+            ? undefined
             : kind === 'area'
               ? () => onOpen('/horizons')
               : () => onOpen(`/?context=${row.id}`)
@@ -420,6 +429,12 @@ function PeriodContent({
     value: task.seconds,
     valueText: formatHM(task.seconds),
     shareText: share(task.seconds),
+    tooltip: (
+      <span>
+        <b style={mono}>{formatHM(task.seconds)}</b> · {share(task.seconds)} do total ·{' '}
+        {task.projectName ?? 'sem projeto'}
+      </span>
+    ),
     open: () => onOpen(`/task/${task.taskId}`)
   }))
 
@@ -467,7 +482,8 @@ function PeriodContent({
         <b style={mono}>{formatHM(row.seconds)}</b> · {row.taskCount}{' '}
         {row.taskCount === 1 ? 'tarefa' : 'tarefas'} · média {formatHM(row.avgSeconds)} por tarefa
       </span>
-    )
+    ),
+    open: () => onOpen(`/?energia=${row.energy}`)
   }))
 
   const avgSession = stats.avgSessionSeconds
@@ -477,7 +493,7 @@ function PeriodContent({
       style={{ height: '100%' }}
       title={
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-          <Clock {...ICON} />
+          <Timer {...ICON} />
           Tempo focado
         </span>
       }
@@ -551,13 +567,13 @@ function PeriodContent({
   return (
     <Row gutter={gutter}>
       <Col xs={24} xl={16}>
-        {hero}
+        <RegionBoundary region="gráfico Tempo focado">{hero}</RegionBoundary>
       </Col>
       <Col xs={24} xl={8}>
         <Row gutter={gutter} style={{ height: screens.xl ? '100%' : 'auto' }}>
           {tiles.map((tile) => (
             <Col key={tile.key} xs={24} sm={8} xl={24}>
-              {tile}
+              <RegionBoundary region={`número ${tile.key}`}>{tile}</RegionBoundary>
             </Col>
           ))}
         </Row>
@@ -595,6 +611,11 @@ function PeriodContent({
             data: stats.topTasks,
             columns: [
               { title: 'Tarefa', dataIndex: 'name', key: 'name' },
+              {
+                title: 'Projeto',
+                key: 'project',
+                render: (_, row) => row.projectName ?? '—'
+              },
               {
                 title: 'Tempo',
                 key: 'time',
@@ -687,7 +708,7 @@ function PeriodContent({
       <Col xs={24} xl={14}>
         <ChartCard<{ key: number; name: string; values: number[] }>
           title="Quando você foca"
-          icon={CalendarRange}
+          icon={Clock}
           extra={screens.sm ? <HeatLegend /> : null}
           table={{
             rowKey: 'key',
@@ -733,9 +754,7 @@ function PeriodContent({
                 title: 'Dia',
                 dataIndex: 'date',
                 key: 'date',
-                render: (date: string) => (
-                  <span style={mono}>{date.split('-').reverse().join('/')}</span>
-                )
+                render: (date: string) => <span style={mono}>{formatDayLong(date)}</span>
               },
               {
                 title: 'Tempo',

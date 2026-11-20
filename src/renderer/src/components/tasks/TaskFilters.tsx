@@ -1,7 +1,14 @@
 import { Badge, Button, Checkbox, Drawer, Flex, Grid, Popover, Select, Typography } from 'antd'
 import { ListFilter } from 'lucide-react'
 import { useState } from 'react'
-import type { Context, Project, Tag, TaskCategory } from '@shared/types'
+import {
+  ENERGY_LABELS,
+  type Context,
+  type EnergyLevel,
+  type Project,
+  type Tag,
+  type TaskCategory
+} from '@shared/types'
 import {
   EMPTY_TASK_FILTERS,
   STALE_DAYS_OPTIONS,
@@ -12,6 +19,7 @@ import { CATEGORY_CHIP_LABELS } from '@renderer/components/chips/categoryMeta'
 
 const NO_PROJECT = -1
 const CATEGORIES: TaskCategory[] = ['urgente', 'prioridade', 'normal', 'time_leak']
+const ENERGIES: EnergyLevel[] = ['alto', 'medio', 'baixo']
 const search = { optionFilterProp: 'label' }
 
 interface TaskFiltersProps {
@@ -51,6 +59,17 @@ export function TaskFilters({
         options={CATEGORIES.map((category) => ({
           value: category,
           label: CATEGORY_CHIP_LABELS[category]
+        }))}
+      />
+      <Select
+        aria-label="Energia"
+        placeholder="Energia"
+        allowClear
+        value={value.energy ?? undefined}
+        onChange={(energy: EnergyLevel | undefined) => onChange({ energy: energy ?? null })}
+        options={ENERGIES.map((energy) => ({
+          value: energy,
+          label: `Energia ${ENERGY_LABELS[energy].toLowerCase()}`
         }))}
       />
       <Select

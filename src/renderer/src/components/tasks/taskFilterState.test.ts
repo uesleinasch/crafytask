@@ -9,9 +9,10 @@ describe('contagem de filtros ativos', () => {
         ...EMPTY_TASK_FILTERS,
         category: 'urgente',
         projectId: -1,
+        energy: 'alto',
         sort: 'due_date'
       })
-    ).toBe(3)
+    ).toBe(4)
   })
 })
 
@@ -37,6 +38,12 @@ describe('listIntentFromSearch', () => {
       filters: { ...EMPTY_TASK_FILTERS, category: 'time_leak' }
     })
     expect(listIntentFromSearch('?categoria=xyz')).toBeNull()
+  })
+
+  it('lê energia e "sem projeto"', () => {
+    expect(listIntentFromSearch('?energia=alto')?.filters.energy).toBe('alto')
+    expect(listIntentFromSearch('?energia=xyz')).toBeNull()
+    expect(listIntentFromSearch('?projeto=sem')?.filters.projectId).toBe(-1)
   })
 
   it('prazo vencido abre em Todas', () => {

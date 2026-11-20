@@ -5,6 +5,7 @@ import {
   HEAT_HOURS,
   WEEKDAYS,
   WEEK_ORDER,
+  formatDayLong,
   formatHM,
   heatLevel,
   niceMaxHours,
@@ -157,16 +158,6 @@ export function HourHeatmap({ grid }: { grid: number[][] }): React.JSX.Element {
   )
 }
 
-const dayTitle = (date: string): string => {
-  const [y, m, d] = date.split('-').map(Number)
-  return new Date(y, m - 1, d).toLocaleDateString('pt-BR', {
-    weekday: 'short',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  })
-}
-
 export function CalendarHeat({
   weeks,
   today
@@ -196,19 +187,18 @@ export function CalendarHeat({
                   trigger={['hover', 'focus']}
                   title={
                     <span>
-                      <Figure>{formatHM(day.seconds)}</Figure> · {dayTitle(day.date)}
+                      <Figure>{formatHM(day.seconds)}</Figure> · {formatDayLong(day.date)}
                     </span>
                   }
                 >
                   <span
                     className="ct-heatcell"
                     tabIndex={0}
-                    aria-label={`${dayTitle(day.date)}: ${formatHM(day.seconds)}`}
+                    aria-label={`${formatDayLong(day.date)}: ${formatHM(day.seconds)}`}
                     style={{
                       background: colors.sequential[heatLevel(day.seconds, max)],
-                      outline:
-                        day.date === today ? `1px solid ${token.colorTextSecondary}` : undefined,
-                      outlineOffset: 1
+                      boxShadow:
+                        day.date === today ? `0 0 0 1px ${token.colorTextSecondary}` : undefined
                     }}
                   />
                 </Tooltip>

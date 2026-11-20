@@ -27,7 +27,7 @@ Estado atual, sem filtro (`DashboardNow.tsx`). Recarrega com o evento `tasks:ref
 `src/main/statsQueries.ts`). Também recarrega com `tasks:refresh`.
 
 - **Filtros** numa linha, valendo para tudo abaixo: `Segmented` 7 dias / 30 dias / 90 dias /
-  12 meses (padrão 30), `RangePicker` (sem datas futuras) e `Select` de projeto (ativos e
+  12 meses (padrão 30), `RangePicker` (sem datas futuras, até 365 dias) e `Select` de projeto (ativos e
   someday). O cabeçalho da seção mostra o período e o projeto. Enquanto recarrega, o conteúdo fica
   a 55% de opacidade (`aria-busy`), sem skeleton.
 - **Exportar PDF** no fim da linha: `report:weeklyPDF` com o período, nome sugerido
@@ -39,14 +39,15 @@ Estado atual, sem filtro (`DashboardNow.tsx`). Recarrega com o evento `tasks:ref
 - **Três números** ao lado: tarefas concluídas (pela data da mudança para Finalizada), sessões de
   foco e média por sessão, cada um com a diferença.
 - **Para onde foi o tempo**, com `Segmented` Projeto / Área / Contexto no cabeçalho (troca a
-  visão, não filtra). Projeto abre o projeto; área abre Horizontes; contexto abre a lista com o
-  contexto. "Sem projeto/área/contexto" não abre nada. Tempo de uma tarefa com vários contextos
-  conta em cada um.
-- **Tarefas com mais tempo** (oito, ponto do projeto), abrindo a tarefa.
+  visão, não filtra). Projeto abre o projeto e "Sem projeto" abre a lista com `?projeto=sem`; área
+  abre Horizontes; contexto abre a lista com o contexto. "Sem área" e "Sem contexto" não abrem
+  nada. Tempo de uma tarefa com vários contextos conta em cada um.
+- **Tarefas com mais tempo** (oito, ponto do projeto e o nome dele no tooltip e na tabela),
+  abrindo a tarefa.
 - **Por categoria:** chip, "N tarefas" e tempo; abre a lista filtrada pela categoria
   (`?categoria=`). Com time leak acima de 10% do tempo, uma frase avisa, sem culpa.
-- **Por nível de energia:** medidor, média por tarefa e tempo. Sem destino: a lista não filtra
-  por energia.
+- **Por nível de energia:** medidor, média por tarefa e tempo; abre a lista filtrada pela energia
+  (`?energia=`).
 - **Quando você foca:** heatmap dia da semana × hora (6h–23h, segunda primeiro), escala
   sequencial.
 - **Constância:** heatmap de dias do período em semanas (segunda a domingo), com rótulo de mês;

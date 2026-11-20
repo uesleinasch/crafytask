@@ -34,6 +34,15 @@ function parseDay(value: string): Date {
   return new Date(y, m - 1, d)
 }
 
+export function formatDayLong(date: string): string {
+  return parseDay(date).toLocaleDateString('pt-BR', {
+    weekday: 'short',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  })
+}
+
 export function presetRange(days: number, today: Date): { start: string; end: string } {
   const end = new Date(today.getFullYear(), today.getMonth(), today.getDate())
   const start = new Date(end.getFullYear(), end.getMonth(), end.getDate() - (days - 1))

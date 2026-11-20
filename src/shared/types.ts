@@ -566,6 +566,7 @@ export interface StatsTimeRow {
 export interface StatsTaskRow {
   taskId: number
   name: string
+  projectName: string | null
   projectColor: string | null
   seconds: number
 }

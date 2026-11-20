@@ -15,6 +15,7 @@ import type { SqliteLike, SqliteParam } from './tagQueries'
 const HOUR_MS = 60 * 60 * 1000
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 const TOP_TASKS = 8
+const MAX_PERIOD_DAYS = 366
 const CATEGORIES: TaskCategory[] = ['urgente', 'prioridade', 'normal', 'time_leak']
 const ENERGIES: EnergyLevel[] = ['alto', 'medio', 'baixo']
 
@@ -95,6 +96,8 @@ export function periodStatsQuery(db: SqliteLike, period: StatsPeriod, now: Date)
   const start = parseDate(period.start)
   const endExclusive = addDays(parseDate(period.end), 1)
   if (endExclusive <= start) throw new Error('O fim do período precisa ser depois do início.')
+  if (daysBetween(start, endExclusive) > MAX_PERIOD_DAYS)
+    throw new Error('O período vai até 366 dias.')
   const days = daysBetween(start, endExclusive)
   const prevStart = addDays(start, -days)
   const nowMs = now.getTime()
@@ -300,6 +303,7 @@ export function periodStatsQuery(db: SqliteLike, period: StatsPeriod, now: Date)
       .map(([taskId, t]) => ({
         taskId,
         name: t.name,
+        projectName: t.projectId === null ? null : (projectById.get(t.projectId)?.name ?? null),
         projectColor: t.projectId === null ? null : (projectById.get(t.projectId)?.color ?? null),
         seconds: round(t.seconds)
       })),

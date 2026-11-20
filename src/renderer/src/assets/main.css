@@ -1545,6 +1545,7 @@ button.ct-health:focus-visible {
 
 .ct-colchart-y {
   font-family: var(--ant-font-family-code);
+  font-variant-numeric: tabular-nums;
   height: 180px;
   display: flex;
   flex-direction: column;
@@ -1669,4 +1670,12 @@ button.ct-health:focus-visible {
   color: var(--ant-color-text-tertiary);
   padding-right: 4px;
   line-height: 13px;
+}
+
+.ct-dot {
+  display: inline-block;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
 }
