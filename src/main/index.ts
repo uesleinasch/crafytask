@@ -729,6 +729,36 @@ function revealMainWindow(route?: string): void {
   hideFloatWindow()
 }
 
+function navigateMainWindow(route: string): void {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    revealMainWindow(route)
+    return
+  }
+  revealMainWindow()
+  mainWindow.webContents.send('app:navigate', route)
+}
+
+// O Electron não segura a Notification: sem esta referência ela pode ser coletada antes do clique.
+const liveNotifications = new Set<Notification>()
+
+function showNotification(title: string, body: string, taskId?: number): void {
+  if (!Notification.isSupported()) {
+    throw new Error('Este sistema não aceita notificações.')
+  }
+  const notification = new Notification({ title, body })
+  liveNotifications.add(notification)
+  const release = (): void => {
+    liveNotifications.delete(notification)
+  }
+  notification.on('close', release)
+  notification.on('failed', release)
+  notification.on('click', () => {
+    release()
+    if (taskId !== undefined) navigateMainWindow(`/task/${taskId}`)
+  })
+  notification.show()
+}
+
 // Em AppImage o process.execPath aponta para o volume temporário montado, que some quando este
 // processo sai; APPIMAGE guarda o caminho real do arquivo distribuído.
 function relaunchApp(): void {
@@ -1125,7 +1155,7 @@ function setupIpcHandlers(): void {
 
   // Notifications
   ipcMain.handle('notification:show', (_, title: string, body: string) => {
-    new Notification({ title, body }).show()
+    if (Notification.isSupported()) showNotification(title, body)
   })
 
   // Float window controls
@@ -1145,13 +1175,7 @@ function setupIpcHandlers(): void {
   })
   ipcMain.handle('float:openTask', (_, taskId: number) => {
     if (!Number.isInteger(taskId) || taskId <= 0) return
-    const path = `/task/${taskId}`
-    if (!mainWindow || mainWindow.isDestroyed()) {
-      revealMainWindow(path)
-      return
-    }
-    revealMainWindow()
-    mainWindow.webContents.send('app:navigate', path)
+    navigateMainWindow(`/task/${taskId}`)
   })
   ipcMain.handle('float:stopAll', async () => {
     const ids = currentTimers.map((t) => t.taskId)
@@ -1641,6 +1665,8 @@ app.whenReady().then(() => {
     syncCalendar: (ids) => pushToGoogle(ids),
     disposeTerminals: (ids) => disposeTerminalsForTasks(ids),
     disposeProjectTerminals: (ids) => disposeTerminalsForProjects(ids),
+    showNotification,
+    navigate: navigateMainWindow,
     recordHistory: (taskId, summary) => {
       addTaskHistory({ task_id: taskId, summary, kind: 'operation' }, 'mcp')
     }

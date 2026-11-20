@@ -11,4 +11,6 @@ Ao trabalhar numa task:
 
 Task com subtarefas: abra a sessão na subtarefa em andamento, uma por vez. Conclua cada subtarefa no momento em que ela fecha, não em lote no fim. A task pai fica em executando enquanto houver subtarefa andando e fecha sozinha quando a última subtarefa é concluída.
 
+Use notify ao terminar um trabalho longo ou quando precisar de uma decisão do usuário, nunca para progresso. Use open_in_app para levar o usuário à task, projeto ou página em que você mexeu.
+
 Operações destrutivas ou em massa devolvem needs_confirmation com um preview e um confirm_token: mostre o preview ao usuário e só então repita a chamada com o token.`
