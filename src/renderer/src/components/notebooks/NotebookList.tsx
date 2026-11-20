@@ -1,124 +1,205 @@
-import { BookOpen, Download, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
+import { useRef, useState, type ReactNode } from 'react'
+import {
+  Button,
+  Card,
+  Divider,
+  Dropdown,
+  Menu,
+  Select,
+  theme,
+  Tooltip,
+  Typography,
+  type MenuProps
+} from 'antd'
+import { BookOpen, Ellipsis, Plus, RefreshCw } from 'lucide-react'
 import type { Notebook } from '@shared/types'
-import { cn } from '@renderer/lib/utils'
-import { GroupDragHandle, SortableGroups } from '@renderer/components/SortableGroups'
 
-interface NotebookListProps {
+const ICON = { size: 16, strokeWidth: 1.75, 'aria-hidden': true } as const
+
+interface NotebookNavProps {
   notebooks: Notebook[]
   selectedId: number | null
   onSelect: (id: number) => void
   onCreate: () => void
-  onEdit: (notebook: Notebook) => void
-  onDelete: (notebook: Notebook) => void
-  onSync: (notebook: Notebook) => void
+  menuFor: (notebook: Notebook) => MenuProps
+}
+
+interface NotebookListProps extends NotebookNavProps {
+  loaded: boolean
   syncingId: number | null
-  onExport: (notebook: Notebook) => void
-  onReorder: (activeKey: string, overKey: string) => void
+  search: ReactNode
+  onReorder: (id: number, targetId: number) => void
 }
 
 export function NotebookList({
   notebooks,
+  loaded,
+  selectedId,
+  syncingId,
+  search,
+  onSelect,
+  onCreate,
+  menuFor,
+  onReorder
+}: NotebookListProps): React.JSX.Element {
+  const { token } = theme.useToken()
+  const dragging = useRef<number | null>(null)
+  const [over, setOver] = useState<number | null>(null)
+
+  const items: MenuProps['items'] = notebooks.map((notebook) => ({
+    key: String(notebook.id),
+    icon: <BookOpen {...ICON} style={{ color: notebook.color }} />,
+    label: (
+      <Dropdown menu={menuFor(notebook)} trigger={['contextMenu']}>
+        <div
+          className={[
+            'ct-nb-node',
+            notebook.id === selectedId ? 'on' : '',
+            over === notebook.id ? 'over' : ''
+          ].join(' ')}
+          draggable
+          onDragStart={(event) => {
+            dragging.current = notebook.id
+            event.dataTransfer.effectAllowed = 'move'
+            event.dataTransfer.setData('text/plain', notebook.name)
+          }}
+          onDragEnd={() => {
+            dragging.current = null
+            setOver(null)
+          }}
+          onDragOver={(event) => {
+            if (dragging.current === null || dragging.current === notebook.id) return
+            event.preventDefault()
+            setOver(notebook.id)
+          }}
+          onDragLeave={() => setOver((current) => (current === notebook.id ? null : current))}
+          onDrop={(event) => {
+            event.preventDefault()
+            const id = dragging.current
+            dragging.current = null
+            setOver(null)
+            if (id !== null && id !== notebook.id) onReorder(id, notebook.id)
+          }}
+        >
+          <span className="ct-ellipsis" style={{ flex: 1 }}>
+            {notebook.name}
+          </span>
+          {syncingId === notebook.id && (
+            <Tooltip title="Sincronizando com o Notion">
+              <RefreshCw
+                {...ICON}
+                aria-label="Sincronizando com o Notion"
+                aria-hidden={false}
+                className="animate-spin motion-reduce:animate-none"
+                style={{ color: token.colorTextTertiary, flex: 'none' }}
+              />
+            </Tooltip>
+          )}
+          <span className="ct-nb-act">
+            <Dropdown menu={menuFor(notebook)} trigger={['click']} placement="bottomRight">
+              <Button
+                size="small"
+                type="text"
+                aria-label={`Ações de ${notebook.name}`}
+                icon={<Ellipsis {...ICON} />}
+                onClick={(event) => event.stopPropagation()}
+              />
+            </Dropdown>
+          </span>
+        </div>
+      </Dropdown>
+    )
+  }))
+
+  return (
+    <Card
+      size="small"
+      className="ct-nb-side"
+      styles={{
+        body: { padding: 8, display: 'flex', flexDirection: 'column', gap: 8, height: '100%' }
+      }}
+    >
+      {search}
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+        <div className="ct-nb-eyebrow" style={{ padding: '8px 8px 4px' }}>
+          Cadernos
+        </div>
+        {notebooks.length > 0 ? (
+          <Menu
+            mode="inline"
+            selectedKeys={selectedId === null ? [] : [String(selectedId)]}
+            items={items}
+            onClick={({ key }) => onSelect(Number(key))}
+            style={{ borderInlineEnd: 0, background: 'transparent' }}
+          />
+        ) : (
+          <Typography.Text
+            type="secondary"
+            style={{ display: 'block', padding: '4px 8px', fontSize: 13 }}
+          >
+            {loaded ? 'Nenhum caderno ainda.' : 'Carregando…'}
+          </Typography.Text>
+        )}
+      </div>
+      <Button
+        type="text"
+        block
+        icon={<Plus {...ICON} />}
+        style={{ justifyContent: 'flex-start' }}
+        onClick={onCreate}
+      >
+        Novo caderno
+      </Button>
+    </Card>
+  )
+}
+
+export function NotebookSelect({
+  notebooks,
   selectedId,
   onSelect,
   onCreate,
-  onEdit,
-  onDelete,
-  onSync,
-  syncingId,
-  onExport,
-  onReorder
-}: NotebookListProps): React.JSX.Element {
+  menuFor
+}: NotebookNavProps): React.JSX.Element {
+  const selected = notebooks.find((n) => n.id === selectedId) ?? null
   return (
-    <aside className="w-60 shrink-0 flex flex-col bg-white border-r border-slate-200 min-h-0">
-      <div className="px-4 py-3 border-b border-slate-100 text-xs font-semibold uppercase tracking-widest text-slate-400">
-        Cadernos
-      </div>
-      <div className="flex-1 overflow-y-auto py-2" style={{ scrollbarWidth: 'thin' }}>
-        {notebooks.length === 0 && (
-          <p className="px-4 py-6 text-sm text-slate-400">Nenhum caderno ainda.</p>
+    <>
+      <Select
+        aria-label="Caderno"
+        placeholder="Escolha um caderno"
+        value={selected?.id}
+        onChange={onSelect}
+        style={{ flex: '1 1 180px', minWidth: 0 }}
+        options={notebooks.map((notebook) => ({
+          value: notebook.id,
+          label: (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+              <BookOpen {...ICON} style={{ color: notebook.color, flex: 'none' }} />
+              <span className="ct-ellipsis">{notebook.name}</span>
+            </span>
+          )
+        }))}
+        popupRender={(menu) => (
+          <>
+            {menu}
+            <Divider style={{ margin: '4px 0' }} />
+            <Button
+              type="text"
+              block
+              icon={<Plus {...ICON} />}
+              style={{ justifyContent: 'flex-start' }}
+              onClick={onCreate}
+            >
+              Novo caderno
+            </Button>
+          </>
         )}
-        <SortableGroups
-          keys={notebooks.map((n) => String(n.id))}
-          direction="vertical"
-          onReorder={onReorder}
-        >
-          {notebooks.map((notebook) => (
-            <SortableGroups.Item key={notebook.id} id={String(notebook.id)}>
-              <div
-                onClick={() => onSelect(notebook.id)}
-                className={cn(
-                  'group flex items-center gap-2 mx-2 px-2 py-2 rounded-sm cursor-pointer transition-colors',
-                  notebook.id === selectedId
-                    ? 'bg-slate-100 text-slate-900'
-                    : 'text-slate-600 hover:bg-slate-50'
-                )}
-              >
-                <GroupDragHandle className="opacity-0 group-hover:opacity-100" />
-                <BookOpen size={16} className="shrink-0" style={{ color: notebook.color }} />
-                <span className="flex-1 min-w-0 truncate text-sm font-medium">{notebook.name}</span>
-                <div
-                  className={cn(
-                    'flex items-center transition-opacity',
-                    syncingId === notebook.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                  )}
-                >
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onSync(notebook)
-                    }}
-                    disabled={syncingId !== null}
-                    title="Sincronizar o caderno inteiro com o Notion"
-                    className="p-1 text-slate-400 hover:text-emerald-600 rounded-md disabled:opacity-50"
-                  >
-                    <RefreshCw
-                      size={13}
-                      className={syncingId === notebook.id ? 'animate-spin' : ''}
-                    />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onExport(notebook)
-                    }}
-                    title="Exportar o caderno em Markdown"
-                    className="p-1 text-slate-400 hover:text-slate-700 rounded-md"
-                  >
-                    <Download size={13} />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onEdit(notebook)
-                    }}
-                    title="Renomear caderno"
-                    className="p-1 text-slate-400 hover:text-slate-700 rounded-md"
-                  >
-                    <Pencil size={13} />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onDelete(notebook)
-                    }}
-                    title="Excluir caderno"
-                    className="p-1 text-slate-400 hover:text-red-600 rounded-md"
-                  >
-                    <Trash2 size={13} />
-                  </button>
-                </div>
-              </div>
-            </SortableGroups.Item>
-          ))}
-        </SortableGroups>
-      </div>
-      <button
-        onClick={onCreate}
-        className="flex items-center gap-2 px-4 py-3 border-t border-slate-100 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
-      >
-        <Plus size={16} />
-        Novo caderno
-      </button>
-    </aside>
+      />
+      {selected && (
+        <Dropdown menu={menuFor(selected)} trigger={['click']} placement="bottomRight">
+          <Button aria-label={`Ações de ${selected.name}`} icon={<Ellipsis {...ICON} />} />
+        </Dropdown>
+      )}
+    </>
   )
 }

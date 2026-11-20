@@ -1350,3 +1350,109 @@ button.ct-health:focus-visible {
   text-decoration: line-through;
   opacity: 0.6;
 }
+
+.ct-nb {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 24px;
+}
+
+.ct-nb-narrow {
+  padding: 12px;
+}
+
+.ct-nb-cols {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 16px;
+}
+
+.ct-nb-side {
+  width: 248px;
+  flex: none;
+  height: 100%;
+}
+
+.ct-nb-main {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ct-nb-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 16px;
+  padding-top: 12px;
+}
+
+.ct-nb-tree {
+  width: 280px;
+  flex: none;
+  height: 100%;
+}
+
+.ct-nb-node {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+  min-height: 24px;
+  border-radius: 4px;
+}
+
+.ct-nb-act {
+  display: inline-flex;
+  flex: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.ct-nb-node:hover .ct-nb-act,
+.ct-nb-node:focus-within .ct-nb-act,
+.ct-nb-node.on .ct-nb-act {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .ct-nb-act {
+    opacity: 1;
+  }
+}
+
+.ct-nb-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 4px;
+}
+
+.ct-nb-tab.over,
+.ct-nb-node.over {
+  outline: 2px dashed var(--ant-color-primary);
+  outline-offset: 4px;
+}
+
+.ct-nb-dot {
+  display: inline-block;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.ct-nb-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ant-color-text-tertiary);
+}

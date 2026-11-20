@@ -21,12 +21,8 @@ esquema `ticktask-asset://`.
 
 ### Modos de leitura
 
-No cabeçalho do painel:
-
-- **Zen** — uma coluna de leitura centralizada, sem distrações.
-- **Maximizar** — o editor ocupa a tela inteira.
-
-`Esc` volta ao modo normal. A largura do painel pode ser ajustada arrastando a borda.
+O botão **Modo foco**, ao lado das abas, deixa só o editor na tela, com o texto numa coluna de
+leitura. `Esc` volta ao modo normal.
 
 ### Salvar fora do app
 

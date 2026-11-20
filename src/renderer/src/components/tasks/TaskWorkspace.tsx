@@ -14,7 +14,8 @@ const ICON = { size: 16, strokeWidth: 1.75, 'aria-hidden': true } as const
 
 interface TaskWorkspaceProps {
   owner: NotesOwner
-  taskName: string
+  title: string
+  heading?: ReactNode
   fill: boolean
   showLabels: boolean
   tab: NotesTab
@@ -22,10 +23,12 @@ interface TaskWorkspaceProps {
   focus: boolean
   onFocusChange: (focus: boolean) => void
   notesActions: ReactNode
-  displaySeconds: number
-  isRunning: boolean
-  startBlocked: boolean
-  onToggleTimer: () => void
+  timer?: {
+    displaySeconds: number
+    isRunning: boolean
+    startBlocked: boolean
+    onToggle: () => void
+  }
   initialContent: JSONContent
   editorRef: Ref<TaskNotesEditorHandle>
   onChange: () => void
@@ -39,7 +42,8 @@ interface TaskWorkspaceProps {
 
 export function TaskWorkspace({
   owner,
-  taskName,
+  title,
+  heading,
   fill,
   showLabels,
   tab,
@@ -47,10 +51,7 @@ export function TaskWorkspace({
   focus,
   onFocusChange,
   notesActions,
-  displaySeconds,
-  isRunning,
-  startBlocked,
-  onToggleTimer,
+  timer,
   initialContent,
   editorRef,
   onChange,
@@ -116,7 +117,7 @@ export function TaskWorkspace({
         {showLabels ? 'Sair' : null}
       </Button>
       <span
-        title={taskName}
+        title={title}
         style={{
           flex: 1,
           minWidth: 0,
@@ -126,21 +127,25 @@ export function TaskWorkspace({
           whiteSpace: 'nowrap'
         }}
       >
-        {taskName}
+        {title}
       </span>
-      {isRunning && <LiveDot label="Timer rodando" />}
-      <span style={{ fontFamily: token.fontFamilyCode, fontVariantNumeric: 'tabular-nums' }}>
-        {formatTime(displaySeconds)}
-      </span>
-      <Tooltip title={isRunning ? 'Pausar' : 'Iniciar'}>
-        <Button
-          type="text"
-          disabled={(readOnly && !isRunning) || startBlocked}
-          aria-label={isRunning ? 'Pausar' : 'Iniciar'}
-          icon={isRunning ? <Pause {...ICON} /> : <Play {...ICON} />}
-          onClick={onToggleTimer}
-        />
-      </Tooltip>
+      {timer && (
+        <>
+          {timer.isRunning && <LiveDot label="Timer rodando" />}
+          <span style={{ fontFamily: token.fontFamilyCode, fontVariantNumeric: 'tabular-nums' }}>
+            {formatTime(timer.displaySeconds)}
+          </span>
+          <Tooltip title={timer.isRunning ? 'Pausar' : 'Iniciar'}>
+            <Button
+              type="text"
+              disabled={(readOnly && !timer.isRunning) || timer.startBlocked}
+              aria-label={timer.isRunning ? 'Pausar' : 'Iniciar'}
+              icon={timer.isRunning ? <Pause {...ICON} /> : <Play {...ICON} />}
+              onClick={timer.onToggle}
+            />
+          </Tooltip>
+        </>
+      )}
       <Segmented
         size="small"
         value={tab}
@@ -180,9 +185,14 @@ export function TaskWorkspace({
     <FocusOverlay
       open={focus}
       onExit={exit}
-      label={`Modo foco: ${taskName}`}
+      label={`Modo foco: ${title}`}
       bar={bar}
-      header={header}
+      header={
+        <>
+          {heading}
+          {header}
+        </>
+      }
       style={{
         background: token.colorBgContainer,
         border: `1px solid ${token.colorBorderSecondary}`,

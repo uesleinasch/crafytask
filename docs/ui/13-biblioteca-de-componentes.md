@@ -118,7 +118,7 @@ um terceiro.
 
 | Arquivo | Papel |
 | --- | --- |
-| `NotesPanel` | casca do painel direito: abas Notas/Desenho, ações, botões zen/maximizar; carrega o Excalidraw com `React.lazy` |
+| `NotesBody` (`NotesPanel.tsx`) | corpo das abas Notas/Desenho, cada editor num `RegionBoundary`; carrega o Excalidraw com `React.lazy`. A casca (abas, ações, Modo foco) é o `TaskWorkspace`, usado pela tarefa e pela página de caderno |
 | `TaskNotesEditor` | monta o Tiptap; auto-save com debounce de 400ms; expõe `flushSave()` via ref |
 | `extensions.ts` | conjunto de extensões: StarterKit, Highlight, TextStyle+FontSize, TaskList/TaskItem aninhável, Placeholder, TableKit redimensionável, SlashCommand, Mention, Image com `assetId`, FileHandler |
 | `BubbleToolbar` | barra flutuante na seleção: negrito, itálico, tachado, código, marca-texto, tamanho da fonte (12–32px), link |
@@ -126,12 +126,11 @@ um terceiro.
 | `mention/mentionConfig` + `MentionList` | menções `@` a tarefas, projetos e contextos, com o tipo à direita de cada item |
 | `TableContextMenu` | menu de botão direito: 10 operações de tabela dentro dela, "Inserir tabela" fora |
 | `NotesActions` | botões "Salvar local" e "Salvar e sincronizar" |
-| `FocusOverlay` | modo foco do detalhe da tarefa: camada fixa sobre o shell com barra de 48px (sair, nome, cronômetro, iniciar/pausar, Notas/Desenho, ações da nota); `Esc` sai |
+| `FocusOverlay` | modo foco do `TaskWorkspace` (tarefa e página de caderno): camada fixa sobre o shell com barra de 48px (sair, nome, cronômetro e iniciar/pausar só na tarefa, Notas/Desenho, ações da nota); `Esc` sai |
 | `TaskDrawingEditor` | Excalidraw em `pt-BR`; auto-save com debounce de 800ms; grava JSON + PNG derivado |
 | `imageUpload` | seleção/colagem de imagem → `notesAssets` → `ticktask-asset://` |
 | `suggestionPopup` | infraestrutura compartilhada dos popups de `/` e `@`; marca `[data-suggestion-popup]` para que o `Esc` da página não interfira; o popup roda numa raiz React própria e é anexado ao `[data-popup-root]` (o `Layout` do `AppShell`) para herdar as variáveis CSS do antd |
 | `notesFormat.ts` | ProseMirror ↔ formato legado do Editor.js (unitário) |
-| `notesLayout.ts` | modos do editor dos cadernos (`NotesViewMode`) e largura padrão do zen |
 | `drawingAssetPath.ts` | resolve as fontes do Excalidraw pelo esquema `ticktask-asset://` (host `excalidraw`) |
 
 ---

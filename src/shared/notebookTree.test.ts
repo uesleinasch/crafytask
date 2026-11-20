@@ -6,8 +6,10 @@ import {
   indentPlacement,
   outdentPlacement,
   pageDepth,
+  shiftPlacement,
   subtreeHeight,
   subtreeIds,
+  treeDropPlacement,
   type PageNode
 } from './notebookTree'
 
@@ -94,5 +96,38 @@ describe('recuar e avançar', () => {
     expect(outdentPlacement(TREE, 3)).toEqual({ parent_page_id: 1, index: 1 })
     expect(outdentPlacement(TREE, 2)).toEqual({ parent_page_id: null, index: 1 })
     expect(outdentPlacement(TREE, 1)).toBeNull()
+  })
+})
+
+describe('treeDropPlacement', () => {
+  it('antes e depois de uma irmã, sem contar a página arrastada', () => {
+    expect(treeDropPlacement(TREE, 6, 5, 'before')).toEqual({ parent_page_id: null, index: 1 })
+    expect(treeDropPlacement(TREE, 1, 5, 'after')).toEqual({ parent_page_id: null, index: 1 })
+    expect(treeDropPlacement(TREE, 6, 2, 'after')).toEqual({ parent_page_id: 1, index: 1 })
+  })
+
+  it('dentro vira o último filho', () => {
+    expect(treeDropPlacement(TREE, 6, 1, 'inside')).toEqual({ parent_page_id: 1, index: 2 })
+    expect(treeDropPlacement(TREE, 4, 1, 'inside')).toEqual({ parent_page_id: 1, index: 1 })
+  })
+
+  it('recusa soltar em si mesma ou na própria subárvore', () => {
+    expect(treeDropPlacement(TREE, 1, 1, 'inside')).toBeNull()
+    expect(treeDropPlacement(TREE, 1, 3, 'after')).toBeNull()
+    expect(treeDropPlacement(TREE, 6, 99, 'before')).toBeNull()
+  })
+})
+
+describe('shiftPlacement', () => {
+  it('troca de lugar com a irmã de cima ou de baixo', () => {
+    expect(shiftPlacement(TREE, 5, -1)).toEqual({ parent_page_id: null, index: 0 })
+    expect(shiftPlacement(TREE, 5, 1)).toEqual({ parent_page_id: null, index: 2 })
+    expect(shiftPlacement(TREE, 2, 1)).toEqual({ parent_page_id: 1, index: 1 })
+  })
+
+  it('para nas pontas', () => {
+    expect(shiftPlacement(TREE, 1, -1)).toBeNull()
+    expect(shiftPlacement(TREE, 6, 1)).toBeNull()
+    expect(shiftPlacement(TREE, 3, 1)).toBeNull()
   })
 })

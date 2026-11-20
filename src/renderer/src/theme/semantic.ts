@@ -146,6 +146,19 @@ export const USER_COLORS = [
   '#5D6B82'
 ] as const
 
+export const USER_COLOR_NAMES: Record<(typeof USER_COLORS)[number], string> = {
+  '#E5484D': 'vermelho',
+  '#A84803': 'laranja',
+  '#A15C00': 'âmbar',
+  '#0B7A50': 'verde',
+  '#0F6E7A': 'azul-petróleo',
+  '#2A62D6': 'azul',
+  '#5B47EB': 'violeta',
+  '#7647B0': 'roxo',
+  '#B8327A': 'magenta',
+  '#5D6B82': 'ardósia'
+}
+
 export function userColorTint(color: string): string | undefined {
   return /^#[0-9a-f]{6}$/i.test(color) ? `${color}24` : undefined
 }
