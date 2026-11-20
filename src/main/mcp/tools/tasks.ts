@@ -3,6 +3,7 @@ import { normalizeWaitingFor } from '@shared/waitingFor'
 import type { CreateTaskInput, Task, TaskListFilters, UpdateTaskInput } from '@shared/types'
 import { z } from 'zod'
 import {
+  addTaskDependency,
   archiveTask,
   countTasks,
   countTimeBlocksForTask,
@@ -21,6 +22,8 @@ import {
   listProjects,
   listTasks,
   moveTasksToProject,
+  removeTaskDependency,
+  setTaskWorkspace,
   unarchiveTask,
   updateTask
 } from '../../database'
@@ -47,6 +50,28 @@ const DATE = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use o formato AAAA-MM-DD.'
 const TIME = z.string().regex(/^\d{2}:\d{2}$/, 'Use o formato HH:MM.')
 const EXTERNAL_URL = z.string().refine(isSafeHttpUrl, 'Use um link http:// ou https://.')
 const WAITING_FOR = z.string().transform(normalizeWaitingFor)
+
+const TIME_LIMIT = z.number().int().positive().describe('Limite de tempo da task, em minutos.')
+const RECURRENCE = z
+  .object({
+    type: z.enum(['daily', 'weekly', 'monthly']),
+    day_of_week: z.number().int().min(0).max(6).optional().describe('weekly: 0 = domingo.'),
+    day_of_month: z.number().int().min(1).max(31).optional().describe('monthly.')
+  })
+  .describe('Repetição: ao finalizar, a próxima ocorrência é criada.')
+const WORKING_DIR = z
+  .string()
+  .refine((value) => value.startsWith('/'), 'Use um caminho absoluto.')
+  .describe('Pasta de trabalho do terminal da task.')
+const START_COMMAND = z.string().describe('Comando que o terminal da task roda ao abrir.')
+
+function recurrenceRule(value: z.infer<typeof RECURRENCE>): string {
+  return JSON.stringify({
+    type: value.type,
+    dayOfWeek: value.day_of_week,
+    dayOfMonth: value.day_of_month
+  })
+}
 
 type Resolution = { ok: true; id: number } | { ok: false; response: ReturnType<typeof fail> }
 
@@ -206,6 +231,10 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
         ),
         parent_task_id: z.number().int().positive().optional(),
         external_url: EXTERNAL_URL.optional(),
+        time_limit_minutes: TIME_LIMIT.optional(),
+        recurrence: RECURRENCE.optional(),
+        working_dir: WORKING_DIR.optional(),
+        start_command: START_COMMAND.optional(),
         waiting_for: WAITING_FOR.optional().describe(
           'Quem ou o quê a task aguarda (ex.: "Revisor externo"), até 120 caracteres. Aparece na lista de tarefas.'
         )
@@ -230,7 +259,9 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
         scheduled_end_time: args.scheduled_end_time,
         parent_task_id: args.parent_task_id,
         external_url: args.external_url,
-        waiting_for: args.waiting_for
+        waiting_for: args.waiting_for,
+        time_limit_seconds: args.time_limit_minutes ? args.time_limit_minutes * 60 : undefined,
+        recurrence_rule: args.recurrence ? recurrenceRule(args.recurrence) : undefined
       }
 
       if (args.project !== undefined) {
@@ -254,6 +285,12 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
       // afterTaskWrite precisa rodar mesmo se o backfill de status falhar — a task já foi
       // persistida e não pode ficar sem sync no Notion nem tasks:refresh.
       try {
+        if (args.working_dir !== undefined || args.start_command !== undefined) {
+          setTaskWorkspace(task.id, {
+            working_dir: args.working_dir,
+            start_command: args.start_command
+          })
+        }
         if (args.status !== undefined) {
           updateTask(task.id, { status: args.status })
         }
@@ -299,7 +336,11 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
         waiting_for: z
           .union([WAITING_FOR, z.null()])
           .optional()
-          .describe('Quem ou o quê a task aguarda; null remove.')
+          .describe('Quem ou o quê a task aguarda; null remove.'),
+        time_limit_minutes: TIME_LIMIT.optional(),
+        recurrence: z.union([RECURRENCE, z.null()]).optional().describe('null remove a repetição.'),
+        working_dir: z.union([WORKING_DIR, z.null()]).optional(),
+        start_command: z.union([START_COMMAND, z.null()]).optional()
       }
     },
     async (args) => {
@@ -320,6 +361,12 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
       if (args.scheduled_end_time !== undefined) patch.scheduled_end_time = args.scheduled_end_time
       if (args.external_url !== undefined) patch.external_url = args.external_url
       if (args.waiting_for !== undefined) patch.waiting_for = args.waiting_for
+      if (args.time_limit_minutes !== undefined) {
+        patch.time_limit_seconds = args.time_limit_minutes * 60
+      }
+      if (args.recurrence !== undefined) {
+        patch.recurrence_rule = args.recurrence ? recurrenceRule(args.recurrence) : null
+      }
 
       if (args.project !== undefined) {
         if (args.project === null) {
@@ -350,6 +397,12 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
       }
 
       if (Object.keys(patch).length > 0) updateTask(args.id, patch)
+      if (args.working_dir !== undefined || args.start_command !== undefined) {
+        setTaskWorkspace(args.id, {
+          working_dir: args.working_dir,
+          start_command: args.start_command
+        })
+      }
 
       afterTaskWrite(args.id)
       return ok({ updated: args.id, task: stripNotes(getTask(args.id)!) })
@@ -543,6 +596,59 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
         },
         blocked: { total: countTasks(blockedFilters), sample: sample(blockedFilters) },
         someday: { total: countTasks(somedayFilters), sample: sample(somedayFilters) }
+      })
+    }
+  )
+
+  server.registerTool(
+    'task_dependencies',
+    {
+      title: 'Dependências entre tasks',
+      description:
+        'action=add faz task_id depender de depends_on_id: a task fica bloqueada (não entra em executando) até a outra ser finalizada. action=remove desfaz. get_task mostra depends_on e blocked_task_ids.',
+      inputSchema: {
+        action: z.enum(['add', 'remove']),
+        task_id: z.number().int().positive(),
+        depends_on_id: z.number().int().positive()
+      }
+    },
+    async ({ action, task_id, depends_on_id }) => {
+      if (task_id === depends_on_id) {
+        return fail('validation', 'Uma task não pode depender dela mesma.')
+      }
+      for (const id of [task_id, depends_on_id]) {
+        if (!getTask(id)) return fail('not_found', `Task ${id} não existe.`)
+      }
+
+      if (action === 'add') {
+        const seen = new Set<number>()
+        const queue = [depends_on_id]
+        while (queue.length > 0) {
+          const id = queue.pop()!
+          if (id === task_id) {
+            return fail(
+              'validation',
+              `A task ${depends_on_id} já depende da ${task_id}; isso criaria um ciclo.`
+            )
+          }
+          if (seen.has(id)) continue
+          seen.add(id)
+          queue.push(...getTaskDependencies(id).map((dependency) => dependency.depends_on_task_id))
+        }
+        addTaskDependency(task_id, depends_on_id)
+      } else {
+        removeTaskDependency(task_id, depends_on_id)
+      }
+
+      afterTaskWrite(task_id)
+      const task = getTask(task_id)!
+      return ok({
+        task_id,
+        is_blocked: task.is_blocked,
+        depends_on: getTaskDependencies(task_id).map((dependency) => ({
+          id: dependency.depends_on_task_id,
+          name: dependency.depends_on_task_name
+        }))
       })
     }
   )
