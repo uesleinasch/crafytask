@@ -5,7 +5,8 @@ import { markdownToProsemirror, type PMDoc } from '../../markdownToProsemirror'
 import { detectNotesDialect } from '../../notionBlocks'
 import { prosemirrorToMarkdown } from '../../notesMarkdown'
 import { needsConfirmation } from '../confirmGuard'
-import { afterTaskWrite } from '../effects'
+import { afterTaskWrite, recordOperation } from '../effects'
+import { notesWrittenSummary } from '../operationSummary'
 import { fail, ok } from '../reply'
 import type { ToolContext } from '../toolContext'
 
@@ -130,6 +131,10 @@ export function registerNotesTools(server: McpServer, ctx: ToolContext): void {
           : incoming
 
       updateTaskNotes(task_id, JSON.stringify(next))
+      recordOperation(
+        task_id,
+        notesWrittenSummary(next === incoming ? 'replace' : 'append', incoming.content.length)
+      )
       afterTaskWrite(task_id)
       return ok({ task_id, mode: effectiveMode, blocks: next.content.length })
     }

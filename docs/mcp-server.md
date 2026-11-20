@@ -149,6 +149,18 @@ Toda mudança de status pelo MCP (`update_task`, `bulk_update_tasks`, `work_sess
 - concluir a última subtarefa fecha a task pai;
 - concluir uma task avisa o app das dependentes que ficaram livres.
 
+## Histórico automático
+
+As tools que escrevem numa task gravam sozinhas uma entrada `operation` (origem `mcp`) no histórico
+dela, sem o agente chamar `task_history`: `update_task` (só os nomes dos campos, ex.: "Alterado:
+prazo, projeto"), `write_notes`, `write_drawing`, `task_dependencies`, `timer` (`add_manual_time`),
+`time_entries` e `integrations` (`gcal_sync`, `jira_transition`, `export_task`). Subtarefa criada ou
+apagada entra no histórico da task pai. Os textos saem de `mcp/operationSummary.ts`.
+
+Ficam de fora: leituras, mudança só de status (já está em `task_status_events`) e `timer`
+`start`/`stop` (já é sessão de tempo). Falha ao gravar a entrada não derruba a tool. O histórico
+não é podado: cresce com o uso (um limite por task fica para avaliar depois).
+
 ## Instruções ao cliente
 
 O servidor envia `instructions` no `initialize` (`mcp/instructions.ts`): o que está sendo feito fica

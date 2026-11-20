@@ -7,7 +7,8 @@ import { deleteDrawingPreview, readDrawingPreview, saveDrawingPreview } from '..
 import { getPage, updatePageDrawing } from '../../notebookQueries'
 import { autoSyncNotebook } from '../../notebookService'
 import { DRAWING_GUIDE } from '../drawingGuide'
-import { afterTaskWrite, renderDrawing } from '../effects'
+import { afterTaskWrite, recordOperation, renderDrawing } from '../effects'
+import { drawingWrittenSummary } from '../operationSummary'
 import { fail, ok, okImage } from '../reply'
 import type { ToolContext } from '../toolContext'
 
@@ -154,6 +155,7 @@ export function registerDrawingTools(server: McpServer, ctx: ToolContext): void 
       else await deleteDrawingPreview(owner)
       if (owner.kind === 'task') {
         updateTaskDrawing(owner.id, rendered.drawing)
+        recordOperation(owner.id, drawingWrittenSummary(effectiveMode, elements.length))
         afterTaskWrite(owner.id)
       } else {
         updatePageDrawing(notebookDb(), owner.id, rendered.drawing)

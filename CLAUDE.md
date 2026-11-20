@@ -141,7 +141,9 @@ header, and the extra height can be scrolled by a programmatic `scrollIntoView` 
 - `task_history` holds the written entries of a task's history (`checkpoint`, `operation`, `note`;
   origin `app` or `mcp`), with the task status at that moment. `listTaskHistory`
   (`taskHistoryQueries.ts`, pure, tested) merges them with `task_status_events`, so status moves are
-  never copied into it. The MCP tool `task_history` reads and appends; the task screen shows it in
+  never copied into it. MCP tools that write to a task append an `operation` entry by themselves
+  (`recordOperation` in `mcp/effects.ts`, texts in `mcp/operationSummary.ts`); the table is not
+  pruned. The MCP tool `task_history` reads and appends; the task screen shows it in
   the Histórico tab (`TaskHistoryPanel`, IPC `task:history`/`task:addHistory`).
 - Dashboard period stats (`stats:period`, `StatsPeriod` → `PeriodStats`) come from
   `statsQueries.ts` (pure, tested): sessions clipped to the period and to now, split per local day

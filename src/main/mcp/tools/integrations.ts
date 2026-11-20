@@ -1,7 +1,8 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import { getTask } from '../../database'
-import { integrations } from '../effects'
+import { broadcastRefresh, integrations, recordOperation } from '../effects'
+import { exportSummary, gcalSyncSummary, jiraTransitionSummary } from '../operationSummary'
 import { fail, ok } from '../reply'
 import type { ToolContext } from '../toolContext'
 
@@ -42,6 +43,8 @@ export function registerIntegrationTools(server: McpServer, ctx: ToolContext): v
           case 'gcal_sync':
             if (enabled === undefined) return fail('validation', 'gcal_sync exige enabled.')
             await api.setGcalSync(task_id, enabled)
+            recordOperation(task_id, gcalSyncSummary(enabled))
+            broadcastRefresh()
             return ok({ task_id, gcal_sync: enabled })
           case 'notion_sync':
             return ok({ task_id, notion: await api.syncNotion(task_id) })
@@ -70,7 +73,10 @@ export function registerIntegrationTools(server: McpServer, ctx: ToolContext): v
             const consumed = ctx.confirmStore.consume(confirm_token, operation)
             if (!consumed.ok) return fail(consumed.code, consumed.message)
             await api.jiraTransition(task_id, transition_id)
-            return ok({ task_id, jira_status: getTask(task_id)?.jira_status ?? null })
+            const jiraStatus = getTask(task_id)?.jira_status ?? null
+            recordOperation(task_id, jiraTransitionSummary(jiraStatus))
+            broadcastRefresh()
+            return ok({ task_id, jira_status: jiraStatus })
           }
           case 'export_task': {
             const exported = await api.exportTask(task_id)
@@ -80,6 +86,8 @@ export function registerIntegrationTools(server: McpServer, ctx: ToolContext): v
                 'A task ainda não tem arquivo local: escolha o arquivo uma vez pelo app.'
               )
             }
+            recordOperation(task_id, exportSummary())
+            broadcastRefresh()
             return ok({ task_id, exported: task.local_export_path })
           }
         }
