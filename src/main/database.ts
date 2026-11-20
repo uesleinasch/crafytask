@@ -949,6 +949,17 @@ export function createTask(data: CreateTaskInput): Task {
   return getTask(taskId)!
 }
 
+export function createTaskWithSubtasks(
+  parent: CreateTaskInput,
+  children: CreateTaskInput[]
+): { parent: Task; subtasks: Task[] } {
+  return db.transaction(() => {
+    const created = createTask(parent)
+    const subtasks = children.map((child) => createTask({ ...child, parent_task_id: created.id }))
+    return { parent: getTask(created.id)!, subtasks }
+  })()
+}
+
 // Projeção das listagens: sem `notes` (JSON do Tiptap) e com `description` truncada — a lista
 // exibe no máximo duas linhas dela. Quem precisa do conteúdo integral usa getTask.
 const TASK_LIST_COLUMNS = `

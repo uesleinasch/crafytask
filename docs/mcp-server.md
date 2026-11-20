@@ -63,7 +63,7 @@ Ao subir a ponte com `ELECTRON_RUN_AS_NODE=1`, essa variável é removida do amb
 | `server_info` | Confirma que o CrafyTask está aberto e respondendo (`app: 'CrafyTask'`). |
 | `search_tasks` | Lista tasks com filtros (status, categoria, energia, projeto, contexto, busca, datas), no [formato compacto](#formato-compacto); `detail=full` devolve a task inteira. Não inclui subtarefas. |
 | `get_task` | Detalhe completo de uma task: campos, notas em Markdown, subtarefas (compactas), dependências, registros de tempo. |
-| `create_task` | Cria uma task; projeto/contexto por nome ou id, tags criadas se não existirem. Aceita `scheduled_time`/`scheduled_end_time` (exigem `scheduled_date`) e `due_time` (exige `due_date`), em `HH:MM`, `external_url` (`http(s)`), `waiting_for` (quem ou o quê a task aguarda, até 120 caracteres), `time_limit_minutes`, `recurrence` (`daily`/`weekly`/`monthly`), `working_dir` (caminho absoluto) e `start_command` (terminal da task). A resposta traz a task compacta (`detail=full` para inteira). |
+| `create_task` | Cria uma task; projeto/contexto por nome ou id, tags criadas se não existirem. Aceita `scheduled_time`/`scheduled_end_time` (exigem `scheduled_date`) e `due_time` (exige `due_date`), em `HH:MM`, `external_url` (`http(s)`), `waiting_for` (quem ou o quê a task aguarda, até 120 caracteres), `time_limit_minutes`, `recurrence` (`daily`/`weekly`/`monthly`), `working_dir` (caminho absoluto) e `start_command` (terminal da task). Com `subtasks` (até 30; `name`, `description`, `status`, `category`, `energy`, `due_date`, `project`, `tags`) cria a task e as subtarefas numa transação só: falhou uma, nada é criado. Subtarefa herda projeto e tags da task; não combina com `parent_task_id` nem pede `confirm_token`. A resposta traz a task compacta (`detail=full` para inteira) e, com `subtasks`, a lista `{id, name, status}`. |
 | `update_task` | Altera campos de uma task; passar `tags`/`contexts` substitui a lista inteira. Horários em `HH:MM`, `null` remove; limpar a data remove a hora dela, limpar o início remove o fim. `external_url` aceita `http(s)` ou `null` (remove); `waiting_for` aceita texto ou `null`. Fim ≤ início ou hora sem data → erro `validation`. Também aceita `time_limit_minutes`, `recurrence` (`null` remove), `working_dir` e `start_command` (`null` remove). A resposta traz a task compacta (`detail=full` para inteira). |
 | `bulk_update_tasks` | Altera status/projeto/arquivamento de várias tasks; acima do `bulkThreshold` exige `confirm_token`. O status segue as regras de status abaixo; as tasks recusadas voltam em `status_refused`, e as demais mudam. |
 | `delete_tasks` | Deleta tasks permanentemente, incluindo subtarefas em cascata; sempre exige `confirm_token`. |
@@ -114,7 +114,7 @@ O que a tela faz e por onde o MCP faz o mesmo.
 
 | Recurso do app | Pelo MCP |
 | --- | --- |
-| Listar, ver, criar, editar e apagar tasks; subtarefas | `search_tasks`, `get_task`, `create_task` (`parent_task_id`), `update_task`, `bulk_update_tasks`, `delete_tasks` |
+| Listar, ver, criar, editar e apagar tasks; subtarefas | `search_tasks`, `get_task`, `create_task` (`parent_task_id`, `subtasks`), `update_task`, `bulk_update_tasks`, `delete_tasks` |
 | Status, com as regras de bloqueio e recorrência | `update_task`, `bulk_update_tasks`, `work_session` |
 | Timer, tempo manual, corrigir e zerar sessões | `timer`, `time_entries` |
 | Relatórios e estatísticas do dashboard | `time_report` |
