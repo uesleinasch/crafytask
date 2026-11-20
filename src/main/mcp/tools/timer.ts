@@ -17,6 +17,7 @@ import { BLOCKED_TASK_MESSAGE } from '../../taskStatusService'
 import type { StatsPeriod } from '@shared/types'
 import { afterTaskWrite, editTimeEntry, removeTimeEntry, resetTaskTime } from '../effects'
 import { fail, ok } from '../reply'
+import { compactTask } from '../taskView'
 import type { ToolContext } from '../toolContext'
 
 const DAY = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use o formato AAAA-MM-DD.')
@@ -37,7 +38,7 @@ export function registerTimerTools(server: McpServer, ctx: ToolContext): void {
     },
     async ({ action, task_id, minutes }) => {
       if (action === 'status') {
-        return ok({ running: listRunningTasks() })
+        return ok({ running: listRunningTasks().map(compactTask) })
       }
 
       if (task_id === undefined) {

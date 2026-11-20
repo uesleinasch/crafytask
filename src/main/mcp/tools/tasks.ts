@@ -1,6 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { normalizeWaitingFor } from '@shared/waitingFor'
-import type { CreateTaskInput, Task, TaskListFilters, UpdateTaskInput } from '@shared/types'
+import type { CreateTaskInput, TaskListFilters, UpdateTaskInput } from '@shared/types'
 import { z } from 'zod'
 import {
   addTaskDependency,
@@ -41,6 +41,7 @@ import {
 } from '../effects'
 import { fail, ok } from '../reply'
 import { resolveByName } from '../resolve'
+import { compactTask, fullTask, viewTask, type CompactTask } from '../taskView'
 import type { ToolContext } from '../toolContext'
 
 const STATUS = z.enum(['inbox', 'aguardando', 'proximas', 'executando', 'finalizada', 'someday'])
@@ -50,6 +51,11 @@ const DATE = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use o formato AAAA-MM-DD.'
 const TIME = z.string().regex(/^\d{2}:\d{2}$/, 'Use o formato HH:MM.')
 const EXTERNAL_URL = z.string().refine(isSafeHttpUrl, 'Use um link http:// ou https://.')
 const WAITING_FOR = z.string().transform(normalizeWaitingFor)
+const DETAIL = z
+  .enum(['compact', 'full'])
+  .describe(
+    'compact (padrão): só os campos com valor. full: a task inteira, sem o corpo das notas.'
+  )
 
 const TIME_LIMIT = z.number().int().positive().describe('Limite de tempo da task, em minutos.')
 const RECURRENCE = z
@@ -74,14 +80,6 @@ function recurrenceRule(value: z.infer<typeof RECURRENCE>): string {
 }
 
 type Resolution = { ok: true; id: number } | { ok: false; response: ReturnType<typeof fail> }
-
-// Invariante do projeto: só read_notes e o notes_markdown de get_task carregam corpo de nota;
-// todo outro retorno de task precisa passar por aqui.
-export function stripNotes(task: Task): Task {
-  const clean: Task = { ...task }
-  delete clean.notes
-  return clean
-}
 
 function resolveProject(input: string | number): Resolution {
   const resolved = resolveByName(listProjects(), input)
@@ -120,7 +118,7 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
     {
       title: 'Buscar tasks',
       description:
-        'Lista tasks com filtros. Não inclui subtarefas nem o corpo das notas. Use get_task para o detalhe completo de uma task.',
+        'Lista tasks com filtros, em formato compacto (detail=full devolve todos os campos). Não inclui subtarefas nem o corpo das notas. Use get_task para o detalhe completo de uma task.',
       inputSchema: {
         status: STATUS.optional(),
         category: CATEGORY.optional(),
@@ -135,7 +133,8 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
         archived: z.boolean().optional(),
         sort: z.enum(['updated', 'due_date']).optional(),
         limit: z.number().int().min(1).max(200).optional(),
-        offset: z.number().int().min(0).optional()
+        offset: z.number().int().min(0).optional(),
+        detail: DETAIL.optional()
       }
     },
     async (args) => {
@@ -177,7 +176,7 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
 
       return ok({
         total: countTasks(filters),
-        tasks: listTasks(filters)
+        tasks: listTasks(filters).map((task) => viewTask(task, args.detail))
       })
     }
   )
@@ -197,9 +196,9 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
       const notesMarkdown = task.notes ? prosemirrorToMarkdown(task.notes) : null
 
       return ok({
-        task: stripNotes(task),
+        task: fullTask(task),
         notes_markdown: notesMarkdown,
-        subtasks: getSubtasks(id).map(stripNotes),
+        subtasks: getSubtasks(id).map(compactTask),
         depends_on: getTaskDependencies(id),
         blocked_task_ids: getTaskDependents(id),
         time_entries: getTimeEntries(id)
@@ -237,7 +236,8 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
         start_command: START_COMMAND.optional(),
         waiting_for: WAITING_FOR.optional().describe(
           'Quem ou o quê a task aguarda (ex.: "Revisor externo"), até 120 caracteres. Aparece na lista de tarefas.'
-        )
+        ),
+        detail: DETAIL.optional()
       }
     },
     async (args) => {
@@ -298,7 +298,7 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
         afterTaskWrite(task.id)
       }
 
-      return ok({ created: task.id, task: stripNotes(getTask(task.id)!) })
+      return ok({ created: task.id, task: viewTask(getTask(task.id)!, args.detail) })
     }
   )
 
@@ -340,7 +340,8 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
         time_limit_minutes: TIME_LIMIT.optional(),
         recurrence: z.union([RECURRENCE, z.null()]).optional().describe('null remove a repetição.'),
         working_dir: z.union([WORKING_DIR, z.null()]).optional(),
-        start_command: z.union([START_COMMAND, z.null()]).optional()
+        start_command: z.union([START_COMMAND, z.null()]).optional(),
+        detail: DETAIL.optional()
       }
     },
     async (args) => {
@@ -405,7 +406,7 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
       }
 
       afterTaskWrite(args.id)
-      return ok({ updated: args.id, task: stripNotes(getTask(args.id)!) })
+      return ok({ updated: args.id, task: viewTask(getTask(args.id)!, args.detail) })
     }
   )
 
@@ -566,8 +567,8 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
     },
     async ({ today, sample_size }) => {
       const limit = sample_size ?? 10
-      const sample = (filters: TaskListFilters): Task[] =>
-        limit === 0 ? [] : listTasks({ ...filters, limit })
+      const sample = (filters: TaskListFilters): CompactTask[] =>
+        limit === 0 ? [] : listTasks({ ...filters, limit }).map(compactTask)
 
       const inboxFilters: TaskListFilters = { status: 'inbox' }
       const withoutProjectFilters: TaskListFilters = { projectId: 'none' }
