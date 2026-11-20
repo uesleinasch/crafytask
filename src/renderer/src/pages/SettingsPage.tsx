@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import {
   Alert,
   Badge,
-  Card,
   Flex,
   Grid,
   Input,
@@ -239,10 +238,6 @@ export function SettingsPage(): React.JSX.Element {
     </div>
   )
 
-  const legacy = (children: React.ReactNode): React.ReactNode => (
-    <Card size="small">{children}</Card>
-  )
-
   const body = isLoading ? (
     <Flex justify="center" style={{ padding: 48 }}>
       <Spin />
@@ -261,14 +256,11 @@ export function SettingsPage(): React.JSX.Element {
       )}
       {current.id === 'terminal' && <TerminalSection />}
       {current.id === 'backup' && <BackupSection />}
-      {current.id === 'notion' &&
-        legacy(<NotionSection config={notion} onConfigChange={setNotion} />)}
-      {current.id === 'google' &&
-        gcal &&
-        legacy(<GoogleCalendarSection status={gcal} onStatusChange={setGcal} />)}
-      {current.id === 'jira' &&
-        jira &&
-        legacy(<JiraSection status={jira} onStatusChange={setJira} />)}
+      {current.id === 'notion' && <NotionSection config={notion} onConfigChange={setNotion} />}
+      {current.id === 'google' && gcal && (
+        <GoogleCalendarSection status={gcal} onStatusChange={setGcal} />
+      )}
+      {current.id === 'jira' && jira && <JiraSection status={jira} onStatusChange={setJira} />}
       {current.id === 'mcp' && mcp && <McpSection status={mcp} onStatusChange={setMcp} />}
       {current.id === 'sobre' && <AboutSection />}
     </RegionBoundary>

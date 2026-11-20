@@ -1,17 +1,32 @@
 import { useEffect, useState } from 'react'
-import { Loader2, LogOut, RefreshCw } from 'lucide-react'
-import { Button } from '@renderer/components/ui/button'
-import { Input } from '@renderer/components/ui/input'
-import { toast } from '@renderer/components/ui/sonner'
 import {
-  STATUS_LABELS,
+  App,
+  Button,
+  Checkbox,
+  Flex,
+  Input,
+  Popconfirm,
+  Select,
+  Space,
+  Switch,
+  Table,
+  Typography,
+  theme
+} from 'antd'
+import { Download, LogOut, RefreshCw } from 'lucide-react'
+import {
   type JiraBoardSummary,
   type JiraStatus,
   type Project,
   type TaskStatus
 } from '@shared/types'
-import { ToggleRow } from './SettingsPrimitives'
+import { StatusChip } from '@renderer/components/chips/StatusChip'
+import { ProjectLabel } from '@renderer/components/tasks/ProjectLabel'
+import { SettingRow, SettingsCard } from './SettingsLayout'
 import { errorMessage } from './settingsStatus'
+
+const ICON = { size: 16, strokeWidth: 1.75, 'aria-hidden': true } as const
+const FIELD_WIDTH = 280
 
 const LOCAL_STATUSES: TaskStatus[] = [
   'inbox',
@@ -25,38 +40,13 @@ const LOCAL_STATUSES: TaskStatus[] = [
 const CATEGORY_LABELS = { new: 'A fazer', indeterminate: 'Em andamento', done: 'Concluído' }
 
 const AUTO_IMPORT_OPTIONS = [
-  { value: 0, label: 'Desligado' },
+  { value: 0, label: 'Desligada' },
   { value: 15, label: 'A cada 15 min' },
   { value: 30, label: 'A cada 30 min' },
   { value: 60, label: 'A cada hora' }
 ]
 
-function ProjectSelect({
-  value,
-  projects,
-  emptyLabel,
-  onChange
-}: {
-  value: number | null
-  projects: Project[]
-  emptyLabel: string
-  onChange: (projectId: number | null) => void
-}): React.JSX.Element {
-  return (
-    <select
-      value={value ?? ''}
-      onChange={(e) => onChange(e.target.value ? Number(e.target.value) : null)}
-      className="h-8 max-w-[14rem] rounded-md border border-slate-200 bg-white px-2 text-sm"
-    >
-      <option value="">{emptyLabel}</option>
-      {projects.map((project) => (
-        <option key={project.id} value={project.id}>
-          {project.name}
-        </option>
-      ))}
-    </select>
-  )
-}
+const DEFAULT_PROJECT_ROW = '__default__'
 
 interface BoardGroup {
   key: string | null
@@ -85,15 +75,27 @@ export function JiraSection({
   status: JiraStatus
   onStatusChange: (status: JiraStatus) => void
 }): React.JSX.Element {
+  const { token } = theme.useToken()
+  const { message } = App.useApp()
   const [site, setSite] = useState(status.site)
   const [email, setEmail] = useState(status.email)
   const [apiToken, setApiToken] = useState('')
   const [busy, setBusy] = useState<'save' | 'boards' | 'import' | 'disconnect' | null>(null)
   const [projects, setProjects] = useState<Project[]>([])
+  const mono = { fontFamily: token.fontFamilyCode }
+  const otherBusy = (own: typeof busy): boolean => busy !== null && busy !== own
 
   useEffect(() => {
     window.api.listProjects().then(setProjects).catch(console.error)
   }, [])
+
+  async function save(patch: Parameters<typeof window.api.jiraSaveOptions>[0]): Promise<void> {
+    try {
+      onStatusChange(await window.api.jiraSaveOptions(patch))
+    } catch (error) {
+      message.error(errorMessage(error))
+    }
+  }
 
   async function handleSave(): Promise<void> {
     setBusy('save')
@@ -102,9 +104,9 @@ export function JiraSection({
       setApiToken('')
       onStatusChange(saved)
       const me = await window.api.jiraTest()
-      toast.success(`Jira conectado como ${me.displayName}.`)
+      message.success(`Jira conectado como ${me.displayName}.`)
     } catch (error) {
-      toast.error(errorMessage(error))
+      message.error(errorMessage(error))
       onStatusChange(await window.api.jiraGetStatus())
     } finally {
       setBusy(null)
@@ -117,7 +119,7 @@ export function JiraSection({
       await window.api.jiraListBoards()
       onStatusChange(await window.api.jiraGetStatus())
     } catch (error) {
-      toast.error(errorMessage(error))
+      message.error(errorMessage(error))
     } finally {
       setBusy(null)
     }
@@ -128,7 +130,7 @@ export function JiraSection({
     try {
       const result = await window.api.jiraImportNow()
       if (result) {
-        toast.success(
+        message.success(
           `Jira: ${result.created} novas, ${result.updated} atualizadas, ${result.unchanged} sem mudança.`
         )
       }
@@ -140,33 +142,47 @@ export function JiraSection({
     }
   }
 
-  async function changeMapping(jiraStatus: string, local: string): Promise<void> {
+  async function changeMapping(jiraStatus: string, local: TaskStatus | undefined): Promise<void> {
     const mapping = { ...status.statusMapping }
-    if (local) mapping[jiraStatus] = local as TaskStatus
+    if (local) mapping[jiraStatus] = local
     else delete mapping[jiraStatus]
-    onStatusChange(await window.api.jiraSaveMapping(mapping))
+    try {
+      onStatusChange(await window.api.jiraSaveMapping(mapping))
+    } catch (error) {
+      message.error(errorMessage(error))
+    }
   }
 
   async function changeSpaceProject(spaceKey: string, projectId: number | null): Promise<void> {
+    if (spaceKey === DEFAULT_PROJECT_ROW) return save({ projectId })
     const spaceProjects = { ...status.spaceProjects }
     if (projectId) spaceProjects[spaceKey] = projectId
     else delete spaceProjects[spaceKey]
-    onStatusChange(await window.api.jiraSaveOptions({ spaceProjects }))
+    return save({ spaceProjects })
   }
 
   async function toggleBoard(boardId: number): Promise<void> {
     const next = status.boardIds.includes(boardId)
       ? status.boardIds.filter((id) => id !== boardId)
       : [...status.boardIds, boardId]
-    onStatusChange(await window.api.jiraSaveBoards(next))
+    try {
+      onStatusChange(await window.api.jiraSaveBoards(next))
+    } catch (error) {
+      message.error(errorMessage(error))
+    }
   }
 
   async function handleDisconnect(): Promise<void> {
     setBusy('disconnect')
     try {
-      onStatusChange(await window.api.jiraDisconnect())
+      const next = await window.api.jiraDisconnect()
+      setSite(next.site)
+      setEmail(next.email)
       setApiToken('')
-      toast.success('Jira desconectado.')
+      onStatusChange(next)
+      message.success('Jira desconectado.')
+    } catch (error) {
+      message.error(errorMessage(error))
     } finally {
       setBusy(null)
     }
@@ -174,272 +190,304 @@ export function JiraSection({
 
   const credentialsChanged =
     site.trim() !== status.site || email.trim() !== status.email || apiToken.trim() !== ''
+  const canSave = !!site.trim() && !!email.trim() && !!(apiToken.trim() || status.hasToken)
+
+  const projectOptions = projects.map((project) => ({
+    value: project.id,
+    label: <ProjectLabel name={project.name} color={project.color} />,
+    title: project.name
+  }))
+
+  const spaceRows = [
+    { key: DEFAULT_PROJECT_ROW, name: 'Projeto padrão', projectId: status.projectId },
+    ...status.knownSpaces.map((space) => ({
+      key: space.key,
+      name: space.name,
+      projectId: status.spaceProjects[space.key] ?? null
+    }))
+  ]
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-2">
-        <label className="text-xs font-medium text-slate-700">
-          Site do Jira Cloud
+    <Flex vertical gap={16}>
+      <SettingsCard title="Conta">
+        <SettingRow title="Site" description="Jira Cloud">
           <Input
+            aria-label="Site do Jira Cloud"
             value={site}
             onChange={(e) => setSite(e.target.value)}
             placeholder="sua-empresa.atlassian.net"
-            className="mt-1 bg-white border-slate-200"
+            style={{ ...mono, width: FIELD_WIDTH, maxWidth: '100%' }}
           />
-        </label>
-        <label className="text-xs font-medium text-slate-700">
-          E-mail da conta Atlassian
+        </SettingRow>
+        <SettingRow title="E-mail" description="Da conta Atlassian.">
           <Input
+            aria-label="E-mail da conta Atlassian"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="voce@empresa.com"
-            className="mt-1 bg-white border-slate-200"
+            style={{ width: FIELD_WIDTH, maxWidth: '100%' }}
           />
-        </label>
-        <label className="text-xs font-medium text-slate-700">
-          API token
-          <Input
-            type="password"
-            value={apiToken}
-            onChange={(e) => setApiToken(e.target.value)}
-            placeholder={status.hasToken ? '•••••••• (salvo)' : 'Cole o token gerado na Atlassian'}
-            className="mt-1 bg-white border-slate-200"
-          />
-        </label>
-        <p className="text-xs text-slate-500">
-          Gere o token em id.atlassian.com → Segurança → Criar token de API. O token fica
-          criptografado no seu computador e nunca aparece depois de salvo.
-        </p>
-      </div>
-
-      <div className="flex flex-wrap gap-3">
-        <Button
-          onClick={handleSave}
-          disabled={
-            busy !== null || !site.trim() || !email.trim() || !(apiToken.trim() || status.hasToken)
-          }
-          className="bg-slate-900 text-white hover:bg-slate-800"
+        </SettingRow>
+        <SettingRow
+          title="API token"
+          description="Gere em id.atlassian.com → Segurança → Criar token de API. Fica criptografado no seu computador e nunca volta para a tela."
         >
-          {busy === 'save' && <Loader2 size={16} className="animate-spin" />}
-          {credentialsChanged || !status.connected ? 'Salvar e testar' : 'Testar conexão'}
-        </Button>
+          <Space.Compact style={{ maxWidth: '100%' }}>
+            <Input.Password
+              aria-label="API token do Jira"
+              value={apiToken}
+              onChange={(e) => setApiToken(e.target.value)}
+              placeholder={status.hasToken ? '•••••••• (salvo)' : 'Cole o token'}
+              style={{ ...mono, width: 180 }}
+            />
+            <Button
+              type={status.connected ? 'default' : 'primary'}
+              loading={busy === 'save'}
+              disabled={otherBusy('save') || !canSave}
+              onClick={handleSave}
+            >
+              {credentialsChanged || !status.connected ? 'Salvar e testar' : 'Testar conexão'}
+            </Button>
+          </Space.Compact>
+        </SettingRow>
         {status.connected && (
-          <Button
-            variant="outline"
-            onClick={handleDisconnect}
-            disabled={busy !== null}
-            className="text-red-600 hover:text-red-700"
+          <SettingRow
+            title="Desconectar"
+            description="Apaga o acesso salvo e para a importação. As tasks importadas continuam."
           >
-            <LogOut size={16} />
-            Desconectar
-          </Button>
+            <Popconfirm
+              title="Desconectar o Jira?"
+              description="O site, o e-mail, o token e os boards marcados saem do CrafyTask, e a importação e o worklog param. As tasks já importadas e as issues no Jira continuam como estão."
+              okText="Desconectar"
+              okButtonProps={{ danger: true }}
+              cancelText="Cancelar"
+              onConfirm={handleDisconnect}
+            >
+              <Button
+                danger
+                icon={<LogOut {...ICON} />}
+                loading={busy === 'disconnect'}
+                disabled={otherBusy('disconnect')}
+              >
+                Desconectar
+              </Button>
+            </Popconfirm>
+          </SettingRow>
         )}
-      </div>
+      </SettingsCard>
 
       {status.connected && (
         <>
-          <div className="space-y-3 pt-4 border-t border-slate-200">
-            <div className="flex items-center justify-between gap-3">
-              <h3 className="text-sm font-medium text-slate-800">Boards</h3>
+          <SettingsCard
+            title="Boards"
+            extra={
               <Button
-                variant="outline"
-                size="sm"
+                size="small"
+                type="link"
+                icon={<RefreshCw size={14} strokeWidth={1.75} aria-hidden />}
+                loading={busy === 'boards'}
+                disabled={otherBusy('boards')}
                 onClick={handleLoadBoards}
-                disabled={busy !== null}
               >
-                {busy === 'boards' ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : (
-                  <RefreshCw size={14} />
-                )}
                 Carregar boards
               </Button>
-            </div>
-            {status.boards.length === 0 ? (
-              <p className="text-xs text-slate-500">
-                Carregue os boards do seu Jira e marque os que devem alimentar o CrafyTask.
-              </p>
-            ) : (
-              <div className="grid gap-4">
-                {groupBoardsBySpace(status.boards).map((group) => (
-                  <div key={group.name} className="space-y-1.5">
-                    <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      {group.name}
-                      {group.key && (
-                        <span className="ml-1.5 font-mono font-normal normal-case text-slate-400">
-                          {group.key}
-                        </span>
-                      )}
-                    </h4>
-                    <ul className="grid gap-1.5">
+            }
+          >
+            <SettingRow
+              title="Boards que alimentam o app"
+              description={
+                status.boards.length === 0
+                  ? 'Carregue os boards do seu Jira e marque os que devem alimentar o CrafyTask.'
+                  : undefined
+              }
+              vertical
+            >
+              {status.boards.length > 0 && (
+                <Flex vertical gap={12}>
+                  {groupBoardsBySpace(status.boards).map((group) => (
+                    <Flex key={group.name} vertical gap={6}>
+                      <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                        {group.name}
+                        {group.key && <span style={{ ...mono, marginLeft: 6 }}>{group.key}</span>}
+                      </Typography.Text>
                       {group.boards.map((board) => (
-                        <li key={board.id}>
-                          <label className="flex items-center gap-2 text-sm text-slate-700">
-                            <input
-                              type="checkbox"
-                              checked={status.boardIds.includes(board.id)}
-                              onChange={() => toggleBoard(board.id)}
-                              className="h-4 w-4 accent-slate-900"
-                            />
-                            {board.name}
-                          </label>
-                        </li>
+                        <Checkbox
+                          key={board.id}
+                          checked={status.boardIds.includes(board.id)}
+                          onChange={() => void toggleBoard(board.id)}
+                        >
+                          {board.name}
+                        </Checkbox>
                       ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-3 pt-4 border-t border-slate-200">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h3 className="text-sm font-medium text-slate-800">Importar issues</h3>
-                <p className="text-xs text-slate-500">
-                  {status.lastImportAt
-                    ? `Última tentativa: ${new Date(status.lastImportAt).toLocaleString('pt-BR')}`
-                    : 'Ainda não importado.'}
-                </p>
-              </div>
+                    </Flex>
+                  ))}
+                </Flex>
+              )}
+            </SettingRow>
+            <SettingRow
+              title="Importar agora"
+              description={
+                status.lastImportAt
+                  ? `Issues atribuídas a você nos boards marcados. Última tentativa em ${new Date(status.lastImportAt).toLocaleString('pt-BR')}.`
+                  : 'Issues atribuídas a você nos boards marcados. Ainda não importado.'
+              }
+            >
               <Button
-                variant="outline"
+                type="primary"
+                icon={<Download {...ICON} />}
+                loading={busy === 'import'}
+                disabled={otherBusy('import') || status.boardIds.length === 0}
                 onClick={handleImport}
-                disabled={busy !== null || status.boardIds.length === 0}
               >
-                {busy === 'import' ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : (
-                  <RefreshCw size={16} />
-                )}
-                Importar agora
+                Importar
               </Button>
-            </div>
-          </div>
+            </SettingRow>
+            <SettingRow title="Importação automática">
+              <Select
+                aria-label="Importação automática"
+                value={status.autoImportMinutes}
+                onChange={(value: number) => void save({ autoImportMinutes: value })}
+                options={AUTO_IMPORT_OPTIONS}
+                style={{ width: 160 }}
+              />
+            </SettingRow>
+          </SettingsCard>
 
-          <div className="space-y-3 pt-4 border-t border-slate-200">
-            <h3 className="text-sm font-medium text-slate-800">Projeto por espaço</h3>
-            <p className="text-xs text-slate-500">
-              Tasks novas vão para o projeto do seu espaço; sem escolha, para o projeto padrão. Na
-              importação, task já vinculada e sem projeto também recebe o projeto do espaço.
-            </p>
-            <ul className="grid gap-2">
-              <li className="flex items-center justify-between gap-3 text-sm text-slate-700">
-                <span className="font-medium">Projeto padrão</span>
-                <ProjectSelect
-                  value={status.projectId}
-                  projects={projects}
-                  emptyLabel="Sem projeto"
-                  onChange={async (projectId) =>
-                    onStatusChange(await window.api.jiraSaveOptions({ projectId }))
+          <SettingsCard title="Destino das tasks importadas">
+            <SettingRow
+              title="Projeto por espaço"
+              description="Task nova vai para o projeto do espaço; sem escolha, para o projeto padrão. Na importação, task já vinculada e sem projeto também recebe o projeto do espaço."
+              vertical
+            >
+              <Table
+                size="small"
+                pagination={false}
+                rowKey="key"
+                dataSource={spaceRows}
+                columns={[
+                  {
+                    title: 'Espaço',
+                    key: 'space',
+                    render: (_, row) =>
+                      row.key === DEFAULT_PROJECT_ROW ? (
+                        <Typography.Text strong style={{ fontWeight: 500 }}>
+                          {row.name}
+                        </Typography.Text>
+                      ) : (
+                        <span>
+                          {row.name}{' '}
+                          <Typography.Text type="secondary" style={{ ...mono, fontSize: 12 }}>
+                            {row.key}
+                          </Typography.Text>
+                        </span>
+                      )
+                  },
+                  {
+                    title: 'Projeto',
+                    key: 'project',
+                    width: 220,
+                    render: (_, row) => (
+                      <Select
+                        size="small"
+                        aria-label={`Projeto de ${row.name}`}
+                        allowClear
+                        value={row.projectId ?? undefined}
+                        placeholder={
+                          row.key === DEFAULT_PROJECT_ROW ? 'Sem projeto' : 'Projeto padrão'
+                        }
+                        onChange={(value?: number) =>
+                          void changeSpaceProject(row.key, value ?? null)
+                        }
+                        options={projectOptions}
+                        optionFilterProp="title"
+                        showSearch
+                        style={{ width: 200 }}
+                      />
+                    )
                   }
+                ]}
+              />
+              {status.knownSpaces.length === 0 && (
+                <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                  Os espaços aparecem aqui ao marcar boards ou depois da primeira importação.
+                </Typography.Text>
+              )}
+            </SettingRow>
+            {status.knownStatuses.length > 0 && (
+              <SettingRow
+                title="Status inicial das tasks novas"
+                description="Vale só quando a importação cria a task. Depois disso o status da task e o do Jira andam separados. Sem escolha, segue a categoria do Jira."
+                vertical
+              >
+                <Table
+                  size="small"
+                  pagination={false}
+                  rowKey="name"
+                  dataSource={status.knownStatuses}
+                  columns={[
+                    {
+                      title: 'Status no Jira',
+                      key: 'jira',
+                      render: (_, known) => (
+                        <span>
+                          {known.name}{' '}
+                          <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                            ({CATEGORY_LABELS[known.category]})
+                          </Typography.Text>
+                        </span>
+                      )
+                    },
+                    {
+                      title: 'Status inicial',
+                      key: 'local',
+                      width: 220,
+                      render: (_, known) => (
+                        <Select
+                          size="small"
+                          aria-label={`Status inicial para ${known.name}`}
+                          allowClear
+                          value={status.statusMapping[known.name]}
+                          placeholder="Padrão da categoria"
+                          onChange={(value?: TaskStatus) => void changeMapping(known.name, value)}
+                          options={LOCAL_STATUSES.map((local) => ({
+                            value: local,
+                            label: <StatusChip status={local} />
+                          }))}
+                          style={{ width: 200 }}
+                        />
+                      )
+                    }
+                  ]}
                 />
-              </li>
-              {status.knownSpaces.map((space) => (
-                <li
-                  key={space.key}
-                  className="flex items-center justify-between gap-3 text-sm text-slate-700"
-                >
-                  <span className="min-w-0 truncate">
-                    {space.name}{' '}
-                    <span className="font-mono text-xs text-slate-400">{space.key}</span>
-                  </span>
-                  <ProjectSelect
-                    value={status.spaceProjects[space.key] ?? null}
-                    projects={projects}
-                    emptyLabel="Projeto padrão"
-                    onChange={(projectId) => changeSpaceProject(space.key, projectId)}
-                  />
-                </li>
-              ))}
-            </ul>
-            {status.knownSpaces.length === 0 && (
-              <p className="text-xs text-slate-400">
-                Os espaços aparecem aqui ao marcar boards ou depois da primeira importação.
-              </p>
+              </SettingRow>
             )}
-          </div>
+          </SettingsCard>
 
-          {status.knownStatuses.length > 0 && (
-            <div className="space-y-3 pt-4 border-t border-slate-200">
-              <h3 className="text-sm font-medium text-slate-800">Status inicial das tasks novas</h3>
-              <p className="text-xs text-slate-500">
-                Vale só quando a importação cria a task. Depois disso o status da task e o status do
-                Jira andam separados. Sem escolha, segue a categoria do Jira.
-              </p>
-              <ul className="grid gap-2">
-                {status.knownStatuses.map((known) => (
-                  <li
-                    key={known.name}
-                    className="flex items-center justify-between gap-3 text-sm text-slate-700"
-                  >
-                    <span className="min-w-0 truncate">
-                      {known.name}{' '}
-                      <span className="text-xs text-slate-400">
-                        ({CATEGORY_LABELS[known.category]})
-                      </span>
-                    </span>
-                    <select
-                      value={status.statusMapping[known.name] ?? ''}
-                      onChange={(e) => changeMapping(known.name, e.target.value)}
-                      className="h-8 rounded-md border border-slate-200 bg-white px-2 text-sm"
-                    >
-                      <option value="">Padrão da categoria</option>
-                      {LOCAL_STATUSES.map((local) => (
-                        <option key={local} value={local}>
-                          {STATUS_LABELS[local]}
-                        </option>
-                      ))}
-                    </select>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          <div className="space-y-3 pt-4 border-t border-slate-200">
-            <ToggleRow
+          <SettingsCard title="Opções">
+            <SettingRow
+              title="Registrar o tempo no Jira (worklog)"
+              description="Cada sessão de 1 min ou mais em task vinculada vira um worklog na issue. Vale só para o tempo contado depois de ligar; zerar o timer apaga os worklogs criados pelo app."
+            >
+              <Switch
+                aria-label="Registrar o tempo no Jira"
+                checked={status.syncWorklogs}
+                onChange={(checked) => void save({ syncWorklogs: checked })}
+              />
+            </SettingRow>
+            <SettingRow
               title="Sincronizar tasks do Jira com o Notion"
               description="Envia as tasks vinculadas ao Jira para o banco do Notion, junto com as demais."
-              checked={status.syncToNotion}
-              onChange={async () =>
-                onStatusChange(
-                  await window.api.jiraSaveOptions({ syncToNotion: !status.syncToNotion })
-                )
-              }
-            />
-            <ToggleRow
-              title="Registrar o tempo no Jira (worklog)"
-              description="Cada sessão de 1 min ou mais em task vinculada vira um registro de trabalho na issue. Vale só para o tempo contado depois de ligar; zerar o timer apaga os registros criados pelo app."
-              checked={status.syncWorklogs}
-              onChange={async () =>
-                onStatusChange(
-                  await window.api.jiraSaveOptions({ syncWorklogs: !status.syncWorklogs })
-                )
-              }
-            />
-            <label className="flex items-center justify-between gap-3 text-sm text-slate-700">
-              Importação automática
-              <select
-                value={status.autoImportMinutes}
-                onChange={async (e) =>
-                  onStatusChange(
-                    await window.api.jiraSaveOptions({ autoImportMinutes: Number(e.target.value) })
-                  )
-                }
-                className="h-8 rounded-md border border-slate-200 bg-white px-2 text-sm"
-              >
-                {AUTO_IMPORT_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
+            >
+              <Switch
+                aria-label="Sincronizar tasks do Jira com o Notion"
+                checked={status.syncToNotion}
+                onChange={(checked) => void save({ syncToNotion: checked })}
+              />
+            </SettingRow>
+          </SettingsCard>
         </>
       )}
-    </div>
+    </Flex>
   )
 }
