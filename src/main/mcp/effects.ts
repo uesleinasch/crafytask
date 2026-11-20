@@ -26,6 +26,8 @@ interface WriteEffectDeps {
   disposeTerminals: (taskIds: number[]) => void
   disposeProjectTerminals: (projectIds: number[]) => void
   recordHistory: (taskId: number, summary: string) => void
+  showNotification: (title: string, body: string, taskId?: number) => void
+  navigate: (route: string) => void
 }
 
 // Injetado no boot em vez de importado direto: as tools de escrita (ainda a criar) vão importar
@@ -92,6 +94,14 @@ export function renderDrawing(payload: DrawingRenderPayload): Promise<DrawingRen
 function ready(): WriteEffectDeps {
   if (!deps) throw new Error('O CrafyTask ainda está iniciando; tente de novo em instantes.')
   return deps
+}
+
+export function notifyUser(title: string, body: string, taskId?: number): void {
+  ready().showNotification(title, body, taskId)
+}
+
+export function navigateApp(route: string): void {
+  ready().navigate(route)
 }
 
 export function integrations(): IntegrationActions {

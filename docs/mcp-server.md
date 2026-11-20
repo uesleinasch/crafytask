@@ -92,6 +92,8 @@ Ao subir a ponte com `ELECTRON_RUN_AS_NODE=1`, essa variável é removida do amb
 | `delete_page` | Apaga a página e as subpáginas; sempre exige `confirm_token`. |
 | `manage_notebooks` | Estrutura dos cadernos: cria, renomeia e apaga caderno e seção (apagar sempre exige `confirm_token` e leva as páginas junto); renomeia e move página (`section_id`, `parent_page_id`, `index`). |
 | `integrations` | Aciona integrações já configuradas: `gcal_sync` (liga/desliga a task na agenda do Google), `notion_sync`, `jira_import`, `jira_transitions` e `jira_transition` (muda o status no Jira; sempre exige `confirm_token`), `export_task` (regrava o Markdown local) e `backup`. Integração não configurada devolve `app_state`. |
+| `notify` | Notificação do sistema (`title` até 80, `body` até 300 caracteres), mesmo com o app na bandeja. Com `task_id`, o clique abre a task. No máximo uma a cada 10 s; antes disso devolve `app_state` com `retry_after_seconds`. |
+| `open_in_app` | Mostra e foca a janela principal numa task, projeto ou página (`target` + `id`) ou numa tela (`target=screen` + `screen`, lista fechada: as telas da barra lateral). |
 
 ## Formato compacto
 
@@ -129,6 +131,7 @@ O que a tela faz e por onde o MCP faz o mesmo.
 | Revisão semanal e indicadores de saúde | `weekly_review`, `organize_overview` |
 | Cadernos, seções e páginas | `list_notebooks`, `search_pages`, `read_page`, `create_page`, `write_page`, `delete_page`, `manage_notebooks`, `write_drawing` (`page_id`) |
 | Google Calendar, Notion, Jira, export local, backup | `integrations` |
+| Notificação do sistema e abrir uma tela | `notify`, `open_in_app` |
 
 Fica só na tela, de propósito:
 
