@@ -185,6 +185,12 @@ no mesmo IPC (`drawing:save`) que grava o JSON — MCP, Notion e export local le
 as duas escritas não podem divergir. O editor (`components/editor/TaskDrawingEditor.tsx`) é
 carregado com `React.lazy`: o pacote é grande e só a aba de desenho paga por ele.
 
+O MCP também desenha (`write_drawing`): o main não tem como gerar o PNG, então pede à janela
+principal (`drawingRenderBridge.ts`, puro e testado → evento `drawing:renderRequest` →
+`renderer/src/lib/drawingRender.ts`, que usa `convertToExcalidrawElements` e `exportToBlob` →
+`drawing:renderResult`) e só então grava JSON e PNG juntos. O guia que o cliente lê está em
+`mcp/drawingGuide.ts`.
+
 As fontes do Excalidraw são servidas pelo protocolo `ticktask-asset://` (host `excalidraw`), não
 por `file://` — o renderer roda em origem opaca em produção e o Chromium recusa carregar fontes
 dali. A CSP em `src/renderer/index.html` precisa listar o esquema em `font-src` e `img-src`.

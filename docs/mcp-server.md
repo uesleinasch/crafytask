@@ -74,6 +74,8 @@ Ao subir a ponte com `ELECTRON_RUN_AS_NODE=1`, essa variável é removida do amb
 | `time_report` | Tempo gasto: geral, semanal, por task, ou registros de uma task. |
 | `read_notes` | Devolve as notas de uma task convertidas para Markdown. |
 | `read_drawing` | Devolve o desenho (Excalidraw) de uma task como imagem PNG, com um resumo dos elementos e dos textos contidos. |
+| `drawing_guide` | Guia de como montar os elementos de `write_drawing`: formas, texto, setas ligadas por `id`, molduras, cores e um exemplo. |
+| `write_drawing` | Cria ou altera o desenho de uma task (`task_id`) ou página (`page_id`) a partir de elementos simplificados do Excalidraw. `mode=append` (padrão) acrescenta; `mode=replace` sobre desenho existente exige `confirm_token`. O JSON e o PNG são gerados pela janela principal e gravados juntos. |
 | `write_notes` | Grava Markdown nas notas; `mode=append` (recomendado) ou `mode=replace` sobre nota não vazia, que exige `confirm_token`. |
 | `work_session` | Sessão de trabalho numa task. `start` põe a task (e a pai) em `executando`, liga o timer e devolve o último checkpoint, o histórico recente e as subtarefas; `pause` para o timer, grava um checkpoint e move para `aguardando` (com `waiting_for`) ou `proximas`; `finish` para o timer, grava o checkpoint final e move para `finalizada` (recusa com subtarefa aberta); `status` lista o que está em `executando` e os timers ligados. |
 | `task_history` | Histórico e memória da task. `read` devolve mudanças de status e entradas escritas (mais recentes primeiro, `limit`/`before`) e o último checkpoint; `add` grava `checkpoint` (estado atual, `done`, `remaining`), `operation` ou `note`. `include_subtasks` junta o histórico das subtarefas. |
@@ -115,8 +117,9 @@ Operações destrutivas ou em massa seguem um fluxo de duas fases (`confirmGuard
 3. O token é validado contra um hash da operação exata (`kind` + payload) — não serve para uma
    operação diferente, mesmo que pareça similar, e é descartado no primeiro uso.
 
-`delete_tasks`, `manage_structure` (delete/merge_tag), `delete_page` e `write_notes`/`write_page`
-(`mode=replace` sobre nota não vazia) sempre exigem confirmação. `bulk_update_tasks` e `plan_day` só exigem acima do
+`delete_tasks`, `manage_structure` (delete/merge_tag), `delete_page`, `write_notes`/`write_page`
+(`mode=replace` sobre nota não vazia) e `write_drawing` (`mode=replace` sobre desenho existente)
+sempre exigem confirmação. `bulk_update_tasks` e `plan_day` só exigem acima do
 `bulkThreshold` configurado (padrão 5 itens).
 
 ## Limitações conhecidas
@@ -130,5 +133,10 @@ Operações destrutivas ou em massa seguem um fluxo de duas fases (`confirmGuard
 - `write_notes` converte um subconjunto de Markdown; menções `@` a outras tasks, tabelas e imagens
   do editor Tiptap não sobrevivem à conversão.
 - Deletar uma task pai apaga as subtarefas em cascata — não há como recuperar depois de confirmado.
+- `write_drawing` depende da janela principal: é ela que converte os elementos e gera o PNG
+  (`drawing:renderRequest` → `lib/drawingRender.ts` → `drawing:renderResult`, com limite de 20 s).
+  A janela pode estar minimizada ou escondida na bandeja, mas precisa existir e ter terminado de
+  carregar. Se a aba Desenho da mesma task ou página estiver aberta no app, ela não recarrega
+  sozinha, e o próximo salvamento dela sobrescreve o que o MCP gravou.
 - `read_drawing` serve o PNG gerado no último save feito no app. Um desenho criado numa versão
   antiga do app, antes da coluna `drawing` existir, não tem imagem para servir.

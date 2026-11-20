@@ -239,6 +239,8 @@ import { readMcpConfig, writeMcpConfig } from './mcp/store'
 import { isMcpRunning, startMcpServer, stopMcpServer } from './mcp/transport'
 import { generateToken } from './mcp/config'
 import { registerWriteEffects } from './mcp/effects'
+import { createDrawingRenderBridge } from './drawingRenderBridge'
+import type { DrawingRenderResult } from '@shared/drawingRender'
 import {
   applyStatusChange as applyTaskStatusChange,
   type StatusChangeDeps
@@ -829,6 +831,12 @@ function buildMcpStatus(): McpStatus {
 
 // ===================== IPC HANDLERS =====================
 
+const drawingRenderBridge = createDrawingRenderBridge((requestId, payload) => {
+  if (!mainWindow || mainWindow.isDestroyed() || mainWindow.webContents.isLoading()) return false
+  mainWindow.webContents.send('drawing:renderRequest', requestId, payload)
+  return true
+})
+
 const statusChangeDeps: StatusChangeDeps = {
   getTask,
   updateTaskStatus,
@@ -899,6 +907,9 @@ function setupIpcHandlers(): void {
       if (preview) await saveDrawingPreview(owner, preview)
       updateTaskDrawing(taskId, drawing)
     }
+  )
+  ipcMain.handle('drawing:renderResult', (_, requestId: string, result: DrawingRenderResult) =>
+    drawingRenderBridge.resolve(requestId, result)
   )
   ipcMain.handle('notes:searchMentions', (_, query: string) => searchMentions(query))
   ipcMain.handle(
@@ -1574,6 +1585,7 @@ app.whenReady().then(() => {
     getMainWindow: () => mainWindow,
     autoSync: (id) => autoSyncTask(id),
     changeStatus: (id, status) => applyStatusChange(id, status),
+    renderDrawing: (payload) => drawingRenderBridge.request(payload),
     syncTagChange: (ids) => syncTasksAfterTagChange(ids),
     syncCalendar: (ids) => pushToGoogle(ids),
     disposeTerminals: (ids) => disposeTerminalsForTasks(ids),
