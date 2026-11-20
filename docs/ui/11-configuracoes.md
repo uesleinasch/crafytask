@@ -75,17 +75,23 @@ que sai do CrafyTask e o que continua no serviço.
 - Card **Inicialização**: `Switch` "Iniciar o CrafyTask com o sistema". Se o sistema recusar, aviso
   de erro; senão, aviso de confirmação.
 - Card **Janela e bandeja**: "Fechar a janela não encerra o app" (`Tag` "Comportamento fixo") e
-  "Captura rápida" com o atalho atual em `KeyCombo`; se o
-  sistema não aceitou o atalho, uma `Tag` de aviso "Não registrado".
-- **Atalho da captura rápida**: **Alterar atalho** põe o botão em modo de gravação ("Pressione as
-  teclas…", `aria-pressed`); a próxima combinação com dois modificadores (ex.: Ctrl+Shift) ou Super,
-  mais uma letra, número, F1–F12, Espaço ou seta, vira o atalho (`acceleratorFromEvent` em
-  `shared/accelerator.ts`, puro e testado). Um modificador só (Ctrl+C, Alt+F4) e combinações do
-  sistema (Ctrl+Shift+C/V/Z…) são recusados: a descrição fica vermelha com a regra. `Esc`, `Tab` ou
-  sair do botão cancela; o resultado é anunciado numa região `aria-live`. O main desregistra o antigo e registra o novo no `globalShortcut`; se o
-  sistema recusar, volta ao antigo e o erro aparece. **Restaurar padrão** (só fora do padrão) volta
-  a `Ctrl+Shift+Space`. O atalho fica em `app_prefs` (linha `app`, `shared/appPrefs.ts`), lido na
-  abertura do app (IPC `prefs:getApp`/`prefs:setCaptureShortcut`).
+  **Captura rápida** numa linha só: o atalho atual em `KeyCombo` e o botão **Definir atalho**.
+- **Definir atalho** põe o botão em modo de gravação ("Pressione as teclas…", `aria-pressed`, a
+  descrição da linha vira a instrução); a próxima combinação com dois modificadores (ex.:
+  Ctrl+Shift) ou Super, mais uma letra, número, F1–F12, Espaço ou seta, vira o atalho
+  (`acceleratorFromEvent` em `shared/accelerator.ts`, puro e testado). Um modificador só (Ctrl+C,
+  Alt+F4) e combinações do sistema (Ctrl+Shift+C/V/Z…) são recusados: a descrição fica vermelha com
+  a regra. `Esc`, `Tab` ou sair do botão cancela; o resultado é anunciado numa região `aria-live`.
+  Se o atalho salvo não está valendo, uma `Tag` de aviso "Inativo" pede para definir de novo.
+- Definir faz o necessário sozinho, sem explicar o mecanismo ao usuário. Em X11 o main troca o
+  registro no `globalShortcut` (se o sistema recusar, volta ao anterior e mostra o erro). No GNOME
+  com Wayland o Electron não consegue registrar atalho global, nem pelo portal; aí o main grava um
+  atalho personalizado do GNOME pelo `gsettings` (`gnomeKeybinding.ts`, puro e testado com um
+  `gsettings` falso: caminho próprio `crafytask-capture`, sem mexer nos outros atalhos), cujo
+  comando abre o app com `--quick-capture` (a instância aberta recebe pelo `second-instance`; se o
+  app estiver fechado, ele sobe escondido e abre só a captura). "Ativo" no GNOME quer dizer que a
+  combinação e o comando de lá batem com os de agora. O atalho fica em `app_prefs` (linha `app`,
+  `shared/appPrefs.ts`; IPC `prefs:getApp`/`prefs:setCaptureShortcut`).
 
 ### Aparência
 

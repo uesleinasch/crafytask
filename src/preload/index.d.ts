@@ -354,7 +354,6 @@ interface API {
   onWorkflowPrefsChanged: (callback: (prefs: WorkflowPrefs) => void) => () => void
   getAppPrefs: () => Promise<AppPrefsStatus>
   setCaptureShortcut: (accelerator: string) => Promise<AppPrefsStatus>
-  removeGnomeShortcut: () => Promise<AppPrefsStatus>
   setAutoBackup: (enabled: boolean) => Promise<AppPrefsStatus>
   onBackupChanged: (callback: () => void) => () => void
   appLogRendererError: (report: RendererErrorReport) => Promise<void>

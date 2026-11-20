@@ -9,7 +9,6 @@ import {
   isGnomeKeybindingCurrent,
   parseStrv,
   readGnomeKeybinding,
-  removeGnomeKeybinding,
   shellQuote,
   writeGnomeKeybinding,
   type GsettingsRun
@@ -76,15 +75,13 @@ describe('atalho personalizado do GNOME', () => {
     expect(isGnomeKeybindingCurrent(current, 'CommandOrControl+Shift+Space', command)).toBe(false)
   })
 
-  it('atualizar não duplica o caminho; remover tira só o do CrafyTask', async () => {
+  it('atualizar não duplica o caminho', async () => {
     const { run, store } = fakeGsettings({
       [`${MEDIA_KEYS_SCHEMA} custom-keybindings`]: "['/org/x/custom0/']"
     })
     await writeGnomeKeybinding(run, 'CommandOrControl+Alt+J', command)
     await writeGnomeKeybinding(run, 'Super+F9', command)
     expect(parseStrv(store[`${MEDIA_KEYS_SCHEMA} custom-keybindings`])).toHaveLength(2)
-    await removeGnomeKeybinding(run)
-    expect(parseStrv(store[`${MEDIA_KEYS_SCHEMA} custom-keybindings`])).toEqual(['/org/x/custom0/'])
-    expect(store[`${CUSTOM_SCHEMA}:${CRAFYTASK_PATH} binding`]).toBeUndefined()
+    expect(store[`${CUSTOM_SCHEMA}:${CRAFYTASK_PATH} binding`]).toBe("'<Super>F9'")
   })
 })

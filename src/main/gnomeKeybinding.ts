@@ -81,20 +81,6 @@ export async function writeGnomeKeybinding(
   }
 }
 
-export async function removeGnomeKeybinding(run: GsettingsRun): Promise<void> {
-  const paths = parseStrv(await run(['get', MEDIA_KEYS_SCHEMA, 'custom-keybindings']))
-  if (paths.includes(CRAFYTASK_PATH)) {
-    const rest = paths.filter((path) => path !== CRAFYTASK_PATH)
-    await run([
-      'set',
-      MEDIA_KEYS_SCHEMA,
-      'custom-keybindings',
-      rest.length ? formatStrv(rest) : '@as []'
-    ])
-  }
-  await run(['reset-recursively', `${CUSTOM_SCHEMA}:${CRAFYTASK_PATH}`])
-}
-
 export function isGnomeKeybindingCurrent(
   current: GnomeKeybinding | null,
   accelerator: string,

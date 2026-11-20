@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { App, Button, Flex, Popconfirm, Space, Switch, Tag, Tooltip, Typography } from 'antd'
-import { Info, Monitor, TriangleAlert } from 'lucide-react'
+import { App, Button, Flex, Switch, Tag, Tooltip, Typography } from 'antd'
+import { Info, TriangleAlert } from 'lucide-react'
 import {
   ACCELERATOR_RULE,
   DEFAULT_CAPTURE_SHORTCUT,
@@ -15,7 +15,7 @@ import { errorMessage } from './settingsStatus'
 
 const RECORD_HINT_ID = 'capture-shortcut-hint'
 
-function CaptureShortcutRows(): React.JSX.Element {
+function CaptureShortcutRow(): React.JSX.Element {
   const { message } = App.useApp()
   const [prefs, setPrefs] = useState<AppPrefsStatus | null>(null)
   const [failed, setFailed] = useState(false)
@@ -36,20 +36,6 @@ function CaptureShortcutRows(): React.JSX.Element {
   }, [message])
 
   const shortcut = prefs?.captureShortcut ?? DEFAULT_CAPTURE_SHORTCUT
-  const gnome = prefs?.captureShortcutMode === 'gnome'
-
-  async function removeFromGnome(): Promise<void> {
-    setSaving(true)
-    try {
-      setPrefs(await window.api.removeGnomeShortcut())
-      message.success('Atalho removido do GNOME')
-    } catch (error) {
-      message.error(errorMessage(error))
-    } finally {
-      setSaving(false)
-      recordRef.current?.focus()
-    }
-  }
 
   function startRecording(): void {
     setInvalid(false)
@@ -99,131 +85,60 @@ function CaptureShortcutRows(): React.JSX.Element {
     }
   }
 
+  const inactive = !!prefs && !prefs.captureShortcutActive
   const hint = recording
     ? invalid
       ? `${ACCELERATOR_RULE} Esc cancela.`
       : 'Pressione a nova combinação. Esc cancela.'
     : failed
       ? 'Não foi possível ler o atalho salvo.'
-      : gnome
-        ? 'No GNOME com Wayland o app não registra atalho sozinho: ele fica nos atalhos personalizados do sistema. Gravar aqui cria ou atualiza lá.'
-        : 'Troca a combinação que abre a captura.'
-
-  const status = !prefs
-    ? null
-    : gnome
-      ? prefs.captureShortcutActive
-        ? {
-            warn: false,
-            label: 'No GNOME',
-            tip: 'Atalho personalizado do GNOME criado pelo CrafyTask.'
-          }
-        : prefs.gnomeKeybindingExists
-          ? {
-              warn: true,
-              label: 'Diferente no GNOME',
-              tip: 'O atalho no GNOME não bate com o salvo aqui. Atualize para usar este.'
-            }
-          : {
-              warn: true,
-              label: 'Não criado no GNOME',
-              tip: 'Ainda não existe atalho no GNOME. Crie para a combinação funcionar.'
-            }
-      : prefs.captureShortcutActive
-        ? null
-        : {
-            warn: true,
-            label: 'Não registrado',
-            tip: 'O sistema não aceitou este atalho. Escolha outro.'
-          }
+      : 'Abre de qualquer lugar do sistema e manda direto para o Inbox.'
 
   return (
-    <>
-      <SettingRow
-        title="Captura rápida"
-        description="Abre de qualquer lugar do sistema e manda direto para o Inbox."
-      >
-        <Flex align="center" gap={8} wrap>
-          <KeyCombo keys={acceleratorKeys(shortcut)} />
-          {status && (
-            <Tooltip title={status.tip}>
-              <Tag
-                bordered={false}
-                color={status.warn ? 'warning' : undefined}
-                icon={
-                  status.warn ? (
-                    <TriangleAlert size={12} strokeWidth={1.75} aria-hidden />
-                  ) : (
-                    <Monitor size={12} strokeWidth={1.75} aria-hidden />
-                  )
-                }
-                style={{ margin: 0 }}
-              >
-                {status.label}
-              </Tag>
-            </Tooltip>
-          )}
-        </Flex>
-      </SettingRow>
-      <SettingRow
-        title="Atalho da captura rápida"
-        description={
-          <Typography.Text
-            id={RECORD_HINT_ID}
-            type={invalid || failed ? 'danger' : 'secondary'}
-            style={{ fontSize: 13 }}
-          >
-            {hint}
-          </Typography.Text>
-        }
-      >
-        <Space wrap>
-          {gnome && prefs?.gnomeKeybindingExists && !recording && (
-            <Popconfirm
-              title="Remover o atalho do GNOME?"
-              description="Some dos atalhos personalizados do sistema. A combinação salva aqui continua, e você pode criar de novo."
-              okText="Remover"
-              cancelText="Cancelar"
-              onConfirm={() => removeFromGnome()}
+    <SettingRow
+      title="Captura rápida"
+      description={
+        <Typography.Text
+          id={RECORD_HINT_ID}
+          type={invalid || failed ? 'danger' : 'secondary'}
+          style={{ fontSize: 13 }}
+        >
+          {hint}
+        </Typography.Text>
+      }
+    >
+      <Flex align="center" gap={8} wrap>
+        <KeyCombo keys={acceleratorKeys(shortcut)} />
+        {inactive && !recording && (
+          <Tooltip title="Clique em Definir atalho para ativar.">
+            <Tag
+              bordered={false}
+              color="warning"
+              icon={<TriangleAlert size={12} strokeWidth={1.75} aria-hidden />}
+              style={{ margin: 0 }}
             >
-              <Button type="link" disabled={saving}>
-                Remover do GNOME
-              </Button>
-            </Popconfirm>
-          )}
-          {gnome && !prefs?.captureShortcutActive && !recording && (
-            <Button disabled={saving} onClick={() => void save(shortcut)}>
-              {prefs?.gnomeKeybindingExists ? 'Atualizar no GNOME' : 'Criar no GNOME'}
-            </Button>
-          )}
-          {shortcut !== DEFAULT_CAPTURE_SHORTCUT && !recording && (
-            <Button
-              type="link"
-              disabled={saving}
-              onClick={() => void save(DEFAULT_CAPTURE_SHORTCUT)}
-            >
-              Restaurar padrão
-            </Button>
-          )}
-          <Button
-            ref={recordRef}
-            type={recording ? 'primary' : 'default'}
-            loading={saving}
-            disabled={!prefs}
-            aria-pressed={recording}
-            aria-describedby={RECORD_HINT_ID}
-            onClick={() => (recording ? stopRecording() : startRecording())}
-            onKeyDown={onKeyDown}
-            onBlur={stopRecording}
-          >
-            {recording ? 'Pressione as teclas…' : 'Alterar atalho'}
-          </Button>
-        </Space>
-        <span className="sr-only" aria-live="polite">
-          {announce}
-        </span>
-      </SettingRow>
-    </>
+              Inativo
+            </Tag>
+          </Tooltip>
+        )}
+        <Button
+          ref={recordRef}
+          type={recording ? 'primary' : 'default'}
+          loading={saving}
+          disabled={!prefs}
+          aria-pressed={recording}
+          aria-describedby={RECORD_HINT_ID}
+          onClick={() => (recording ? stopRecording() : startRecording())}
+          onKeyDown={onKeyDown}
+          onBlur={stopRecording}
+        >
+          {recording ? 'Pressione as teclas…' : 'Definir atalho'}
+        </Button>
+      </Flex>
+      <span className="sr-only" aria-live="polite">
+        {announce}
+      </span>
+    </SettingRow>
   )
 }
 
@@ -275,7 +190,7 @@ export function GeneralSection({
             Comportamento fixo
           </Tag>
         </SettingRow>
-        <CaptureShortcutRows />
+        <CaptureShortcutRow />
       </SettingsCard>
     </Flex>
   )

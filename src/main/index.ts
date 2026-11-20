@@ -20,7 +20,6 @@ import { execFile } from 'child_process'
 import {
   isGnomeKeybindingCurrent,
   readGnomeKeybinding,
-  removeGnomeKeybinding,
   shellQuote,
   writeGnomeKeybinding,
   type GnomeKeybinding,
@@ -659,12 +658,7 @@ function registerGlobalShortcut(): void {
 async function appPrefsStatus(): Promise<AppPrefsStatus> {
   const prefs = getAppPrefs()
   if (!usesGnomeKeybinding()) {
-    return {
-      ...prefs,
-      captureShortcutMode: 'app',
-      captureShortcutActive: globalShortcut.isRegistered(captureShortcut),
-      gnomeKeybindingExists: false
-    }
+    return { ...prefs, captureShortcutActive: globalShortcut.isRegistered(captureShortcut) }
   }
   let current: GnomeKeybinding | null = null
   try {
@@ -674,13 +668,11 @@ async function appPrefsStatus(): Promise<AppPrefsStatus> {
   }
   return {
     ...prefs,
-    captureShortcutMode: 'gnome',
     captureShortcutActive: isGnomeKeybindingCurrent(
       current,
       prefs.captureShortcut,
       quickCaptureCommand()
-    ),
-    gnomeKeybindingExists: current !== null
+    )
   }
 }
 
@@ -693,7 +685,7 @@ async function changeCaptureShortcut(accelerator: unknown): Promise<AppPrefsStat
       await writeGnomeKeybinding(runGsettings, accelerator, quickCaptureCommand())
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error)
-      throw new Error(`Não foi possível gravar o atalho no GNOME: ${detail}`)
+      throw new Error(`Não foi possível definir o atalho no sistema: ${detail}`)
     }
   } else if (accelerator !== captureShortcut) {
     const previous = captureShortcut
@@ -707,12 +699,6 @@ async function changeCaptureShortcut(accelerator: unknown): Promise<AppPrefsStat
   }
   captureShortcut = accelerator
   setAppPrefs({ captureShortcut: accelerator })
-  return appPrefsStatus()
-}
-
-async function removeCaptureFromGnome(): Promise<AppPrefsStatus> {
-  if (!usesGnomeKeybinding()) throw new Error('O atalho só fica no GNOME numa sessão Wayland.')
-  await removeGnomeKeybinding(runGsettings)
   return appPrefsStatus()
 }
 
@@ -1466,7 +1452,6 @@ function setupIpcHandlers(): void {
   })
 
   ipcMain.handle('prefs:getApp', () => appPrefsStatus())
-  ipcMain.handle('prefs:removeGnomeShortcut', () => removeCaptureFromGnome())
   ipcMain.handle('prefs:setCaptureShortcut', (_, accelerator: unknown) =>
     changeCaptureShortcut(accelerator)
   )

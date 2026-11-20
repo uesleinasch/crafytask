@@ -577,11 +577,12 @@ Mesmo esqueleto das outras telas, com navegação própria porque são muitas se
   ao Notion), guardadas no banco (`app_prefs`) e lidas pelo main e pelo renderer. Também novos:
   alterar o atalho da captura (em Geral) e backup automático (em Backup: diário, guarda os 14
   automáticos mais recentes e nunca apaga os manuais; desabilitado sem pasta).
-- **Gravar um atalho:** o botão "Alterar atalho" vira primário com "Pressione as teclas…"
-  (`aria-pressed`) e a descrição da linha diz o que fazer; a combinação vale com dois modificadores
-  ou Super (Ctrl+C, Alt+F4 e Ctrl+Shift+C/V/Z… são recusados, e a descrição fica `error` com a
-  regra). `Esc`, `Tab` ou tirar o foco cancela. "Restaurar padrão" aparece só fora do padrão. Se o
-  sistema não aceitou o atalho salvo, uma `Tag` `warning` "Não registrado" fica ao lado das teclas.
+- **Gravar um atalho:** uma linha só, com as teclas atuais e o botão "Definir atalho". Ao clicar, o
+  botão vira primário com "Pressione as teclas…" (`aria-pressed`) e a descrição da linha diz o que
+  fazer; a combinação vale com dois modificadores ou Super (Ctrl+C, Alt+F4 e Ctrl+Shift+C/V/Z… são
+  recusados, e a descrição fica `error` com a regra). `Esc`, `Tab` ou tirar o foco cancela. Definir
+  já deixa o atalho valendo, seja qual for o sistema; a tela não explica o mecanismo. Se o atalho
+  salvo não está valendo, uma `Tag` `warning` "Inativo" fica ao lado das teclas.
 
 ### Cadernos
 
