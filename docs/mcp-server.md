@@ -75,11 +75,11 @@ Ao subir a ponte com `ELECTRON_RUN_AS_NODE=1`, essa variável é removida do amb
 | `time_entries` | Corrige o tempo registrado: `update` muda início e fim de uma sessão encerrada, `delete` apaga uma sessão, `reset` zera o tempo da task. `delete` e `reset` exigem `confirm_token`. O worklog do Jira acompanha. |
 | `timer` | Inicia, para, consulta status ou lança tempo manual numa task. Iniciar em task bloqueada devolve `app_state`. |
 | `time_report` | Tempo gasto: geral, semanal, por task, registros de uma task, ou `scope=period` (`start`, `end`, `project_id` opcional): as estatísticas do dashboard para o período, com a comparação com o período anterior. |
-| `read_notes` | Devolve as notas de uma task convertidas para Markdown; menções saem como `@[Nome](task:123)`. |
+| `read_notes` | Devolve as notas de uma task convertidas para Markdown; menções saem como `@[Nome](task:123)`. Com `heading`, só aquela seção. |
 | `read_drawing` | Devolve o desenho (Excalidraw) de uma task como imagem PNG, com um resumo dos elementos e dos textos contidos. |
 | `drawing_guide` | Guia de como montar os elementos de `write_drawing`: formas, texto, setas ligadas por `id`, molduras, cores e um exemplo. |
 | `write_drawing` | Cria ou altera o desenho de uma task (`task_id`) ou página (`page_id`) a partir de elementos simplificados do Excalidraw. `mode=append` (padrão) acrescenta; `mode=replace` sobre desenho existente exige `confirm_token`. O JSON e o PNG são gerados pela janela principal e gravados juntos. |
-| `write_notes` | Grava Markdown nas notas (ver [Markdown das notas](#markdown-das-notas)); `mode=append` (recomendado) ou `mode=replace` sobre nota não vazia, que exige `confirm_token`. |
+| `write_notes` | Grava Markdown nas notas (ver [Markdown das notas](#markdown-das-notas)); `mode=append` (recomendado), `mode=section` (com `heading`: troca só o que está sob aquele título, ver [Edição por seção](#edicao-por-secao)) ou `mode=replace` sobre nota não vazia, que exige `confirm_token`. |
 | `work_session` | Sessão de trabalho numa task. `start` põe a task (e a pai) em `executando`, liga o timer e devolve o último checkpoint, o histórico recente e as subtarefas; `pause` para o timer, grava um checkpoint e move para `aguardando` (com `waiting_for`) ou `proximas`; `finish` para o timer, grava o checkpoint final e move para `finalizada` (recusa com subtarefa aberta); `status` lista o que está em `executando` (subtarefas também) e os timers ligados. Com `directory` no lugar de `task_id`, `start` acha a task pela pasta (`working_dir` da task ou do projeto; a pasta mais específica vence): abre a que está em `executando` (a subtarefa, não a pai), devolve `ambiguous` com as candidatas ou `not_found`; `status` lista só o que é daquela pasta. |
 | `task_history` | Histórico e memória da task. `read` devolve mudanças de status e entradas escritas (mais recentes primeiro, `limit`/`before`) e o último checkpoint; `add` grava `checkpoint` (estado atual, `done`, `remaining`), `operation` ou `note`. `include_subtasks` junta o histórico das subtarefas. |
 | `agenda` | Tasks agendadas e blocos de tempo de um dia, semana ou mês. |
@@ -87,9 +87,9 @@ Ao subir a ponte com `ELECTRON_RUN_AS_NODE=1`, essa variável é removida do amb
 | `weekly_review` | `status` (revisão aberta, última e indicadores de saúde), `list` (concluídas), `past_week` (sessões, conclusões e blocos dos últimos 7 dias), `start` (abre a revisão; se já há uma em andamento, devolve essa com `already_open`, sem mexer nas notas), `step` (passo feito, pulado ou pendente), `notes` e `complete` (pendentes viram pulados). |
 | `list_notebooks` | Cadernos, seções e páginas (subpáginas em ordem de árvore, `depth` 0–2); `notebook_id` limita a um caderno. |
 | `search_pages` | Busca páginas de caderno pelo título e pelo texto das notas (até 30, com trecho). |
-| `read_page` | Página em Markdown, com caderno, seção e subpáginas; o PNG do desenho vem junto quando existe. |
+| `read_page` | Página em Markdown, com caderno, seção e subpáginas; o PNG do desenho vem junto quando existe. Com `heading`, o Markdown traz só aquela seção das notas. |
 | `create_page` | Cria página numa seção, opcionalmente como subpágina (até 2 níveis) e já com Markdown. |
-| `write_page` | Grava Markdown numa página; mesmas regras de `write_notes` (`mode=replace` sobre conteúdo exige confirmação). |
+| `write_page` | Grava Markdown numa página; mesmas regras de `write_notes` (`mode=section` com `heading`; `mode=replace` sobre conteúdo exige confirmação). |
 | `delete_page` | Apaga a página e as subpáginas; sempre exige `confirm_token`. |
 | `manage_notebooks` | Estrutura dos cadernos: cria, renomeia e apaga caderno e seção (apagar sempre exige `confirm_token` e leva as páginas junto); renomeia e move página (`section_id`, `parent_page_id`, `index`). |
 | `integrations` | Aciona integrações já configuradas: `gcal_sync` (liga/desliga a task na agenda do Google), `notion_sync`, `jira_import`, `jira_transitions` e `jira_transition` (muda o status no Jira; sempre exige `confirm_token`), `export_task` (regrava o Markdown local) e `backup`. Integração não configurada devolve `app_state`. |
@@ -127,6 +127,19 @@ O servidor também publica prompts (`mcp/prompts.ts`). No Claude Code eles viram
 
 Menção a um id que não existe entra como texto (`@Nome`). O export local em Markdown continua
 escrevendo a menção só como `@Nome`.
+
+## Edição por seção
+
+`write_notes` e `write_page` com `mode=section` e `heading` trocam só o conteúdo sob aquele título
+(`notesSection.ts`): a seção vai do título até o próximo título de nível igual ou maior, então os
+subtítulos de dentro saem junto. O título fica; se o Markdown novo começar repetindo o mesmo
+título, ele não é duplicado. O resto do documento não é tocado.
+
+- O título é comparado pelo texto, sem diferenciar maiúsculas; `## Plano` e `Plano` valem igual.
+- Título não encontrado devolve `not_found`; título repetido, `ambiguous`. Os dois trazem
+  `headings`, a lista de títulos da nota com o nível.
+- Não pede `confirm_token`: a resposta traz `previous_markdown`, o conteúdo que saiu, para desfazer.
+- `read_notes` e `read_page` aceitam `heading` para ler só uma seção.
 
 ## Formato compacto
 

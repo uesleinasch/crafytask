@@ -32,11 +32,15 @@ import {
 } from '../../notebookService'
 import { readDrawingPreview } from '../../drawingAssets'
 import type { PMDoc } from '../../markdownToProsemirror'
+import { readSection, replaceSection } from '../../notesSection'
 import { needsConfirmation } from '../confirmGuard'
 import { fail, ok, okImage } from '../reply'
 import type { ToolContext } from '../toolContext'
 import {
   MARKDOWN_SUPPORT,
+  SECTION_MODE_HELP,
+  nodesToMarkdown,
+  sectionFailure,
   hasRealContent,
   markdownToNotes,
   notesToMarkdown,
@@ -99,10 +103,13 @@ export function registerNotebookTools(server: McpServer, ctx: ToolContext): void
     {
       title: 'Ler uma página de caderno',
       description:
-        'Devolve a página em Markdown, com caderno, seção e subpáginas. Se a página tem desenho, a imagem PNG vem junto.',
-      inputSchema: { page_id: z.number().int().positive() }
+        'Devolve a página em Markdown, com caderno, seção e subpáginas. Se a página tem desenho, a imagem PNG vem junto. Com heading, o Markdown traz só aquela seção das notas (o título e o que está sob ele).',
+      inputSchema: {
+        page_id: z.number().int().positive(),
+        heading: z.string().trim().min(1).optional().describe('Texto do título da seção.')
+      }
     },
-    async ({ page_id }) => {
+    async ({ page_id, heading }) => {
       const db = notebookDb()
       const page = getPage(db, page_id)
       if (!page) return fail('not_found', `Página ${page_id} não existe.`)
@@ -110,6 +117,15 @@ export function registerNotebookTools(server: McpServer, ctx: ToolContext): void
       const notebook = section ? getNotebook(db, section.notebook_id) : undefined
       const parsed = parseNotes(page.notes)
       const drawing = describeElements(page.drawing)
+      let sectionMarkdown: string | undefined
+      if (heading !== undefined) {
+        const found = readSection(
+          parsed.kind === 'doc' ? parsed.doc : { type: 'doc', content: [] },
+          heading
+        )
+        if (!found.ok) return sectionFailure(found.code, heading, found.headings)
+        sectionMarkdown = nodesToMarkdown(found.content)
+      }
       const data = {
         page_id,
         title: page.title || UNTITLED_PAGE,
@@ -118,8 +134,10 @@ export function registerNotebookTools(server: McpServer, ctx: ToolContext): void
         parent_page_id: page.parent_page_id,
         subpage_ids: listPageSubtree(db, page_id).slice(1),
         updated_at: page.updated_at,
+        ...(heading !== undefined && { heading }),
         markdown:
-          parsed.kind === 'doc' || parsed.kind === 'empty' ? notesToMarkdown(page.notes) : null,
+          sectionMarkdown ??
+          (parsed.kind === 'doc' || parsed.kind === 'empty' ? notesToMarkdown(page.notes) : null),
         drawing: { elements: drawing.count, kinds: drawing.kinds, texts: drawing.texts }
       }
       if (drawing.count === 0) return ok(data)
@@ -159,15 +177,16 @@ export function registerNotebookTools(server: McpServer, ctx: ToolContext): void
     'write_page',
     {
       title: 'Escrever numa página de caderno',
-      description: `Grava Markdown nas notas de uma página. ${MARKDOWN_SUPPORT} Prefira mode=append; mode=replace sobre página com conteúdo exige confirm_token.`,
+      description: `Grava Markdown nas notas de uma página. ${MARKDOWN_SUPPORT} Prefira mode=append. ${SECTION_MODE_HELP} mode=replace sobre página com conteúdo exige confirm_token.`,
       inputSchema: {
         page_id: z.number().int().positive(),
         markdown: z.string().min(1),
-        mode: z.enum(['append', 'replace']).optional(),
+        mode: z.enum(['append', 'replace', 'section']).optional(),
+        heading: z.string().trim().min(1).optional().describe('mode=section: texto do título.'),
         confirm_token: z.string().optional()
       }
     },
-    async ({ page_id, markdown, mode, confirm_token }) => {
+    async ({ page_id, markdown, mode, heading, confirm_token }) => {
       const db = notebookDb()
       const page = getPage(db, page_id)
       if (!page) return fail('not_found', `Página ${page_id} não existe.`)
@@ -175,6 +194,25 @@ export function registerNotebookTools(server: McpServer, ctx: ToolContext): void
       const effectiveMode = mode ?? 'append'
       const parsed = parseNotes(page.notes)
       const incoming = markdownToNotes(markdown)
+
+      if (effectiveMode === 'section') {
+        if (!heading) return fail('validation', 'mode=section exige heading.')
+        if (parsed.kind !== 'doc') {
+          return fail('app_state', 'A página não tem títulos: use mode=append ou mode=replace.')
+        }
+        const replaced = replaceSection(parsed.doc, heading, incoming.content)
+        if (!replaced.ok) return sectionFailure(replaced.code, heading, replaced.headings)
+        updatePageNotes(db, page_id, JSON.stringify(replaced.doc))
+        autoSyncNotebook({ kind: 'page', id: page_id })
+        return ok({
+          page_id,
+          mode: effectiveMode,
+          heading,
+          blocks: replaced.doc.content.length,
+          previous_markdown: nodesToMarkdown(replaced.previous)
+        })
+      }
+
       const destructive = effectiveMode === 'replace' || parsed.kind !== 'doc'
 
       if (
