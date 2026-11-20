@@ -2094,6 +2094,27 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const [jiraNotion, setJiraNotion] = useState(false);
     const [mcpOn, setMcpOn] = useState(true);
     const [backupDir, setBackupDir] = useState('~/Backups/crafytask');
+    const SHORTCUT_DEFAULT = ['Ctrl', 'Shift', 'Space'];
+    const [shortcut, setShortcut] = useState(SHORTCUT_DEFAULT);
+    const [recording, setRecording] = useState(false);
+    const [badCombo, setBadCombo] = useState(false);
+    const [shortcutSample, setShortcutSample] = useState('ativo');
+    const SHORTCUT_RULE = 'Use dois modificadores (ex.: Ctrl+Shift) ou Super, com uma letra, número, F1–F12, Espaço ou seta.';
+    const recordKey = e => {
+      if (!recording || e.key === 'Tab') return;
+      e.preventDefault();
+      if (e.key === 'Escape') { setRecording(false); setBadCombo(false); return; }
+      if (/^(Control|Shift|Alt|Meta|OS)/.test(e.code)) return;
+      const m = /^Key([A-Z])$/.exec(e.code) || /^Digit(\d)$/.exec(e.code);
+      const key = m ? m[1] : /^F([1-9]|1[0-2])$/.test(e.code) || e.code === 'Space' ? e.code : null;
+      const mods = [e.ctrlKey && 'Ctrl', e.altKey && 'Alt', e.shiftKey && 'Shift', e.metaKey && 'Super'].filter(Boolean);
+      const strong = mods.length >= 2 || mods.includes('Super');
+      const reserved = mods.join('+') === 'Ctrl+Shift' && 'CVZITNWQ'.includes(key);
+      if (!key || !strong || reserved) { setBadCombo(true); return; }
+      const next = mods.concat(key);
+      setShortcut(next); setRecording(false); setBadCombo(false);
+      message.success('Atalho da captura: ' + next.join('+'));
+    };
 
     const nav = html`<div className="ct-settings-nav">
       <${Input} allowClear size="small" placeholder="Buscar configuração" prefix=${html`<${I.SearchOutlined} />`} value=${q} onChange=${e => setQ(e.target.value)} aria-label="Buscar configuração" style=${{ marginBottom: 8 }} />
@@ -2135,15 +2156,21 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
             <${Switch} checked=${autostart} onChange=${v => { setAutostart(v); message.success(v ? 'Vai iniciar com o sistema' : 'Não inicia mais com o sistema'); }} aria-label="Iniciar com o sistema" />
           <//>
         <//>
-        <${SettingsCard} title="Janela e bandeja">
+        <${SettingsCard} title="Janela e bandeja" extra=${html`<${Flex} align="center" gap=${6}><${Text} type="secondary" style=${{ fontSize: 12 }}>Exemplo:<//><${Segmented} size="small" value=${shortcutSample} onChange=${setShortcutSample} options=${[{ value: 'ativo', label: 'Atalho ativo' }, { value: 'recusado', label: 'Atalho recusado' }]} /><//>`}>
           <${SettingRow} title="Fechar a janela não encerra o app" desc="O CrafyTask continua na bandeja, com os timers rodando. Para sair de vez, use Sair no menu da bandeja.">
             <${Tag} bordered=${false} icon=${html`<${I.InfoCircleOutlined} />`}>Comportamento fixo<//>
           <//>
           <${SettingRow} title="Captura rápida" desc="Abre de qualquer lugar do sistema e manda direto para o Inbox.">
-            <${Space} size=${4}><kbd className="ct-kbd">Ctrl</kbd><kbd className="ct-kbd">Shift</kbd><kbd className="ct-kbd">Space</kbd><//>
+            <${Flex} align="center" gap=${8} wrap="wrap">
+              <${Space} size=${4}>${shortcut.map(k => html`<kbd key=${k} className="ct-kbd">${k}</kbd>`)}<//>
+              ${shortcutSample === 'recusado' ? html`<${Tooltip} title="O sistema não aceitou este atalho. Escolha outro."><${Tag} bordered=${false} color="warning" icon=${html`<${I.WarningOutlined} />`} style=${{ margin: 0 }}>Não registrado<//><//>` : null}
+            <//>
           <//>
-          <${SettingRow} title="Atalho da captura rápida" desc="Troca a combinação que abre a captura.">
-            <${Button} onClick=${() => message.info('Pressione a nova combinação de teclas')}>Alterar atalho<//>
+          <${SettingRow} title="Atalho da captura rápida" desc=${html`<span style=${{ color: badCombo ? 'var(--ant-color-error)' : undefined }}>${recording ? (badCombo ? SHORTCUT_RULE + ' Esc cancela.' : 'Pressione a nova combinação. Esc cancela.') : 'Troca a combinação que abre a captura.'}</span>`}>
+            <${Space} wrap>
+              ${shortcut.join('+') !== SHORTCUT_DEFAULT.join('+') && !recording ? html`<${Button} type="link" onClick=${() => { setShortcut(SHORTCUT_DEFAULT); message.success('Atalho da captura: Ctrl+Shift+Space'); }}>Restaurar padrão<//>` : null}
+              <${Button} type=${recording ? 'primary' : 'default'} aria-pressed=${recording} onClick=${() => { setRecording(!recording); setBadCombo(false); }} onKeyDown=${recordKey} onBlur=${() => { setRecording(false); setBadCombo(false); }}>${recording ? 'Pressione as teclas…' : 'Alterar atalho'}<//>
+            <//>
           <//>
         <//>
       <//>`,

@@ -1,56 +1,97 @@
-import { useEffect, useState } from 'react'
-import { App, Button, Flex, Space, Switch, Tag, Tooltip } from 'antd'
+import { useEffect, useRef, useState } from 'react'
+import { App, Button, Flex, Space, Switch, Tag, Tooltip, Typography } from 'antd'
 import { Info, TriangleAlert } from 'lucide-react'
 import {
+  ACCELERATOR_RULE,
   DEFAULT_CAPTURE_SHORTCUT,
   acceleratorFromEvent,
-  acceleratorKeys
+  acceleratorKeys,
+  isModifierCode
 } from '@shared/accelerator'
 import type { AppPrefsStatus } from '@shared/appPrefs'
 import { KeyCombo } from '@renderer/components/shell/Kbd'
 import { SettingRow, SettingsCard } from './SettingsLayout'
 import { errorMessage } from './settingsStatus'
 
+const RECORD_HINT_ID = 'capture-shortcut-hint'
+
 function CaptureShortcutRows(): React.JSX.Element {
   const { message } = App.useApp()
   const [prefs, setPrefs] = useState<AppPrefsStatus | null>(null)
+  const [failed, setFailed] = useState(false)
   const [recording, setRecording] = useState(false)
+  const [invalid, setInvalid] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [announce, setAnnounce] = useState('')
+  const recordRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     window.api
       .getAppPrefs()
       .then(setPrefs)
-      .catch((error) => message.error(errorMessage(error)))
+      .catch((error) => {
+        setFailed(true)
+        message.error(errorMessage(error))
+      })
   }, [message])
 
   const shortcut = prefs?.captureShortcut ?? DEFAULT_CAPTURE_SHORTCUT
 
-  async function save(accelerator: string): Promise<void> {
+  function startRecording(): void {
+    setInvalid(false)
+    setRecording(true)
+    setAnnounce('Gravando. Pressione a nova combinação; Esc cancela.')
+  }
+
+  function stopRecording(): void {
     setRecording(false)
+    setInvalid(false)
+  }
+
+  async function save(accelerator: string): Promise<void> {
+    stopRecording()
     setSaving(true)
     try {
       const next = await window.api.setCaptureShortcut(accelerator)
       setPrefs(next)
-      message.success(`Atalho da captura: ${acceleratorKeys(next.captureShortcut).join('+')}`)
+      const label = acceleratorKeys(next.captureShortcut).join('+')
+      message.success(`Atalho da captura: ${label}`)
+      setAnnounce(`Atalho da captura: ${label}`)
     } catch (error) {
       message.error(errorMessage(error))
+      setAnnounce(errorMessage(error))
     } finally {
       setSaving(false)
+      recordRef.current?.focus()
     }
   }
 
   function onKeyDown(event: React.KeyboardEvent<HTMLButtonElement>): void {
-    if (!recording) return
+    if (!recording || event.key === 'Tab') return
     event.preventDefault()
     event.stopPropagation()
     if (event.key === 'Escape') {
-      setRecording(false)
+      stopRecording()
+      setAnnounce('Gravação cancelada.')
       return
     }
+    if (isModifierCode(event.code)) return
     const accelerator = acceleratorFromEvent(event.nativeEvent)
-    if (accelerator) void save(accelerator)
+    if (accelerator) {
+      void save(accelerator)
+    } else {
+      setInvalid(true)
+      setAnnounce(ACCELERATOR_RULE)
+    }
   }
+
+  const hint = recording
+    ? invalid
+      ? `${ACCELERATOR_RULE} Esc cancela.`
+      : 'Pressione a nova combinação. Esc cancela.'
+    : failed
+      ? 'Não foi possível ler o atalho salvo.'
+      : 'Troca a combinação que abre a captura.'
 
   return (
     <>
@@ -77,9 +118,13 @@ function CaptureShortcutRows(): React.JSX.Element {
       <SettingRow
         title="Atalho da captura rápida"
         description={
-          recording
-            ? 'Pressione a nova combinação, com Ctrl, Alt ou Super. Esc cancela.'
-            : 'Troca a combinação que abre a captura.'
+          <Typography.Text
+            id={RECORD_HINT_ID}
+            type={invalid || failed ? 'danger' : 'secondary'}
+            style={{ fontSize: 13 }}
+          >
+            {hint}
+          </Typography.Text>
         }
       >
         <Space wrap>
@@ -93,17 +138,22 @@ function CaptureShortcutRows(): React.JSX.Element {
             </Button>
           )}
           <Button
+            ref={recordRef}
             type={recording ? 'primary' : 'default'}
             loading={saving}
             disabled={!prefs}
-            aria-live="polite"
-            onClick={() => setRecording(!recording)}
+            aria-pressed={recording}
+            aria-describedby={RECORD_HINT_ID}
+            onClick={() => (recording ? stopRecording() : startRecording())}
             onKeyDown={onKeyDown}
-            onBlur={() => setRecording(false)}
+            onBlur={stopRecording}
           >
             {recording ? 'Pressione as teclas…' : 'Alterar atalho'}
           </Button>
         </Space>
+        <span className="sr-only" aria-live="polite">
+          {announce}
+        </span>
       </SettingRow>
     </>
   )

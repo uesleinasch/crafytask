@@ -75,12 +75,14 @@ que sai do CrafyTask e o que continua no serviço.
 - Card **Inicialização**: `Switch` "Iniciar o CrafyTask com o sistema". Se o sistema recusar, aviso
   de erro; senão, aviso de confirmação.
 - Card **Janela e bandeja**: "Fechar a janela não encerra o app" (`Tag` "Comportamento fixo") e
-  "Captura rápida" com o atalho atual em `KeyCombo` (`Ctrl` ou `⌘` conforme a plataforma); se o
+  "Captura rápida" com o atalho atual em `KeyCombo`; se o
   sistema não aceitou o atalho, uma `Tag` de aviso "Não registrado".
 - **Atalho da captura rápida**: **Alterar atalho** põe o botão em modo de gravação ("Pressione as
-  teclas…"); a próxima combinação com Ctrl, Alt ou Super mais uma letra, número, F1–F12, Espaço ou
-  seta vira o atalho (`acceleratorFromEvent` em `shared/accelerator.ts`, puro e testado). `Esc` ou
-  sair do botão cancela. O main desregistra o antigo e registra o novo no `globalShortcut`; se o
+  teclas…", `aria-pressed`); a próxima combinação com dois modificadores (ex.: Ctrl+Shift) ou Super,
+  mais uma letra, número, F1–F12, Espaço ou seta, vira o atalho (`acceleratorFromEvent` em
+  `shared/accelerator.ts`, puro e testado). Um modificador só (Ctrl+C, Alt+F4) e combinações do
+  sistema (Ctrl+Shift+C/V/Z…) são recusados: a descrição fica vermelha com a regra. `Esc`, `Tab` ou
+  sair do botão cancela; o resultado é anunciado numa região `aria-live`. O main desregistra o antigo e registra o novo no `globalShortcut`; se o
   sistema recusar, volta ao antigo e o erro aparece. **Restaurar padrão** (só fora do padrão) volta
   a `Ctrl+Shift+Space`. O atalho fica em `app_prefs` (linha `app`, `shared/appPrefs.ts`), lido na
   abertura do app (IPC `prefs:getApp`/`prefs:setCaptureShortcut`).

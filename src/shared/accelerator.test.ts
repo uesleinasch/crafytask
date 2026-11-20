@@ -18,10 +18,17 @@ const event = (
 })
 
 describe('isValidAccelerator', () => {
-  it('aceita o padrão e combinações com Ctrl, Alt ou Super', () => {
+  it('aceita o padrão, dois modificadores ou Super', () => {
     expect(isValidAccelerator(DEFAULT_CAPTURE_SHORTCUT)).toBe(true)
     expect(isValidAccelerator('Alt+Shift+K')).toBe(true)
     expect(isValidAccelerator('Super+F5')).toBe(true)
+  })
+
+  it('recusa combinações do sistema e de um modificador só', () => {
+    expect(isValidAccelerator('CommandOrControl+C')).toBe(false)
+    expect(isValidAccelerator('Alt+F4')).toBe(false)
+    expect(isValidAccelerator('CommandOrControl+K')).toBe(false)
+    expect(isValidAccelerator('CommandOrControl+Shift+V')).toBe(false)
   })
 
   it('recusa sem modificador forte, tecla desconhecida, repetida ou fora de ordem', () => {
@@ -39,16 +46,19 @@ describe('acceleratorFromEvent', () => {
     expect(acceleratorFromEvent(event('Space', { ctrl: true, shift: true }))).toBe(
       DEFAULT_CAPTURE_SHORTCUT
     )
-    expect(acceleratorFromEvent(event('KeyJ', { alt: true }))).toBe('Alt+J')
+    expect(acceleratorFromEvent(event('KeyJ', { ctrl: true, alt: true }))).toBe(
+      'CommandOrControl+Alt+J'
+    )
     expect(acceleratorFromEvent(event('Digit3', { ctrl: true, meta: true }))).toBe(
       'CommandOrControl+Super+3'
     )
-    expect(acceleratorFromEvent(event('ArrowUp', { ctrl: true }))).toBe('CommandOrControl+Up')
+    expect(acceleratorFromEvent(event('ArrowUp', { meta: true }))).toBe('Super+Up')
   })
 
   it('ignora modificador sozinho e combinação sem Ctrl, Alt ou Super', () => {
     expect(acceleratorFromEvent(event('ControlLeft', { ctrl: true }))).toBeNull()
     expect(acceleratorFromEvent(event('KeyA', { shift: true }))).toBeNull()
+    expect(acceleratorFromEvent(event('KeyC', { ctrl: true }))).toBeNull()
     expect(acceleratorFromEvent(event('Enter', { ctrl: true }))).toBeNull()
   })
 })
@@ -56,6 +66,6 @@ describe('acceleratorFromEvent', () => {
 describe('acceleratorKeys', () => {
   it('mostra Ctrl no lugar de CommandOrControl e setas como símbolo', () => {
     expect(acceleratorKeys(DEFAULT_CAPTURE_SHORTCUT)).toEqual(['Ctrl', 'Shift', 'Space'])
-    expect(acceleratorKeys('Alt+Up')).toEqual(['Alt', '↑'])
+    expect(acceleratorKeys('Super+Up')).toEqual(['Super', '↑'])
   })
 })

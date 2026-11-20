@@ -575,8 +575,13 @@ Mesmo esqueleto das outras telas, com navegação própria porque são muitas se
   hex, e densidade) e **Fluxo de trabalho** (jornada diária, início da semana, níveis e repetição do
   time leak, faixa de horas do calendário, os quatro avisos de prazo, intervalo do envio das notas
   ao Notion), guardadas no banco (`app_prefs`) e lidas pelo main e pelo renderer. Também novos:
-  alterar o atalho da captura (em Geral, gravando a combinação no próprio botão) e backup
-  automático (em Backup: diário, guarda os 14 automáticos mais recentes e nunca apaga os manuais).
+  alterar o atalho da captura (em Geral) e backup automático (em Backup: diário, guarda os 14
+  automáticos mais recentes e nunca apaga os manuais; desabilitado sem pasta).
+- **Gravar um atalho:** o botão "Alterar atalho" vira primário com "Pressione as teclas…"
+  (`aria-pressed`) e a descrição da linha diz o que fazer; a combinação vale com dois modificadores
+  ou Super (Ctrl+C, Alt+F4 e Ctrl+Shift+C/V/Z… são recusados, e a descrição fica `error` com a
+  regra). `Esc`, `Tab` ou tirar o foco cancela. "Restaurar padrão" aparece só fora do padrão. Se o
+  sistema não aceitou o atalho salvo, uma `Tag` `warning` "Não registrado" fica ao lado das teclas.
 
 ### Cadernos
 

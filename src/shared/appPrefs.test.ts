@@ -8,8 +8,8 @@ describe('preferências do app', () => {
   })
 
   it('aplica o patch e mantém o atual no que for inválido', () => {
-    const next = mergeAppPrefs(DEFAULT_APP_PREFS, { captureShortcut: 'Alt+K', autoBackup: true })
-    expect(next).toEqual({ captureShortcut: 'Alt+K', autoBackup: true })
+    const next = mergeAppPrefs(DEFAULT_APP_PREFS, { captureShortcut: 'Alt+Shift+K', autoBackup: true })
+    expect(next).toEqual({ captureShortcut: 'Alt+Shift+K', autoBackup: true })
     expect(mergeAppPrefs(next, { captureShortcut: 'K', autoBackup: 'sim' })).toEqual(next)
   })
 })

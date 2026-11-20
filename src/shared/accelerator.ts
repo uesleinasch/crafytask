@@ -31,6 +31,10 @@ const CODE_TO_KEY: Record<string, string> = {
   Delete: 'Delete'
 }
 
+const RESERVED = new Set(
+  ['C', 'V', 'Z', 'I', 'T', 'N', 'W', 'Q'].map((key) => `CommandOrControl+Shift+${key}`)
+)
+
 const LABELS: Record<string, string> = {
   CommandOrControl: 'Ctrl',
   Up: '↑',
@@ -53,7 +57,15 @@ export function isValidAccelerator(value: unknown): value is string {
   if (new Set(modifiers).size !== modifiers.length) return false
   const order = modifiers.map((m) => MODIFIERS.indexOf(m))
   if (order.some((index, i) => i > 0 && index < order[i - 1])) return false
-  return modifiers.some((m) => m !== 'Shift')
+  if (RESERVED.has(value)) return false
+  return modifiers.length >= 2 || modifiers.includes('Super')
+}
+
+export const ACCELERATOR_RULE =
+  'Use dois modificadores (ex.: Ctrl+Shift) ou Super, com uma letra, número, F1–F12, Espaço ou seta.'
+
+export function isModifierCode(code: string): boolean {
+  return /^(Control|Shift|Alt|Meta|OS)(Left|Right)?$/.test(code)
 }
 
 export interface KeyEventLike {

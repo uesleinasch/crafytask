@@ -36,6 +36,7 @@ export function BackupSection(): React.JSX.Element {
 
   const [autoBackup, setAutoBackup] = useState<boolean | null>(null)
   const [savingAuto, setSavingAuto] = useState(false)
+  const [autoFailed, setAutoFailed] = useState(false)
 
   useEffect(() => {
     const load = (): void => {
@@ -48,7 +49,10 @@ export function BackupSection(): React.JSX.Element {
     window.api
       .getAppPrefs()
       .then((prefs) => setAutoBackup(prefs.autoBackup))
-      .catch((error) => message.error(errorMessage(error)))
+      .catch((error) => {
+        setAutoFailed(true)
+        message.error(errorMessage(error))
+      })
     return window.api.onBackupChanged(load)
   }, [message])
 
@@ -165,12 +169,20 @@ export function BackupSection(): React.JSX.Element {
           title="Backup automático"
           description={`Diário, mantendo os últimos ${AUTO_BACKUP_KEEP}. Roda com o app aberto e não apaga os backups feitos à mão.`}
         >
-          <Tooltip title={status?.folder ? undefined : 'Escolha uma pasta primeiro.'}>
+          <Tooltip
+            title={
+              autoFailed
+                ? 'Não foi possível ler esta preferência.'
+                : status?.folder
+                  ? undefined
+                  : 'Escolha uma pasta primeiro.'
+            }
+          >
             <Switch
               aria-label="Backup automático"
               checked={!!autoBackup}
-              loading={savingAuto || autoBackup === null}
-              disabled={!status?.folder}
+              loading={savingAuto || (autoBackup === null && !autoFailed)}
+              disabled={!status?.folder || autoFailed}
               onChange={(checked) => void toggleAutoBackup(checked)}
             />
           </Tooltip>

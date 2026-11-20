@@ -149,17 +149,32 @@ export async function chooseBackupFolder(win: BrowserWindow | null): Promise<Bac
     properties: ['openDirectory', 'createDirectory']
   })
   if (!folder) return null
-  writeConfig({ ...readConfig(), folder })
+  const current = readConfig()
+  writeConfig({
+    folder,
+    autoSnapshots: current.folder === folder ? current.autoSnapshots : []
+  })
   return getBackupStatus()
 }
 
 let running: Promise<BackupSnapshot> | null = null
 
+let locked = false
+
 export function isBackupRunning(): boolean {
   return running !== null
 }
 
+export function lockBackups(): void {
+  locked = true
+}
+
+export function unlockBackups(): void {
+  locked = false
+}
+
 export function createBackup(): Promise<BackupSnapshot> {
+  if (locked) return Promise.reject(new Error('O app está restaurando um backup.'))
   if (running) return Promise.reject(new Error('Um backup já está em andamento. Espere terminar.'))
   running = writeSnapshot().finally(() => {
     running = null
@@ -173,7 +188,7 @@ async function listSnapshotNames(folder: string): Promise<string[]> {
 }
 
 export async function runAutoBackupIfDue(now = new Date()): Promise<BackupSnapshot | null> {
-  if (!getAppPrefs().autoBackup || running) return null
+  if (locked || running || !getAppPrefs().autoBackup) return null
   const { folder } = readConfig()
   if (!folder || !fs.existsSync(folder)) return null
   if (!isAutoBackupDue(await listSnapshotNames(folder), now)) return null

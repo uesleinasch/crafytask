@@ -213,12 +213,18 @@ import {
   getBackupStatus,
   inspectSnapshot,
   isBackupRunning,
+  lockBackups,
   restoreSnapshot,
-  runAutoBackupIfDue
+  runAutoBackupIfDue,
+  unlockBackups
 } from './backup'
 import { pickDueNotifications } from './dueNotifications'
 import { localDateString } from '../shared/dueState'
-import { DEFAULT_CAPTURE_SHORTCUT, isValidAccelerator } from '../shared/accelerator'
+import {
+  ACCELERATOR_RULE,
+  DEFAULT_CAPTURE_SHORTCUT,
+  isValidAccelerator
+} from '../shared/accelerator'
 import type { AppPrefsStatus } from '../shared/appPrefs'
 import { readMcpConfig, writeMcpConfig } from './mcp/store'
 import { isMcpRunning, startMcpServer, stopMcpServer } from './mcp/transport'
@@ -620,9 +626,7 @@ function appPrefsStatus(): AppPrefsStatus {
 
 function changeCaptureShortcut(accelerator: unknown): AppPrefsStatus {
   if (!isValidAccelerator(accelerator)) {
-    throw new Error(
-      'Atalho inválido: use Ctrl, Alt ou Super com uma letra, número, F1–F12 ou Espaço.'
-    )
+    throw new Error(`Atalho inválido. ${ACCELERATOR_RULE}`)
   }
   if (accelerator !== captureShortcut) {
     const previous = captureShortcut
@@ -1406,11 +1410,17 @@ function setupIpcHandlers(): void {
   ipcMain.handle('backup:inspect', (_, dir: string) => inspectSnapshot(dir))
   ipcMain.handle('backup:restore', async (_, dir: string) => {
     if (isBackupRunning()) throw new Error('Um backup está em andamento. Espere terminar.')
-    await inspectSnapshot(dir)
+    lockBackups()
+    try {
+      await inspectSnapshot(dir)
+    } catch (error) {
+      unlockBackups()
+      throw error
+    }
     isQuitting = true
     destroyTray()
     if (notificationInterval) clearInterval(notificationInterval)
-    if (autoBackupInterval) clearInterval(autoBackupInterval)
+    stopAutoBackupScheduler()
     await stopMcpServer()
     closeDatabase()
     try {
@@ -1457,6 +1467,7 @@ function setupIpcHandlers(): void {
 const notifiedToday = new Set<string>() // 'taskId-type' keys to avoid spam
 let notificationInterval: NodeJS.Timeout | null = null
 let autoBackupInterval: NodeJS.Timeout | null = null
+let autoBackupFirstCheck: NodeJS.Timeout | null = null
 
 const AUTO_BACKUP_CHECK_MS = 60 * 60 * 1000
 const AUTO_BACKUP_FIRST_CHECK_MS = 2 * 60 * 1000
@@ -1473,8 +1484,15 @@ async function checkAutoBackup(): Promise<void> {
 }
 
 function startAutoBackupScheduler(): void {
-  setTimeout(() => void checkAutoBackup(), AUTO_BACKUP_FIRST_CHECK_MS)
+  autoBackupFirstCheck = setTimeout(() => void checkAutoBackup(), AUTO_BACKUP_FIRST_CHECK_MS)
   autoBackupInterval = setInterval(() => void checkAutoBackup(), AUTO_BACKUP_CHECK_MS)
+}
+
+function stopAutoBackupScheduler(): void {
+  if (autoBackupFirstCheck) clearTimeout(autoBackupFirstCheck)
+  if (autoBackupInterval) clearInterval(autoBackupInterval)
+  autoBackupFirstCheck = null
+  autoBackupInterval = null
 }
 
 function checkDueDateNotifications(): void {
@@ -1580,7 +1598,7 @@ app.on('before-quit', () => {
   destroyTray()
   killAllTerminals()
   if (notificationInterval) clearInterval(notificationInterval)
-  if (autoBackupInterval) clearInterval(autoBackupInterval)
+  stopAutoBackupScheduler()
   void stopMcpServer()
   closeDatabase()
 })
