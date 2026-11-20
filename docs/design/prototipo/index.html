@@ -290,7 +290,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
   const {
     ConfigProvider, App: AntApp, theme, Layout, Menu, Button, Input, Tabs, Badge, Table, Tag, Segmented,
     Select, Space, Typography, Progress, Statistic, Card, Row, Col, Grid, Drawer, Modal, Result, Tooltip,
-    Popover, Popconfirm, Collapse, Steps, Descriptions, Checkbox, Divider, DatePicker, TimePicker, InputNumber, Empty, Alert, Flex, List, Avatar, Dropdown, Switch, Form, Tree, AutoComplete
+    Popover, Popconfirm, Collapse, Steps, Descriptions, Checkbox, Divider, DatePicker, TimePicker, InputNumber, Empty, Alert, Flex, List, Avatar, Dropdown, Switch, Form, Tree, AutoComplete, Timeline
   } = antd;
   const I = icons;
   const { Sider, Header, Content } = Layout;
@@ -1567,14 +1567,16 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         </div>`
       : html`<div className="ct-draw-area"><${Empty} image=${html`<${I.HighlightOutlined} style=${{ fontSize: 40, color: 'var(--ct-text-3)' }} />`} description="Excalidraw carrega aqui sob demanda" /></div>`;
 
+    const historyBody = html`<${TaskHistory} mode=${mode} hasSubtasks=${(t.subtasks || []).length > 0} />`;
+
     const workspace = html`<${Card} size="small" className="ct-workspace" styles=${{ body: { padding: 0, display: 'flex', flexDirection: 'column', minHeight: narrow ? 360 : 520 } }}>
       <${Flex} align="center" gap=${4} style=${{ padding: '0 8px 0 12px', borderBottom: '1px solid var(--ct-border)' }}>
         <${Tabs} activeKey=${noteTab} onChange=${setNoteTab} size="small" tabBarStyle=${{ margin: 0 }} style=${{ flex: 1, marginBottom: -1 }}
-          items=${[{ key: 'notas', label: html`<${Space} size=${4}><${I.FileTextOutlined} />Notas<//>` }, { key: 'desenho', label: html`<${Space} size=${4}><${I.HighlightOutlined} />Desenho<//>` }]} />
+          items=${[{ key: 'notas', label: html`<${Space} size=${4}><${I.FileTextOutlined} />Notas<//>` }, { key: 'desenho', label: html`<${Space} size=${4}><${I.HighlightOutlined} />Desenho<//>` }, { key: 'historico', label: html`<${Space} size=${4}><${I.HistoryOutlined} />Histórico<//>` }]} />
         ${noteTab === 'notas' ? html`<${NoteActions} file=${exportFile} setFile=${setExportFile} showFile=${screens.lg} />` : null}
-        <${Tooltip} title="Modo foco (Esc sai)"><${Button} type="text" aria-label="Modo foco" icon=${html`<${I.ExpandOutlined} />`} onClick=${() => setFocus(true)} /><//>
+        ${noteTab === 'historico' ? null : html`<${Tooltip} title="Modo foco (Esc sai)"><${Button} type="text" aria-label="Modo foco" icon=${html`<${I.ExpandOutlined} />`} onClick=${() => setFocus(true)} /><//>`}
       <//>
-      <div style=${{ padding: '20px 24px', flex: 1 }}>${noteBody}</div>
+      <div style=${{ padding: '20px 24px', flex: 1 }}>${noteTab === 'historico' ? historyBody : noteBody}</div>
     <//>`;
 
     const jiraDrawer = html`<${Drawer} open=${jiraFields} onClose=${() => setJiraFields(false)} width=${380} title=${t.jira ? 'Campos do Jira · ' + t.jira.key : 'Campos do Jira'}>
@@ -1679,6 +1681,105 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     return { total: ts.length, done, open: ts.length - done, blocked: ts.filter(t => t.blocked).length, secs: ts.reduce((a, t) => a + t.secs, 0), next, tasks: ts };
   }
   const daysBetween = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000);
+
+  const HISTORY_KIND = {
+    checkpoint: { label: 'Checkpoint', icon: 'FlagOutlined' },
+    operation:  { label: 'Operação',   icon: 'ThunderboltOutlined' },
+    note:       { label: 'Anotação',   icon: 'MessageOutlined' }
+  };
+  const HISTORY_MOCK = [
+    { id: 9, kind: 'checkpoint', origin: 'mcp', at: 'hoje 18:42', status: 'executando', task: null,
+      summary: 'Tool task_history publicada; falta a aba na tela.',
+      done: 'Tabela task_history, queries com teste e a tool do MCP.',
+      remaining: 'Aba Histórico no detalhe da task e o aviso ao encerrar a sessão.' },
+    { id: 8, kind: 'operation', origin: 'mcp', at: 'hoje 18:40', status: 'executando', task: 'MCP-1: histórico da task', summary: 'PR #117 aprovado nos checks e levado para production.' },
+    { id: 7, kind: 'status', at: 'hoje 18:40', from: 'executando', to: 'finalizada', task: 'MCP-1: histórico da task' },
+    { id: 6, kind: 'note', origin: 'app', at: 'hoje 18:20', status: 'executando', task: null, summary: 'Lembrar: a release só sai quando o épico inteiro fechar.' },
+    { id: 5, kind: 'checkpoint', origin: 'mcp', at: 'hoje 18:12', status: 'executando', task: null,
+      summary: 'Épico dividido em 8 subtarefas; começando pela memória da task.',
+      done: 'Mapa do que o MCP cobre e do que falta.', remaining: 'Todas as subtarefas.' },
+    { id: 4, kind: 'status', at: 'hoje 18:05', from: 'proximas', to: 'executando', task: null },
+    { id: 3, kind: 'status', at: 'hoje 11:25', from: 'inbox', to: 'proximas', task: null },
+    { id: 2, kind: 'status', at: 'hoje 11:25', from: null, to: 'inbox', task: null }
+  ];
+
+  function TaskHistory({ mode, hasSubtasks }) {
+    const { message } = AntApp.useApp();
+    const [filter, setFilter] = useState('tudo');
+    const [withSubs, setWithSubs] = useState(true);
+    const [writing, setWriting] = useState(false);
+    const [draft, setDraft] = useState('');
+    const [extra, setExtra] = useState([]);
+    const all = [...extra, ...HISTORY_MOCK];
+    const last = all.find(e => e.kind === 'checkpoint' && !e.task);
+    const shown = all
+      .filter(e => withSubs || !e.task)
+      .filter(e => filter === 'tudo' || (filter === 'checkpoints' ? e.kind === 'checkpoint' : e.kind === 'status'));
+    const origin = (e) => e.origin === 'mcp'
+      ? html`<${Tag} bordered=${false} icon=${html`<${I.RobotOutlined} />`}>Claude<//>`
+      : html`<${Tag} bordered=${false} icon=${html`<${I.UserOutlined} />`}>Você<//>`;
+    const meta = (e) => html`<${Flex} gap=${8} align="center" wrap>
+      ${e.task ? html`<${Text} type="secondary" style=${{ fontSize: 12 }}>${e.task}<//>` : null}
+      <${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12 }}>${e.at}<//>
+    <//>`;
+    const item = (e) => {
+      if (e.kind === 'status') {
+        const def = STATUS[e.to];
+        const Icon = I[def.icon];
+        return {
+          key: e.id,
+          dot: html`<${Icon} style=${{ color: def[mode][0], fontSize: 14 }} />`,
+          children: html`<${Flex} vertical gap=${2}>
+            <${Flex} gap=${6} align="center" wrap>
+              ${e.from ? html`<${Chip} def=${STATUS[e.from]} mode=${mode} /><${I.ArrowRightOutlined} style=${{ color: 'var(--ct-text-3)', fontSize: 12 }} />` : html`<${Text} type="secondary">Criada em<//>`}
+              <${Chip} def=${def} mode=${mode} />
+            <//>
+            ${meta(e)}
+          <//>`
+        };
+      }
+      const kind = HISTORY_KIND[e.kind];
+      const Icon = I[kind.icon];
+      return {
+        key: e.id,
+        dot: html`<${Icon} style=${{ color: 'var(--ct-text-2)', fontSize: 14 }} />`,
+        children: html`<${Flex} vertical gap=${4}>
+          <${Flex} gap=${6} align="center" wrap><${Text} strong>${kind.label}<//>${origin(e)}<//>
+          <${Text}>${e.summary}<//>
+          ${e.done ? html`<${Text} type="secondary"><b>Feito:</b> ${e.done}<//>` : null}
+          ${e.remaining ? html`<${Text} type="secondary"><b>Falta:</b> ${e.remaining}<//>` : null}
+          ${meta(e)}
+        <//>`
+      };
+    };
+    const save = () => {
+      if (!draft.trim()) return;
+      setExtra([{ id: Date.now(), kind: 'note', origin: 'app', at: 'agora', status: 'executando', task: null, summary: draft.trim() }, ...extra]);
+      setDraft(''); setWriting(false); message.success('Anotação gravada no histórico');
+    };
+    return html`<${Flex} vertical gap=${16} style=${{ maxWidth: '76ch' }}>
+      ${last ? html`<${Card} size="small" title=${html`<${Space} size=${6}><${I.FlagOutlined} />Onde parei<//>`} extra=${html`<${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12 }}>${last.at}<//>`}>
+        <${Flex} vertical gap=${6}>
+          <${Text} strong>${last.summary}<//>
+          ${last.done ? html`<${Text} type="secondary"><b>Feito:</b> ${last.done}<//>` : null}
+          ${last.remaining ? html`<${Text} type="secondary"><b>Falta:</b> ${last.remaining}<//>` : null}
+        <//>
+      <//>` : null}
+      <${Flex} gap=${8} align="center" wrap>
+        <${Segmented} size="small" value=${filter} onChange=${setFilter} options=${[{ value: 'tudo', label: 'Tudo' }, { value: 'checkpoints', label: 'Checkpoints' }, { value: 'status', label: 'Movimentações' }]} />
+        ${hasSubtasks ? html`<${Space} size=${6}><${Switch} size="small" checked=${withSubs} onChange=${setWithSubs} aria-label="Incluir subtarefas" /><${Text} type="secondary">Subtarefas<//><//>` : null}
+        <div style=${{ flex: 1 }}></div>
+        <${Button} size="small" icon=${html`<${I.EditOutlined} />`} onClick=${() => setWriting(!writing)}>Anotar<//>
+      <//>
+      ${writing ? html`<${Flex} vertical gap=${8}>
+        <${Input.TextArea} autoFocus autoSize=${{ minRows: 2, maxRows: 6 }} value=${draft} onChange=${ev => setDraft(ev.target.value)} placeholder="O que vale lembrar ao retomar esta tarefa?" />
+        <${Flex} gap=${8} justify="flex-end"><${Button} size="small" onClick=${() => { setWriting(false); setDraft(''); }}>Cancelar<//><${Button} size="small" type="primary" disabled=${!draft.trim()} onClick=${save}>Gravar<//><//>
+      <//>` : null}
+      ${shown.length === 0
+        ? html`<${Empty} image=${Empty.PRESENTED_IMAGE_SIMPLE} description="Nada no histórico com este filtro" />`
+        : html`<${Timeline} items=${shown.map(item)} />`}
+    <//>`;
+  }
 
   function ProjectStatusChip({ status, mode }) {
     return html`<${Chip} def=${PROJECT_STATUS[status]} mode=${mode} />`;
