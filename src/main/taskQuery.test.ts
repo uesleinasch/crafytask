@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import {
   buildTaskCountQuery,
+  buildTaskIdsQuery,
   buildTaskListQuery,
+  buildTaskTotalsQuery,
+  buildTaskStatusCountQuery,
   buildTaskListWhere,
   escapeLike
 } from './taskQuery'
@@ -145,6 +148,12 @@ describe('buildTaskListQuery', () => {
     expect(sql).toContain('ORDER BY t.due_date IS NULL, t.due_date ASC')
   })
 
+  it('ordena pela mais parada: mudança de status mais antiga primeiro', () => {
+    const { sql } = buildTaskListQuery(COLUMNS, { sort: 'status_changed' })
+
+    expect(sql).toContain('ORDER BY julianday(COALESCE(t.status_changed_at, t.updated_at)) ASC')
+  })
+
   it('cai no padrão quando o sort é desconhecido', () => {
     const { sql } = buildTaskListQuery(COLUMNS, {
       sort: 'drop table' as unknown as 'updated'
@@ -195,6 +204,18 @@ describe('buildTaskCountQuery', () => {
   })
 })
 
+describe('buildTaskStatusCountQuery', () => {
+  it('agrupa por status com os outros filtros da lista, ignorando o status escolhido', () => {
+    const filters = { status: 'inbox' as const, projectId: 7, search: 'api', limit: 10 }
+    const count = buildTaskStatusCountQuery(filters)
+
+    expect(count.sql).toContain('GROUP BY t.status')
+    expect(count.sql).not.toContain('t.status = ?')
+    expect(count.sql).not.toContain('LIMIT')
+    expect(count.params).toEqual([0, 7, '%api%', '%api%'])
+  })
+})
+
 describe('buildTaskListWhere - prazo e energia', () => {
   it('filtra por prazo máximo incluindo o próprio dia', () => {
     const { clause, params } = buildTaskListWhere({ dueBefore: '2026-08-21' })
@@ -240,6 +261,13 @@ describe('buildTaskListWhere - prazo e energia', () => {
   it('ignora excludeStatus vazio', () => {
     expect(buildTaskListWhere({ excludeStatus: [] }).clause).not.toContain('NOT IN')
   })
+
+  it('parada há mais de N dias conta da última mudança de status', () => {
+    const { clause, params } = buildTaskListWhere({ staleDays: 7 })
+    expect(clause).toContain('COALESCE(t.status_changed_at, t.updated_at)')
+    expect(params).toEqual([0, '-7 days'])
+    expect(buildTaskListWhere({ staleDays: 0 }).params).toEqual([0])
+  })
 })
 
 describe('escapeLike', () => {
@@ -249,5 +277,59 @@ describe('escapeLike', () => {
 
   it('deixa texto comum intacto', () => {
     expect(escapeLike('relatório final')).toBe('relatório final')
+  })
+})
+
+describe('arquivo', () => {
+  it('filtra pela data de arquivamento', () => {
+    const { clause, params } = buildTaskListWhere({
+      archived: true,
+      archivedAfter: '2026-01-01',
+      archivedBefore: '2026-06-01'
+    })
+
+    expect(clause).toContain("date(t.archived_at, 'localtime') >= ?")
+    expect(clause).toContain("date(t.archived_at, 'localtime') < ?")
+    expect(params).toEqual([1, '2026-01-01', '2026-06-01'])
+  })
+
+  it('ordena por arquivamento, nome e tempo', () => {
+    expect(buildTaskListQuery(COLUMNS, { sort: 'archived' }).sql).toContain(
+      'ORDER BY t.archived_at IS NULL, t.archived_at DESC'
+    )
+    expect(buildTaskListQuery(COLUMNS, { sort: 'name' }).sql).toContain(
+      'ORDER BY t.name COLLATE NOCASE ASC'
+    )
+    expect(buildTaskListQuery(COLUMNS, { sort: 'total_time' }).sql).toContain(
+      'ORDER BY t.total_seconds DESC'
+    )
+  })
+
+  it('lista os ids com o mesmo filtro da listagem', () => {
+    const { sql, params } = buildTaskIdsQuery({ archived: true, archivedBefore: '2025-11-18' })
+
+    expect(sql).toContain('SELECT t.id FROM tasks t WHERE t.is_archived = ?')
+    expect(sql).toContain('t.parent_task_id IS NULL')
+    expect(params).toEqual([1, '2025-11-18'])
+  })
+})
+
+describe('busca por #id e totais', () => {
+  it('casa #id ou número com o id da tarefa, além do nome', () => {
+    for (const search of ['#42', '42']) {
+      const { clause, params } = buildTaskListWhere({ search })
+      expect(clause).toContain('(t.id = ? OR t.name LIKE ?')
+      expect(params).toEqual([0, 42, `%${search}%`, `%${search}%`])
+    }
+  })
+
+  it('texto comum não compara id', () => {
+    expect(buildTaskListWhere({ search: '#abc' }).clause).not.toContain('t.id = ?')
+  })
+
+  it('soma contagem e tempo com o mesmo filtro', () => {
+    const { sql, params } = buildTaskTotalsQuery({ archived: true, projectId: 3 })
+    expect(sql).toContain('COUNT(*) AS count, COALESCE(SUM(t.total_seconds), 0) AS seconds')
+    expect(params).toEqual([1, 3])
   })
 })

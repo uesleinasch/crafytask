@@ -1,4 +1,5 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import { normalizeWaitingFor } from '@shared/waitingFor'
 import type { CreateTaskInput, Task, TaskListFilters, UpdateTaskInput } from '@shared/types'
 import { z } from 'zod'
 import {
@@ -45,6 +46,7 @@ const ENERGY = z.enum(['alto', 'medio', 'baixo'])
 const DATE = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use o formato AAAA-MM-DD.')
 const TIME = z.string().regex(/^\d{2}:\d{2}$/, 'Use o formato HH:MM.')
 const EXTERNAL_URL = z.string().refine(isSafeHttpUrl, 'Use um link http:// ou https://.')
+const WAITING_FOR = z.string().transform(normalizeWaitingFor)
 
 type Resolution = { ok: true; id: number } | { ok: false; response: ReturnType<typeof fail> }
 
@@ -203,7 +205,10 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
           'Fim do agendamento (exige scheduled_time). Sem fim, o Google Calendar usa o limite de tempo da task ou 1h.'
         ),
         parent_task_id: z.number().int().positive().optional(),
-        external_url: EXTERNAL_URL.optional()
+        external_url: EXTERNAL_URL.optional(),
+        waiting_for: WAITING_FOR.optional().describe(
+          'Quem ou o quê a task aguarda (ex.: "Revisor externo"), até 120 caracteres. Aparece na lista de tarefas.'
+        )
       }
     },
     async (args) => {
@@ -224,7 +229,8 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
         scheduled_time: args.scheduled_time,
         scheduled_end_time: args.scheduled_end_time,
         parent_task_id: args.parent_task_id,
-        external_url: args.external_url
+        external_url: args.external_url,
+        waiting_for: args.waiting_for
       }
 
       if (args.project !== undefined) {
@@ -289,7 +295,11 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
         external_url: z
           .union([EXTERNAL_URL, z.null()])
           .optional()
-          .describe('Link externo; null remove.')
+          .describe('Link externo; null remove.'),
+        waiting_for: z
+          .union([WAITING_FOR, z.null()])
+          .optional()
+          .describe('Quem ou o quê a task aguarda; null remove.')
       }
     },
     async (args) => {
@@ -310,6 +320,7 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
       if (args.scheduled_time !== undefined) patch.scheduled_time = args.scheduled_time
       if (args.scheduled_end_time !== undefined) patch.scheduled_end_time = args.scheduled_end_time
       if (args.external_url !== undefined) patch.external_url = args.external_url
+      if (args.waiting_for !== undefined) patch.waiting_for = args.waiting_for
 
       if (args.project !== undefined) {
         if (args.project === null) {

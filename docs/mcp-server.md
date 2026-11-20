@@ -17,7 +17,7 @@ regenerar o token a qualquer momento (reinicia o servidor).
 O registro recomendado é via **ponte stdio** (`src/mcp-bridge/`, comando pronto na tela de Ajustes):
 
 ```
-claude mcp add ticktask --scope user --env ELECTRON_RUN_AS_NODE=1 -- "<executável>" "<userData>/mcp-bridge.js"
+claude mcp add crafytask --scope user --env ELECTRON_RUN_AS_NODE=1 -- "<executável>" "<userData>/mcp-bridge.js"
 ```
 
 Dois detalhes importam nesse comando:
@@ -31,7 +31,7 @@ Dois detalhes importam nesse comando:
 O HTTP em loopback continua disponível para clientes que preferirem falar direto com ele:
 
 ```
-claude mcp add ticktask --scope user --transport http http://127.0.0.1:<porta>/mcp --header "Authorization: Bearer <token>"
+claude mcp add crafytask --scope user --transport http http://127.0.0.1:<porta>/mcp --header "Authorization: Bearer <token>"
 ```
 
 A diferença prática: nesse modo o CrafyTask **precisa** estar aberto no momento em que a sessão do
@@ -60,11 +60,11 @@ Ao subir a ponte com `ELECTRON_RUN_AS_NODE=1`, essa variável é removida do amb
 
 | Tool | Descrição |
 | --- | --- |
-| `server_info` | Confirma que o CrafyTask está aberto e respondendo (o payload mantém `app: 'TickTask'` por compatibilidade). |
+| `server_info` | Confirma que o CrafyTask está aberto e respondendo (`app: 'CrafyTask'`). |
 | `search_tasks` | Lista tasks com filtros (status, categoria, energia, projeto, contexto, busca, datas). Não inclui subtarefas. |
 | `get_task` | Detalhe completo de uma task: campos, notas em Markdown, subtarefas, dependências, registros de tempo. |
-| `create_task` | Cria uma task; projeto/contexto por nome ou id, tags criadas se não existirem. Aceita `scheduled_time`/`scheduled_end_time` (exigem `scheduled_date`) e `due_time` (exige `due_date`), em `HH:MM`, e `external_url` (`http(s)`). |
-| `update_task` | Altera campos de uma task; passar `tags`/`contexts` substitui a lista inteira. Horários em `HH:MM`, `null` remove; limpar a data remove a hora dela, limpar o início remove o fim. `external_url` aceita `http(s)` ou `null` (remove). Fim ≤ início ou hora sem data → erro `validation`. |
+| `create_task` | Cria uma task; projeto/contexto por nome ou id, tags criadas se não existirem. Aceita `scheduled_time`/`scheduled_end_time` (exigem `scheduled_date`) e `due_time` (exige `due_date`), em `HH:MM`, `external_url` (`http(s)`) e `waiting_for` (quem ou o quê a task aguarda, até 120 caracteres). |
+| `update_task` | Altera campos de uma task; passar `tags`/`contexts` substitui a lista inteira. Horários em `HH:MM`, `null` remove; limpar a data remove a hora dela, limpar o início remove o fim. `external_url` aceita `http(s)` ou `null` (remove); `waiting_for` aceita texto ou `null`. Fim ≤ início ou hora sem data → erro `validation`. |
 | `bulk_update_tasks` | Altera status/projeto/arquivamento de várias tasks; acima do `bulkThreshold` exige `confirm_token`. |
 | `delete_tasks` | Deleta tasks permanentemente, incluindo subtarefas em cascata; sempre exige `confirm_token`. |
 | `organize_overview` | Retrato GTD: inbox, sem projeto, atrasadas, bloqueadas, someday, métricas. Atrasada = prazo antes de `today`, ou em `today` com `due_time` já passado. |
@@ -76,8 +76,8 @@ Ao subir a ponte com `ELECTRON_RUN_AS_NODE=1`, essa variável é removida do amb
 | `read_drawing` | Devolve o desenho (Excalidraw) de uma task como imagem PNG, com um resumo dos elementos e dos textos contidos. |
 | `write_notes` | Grava Markdown nas notas; `mode=append` (recomendado) ou `mode=replace` sobre nota não vazia, que exige `confirm_token`. |
 | `agenda` | Tasks agendadas e blocos de tempo de um dia, semana ou mês. |
-| `plan_day` | Agenda tasks numa data (itens de `schedule` aceitam `start_time`/`end_time`, gravados como horário da task), ordena o dia, cria/remove blocos de tempo; acima do `bulkThreshold` exige `confirm_token`. |
-| `weekly_review` | Lê revisões anteriores e indicadores de saúde, ou registra uma nova revisão. |
+| `plan_day` | Agenda tasks numa data (itens de `schedule` aceitam `start_time`/`end_time`, gravados como horário da task), ordena o dia (a `order` só pesa entre as tasks sem horário e sem prazo de hoje com hora), cria/remove blocos de tempo; acima do `bulkThreshold` exige `confirm_token`. |
+| `weekly_review` | `status` (revisão aberta, última e indicadores de saúde), `list` (concluídas), `past_week` (sessões, conclusões e blocos dos últimos 7 dias), `start` (abre a revisão; se já há uma em andamento, devolve essa com `already_open`, sem mexer nas notas), `step` (passo feito, pulado ou pendente), `notes` e `complete` (pendentes viram pulados). |
 | `list_notebooks` | Cadernos, seções e páginas (subpáginas em ordem de árvore, `depth` 0–2); `notebook_id` limita a um caderno. |
 | `search_pages` | Busca páginas de caderno pelo título e pelo texto das notas (até 30, com trecho). |
 | `read_page` | Página em Markdown, com caderno, seção e subpáginas; o PNG do desenho vem junto quando existe. |

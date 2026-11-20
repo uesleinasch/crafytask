@@ -1,3 +1,4 @@
+import { isIsoDate } from '@shared/archiveAge'
 import {
   app,
   shell,
@@ -7,22 +8,36 @@ import {
   screen,
   globalShortcut,
   dialog,
+  nativeTheme,
   protocol
 } from 'electron'
 import { copyFileSync } from 'fs'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/512.png?asset'
-import { HIDDEN_FLAG, shouldStartHidden } from './launchArgs'
+import { HIDDEN_FLAG, QUICK_CAPTURE_FLAG, shouldStartHidden, wantsQuickCapture } from './launchArgs'
+import { execFile } from 'child_process'
+import {
+  isGnomeKeybindingCurrent,
+  readGnomeKeybinding,
+  shellQuote,
+  writeGnomeKeybinding,
+  type GnomeKeybinding,
+  type GsettingsRun
+} from './gnomeKeybinding'
 import { createTray, destroyTray } from './tray'
 import { isAutostartEnabled, setAutostartEnabled } from './autostart'
 import { isSafeHttpUrl } from '@shared/externalUrl'
+import { isThemePreference } from '@shared/themePreference'
+import type { RendererErrorReport } from '@shared/rendererError'
+import { guardRenderer } from './rendererGuard'
 import {
   initDatabase,
   closeDatabase,
   createTask,
   listTasks,
   countTasks,
+  countTasksByStatus,
   listActiveTasksLight,
   listRunningTasks,
   listTasksForSync,
@@ -36,10 +51,12 @@ import {
   deleteTasks,
   getChildTaskIds,
   archiveTask,
+  listTaskIds,
+  restoreArchived,
+  taskTotals,
   unarchiveTask,
   setTasksArchived,
   updateTaskStatus,
-  updateTasksStatus,
   moveTasksToProject,
   startTask,
   stopTask,
@@ -49,14 +66,10 @@ import {
   resetTaskTimer,
   addManualTimeEntry,
   setTaskTotalTime,
-  getWeeklyStats,
-  getTaskTimeStats,
-  getStatusStats,
-  getCategoryStats,
-  getHeatmapData,
-  getGeneralStats,
-  getGtdMetrics,
-  getEnergyStats,
+  updateTimeEntry,
+  deleteTimeEntry,
+  listTimeEntriesRange,
+  getPeriodStats,
   // Tags
   createTag,
   listTags,
@@ -78,6 +91,8 @@ import {
   // Contexts
   createContext,
   listContexts,
+  listContextsWithUsage,
+  mergeContexts,
   updateContext,
   deleteContext,
   getTaskContexts,
@@ -87,13 +102,21 @@ import {
   getWeeklyReview,
   listWeeklyReviews,
   getLastWeeklyReview,
-  updateWeeklyReview,
+  updateWeeklyReviewNotes,
+  setWeeklyReviewStep,
+  setWeeklyReviewCurrentStep,
+  discardWeeklyReview,
+  bumpWeeklyReviewCounter,
+  completeWeeklyReview,
+  getReviewPastWeek,
   getReviewHealthIndicators,
   // FASE 4.3: Blocos de Tempo
   createTimeBlock,
   getTimeBlocksForDate,
   getTimeBlocksForWeek,
-  getTimeBlocksForMonth,
+  getTimeBlocksForRange,
+  listCalendarTasks,
+  listUnscheduledTasks,
   updateTimeBlock,
   deleteTimeBlock,
   // FASE 4: Horizontes GTD
@@ -115,15 +138,18 @@ import {
   addTaskDependency,
   removeTaskDependency,
   getTasksForDate,
-  getWeeklySchedule,
-  updateDayOrder,
   createNextRecurrence,
   deleteNextRecurrence,
   getTasksDueForNotification,
   getTimeBlock,
   filterGcalSyncedIds,
-  getNextRecurrenceIds
+  getNextRecurrenceIds,
+  getWorkflowPrefs,
+  setWorkflowPrefs,
+  getAppPrefs,
+  setAppPrefs
 } from './database'
+import { mergeTimeBlock, timeBlockError } from './calendarQueries'
 import {
   connectGcal,
   disconnectGcal,
@@ -149,6 +175,8 @@ import {
   getJiraChildren,
   captureJiraWorklogs,
   deleteJiraWorklogs,
+  syncEditedTimeEntry,
+  syncDeletedTimeEntry,
   searchJiraUsers,
   startJiraScheduler,
   saveJiraBoards,
@@ -164,7 +192,11 @@ import type {
   JiraFieldInput,
   JiraImportResult,
   JiraOptionsInput,
-  NotesOwner
+  NotesOwner,
+  ReviewCounterKey,
+  ReviewStepKey,
+  ReviewStepStatus,
+  StatsPeriod
 } from '@shared/types'
 import type { StatusMapping } from './jiraPlan'
 import {
@@ -189,15 +221,30 @@ import {
   createBackup,
   getBackupStatus,
   inspectSnapshot,
-  restoreSnapshot
+  isBackupRunning,
+  lockBackups,
+  restoreSnapshot,
+  runAutoBackupIfDue,
+  unlockBackups
 } from './backup'
 import { pickDueNotifications } from './dueNotifications'
 import { localDateString } from '../shared/dueState'
+import {
+  ACCELERATOR_RULE,
+  DEFAULT_CAPTURE_SHORTCUT,
+  isValidAccelerator
+} from '../shared/accelerator'
+import type { AppPrefsStatus } from '../shared/appPrefs'
 import { readMcpConfig, writeMcpConfig } from './mcp/store'
 import { isMcpRunning, startMcpServer, stopMcpServer } from './mcp/transport'
 import { generateToken } from './mcp/config'
 import { registerWriteEffects } from './mcp/effects'
-import { disposeTerminalsForTasks, killAllTerminals, registerTerminalIpc } from './terminal'
+import {
+  disposeTerminalsForProjects,
+  disposeTerminalsForTasks,
+  killAllTerminals,
+  registerTerminalIpc
+} from './terminal'
 import { registerNotebookIpc } from './notebookIpc'
 import { resolveUserDataOverride } from './devUserData'
 import type {
@@ -211,7 +258,9 @@ import type {
   ProjectStatus,
   McpStatus,
   CreateTimeBlockInput,
-  UpdateTimeBlockInput
+  UpdateTimeBlockInput,
+  UnscheduledTaskFilters,
+  FloatTimerData
 } from '../shared/types'
 
 // Protocolo custom para servir imagens locais das notas ao renderer.
@@ -242,25 +291,23 @@ if (!hasSingleInstanceLock) {
 let mainWindow: BrowserWindow | null = null
 let floatWindow: BrowserWindow | null = null
 let quickCaptureWindow: BrowserWindow | null = null
-type FloatTimerData = { taskId: number; taskName: string; seconds: number }
 let currentTimers: FloatTimerData[] = []
 let isQuitting = false
-let startHidden = shouldStartHidden(process.argv)
+let startHidden = shouldStartHidden(process.argv) || wantsQuickCapture(process.argv)
 
 // Dimensões da janela flutuante (lista com altura dinâmica)
 const FLOAT_WIDTH = 300
 const FLOAT_ROW_HEIGHT = 44
 const FLOAT_FOOTER_HEIGHT = 44
-const FLOAT_VPADDING = 16
+const FLOAT_BORDERS = 2
 const FLOAT_MAX_ROWS = 5
 
 function floatHeightFor(count: number): number {
   const rows = Math.min(Math.max(count, 1), FLOAT_MAX_ROWS)
-  return rows * FLOAT_ROW_HEIGHT + FLOAT_FOOTER_HEIGHT + FLOAT_VPADDING
+  return rows * FLOAT_ROW_HEIGHT + FLOAT_FOOTER_HEIGHT + FLOAT_BORDERS
 }
 
-// Atalho global padrão para captura rápida
-const quickCaptureShortcut = 'CommandOrControl+Shift+Space'
+let captureShortcut = DEFAULT_CAPTURE_SHORTCUT
 
 function normalizeTaskIds(ids: number[]): number[] {
   const unique = new Set<number>()
@@ -364,6 +411,29 @@ async function afterJiraIssueChange(taskId: number): Promise<void> {
   await autoSyncTask(taskId)
 }
 
+async function deleteTasksWithEffects(taskIds: number[]): Promise<void> {
+  if (taskIds.length === 0) return
+
+  const allIds = [...taskIds, ...taskIds.flatMap((id) => getChildTaskIds(id))]
+  const calendarIds = filterGcalSyncedIds(allIds)
+  const config = getNotionConfig()
+  if (config?.autoSync && config.databaseId) {
+    await Promise.all(
+      allIds.map(async (id) => {
+        try {
+          await deleteTaskFromNotion(id)
+        } catch (error) {
+          console.error(`Erro ao deletar tarefa ${id} do Notion:`, error)
+        }
+      })
+    )
+  }
+
+  disposeTerminalsForTasks(allIds)
+  deleteTasks(taskIds)
+  pushToGoogle(calendarIds)
+}
+
 // Renomear, mesclar ou excluir uma tag muda o multi_select das tarefas no Notion, que só é
 // reescrito quando a tarefa inteira é sincronizada de novo.
 async function syncTasksAfterTagChange(taskIds: number[]): Promise<void> {
@@ -418,6 +488,7 @@ function createFloatWindow(): void {
       sandbox: false
     }
   })
+  guardRenderer(floatWindow, 'float')
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     floatWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}#/float`)
@@ -506,12 +577,14 @@ function createQuickCaptureWindow(): void {
     skipTaskbar: true,
     resizable: false,
     movable: true,
+    hasShadow: false,
     show: false,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
     }
   })
+  guardRenderer(quickCaptureWindow, 'captura')
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     quickCaptureWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}#/quick-capture`)
@@ -536,22 +609,106 @@ function createQuickCaptureWindow(): void {
   })
 }
 
-function registerGlobalShortcut(): void {
+function tryRegisterCapture(accelerator: string): boolean {
   try {
-    globalShortcut.register(quickCaptureShortcut, () => {
+    return globalShortcut.register(accelerator, () => {
       createQuickCaptureWindow()
     })
   } catch (error) {
     console.error('Erro ao registrar atalho global:', error)
+    return false
   }
+}
+
+function usesGnomeKeybinding(): boolean {
+  return (
+    process.platform === 'linux' &&
+    process.env.XDG_SESSION_TYPE === 'wayland' &&
+    /gnome/i.test(process.env.XDG_CURRENT_DESKTOP ?? '')
+  )
+}
+
+const runGsettings: GsettingsRun = (args) =>
+  new Promise((resolve, reject) => {
+    execFile('gsettings', args, { timeout: 5000 }, (error, stdout, stderr) => {
+      if (error) reject(new Error(stderr.trim() || error.message))
+      else resolve(stdout)
+    })
+  })
+
+function quickCaptureCommand(): string {
+  const parts = app.isPackaged
+    ? [shellQuote(process.env.APPIMAGE || process.execPath)]
+    : [
+        'env',
+        'ELECTRON_DISABLE_SANDBOX=1',
+        shellQuote(process.execPath),
+        shellQuote(app.getAppPath())
+      ]
+  return [...parts, QUICK_CAPTURE_FLAG].join(' ')
+}
+
+function registerGlobalShortcut(): void {
+  captureShortcut = getAppPrefs().captureShortcut
+  if (usesGnomeKeybinding()) return
+  if (!tryRegisterCapture(captureShortcut)) {
+    console.error(`Atalho da captura recusado pelo sistema: ${captureShortcut}`)
+  }
+}
+
+async function appPrefsStatus(): Promise<AppPrefsStatus> {
+  const prefs = getAppPrefs()
+  if (!usesGnomeKeybinding()) {
+    return { ...prefs, captureShortcutActive: globalShortcut.isRegistered(captureShortcut) }
+  }
+  let current: GnomeKeybinding | null = null
+  try {
+    current = await readGnomeKeybinding(runGsettings)
+  } catch (error) {
+    console.error('[atalho] não foi possível ler os atalhos do GNOME:', error)
+  }
+  return {
+    ...prefs,
+    captureShortcutActive: isGnomeKeybindingCurrent(
+      current,
+      prefs.captureShortcut,
+      quickCaptureCommand()
+    )
+  }
+}
+
+async function changeCaptureShortcut(accelerator: unknown): Promise<AppPrefsStatus> {
+  if (!isValidAccelerator(accelerator)) {
+    throw new Error(`Atalho inválido. ${ACCELERATOR_RULE}`)
+  }
+  if (usesGnomeKeybinding()) {
+    try {
+      await writeGnomeKeybinding(runGsettings, accelerator, quickCaptureCommand())
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error)
+      throw new Error(`Não foi possível definir o atalho no sistema: ${detail}`)
+    }
+  } else if (accelerator !== captureShortcut) {
+    const previous = captureShortcut
+    if (globalShortcut.isRegistered(previous)) globalShortcut.unregister(previous)
+    if (!tryRegisterCapture(accelerator)) {
+      tryRegisterCapture(previous)
+      throw new Error('O sistema recusou esse atalho. Ele pode estar em uso por outro programa.')
+    }
+  } else if (!globalShortcut.isRegistered(accelerator) && !tryRegisterCapture(accelerator)) {
+    throw new Error('O sistema recusou esse atalho. Ele pode estar em uso por outro programa.')
+  }
+  captureShortcut = accelerator
+  setAppPrefs({ captureShortcut: accelerator })
+  return appPrefsStatus()
 }
 
 // ===================== MAIN WINDOW =====================
 
-function revealMainWindow(): void {
+function revealMainWindow(route?: string): void {
   if (!mainWindow || mainWindow.isDestroyed()) {
     startHidden = false
-    createWindow()
+    createWindow(route)
     return
   }
 
@@ -574,11 +731,11 @@ function quitApp(): void {
   app.quit()
 }
 
-function createWindow(): void {
+function createWindow(route?: string): void {
   mainWindow = new BrowserWindow({
     width: 1024,
     height: 700,
-    minWidth: 800,
+    minWidth: 400,
     minHeight: 600,
     show: false,
     autoHideMenuBar: true,
@@ -589,6 +746,7 @@ function createWindow(): void {
       sandbox: false
     }
   })
+  guardRenderer(mainWindow, 'principal')
 
   mainWindow.on('ready-to-show', () => {
     if (startHidden) {
@@ -629,9 +787,10 @@ function createWindow(): void {
   })
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+    const url = process.env['ELECTRON_RENDERER_URL']
+    mainWindow.loadURL(route ? `${url}#${route}` : url)
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    mainWindow.loadFile(join(__dirname, '../renderer/index.html'), route ? { hash: route } : {})
   }
 }
 
@@ -660,11 +819,51 @@ function buildMcpStatus(): McpStatus {
     running: isMcpRunning(),
     port: config.port,
     token: config.token,
-    command: `claude mcp add ticktask --scope user --env ELECTRON_RUN_AS_NODE=1 -- "${process.execPath}" "${bridge}"`
+    command: `claude mcp add crafytask --scope user --env ELECTRON_RUN_AS_NODE=1 -- "${process.execPath}" "${bridge}"`
   }
 }
 
 // ===================== IPC HANDLERS =====================
+
+function applyStatusChange(id: number, status: TaskStatus): void {
+  const task = getTask(id)
+  if (!task) return
+
+  if (status === 'executando' && task.is_blocked) {
+    throw new Error('Tarefa bloqueada por dependências não concluídas')
+  }
+  if (status === 'finalizada' && task.parent_task_id) {
+    const parentTask = getTask(task.parent_task_id)
+    if (parentTask?.is_blocked) {
+      throw new Error('A tarefa pai possui dependências não concluídas')
+    }
+  }
+
+  const previousStatus: string = task.status
+  updateTaskStatus(id, status)
+
+  if (status === 'finalizada') {
+    if (task.recurrence_rule && !task.parent_task_id) {
+      const next = createNextRecurrence(id)
+      if (next) autoSyncToGoogle(next.id)
+    }
+    if (task.parent_task_id && completeSubtasksCheck(task.parent_task_id)) {
+      autoSyncToGoogle(task.parent_task_id)
+    }
+    for (const depTaskId of getTaskDependents(id)) {
+      const depTask = getTask(depTaskId)
+      if (depTask && !depTask.is_blocked) {
+        mainWindow?.webContents.send('task:unblocked', depTaskId, depTask.name)
+      }
+    }
+  } else if (previousStatus === 'finalizada' && task.recurrence_rule && !task.parent_task_id) {
+    const calendarIds = filterGcalSyncedIds(getNextRecurrenceIds(id))
+    deleteNextRecurrence(id)
+    pushToGoogle(calendarIds)
+  }
+
+  autoSyncTask(id)
+}
 
 function setupIpcHandlers(): void {
   registerTerminalIpc(() => mainWindow)
@@ -684,10 +883,12 @@ function setupIpcHandlers(): void {
   ipcMain.handle('task:create', (_, data: CreateTaskInput) => {
     const task = createTask(data)
     autoSyncTask(task.id)
+    mainWindow?.webContents.send('tasks:refresh')
     return task
   })
   ipcMain.handle('task:list', (_, filters?: TaskListFilters) => listTasks(filters))
   ipcMain.handle('task:count', (_, filters?: TaskListFilters) => countTasks(filters))
+  ipcMain.handle('task:statusCounts', (_, filters?: TaskListFilters) => countTasksByStatus(filters))
   ipcMain.handle('task:listActiveLight', () => listActiveTasksLight())
   ipcMain.handle('task:listRunning', () => listRunningTasks())
   ipcMain.handle('task:get', (_, id: number) => getTask(id))
@@ -761,39 +962,28 @@ function setupIpcHandlers(): void {
     pushToGoogle(calendarIds)
   })
   ipcMain.handle('task:bulkDelete', async (_, ids: number[]) => {
-    const taskIds = normalizeTaskIds(ids)
-    if (taskIds.length === 0) return
-
-    const calendarIds = filterGcalSyncedIds([
-      ...taskIds,
-      ...taskIds.flatMap((id) => getChildTaskIds(id))
-    ])
-    const config = getNotionConfig()
-    if (config?.autoSync && config.databaseId) {
-      // Incluir as subtarefas de cada tarefa para excluí-las também do Notion
-      const idsToDelete = [...taskIds, ...taskIds.flatMap((id) => getChildTaskIds(id))]
-      await Promise.all(
-        idsToDelete.map(async (id) => {
-          try {
-            await deleteTaskFromNotion(id)
-          } catch (error) {
-            console.error(`Erro ao deletar tarefa ${id} do Notion:`, error)
-          }
-        })
-      )
-    }
-
-    disposeTerminalsForTasks([...taskIds, ...taskIds.flatMap((id) => getChildTaskIds(id))])
-    deleteTasks(taskIds)
-    pushToGoogle(calendarIds)
+    await deleteTasksWithEffects(normalizeTaskIds(ids))
+  })
+  ipcMain.handle('task:countArchivedBefore', (_, cutoff: string) =>
+    isIsoDate(cutoff) ? countTasks({ archived: true, archivedBefore: cutoff }) : 0
+  )
+  ipcMain.handle('task:deleteArchivedBefore', async (_, cutoff: string) => {
+    if (!isIsoDate(cutoff)) throw new Error('Data de corte inválida.')
+    const taskIds = listTaskIds({ archived: true, archivedBefore: cutoff })
+    await deleteTasksWithEffects(taskIds)
+    return taskIds.length
   })
   ipcMain.handle('task:bulkUpdateStatus', (_, ids: number[], status: TaskStatus) => {
-    const taskIds = normalizeTaskIds(ids)
-    if (taskIds.length === 0) return
-
-    updateTasksStatus(taskIds, status)
-    for (const id of taskIds) {
-      autoSyncTask(id)
+    const refused: string[] = []
+    for (const id of normalizeTaskIds(ids)) {
+      try {
+        applyStatusChange(id, status)
+      } catch (error) {
+        refused.push(`#${id}: ${error instanceof Error ? error.message : String(error)}`)
+      }
+    }
+    if (refused.length > 0) {
+      throw new Error(`Não foi possível mudar ${refused.length} tarefa(s). ${refused.join('; ')}`)
     }
   })
   ipcMain.handle('task:bulkMoveToProject', (_, ids: number[], projectId: number | null) => {
@@ -815,6 +1005,22 @@ function setupIpcHandlers(): void {
     unarchiveTask(id)
     autoSyncTask(id)
   })
+  ipcMain.handle('task:totals', (_, filters: TaskListFilters) => taskTotals(filters ?? {}))
+  ipcMain.handle(
+    'task:restoreArchived',
+    (_, entries: { id: number; archived_at: string | null }[]) => {
+      const valid = (Array.isArray(entries) ? entries : []).filter(
+        (entry) => Number.isInteger(entry?.id) && entry.id > 0
+      )
+      restoreArchived(
+        valid.map((entry) => ({
+          id: entry.id,
+          archived_at: typeof entry.archived_at === 'string' ? entry.archived_at : null
+        }))
+      )
+      for (const entry of valid) autoSyncTask(entry.id)
+    }
+  )
   ipcMain.handle('task:bulkSetArchived', (_, ids: number[], archived: boolean) => {
     const taskIds = normalizeTaskIds(ids)
     if (taskIds.length === 0) return
@@ -855,60 +1061,25 @@ function setupIpcHandlers(): void {
   })
 
   // Status
-  ipcMain.handle('task:updateStatus', (_, id: number, status: TaskStatus) => {
-    const task = getTask(id)
-    if (!task) return
-
-    // Block setting 'executando' for blocked tasks
-    if (status === 'executando' && task.is_blocked) {
-      throw new Error('Tarefa bloqueada por dependências não concluídas')
-    }
-
-    // Block completing a subtask when the parent task has unresolved dependencies
-    if (status === 'finalizada' && task.parent_task_id) {
-      const parentTask = getTask(task.parent_task_id)
-      if (parentTask?.is_blocked) {
-        throw new Error('A tarefa pai possui dependências não concluídas')
-      }
-    }
-
-    const previousStatus: string = task.status
-    updateTaskStatus(id, status)
-
-    if (status === 'finalizada') {
-      // Recurrence: create next instance for top-level recurring tasks
-      if (task.recurrence_rule && !task.parent_task_id) {
-        const next = createNextRecurrence(id)
-        if (next) autoSyncToGoogle(next.id)
-      }
-
-      // Subtask: check if parent should auto-complete
-      if (task.parent_task_id && completeSubtasksCheck(task.parent_task_id)) {
-        autoSyncToGoogle(task.parent_task_id)
-      }
-
-      // Notify dependents that a dependency was resolved
-      const dependents = getTaskDependents(id)
-      for (const depTaskId of dependents) {
-        const depTask = getTask(depTaskId)
-        if (depTask && !depTask.is_blocked) {
-          mainWindow?.webContents.send('task:unblocked', depTaskId, depTask.name)
-        }
-      }
-    } else if (previousStatus === 'finalizada') {
-      // Undo completion: delete auto-created recurrence instance
-      if (task.recurrence_rule && !task.parent_task_id) {
-        const calendarIds = filterGcalSyncedIds(getNextRecurrenceIds(id))
-        deleteNextRecurrence(id)
-        pushToGoogle(calendarIds)
-      }
-    }
-
-    autoSyncTask(id)
-  })
+  ipcMain.handle('task:updateStatus', (_, id: number, status: TaskStatus) =>
+    applyStatusChange(id, status)
+  )
 
   // Time Entries
   ipcMain.handle('task:getTimeEntries', (_, taskId: number) => getTimeEntries(taskId))
+  ipcMain.handle('timeEntry:update', (_, id: number, startIso: string, endIso: string) => {
+    const { taskId, worklogId } = updateTimeEntry(id, startIso, endIso)
+    syncEditedTimeEntry(taskId, id, worklogId)
+    autoSyncTask(taskId)
+  })
+  ipcMain.handle('timeEntry:listRange', (_, fromIso: string, toIso: string) =>
+    listTimeEntriesRange(fromIso, toIso)
+  )
+  ipcMain.handle('timeEntry:delete', (_, id: number) => {
+    const { taskId, worklogId } = deleteTimeEntry(id)
+    syncDeletedTimeEntry(taskId, worklogId)
+    autoSyncTask(taskId)
+  })
   ipcMain.handle('task:getActiveTimeEntry', (_, taskId: number) => getActiveTimeEntry(taskId))
 
   // Notifications
@@ -924,18 +1095,22 @@ function setupIpcHandlers(): void {
     clearFloatWindowState()
     hideFloatWindow()
   })
-  ipcMain.handle('float:restore', () => {
-    if (mainWindow) {
-      mainWindow.restore()
-      mainWindow.focus()
-    }
-    hideFloatWindow()
-  })
+  ipcMain.handle('float:restore', () => revealMainWindow())
   ipcMain.handle('float:stopTimer', async (_, taskId: number) => {
     const result = await stopTask(taskId)
     autoSyncTask(taskId)
     mainWindow?.webContents.send('timer:stopped', taskId)
     return result
+  })
+  ipcMain.handle('float:openTask', (_, taskId: number) => {
+    if (!Number.isInteger(taskId) || taskId <= 0) return
+    const path = `/task/${taskId}`
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      revealMainWindow(path)
+      return
+    }
+    revealMainWindow()
+    mainWindow.webContents.send('app:navigate', path)
   })
   ipcMain.handle('float:stopAll', async () => {
     const ids = currentTimers.map((t) => t.taskId)
@@ -947,30 +1122,35 @@ function setupIpcHandlers(): void {
   })
 
   // Statistics
-  ipcMain.handle('stats:weekly', () => getWeeklyStats())
-  ipcMain.handle('stats:taskTime', () => getTaskTimeStats())
-  ipcMain.handle('stats:status', () => getStatusStats())
-  ipcMain.handle('stats:category', () => getCategoryStats())
-  ipcMain.handle('stats:heatmap', () => getHeatmapData())
-  ipcMain.handle('stats:general', () => getGeneralStats())
-  // FASE 4.2: Advanced stats
-  ipcMain.handle('stats:gtdMetrics', () => getGtdMetrics())
-  ipcMain.handle('stats:energy', () => getEnergyStats())
-  ipcMain.handle('report:weeklyPDF', async () => {
-    if (!mainWindow) return
+  ipcMain.handle('stats:period', (_, period: StatsPeriod) =>
+    getPeriodStats({
+      start: String(period?.start ?? ''),
+      end: String(period?.end ?? ''),
+      projectId: Number.isInteger(period?.projectId) ? Number(period.projectId) : null
+    })
+  )
+  ipcMain.handle('report:weeklyPDF', async (_, range?: { start?: unknown; end?: unknown }) => {
+    if (!mainWindow) return false
+    const day = (value: unknown): string | null =>
+      typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null
+    const start = day(range?.start)
+    const end = day(range?.end)
     const { filePath } = await dialog.showSaveDialog(mainWindow, {
-      defaultPath: `ticktask-relatorio-${new Date().toISOString().split('T')[0]}.pdf`,
+      defaultPath:
+        start && end
+          ? `crafytask-dashboard-${start}_${end}.pdf`
+          : `crafytask-relatorio-${new Date().toISOString().split('T')[0]}.pdf`,
       filters: [{ name: 'PDF', extensions: ['pdf'] }]
     })
-    if (filePath) {
-      const data = await mainWindow.webContents.printToPDF({
-        printBackground: true,
-        landscape: true
-      })
-      const { writeFile } = await import('fs/promises')
-      await writeFile(filePath, data)
-      shell.openPath(filePath)
-    }
+    if (!filePath) return false
+    const data = await mainWindow.webContents.printToPDF({
+      printBackground: true,
+      landscape: true
+    })
+    const { writeFile } = await import('fs/promises')
+    await writeFile(filePath, data)
+    shell.openPath(filePath)
+    return true
   })
 
   // Tags
@@ -1005,7 +1185,10 @@ function setupIpcHandlers(): void {
   ipcMain.handle('project:update', (_, id: number, data: UpdateProjectInput) =>
     updateProject(id, data)
   )
-  ipcMain.handle('project:delete', (_, id: number) => deleteProject(id))
+  ipcMain.handle('project:delete', (_, id: number) => {
+    deleteProject(id)
+    disposeTerminalsForProjects([id])
+  })
   ipcMain.handle('project:getTasks', (_, projectId: number) => getProjectTasks(projectId))
 
   // ===================== CONTEXTS =====================
@@ -1013,6 +1196,12 @@ function setupIpcHandlers(): void {
     createContext(name, icon, color)
   )
   ipcMain.handle('context:list', () => listContexts())
+  ipcMain.handle('context:listWithUsage', () => listContextsWithUsage())
+  ipcMain.handle('context:merge', (_, sourceId: number, targetId: number) => {
+    const affected = mergeContexts(sourceId, targetId)
+    syncTasksAfterTagChange(affected)
+    return affected.length
+  })
   ipcMain.handle(
     'context:update',
     (_, id: number, data: { name?: string; icon?: string; color?: string }) =>
@@ -1029,19 +1218,25 @@ function setupIpcHandlers(): void {
   ipcMain.handle('review:get', (_, id: number) => getWeeklyReview(id))
   ipcMain.handle('review:list', () => listWeeklyReviews())
   ipcMain.handle('review:getLast', () => getLastWeeklyReview())
-  ipcMain.handle(
-    'review:update',
-    (
-      _,
-      id: number,
-      data: {
-        inbox_cleared?: boolean
-        notes?: string
-        checklist_state?: string
-        completed_at?: string
-      }
-    ) => updateWeeklyReview(id, data)
+  ipcMain.handle('review:updateNotes', (_, id: number, notes: string) =>
+    updateWeeklyReviewNotes(id, notes)
   )
+  ipcMain.handle(
+    'review:setStep',
+    (_, id: number, key: ReviewStepKey, status: ReviewStepStatus | null) =>
+      setWeeklyReviewStep(id, key, status)
+  )
+  ipcMain.handle('review:setCurrentStep', (_, id: number, key: ReviewStepKey) =>
+    setWeeklyReviewCurrentStep(id, key)
+  )
+  ipcMain.handle('review:discard', (_, id: number) => discardWeeklyReview(id))
+  ipcMain.handle('review:bumpCounter', (_, id: number, key: ReviewCounterKey, taskId?: number) =>
+    bumpWeeklyReviewCounter(id, key, taskId)
+  )
+  ipcMain.handle('review:complete', (_, id: number, notes?: string) =>
+    completeWeeklyReview(id, notes)
+  )
+  ipcMain.handle('review:pastWeek', () => getReviewPastWeek())
   ipcMain.handle('review:healthIndicators', () => getReviewHealthIndicators())
 
   // ===================== QUICK CAPTURE =====================
@@ -1050,10 +1245,6 @@ function setupIpcHandlers(): void {
   })
   ipcMain.handle('quickCapture:capture', (_, name: string) => {
     const task = createTask({ name })
-    // Fechar a janela de captura
-    if (quickCaptureWindow && !quickCaptureWindow.isDestroyed()) {
-      quickCaptureWindow.close()
-    }
     // Notificar a janela principal para atualizar
     mainWindow?.webContents.send('tasks:refresh')
     // Mostrar notificação
@@ -1120,10 +1311,6 @@ function setupIpcHandlers(): void {
 
   // ===================== FASE 2: Agendamento =====================
   ipcMain.handle('schedule:getForDate', (_, date: string) => getTasksForDate(date))
-  ipcMain.handle('schedule:getWeekly', (_, startDate: string) => getWeeklySchedule(startDate))
-  ipcMain.handle('schedule:updateDayOrder', (_, taskId: number, order: number) =>
-    updateDayOrder(taskId, order)
-  )
   ipcMain.handle('task:scheduleForDate', (_, taskId: number, date: string | null) => {
     updateTask(taskId, { scheduled_date: date })
     autoSyncToGoogle(taskId)
@@ -1131,24 +1318,37 @@ function setupIpcHandlers(): void {
 
   // ===================== FASE 4.3: Blocos de Tempo =====================
   ipcMain.handle('timeBlock:create', (_, data: CreateTimeBlockInput) => {
+    const error = timeBlockError(data)
+    if (error) throw new Error(error)
     const block = createTimeBlock(data)
     autoSyncToGoogle(block.task_id)
     return block
   })
   ipcMain.handle('timeBlock:getForDate', (_, date: string) => getTimeBlocksForDate(date))
   ipcMain.handle('timeBlock:getForWeek', (_, startDate: string) => getTimeBlocksForWeek(startDate))
-  ipcMain.handle('timeBlock:getForMonth', (_, yearMonth: string) =>
-    getTimeBlocksForMonth(yearMonth)
-  )
   ipcMain.handle('timeBlock:update', (_, id: number, data: UpdateTimeBlockInput) => {
     const before = getTimeBlock(id)
+    if (!before) throw new Error('Bloco não encontrado.')
+    const error = timeBlockError(mergeTimeBlock(before, data))
+    if (error) throw new Error(error)
     updateTimeBlock(id, data)
-    if (before) autoSyncToGoogle(before.task_id, data.task_id ?? before.task_id)
+    autoSyncToGoogle(before.task_id, data.task_id ?? before.task_id)
+    return before
   })
+  ipcMain.handle('timeBlock:getForRange', (_, from: string, to: string) =>
+    getTimeBlocksForRange(from, to)
+  )
+  ipcMain.handle('schedule:getRange', (_, from: string, to: string) => listCalendarTasks(from, to))
+  ipcMain.handle(
+    'schedule:listUnscheduled',
+    (_, from: string, to: string, filters?: UnscheduledTaskFilters) =>
+      listUnscheduledTasks(from, to, filters)
+  )
   ipcMain.handle('timeBlock:delete', (_, id: number) => {
     const before = getTimeBlock(id)
     deleteTimeBlock(id)
     if (before) autoSyncToGoogle(before.task_id)
+    return before ?? null
   })
 
   // Jira
@@ -1230,6 +1430,39 @@ function setupIpcHandlers(): void {
     return shell.openExternal(url)
   })
   ipcMain.handle('app:setAutostart', (_, enabled: boolean) => setAutostartEnabled(enabled))
+  ipcMain.handle('app:logRendererError', (event, report: RendererErrorReport) => {
+    const where = report.region ? ` em "${report.region}"` : ''
+    console.error(
+      `[renderer] erro ${report.kind === 'caught' ? 'capturado' : 'não capturado'}${where}: ${report.message}`,
+      report.stack ?? '',
+      report.componentStack ?? '',
+      `(janela ${event.sender.id})`
+    )
+  })
+  ipcMain.handle('app:setThemeSource', (_, preference: unknown) => {
+    if (!isThemePreference(preference)) throw new Error('Tema inválido')
+    nativeTheme.themeSource = preference
+  })
+
+  ipcMain.handle('prefs:getWorkflow', () => getWorkflowPrefs())
+  ipcMain.handle('prefs:setWorkflow', (_, patch: unknown) => {
+    const prefs = setWorkflowPrefs(patch)
+    for (const window of BrowserWindow.getAllWindows()) {
+      if (!window.isDestroyed()) window.webContents.send('prefs:workflowChanged', prefs)
+    }
+    return prefs
+  })
+
+  ipcMain.handle('prefs:getApp', () => appPrefsStatus())
+  ipcMain.handle('prefs:setCaptureShortcut', (_, accelerator: unknown) =>
+    changeCaptureShortcut(accelerator)
+  )
+  ipcMain.handle('prefs:setAutoBackup', (_, enabled: unknown) => {
+    if (typeof enabled !== 'boolean') throw new Error('Valor inválido')
+    setAppPrefs({ autoBackup: enabled })
+    if (enabled) void checkAutoBackup()
+    return appPrefsStatus()
+  })
 
   ipcMain.handle('backup:getStatus', () => getBackupStatus())
   ipcMain.handle('backup:chooseFolder', () => chooseBackupFolder(mainWindow))
@@ -1237,10 +1470,18 @@ function setupIpcHandlers(): void {
   ipcMain.handle('backup:chooseSnapshot', () => chooseSnapshotFolder(mainWindow))
   ipcMain.handle('backup:inspect', (_, dir: string) => inspectSnapshot(dir))
   ipcMain.handle('backup:restore', async (_, dir: string) => {
-    await inspectSnapshot(dir)
+    if (isBackupRunning()) throw new Error('Um backup está em andamento. Espere terminar.')
+    lockBackups()
+    try {
+      await inspectSnapshot(dir)
+    } catch (error) {
+      unlockBackups()
+      throw error
+    }
     isQuitting = true
     destroyTray()
     if (notificationInterval) clearInterval(notificationInterval)
+    stopAutoBackupScheduler()
     await stopMcpServer()
     closeDatabase()
     try {
@@ -1286,6 +1527,34 @@ function setupIpcHandlers(): void {
 
 const notifiedToday = new Set<string>() // 'taskId-type' keys to avoid spam
 let notificationInterval: NodeJS.Timeout | null = null
+let autoBackupInterval: NodeJS.Timeout | null = null
+let autoBackupFirstCheck: NodeJS.Timeout | null = null
+
+const AUTO_BACKUP_CHECK_MS = 60 * 60 * 1000
+const AUTO_BACKUP_FIRST_CHECK_MS = 2 * 60 * 1000
+
+async function checkAutoBackup(): Promise<void> {
+  try {
+    const snapshot = await runAutoBackupIfDue()
+    if (snapshot && mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('backup:changed')
+    }
+  } catch (error) {
+    console.error('[backup] backup automático falhou:', error)
+  }
+}
+
+function startAutoBackupScheduler(): void {
+  autoBackupFirstCheck = setTimeout(() => void checkAutoBackup(), AUTO_BACKUP_FIRST_CHECK_MS)
+  autoBackupInterval = setInterval(() => void checkAutoBackup(), AUTO_BACKUP_CHECK_MS)
+}
+
+function stopAutoBackupScheduler(): void {
+  if (autoBackupFirstCheck) clearTimeout(autoBackupFirstCheck)
+  if (autoBackupInterval) clearInterval(autoBackupInterval)
+  autoBackupFirstCheck = null
+  autoBackupInterval = null
+}
 
 function checkDueDateNotifications(): void {
   const now = new Date()
@@ -1298,7 +1567,8 @@ function checkDueDateNotifications(): void {
   for (const notification of pickDueNotifications(
     getTasksDueForNotification(),
     now,
-    notifiedToday
+    notifiedToday,
+    getWorkflowPrefs().dueNotices
   )) {
     notifiedToday.add(notification.key)
     new Notification({ title: notification.title, body: notification.body }).show()
@@ -1320,7 +1590,8 @@ app.whenReady().then(() => {
     autoSync: (id) => autoSyncTask(id),
     syncTagChange: (ids) => syncTasksAfterTagChange(ids),
     syncCalendar: (ids) => pushToGoogle(ids),
-    disposeTerminals: (ids) => disposeTerminalsForTasks(ids)
+    disposeTerminals: (ids) => disposeTerminalsForTasks(ids),
+    disposeProjectTerminals: (ids) => disposeTerminalsForProjects(ids)
   })
 
   // Nenhuma falha do MCP pode impedir createWindow(): esta promise não tem .catch.
@@ -1339,6 +1610,7 @@ app.whenReady().then(() => {
   registerAssetProtocol()
   setupIpcHandlers()
   startNotificationScheduler()
+  startAutoBackupScheduler()
   startJiraScheduler(() => {
     runJiraImport().catch(() => undefined)
   })
@@ -1365,8 +1637,11 @@ app.whenReady().then(() => {
   // Registrar atalho global para captura rápida
   registerGlobalShortcut()
 
-  app.on('second-instance', () => {
-    revealMainWindow()
+  if (wantsQuickCapture(process.argv)) createQuickCaptureWindow()
+
+  app.on('second-instance', (_, argv) => {
+    if (wantsQuickCapture(argv)) createQuickCaptureWindow()
+    else revealMainWindow()
   })
 
   app.on('activate', function () {
@@ -1387,6 +1662,7 @@ app.on('before-quit', () => {
   destroyTray()
   killAllTerminals()
   if (notificationInterval) clearInterval(notificationInterval)
+  stopAutoBackupScheduler()
   void stopMcpServer()
   closeDatabase()
 })

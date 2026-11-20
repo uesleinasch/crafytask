@@ -1,771 +1,586 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ScrollArea } from '@renderer/components/ui/scroll-area'
-import { Button } from '@renderer/components/ui/button'
-import { Input } from '@renderer/components/ui/input'
-import { Textarea } from '@renderer/components/ui/textarea'
-import { Progress } from '@renderer/components/ui/progress'
+import { useErrorBoundary } from 'react-error-boundary'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle
-} from '@renderer/components/ui/dialog'
-import {
+  App,
+  Button,
+  Card,
+  Dropdown,
+  Empty,
+  Flex,
+  Grid,
   Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@renderer/components/ui/select'
-import { useAreas, useGoals } from '@renderer/hooks/useHorizons'
-import { useProjects } from '@renderer/hooks/useProjects'
-import type { Area, Goal, GoalHorizon, CreateAreaInput, CreateGoalInput, Task } from '@shared/types'
+  Spin,
+  Tag,
+  Tooltip,
+  Typography,
+  theme,
+  type MenuProps
+} from 'antd'
 import {
-  ArrowLeft,
-  Plus,
-  Target,
-  Mountain,
-  Layers,
-  CalendarDays,
-  FolderKanban,
-  Trash2,
+  ArrowLeftRight,
+  Ellipsis,
+  Filter,
+  Folder,
+  Pause,
   Pencil,
-  CheckCircle2,
-  Clock,
-  Compass,
-  Star,
-  Telescope
+  Play,
+  Plus,
+  Trash2
 } from 'lucide-react'
-import { cn } from '@renderer/lib/utils'
-import { toast } from '@renderer/components/ui/sonner'
+import type { Area, Goal, GoalHorizon } from '@shared/types'
+import { localDateString } from '@shared/dueState'
+import { LiveDot } from '@renderer/components/chips/LiveDot'
+import { AreaModal } from '@renderer/components/horizons/AreaModal'
+import { GoalModal } from '@renderer/components/horizons/GoalModal'
+import { HorizonChip } from '@renderer/components/horizons/HorizonChip'
+import {
+  areaDraft,
+  goalDraft,
+  type AreaDraft,
+  type GoalDraft
+} from '@renderer/components/horizons/horizonDrafts'
+import {
+  GOAL_HORIZONS,
+  HORIZONS,
+  areaCounts,
+  areaSummary,
+  deleteAreaWarning,
+  emptyLevelText,
+  filterByArea,
+  horizonSectionId,
+  type HorizonData,
+  type HorizonDef
+} from '@renderer/components/horizons/horizonLevels'
+import { NextActionCell, ProjectProgress } from '@renderer/components/projects/ProjectCells'
+import { errorMessage } from '@renderer/components/settings/settingsStatus'
+import { PageContainer } from '@renderer/components/shell/PageContainer'
+import { ProjectLabel } from '@renderer/components/tasks/ProjectLabel'
+import { dueTone, formatDueShort } from '@renderer/components/tasks/taskTableFormat'
+import { useTimerStore } from '@renderer/stores/timerStore'
 
-// ===================== HORIZON CONFIG =====================
-
-const HORIZON_CONFIG = {
-  0: {
-    label: 'H0 — Próximas Ações',
-    sublabel: 'Tarefas agendadas para hoje',
-    icon: CalendarDays,
-    color: 'bg-blue-500',
-    lightColor: 'bg-blue-50 border-blue-200',
-    textColor: 'text-blue-700',
-    badgeColor: 'bg-blue-100 text-blue-700'
-  },
-  1: {
-    label: 'H1 — Projetos',
-    sublabel: 'Projetos em andamento',
-    icon: FolderKanban,
-    color: 'bg-emerald-500',
-    lightColor: 'bg-emerald-50 border-emerald-200',
-    textColor: 'text-emerald-700',
-    badgeColor: 'bg-emerald-100 text-emerald-700'
-  },
-  2: {
-    label: 'H2 — Áreas de Foco',
-    sublabel: 'Responsabilidades e papéis',
-    icon: Layers,
-    color: 'bg-violet-500',
-    lightColor: 'bg-violet-50 border-violet-200',
-    textColor: 'text-violet-700',
-    badgeColor: 'bg-violet-100 text-violet-700'
-  },
-  3: {
-    label: 'H3 — Metas (1–2 anos)',
-    sublabel: 'Objetivos de curto prazo',
-    icon: Target,
-    color: 'bg-orange-500',
-    lightColor: 'bg-orange-50 border-orange-200',
-    textColor: 'text-orange-700',
-    badgeColor: 'bg-orange-100 text-orange-700'
-  },
-  4: {
-    label: 'H4 — Visão (3–5 anos)',
-    sublabel: 'Onde você quer estar',
-    icon: Compass,
-    color: 'bg-rose-500',
-    lightColor: 'bg-rose-50 border-rose-200',
-    textColor: 'text-rose-700',
-    badgeColor: 'bg-rose-100 text-rose-700'
-  },
-  5: {
-    label: 'H5 — Propósito',
-    sublabel: 'Princípios e razão de ser',
-    icon: Telescope,
-    color: 'bg-indigo-500',
-    lightColor: 'bg-indigo-50 border-indigo-200',
-    textColor: 'text-indigo-700',
-    badgeColor: 'bg-indigo-100 text-indigo-700'
-  }
-} as const
-
-const HORIZON_ICONS: Record<number, string> = {
-  3: '🎯',
-  4: '🔭',
-  5: '✨'
-}
-
-// ===================== AREA DIALOG =====================
-
-interface AreaDialogProps {
-  open: boolean
-  onClose: () => void
-  onSave: (data: CreateAreaInput) => Promise<void>
-  initial?: Partial<CreateAreaInput>
-  title: string
-}
-
-const AREA_ICONS = ['🎯', '💼', '🏋️', '🧠', '🏠', '❤️', '🌱', '💰', '🎨', '📚', '🤝', '⚡']
-
-function AreaDialog({ open, onClose, onSave, initial, title }: AreaDialogProps): React.JSX.Element {
-  const [name, setName] = useState(initial?.name || '')
-  const [description, setDescription] = useState(initial?.description || '')
-  const [icon, setIcon] = useState(initial?.icon || '🎯')
-
-  const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault()
-      if (!name.trim()) return
-      await onSave({ name: name.trim(), description: description.trim() || undefined, icon })
-      onClose()
-    },
-    [name, description, icon, onSave, onClose]
-  )
-
-  return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>Preencha os dados da área de foco.</DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
-          <div>
-            <label className="text-sm font-medium text-slate-700 mb-1.5 block">Ícone</label>
-            <div className="flex flex-wrap gap-2">
-              {AREA_ICONS.map((i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => setIcon(i)}
-                  className={cn(
-                    'w-9 h-9 text-lg rounded-lg border-2 transition-colors',
-                    icon === i ? 'border-violet-500 bg-violet-50' : 'border-slate-200 hover:border-slate-300'
-                  )}
-                >
-                  {i}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <label className="text-sm font-medium text-slate-700 mb-1.5 block">Nome *</label>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Carreira, Saúde, Família..."
-              autoFocus
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-slate-700 mb-1.5 block">Descrição</label>
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Descreva esta área de foco..."
-              rows={2}
-            />
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={!name.trim()}>
-              Salvar
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
-// ===================== GOAL DIALOG =====================
-
-interface GoalDialogProps {
-  open: boolean
-  onClose: () => void
-  onSave: (data: CreateGoalInput) => Promise<void>
-  areas: Area[]
-  initial?: Partial<CreateGoalInput>
-  title: string
-}
-
-function GoalDialog({ open, onClose, onSave, areas, initial, title }: GoalDialogProps): React.JSX.Element {
-  const [name, setName] = useState(initial?.name || '')
-  const [description, setDescription] = useState(initial?.description || '')
-  const [horizon, setHorizon] = useState<GoalHorizon>(initial?.horizon || 3)
-  const [areaId, setAreaId] = useState<string>(initial?.area_id ? String(initial.area_id) : 'none')
-
-  const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault()
-      if (!name.trim()) return
-      await onSave({
-        name: name.trim(),
-        description: description.trim() || undefined,
-        horizon,
-        area_id: areaId && areaId !== 'none' ? Number(areaId) : undefined
-      })
-      onClose()
-    },
-    [name, description, horizon, areaId, onSave, onClose]
-  )
-
-  return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>Preencha os dados do objetivo.</DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
-          <div>
-            <label className="text-sm font-medium text-slate-700 mb-1.5 block">Horizonte *</label>
-            <Select value={String(horizon)} onValueChange={(v) => setHorizon(Number(v) as GoalHorizon)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="3">🎯 H3 — Metas (1–2 anos)</SelectItem>
-                <SelectItem value="4">🔭 H4 — Visão (3–5 anos)</SelectItem>
-                <SelectItem value="5">✨ H5 — Propósito e princípios</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <label className="text-sm font-medium text-slate-700 mb-1.5 block">Nome *</label>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Tornar-me líder técnico sênior..."
-              autoFocus
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-slate-700 mb-1.5 block">Área de Foco</label>
-            <Select value={areaId} onValueChange={setAreaId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Nenhuma área" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Nenhuma área</SelectItem>
-                {areas.map((a) => (
-                  <SelectItem key={a.id} value={String(a.id)}>
-                    {a.icon} {a.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <label className="text-sm font-medium text-slate-700 mb-1.5 block">Descrição</label>
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Descreva este objetivo em detalhes..."
-              rows={3}
-            />
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={!name.trim()}>
-              Salvar
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
-// ===================== MAIN PAGE =====================
+const ICON = { size: 14, strokeWidth: 1.75, 'aria-hidden': true } as const
 
 export function HorizonsPage(): React.JSX.Element {
   const navigate = useNavigate()
-  const today = new Date().toISOString().split('T')[0]
+  const { showBoundary } = useErrorBoundary()
+  const { message, modal } = App.useApp()
+  const { token } = theme.useToken()
+  const screens = Grid.useBreakpoint()
+  const timers = useTimerStore((s) => s.timers)
+  const startTimer = useTimerStore((s) => s.startTimer)
+  const stopTimer = useTimerStore((s) => s.stopTimer)
+  const [data, setData] = useState<HorizonData | null>(null)
+  const [areaId, setAreaId] = useState<number | null>(null)
+  const [areaEdit, setAreaEdit] = useState<AreaDraft | null>(null)
+  const [goalEdit, setGoalEdit] = useState<GoalDraft | null>(null)
 
-  const { areas, loading: areasLoading, createArea, deleteArea } = useAreas()
-  const { goals, loading: goalsLoading, createGoal, deleteGoal } = useGoals()
-  const { projects, loading: projectsLoading } = useProjects()
-  const [todayTasks, setTodayTasks] = useState<Task[]>([])
-  const [tasksLoading, setTasksLoading] = useState(true)
+  const load = useCallback(() => {
+    Promise.all([
+      window.api.listAreas(),
+      window.api.listGoals(),
+      window.api.listProjects(),
+      window.api.getTasksForDate(localDateString(new Date()))
+    ])
+      .then(([areas, goals, projects, today]) => setData({ areas, goals, projects, today }))
+      .catch(showBoundary)
+  }, [showBoundary])
 
-  const [areaDialogOpen, setAreaDialogOpen] = useState(false)
-  const [goalDialogOpen, setGoalDialogOpen] = useState(false)
-  const [editingArea, setEditingArea] = useState<Area | null>(null)
-  const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
-
-  // H0: tarefas agendadas para hoje e não finalizadas
   useEffect(() => {
-    window.api
-      .getTasksForDate(today)
-      .then((result) => setTodayTasks(result.filter((t) => t.status !== 'finalizada')))
-      .catch(console.error)
-      .finally(() => setTasksLoading(false))
-  }, [today])
+    load()
+    return window.api.onTasksRefresh(load)
+  }, [load])
 
-  // H1: active projects
-  const activeProjects = projects.filter((p) => p.status === 'active')
+  const view = useMemo(() => (data ? filterByArea(data, areaId) : null), [data, areaId])
 
-  // H3-H5 grouped
-  const goalsByHorizon: Record<3 | 4 | 5, Goal[]> = {
-    3: goals.filter((g) => g.horizon === 3),
-    4: goals.filter((g) => g.horizon === 4),
-    5: goals.filter((g) => g.horizon === 5)
+  if (!data || !view) {
+    return (
+      <Flex justify="center" style={{ padding: 48 }}>
+        <Spin />
+      </Flex>
+    )
   }
 
-  const loading = areasLoading || goalsLoading || projectsLoading || tasksLoading
+  const filtered = areaId !== null
+  const areaById = new Map(data.areas.map((a) => [a.id, a]))
+  const selectedArea = areaId !== null ? areaById.get(areaId) : undefined
+  const scrollTo = (h: number): void => {
+    document
+      .getElementById(horizonSectionId(h as HorizonDef['h']))
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+  const newGoal = (h: GoalHorizon): void =>
+    setGoalEdit({ name: '', horizon: h, areaId, description: '' })
 
-  const handleCreateArea = useCallback(
-    async (data: CreateAreaInput) => {
-      await createArea(data)
-      toast.success(`Área "${data.name}" criada!`)
-    },
-    [createArea]
-  )
-
-  const handleCreateGoal = useCallback(
-    async (data: CreateGoalInput) => {
-      await createGoal(data)
-      toast.success(`Objetivo "${data.name}" criado!`)
-    },
-    [createGoal]
-  )
-
-  const handleDeleteArea = useCallback(
-    async (area: Area) => {
-      await deleteArea(area.id)
-      toast.success(`Área "${area.name}" removida.`)
-    },
-    [deleteArea]
-  )
-
-  const handleDeleteGoal = useCallback(
-    async (goal: Goal) => {
-      await deleteGoal(goal.id)
-      toast.success(`Objetivo removido.`)
-    },
-    [deleteGoal]
-  )
-
-  return (
-    <div className="flex flex-col h-full overflow-hidden bg-slate-50">
-      {/* Header */}
-      <header className="shrink-0 px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/')}
-            className="h-8 px-2 text-slate-500 hover:text-slate-700"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div className="flex items-center gap-2">
-            <Mountain className="h-5 w-5 text-indigo-600" />
-            <div>
-              <h1 className="text-lg font-semibold text-slate-900">Visão de Horizonte GTD</h1>
-              <p className="text-xs text-slate-500">6 perspectivas para clareza total</p>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setAreaDialogOpen(true)}
-            className="h-9 border-slate-200"
-          >
-            <Plus className="mr-1.5 h-4 w-4" />
-            Nova Área
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => setGoalDialogOpen(true)}
-            className="h-9 bg-indigo-600 hover:bg-indigo-700 text-white"
-          >
-            <Star className="mr-1.5 h-4 w-4" />
-            Novo Objetivo
-          </Button>
-        </div>
-      </header>
-
-      <ScrollArea className="flex-1">
-        <div className="max-w-4xl mx-auto px-6 py-6 space-y-6">
-          {loading && (
-            <div className="text-center py-12 text-slate-400">Carregando horizontes...</div>
-          )}
-
-          {/* ==================== H0: PRÓXIMAS AÇÕES ==================== */}
-          <HorizonSection
-            level={0}
-            count={todayTasks.length}
-            empty={todayTasks.length === 0}
-            emptyText="Nenhuma tarefa agendada para hoje."
-          >
-            {todayTasks.length > 0 ? (
-              <ul className="space-y-2">
-                {todayTasks.map((task) => (
-                  <li
-                    key={task.id}
-                    onClick={() => navigate(`/task/${task.id}`)}
-                    className="flex items-center gap-3 px-3 py-2.5 bg-white border border-slate-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 cursor-pointer transition-colors group"
-                  >
-                    <CheckCircle2 className="h-4 w-4 text-slate-300 group-hover:text-blue-400 shrink-0" />
-                    <span className="flex-1 text-sm text-slate-700 font-medium">{task.name}</span>
-                    {task.project_name && (
-                      <span className="flex items-center gap-1.5 text-xs text-slate-400 shrink-0">
-                        <span
-                          className="h-2 w-2 rounded-full shrink-0"
-                          style={{ backgroundColor: task.project_color || '#6366f1' }}
-                        />
-                        {task.project_name}
-                      </span>
-                    )}
-                    {task.due_date && (
-                      <span className="flex items-center gap-1 text-xs text-orange-500 shrink-0">
-                        <Clock className="h-3 w-3" />
-                        {new Date(task.due_date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/today')}
-                className="text-blue-600 border-blue-200 hover:bg-blue-50"
-              >
-                <CalendarDays className="mr-1.5 h-4 w-4" />
-                Ir para Plano do Dia
-              </Button>
-            )}
-          </HorizonSection>
-
-          {/* ==================== H1: PROJETOS ATIVOS ==================== */}
-          <HorizonSection
-            level={1}
-            count={activeProjects.length}
-            empty={activeProjects.length === 0}
-            emptyText="Nenhum projeto ativo no momento."
-          >
-            {activeProjects.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {activeProjects.map((project) => {
-                  const pct =
-                    project.task_count && project.task_count > 0
-                      ? Math.round(((project.completed_task_count || 0) / project.task_count) * 100)
-                      : 0
-                  return (
-                    <div
-                      key={project.id}
-                      onClick={() => navigate(`/project/${project.id}`)}
-                      className="p-4 bg-white border border-slate-200 rounded-lg hover:border-emerald-300 cursor-pointer transition-all group"
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <span className="font-medium text-sm text-slate-800 group-hover:text-emerald-700">
-                          {project.name}
-                        </span>
-                        {project.area_name && (
-                          <span className="text-xs text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
-                            {project.area_name}
-                          </span>
-                        )}
-                      </div>
-                      {project.next_action && (
-                        <p className="text-xs text-slate-500 mb-3 line-clamp-1">
-                          → {project.next_action}
-                        </p>
-                      )}
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-xs text-slate-400">
-                          <span>{project.completed_task_count}/{project.task_count} tarefas</span>
-                          <span>{pct}%</span>
-                        </div>
-                        <Progress value={pct} className="h-1.5" />
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/projects')}
-                className="text-emerald-600 border-emerald-200 hover:bg-emerald-50"
-              >
-                <FolderKanban className="mr-1.5 h-4 w-4" />
-                Ir para Projetos
-              </Button>
-            )}
-          </HorizonSection>
-
-          {/* ==================== H2: ÁREAS DE FOCO ==================== */}
-          <HorizonSection
-            level={2}
-            count={areas.length}
-            empty={areas.length === 0}
-            emptyText="Nenhuma área de foco definida ainda."
-            action={
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setAreaDialogOpen(true)}
-                className="h-7 text-violet-600 hover:bg-violet-50"
-              >
-                <Plus className="h-3.5 w-3.5 mr-1" />
-                Adicionar
-              </Button>
-            }
-          >
-            {areas.length > 0 && (
-              <ul className="space-y-2">
-                {areas.map((area) => {
-                  const areaProjects = projects.filter((p) => p.area_id === area.id && p.status === 'active')
-                  return (
-                    <li
-                      key={area.id}
-                      className="flex items-center gap-3 px-4 py-3 bg-white border border-slate-200 rounded-lg hover:border-violet-200 transition-colors group"
-                    >
-                      <span className="text-2xl w-8 text-center shrink-0">{area.icon}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm text-slate-800">{area.name}</span>
-                          {areaProjects.length > 0 && (
-                            <span className="text-xs bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded">
-                              {areaProjects.length} projeto{areaProjects.length > 1 ? 's' : ''}
-                            </span>
-                          )}
-                        </div>
-                        {area.description && (
-                          <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{area.description}</p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 w-7 p-0 text-slate-400 hover:text-slate-600"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setEditingArea(area)
-                          }}
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 w-7 p-0 text-slate-400 hover:text-red-500"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleDeleteArea(area)
-                          }}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
-          </HorizonSection>
-
-          {/* ==================== H3-H5: OBJETIVOS E VISÃO ==================== */}
-          {([3, 4, 5] as const).map((h) => {
-            const cfg = HORIZON_CONFIG[h]
-            const hGoals = goalsByHorizon[h]
-            return (
-              <HorizonSection
-                key={h}
-                level={h}
-                count={hGoals.length}
-                empty={hGoals.length === 0}
-                emptyText={`Nenhum objetivo em ${cfg.label} ainda.`}
-                action={
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setGoalDialogOpen(true)
-                    }}
-                    className={cn('h-7 hover:bg-opacity-10', cfg.textColor)}
-                  >
-                    <Plus className="h-3.5 w-3.5 mr-1" />
-                    Adicionar
-                  </Button>
-                }
-              >
-                {hGoals.length > 0 && (
-                  <ul className="space-y-2">
-                    {hGoals.map((goal) => (
-                      <li
-                        key={goal.id}
-                        className="flex items-start gap-3 px-4 py-3 bg-white border border-slate-200 rounded-lg hover:border-slate-300 transition-colors group"
-                      >
-                        <span className="text-lg shrink-0 mt-0.5">{HORIZON_ICONS[h]}</span>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-medium text-sm text-slate-800">{goal.name}</span>
-                            {goal.area_name && (
-                              <span className="text-xs bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">
-                                {goal.area_name}
-                              </span>
-                            )}
-                          </div>
-                          {goal.description && (
-                            <p className="text-xs text-slate-500 mt-1 whitespace-pre-wrap">{goal.description}</p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 w-7 p-0 text-slate-400 hover:text-slate-600"
-                            onClick={() => setEditingGoal(goal)}
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 w-7 p-0 text-slate-400 hover:text-red-500"
-                            onClick={() => handleDeleteGoal(goal)}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </HorizonSection>
-            )
-          })}
-        </div>
-      </ScrollArea>
-
-      {/* Dialogs */}
-      <AreaDialog
-        open={areaDialogOpen}
-        onClose={() => setAreaDialogOpen(false)}
-        onSave={handleCreateArea}
-        title="Nova Área de Foco"
-      />
-
-      {editingArea && (
-        <AreaDialog
-          open={!!editingArea}
-          onClose={() => setEditingArea(null)}
-          onSave={async (data) => {
-            await window.api.updateArea(editingArea.id, data)
-            setEditingArea(null)
-            toast.success('Área atualizada!')
+  const areaTag = (id: number | null | undefined): React.ReactNode => {
+    const area = id ? areaById.get(id) : undefined
+    if (!area) {
+      return (
+        <Tag bordered={false} style={{ margin: 0 }}>
+          todas as áreas
+        </Tag>
+      )
+    }
+    return (
+      <Tag bordered={false} style={{ margin: 0 }}>
+        <button
+          type="button"
+          className="ct-linkbutton"
+          aria-label={`Filtrar por ${area.name}`}
+          onClick={(e) => {
+            e.stopPropagation()
+            setAreaId(area.id)
           }}
-          initial={editingArea}
-          title="Editar Área de Foco"
-        />
-      )}
+        >
+          {area.icon} {area.name}
+        </button>
+      </Tag>
+    )
+  }
 
-      <GoalDialog
-        open={goalDialogOpen}
-        onClose={() => setGoalDialogOpen(false)}
-        onSave={handleCreateGoal}
-        areas={areas}
-        title="Novo Objetivo"
-      />
-
-      {editingGoal && (
-        <GoalDialog
-          open={!!editingGoal}
-          onClose={() => setEditingGoal(null)}
-          onSave={async (data) => {
-            await window.api.updateGoal(editingGoal.id, data)
-            setEditingGoal(null)
-            toast.success('Objetivo atualizado!')
-          }}
-          areas={areas}
-          initial={editingGoal}
-          title="Editar Objetivo"
-        />
-      )}
-    </div>
-  )
-}
-
-// ===================== HORIZON SECTION =====================
-
-interface HorizonSectionProps {
-  level: 0 | 1 | 2 | 3 | 4 | 5
-  count: number
-  empty: boolean
-  emptyText: string
-  action?: React.ReactNode
-  children: React.ReactNode
-}
-
-function HorizonSection({
-  level,
-  count,
-  empty,
-  emptyText,
-  action,
-  children
-}: HorizonSectionProps): React.JSX.Element {
-  const cfg = HORIZON_CONFIG[level]
-  const Icon = cfg.icon
-
-  return (
-    <section className={cn('rounded-sm border-2 overflow-hidden', cfg.lightColor)}>
-      {/* Section header */}
-      <div className="flex items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-2.5">
-          <div className={cn('flex items-center justify-center w-8 h-8 rounded-lg text-white', cfg.color)}>
-            <Icon className="h-4 w-4" />
-          </div>
-          <div>
-            <h2 className={cn('text-sm font-semibold', cfg.textColor)}>{cfg.label}</h2>
-            <p className="text-xs text-slate-500">{cfg.sublabel}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium', cfg.badgeColor)}>
-            {count}
-          </span>
-          {action}
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="px-4 pb-4">
-        {empty ? (
-          <div className="flex flex-col items-center gap-2 py-4 text-slate-400">
-            <p className="text-sm">{emptyText}</p>
-            {children}
-          </div>
-        ) : (
-          children
-        )}
-      </div>
+  const level = (
+    lv: HorizonDef,
+    count: number,
+    children: React.ReactNode,
+    onAdd?: () => void
+  ): React.ReactNode => (
+    <section
+      key={lv.h}
+      id={horizonSectionId(lv.h)}
+      className="ct-hzsection"
+      aria-labelledby={`${horizonSectionId(lv.h)}-title`}
+    >
+      <Card
+        size="small"
+        styles={{ header: { paddingBlock: 12 } }}
+        title={
+          <Flex align="center" gap={14}>
+            <HorizonChip h={lv.h} />
+            <Flex vertical gap={2} style={{ minWidth: 0 }}>
+              <Flex align="center" gap={8}>
+                <Typography.Text strong id={`${horizonSectionId(lv.h)}-title`}>
+                  {lv.label}
+                </Typography.Text>
+                <Typography.Text
+                  type="secondary"
+                  style={{
+                    fontSize: 12,
+                    fontFamily: token.fontFamilyCode,
+                    fontVariantNumeric: 'tabular-nums'
+                  }}
+                >
+                  {count}
+                </Typography.Text>
+              </Flex>
+              <Typography.Text type="secondary" style={{ fontSize: 12, fontWeight: 400 }}>
+                {lv.sub}
+              </Typography.Text>
+            </Flex>
+          </Flex>
+        }
+        extra={
+          onAdd && (
+            <Button size="small" icon={<Plus {...ICON} />} onClick={onAdd}>
+              Adicionar
+            </Button>
+          )
+        }
+      >
+        {children}
+      </Card>
     </section>
+  )
+
+  const empty = (text: string, action?: React.ReactNode): React.ReactNode => (
+    <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={text} style={{ margin: '8px 0' }}>
+      {action}
+    </Empty>
+  )
+
+  const h0 = level(
+    HORIZONS[0],
+    view.today.length,
+    view.today.length ? (
+      <Flex vertical gap={2}>
+        {view.today.map((task) => {
+          const running = !!timers[task.id]
+          const due = task.due_date?.slice(0, 10)
+          const tone = dueTone(due, new Date())
+          return (
+            <div
+              key={task.id}
+              className="ct-hzrow"
+              onClick={() => void navigate(`/task/${task.id}`)}
+            >
+              {running && <LiveDot label="Timer rodando" />}
+              <Typography.Link
+                href={`#/task/${task.id}`}
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  void navigate(`/task/${task.id}`)
+                }}
+                ellipsis
+                style={{ flex: 1, minWidth: 0, color: token.colorText }}
+              >
+                {task.name}
+              </Typography.Link>
+              {task.project_name && (
+                <ProjectLabel name={task.project_name} color={task.project_color} />
+              )}
+              {due && (
+                <Typography.Text
+                  type={tone ?? 'secondary'}
+                  style={{
+                    fontSize: 12,
+                    fontFamily: token.fontFamilyCode,
+                    fontVariantNumeric: 'tabular-nums',
+                    flex: 'none'
+                  }}
+                >
+                  {formatDueShort(due, task.due_time)}
+                </Typography.Text>
+              )}
+              <Tooltip title={task.is_blocked ? 'Bloqueada' : running ? 'Pausar' : 'Iniciar timer'}>
+                <Button
+                  size="small"
+                  type="text"
+                  disabled={task.is_blocked}
+                  aria-label={running ? `Pausar ${task.name}` : `Iniciar timer de ${task.name}`}
+                  icon={running ? <Pause {...ICON} /> : <Play {...ICON} />}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    ;(running ? stopTimer(task.id) : startTimer(task.id)).catch((error) =>
+                      message.error(errorMessage(error))
+                    )
+                  }}
+                />
+              </Tooltip>
+            </div>
+          )
+        })}
+      </Flex>
+    ) : (
+      empty(
+        `Nada planejado para hoje${filtered ? ' nesta área.' : '.'}`,
+        <Button onClick={() => void navigate('/today')}>Abrir o plano do dia</Button>
+      )
+    )
+  )
+
+  const h1 = level(
+    HORIZONS[1],
+    view.projects.length,
+    view.projects.length ? (
+      <Flex vertical gap={2}>
+        {view.projects.map((project) => (
+          <div
+            key={project.id}
+            className="ct-hzrow"
+            style={{ flexWrap: 'wrap', rowGap: 6 }}
+            onClick={() => void navigate(`/project/${project.id}`)}
+          >
+            <span
+              aria-hidden
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: 999,
+                flex: 'none',
+                background: project.color
+              }}
+            />
+            <Typography.Link
+              href={`#/project/${project.id}`}
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                void navigate(`/project/${project.id}`)
+              }}
+              style={{ color: token.colorText, fontWeight: 500 }}
+            >
+              {project.name}
+            </Typography.Link>
+            {!filtered && areaTag(project.area_id)}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <NextActionCell project={project} />
+            </div>
+            <ProjectProgress project={project} width={56} />
+          </div>
+        ))}
+      </Flex>
+    ) : (
+      empty(
+        `Nenhum projeto ativo${filtered ? ' nesta área.' : '.'}`,
+        <Button onClick={() => void navigate('/projects')}>Abrir projetos</Button>
+      )
+    )
+  )
+
+  const areaMenu = (area: Area): MenuProps => ({
+    items: [
+      { key: 'filter', icon: <Filter {...ICON} />, label: 'Ver só esta área nos horizontes' },
+      { key: 'projects', icon: <Folder {...ICON} />, label: 'Ver projetos da área' },
+      { key: 'edit', icon: <Pencil {...ICON} />, label: 'Editar' },
+      { type: 'divider' },
+      { key: 'delete', icon: <Trash2 {...ICON} />, label: 'Excluir…', danger: true }
+    ],
+    onClick: ({ key, domEvent }) => {
+      domEvent.stopPropagation()
+      if (key === 'filter') setAreaId(area.id)
+      if (key === 'projects') void navigate(`/projects?q=${encodeURIComponent(area.name)}`)
+      if (key === 'edit') setAreaEdit(areaDraft(area))
+      if (key === 'delete') {
+        modal.confirm({
+          title: `Excluir a área ${area.name}?`,
+          content: deleteAreaWarning(area, data.projects, data.goals),
+          okText: 'Excluir',
+          okButtonProps: { danger: true },
+          cancelText: 'Cancelar',
+          onOk: () =>
+            window.api
+              .deleteArea(area.id)
+              .then(() => {
+                if (areaId === area.id) setAreaId(null)
+                message.success('Área excluída')
+                load()
+              })
+              .catch((error) => message.error(errorMessage(error)))
+        })
+      }
+    }
+  })
+
+  const h2 = level(
+    HORIZONS[2],
+    view.areas.length,
+    view.areas.length ? (
+      <div className="ct-hzareas">
+        {view.areas.map((area) => {
+          const on = areaId === area.id
+          return (
+            <Dropdown key={area.id} menu={areaMenu(area)} trigger={['contextMenu']}>
+              <div className={on ? 'ct-hzarea on' : 'ct-hzarea'}>
+                <button
+                  type="button"
+                  className="ct-hzarea-main"
+                  aria-pressed={on}
+                  title={`Filtrar os horizontes por ${area.name}`}
+                  onClick={() => setAreaId(on ? null : area.id)}
+                >
+                  <span className="ct-emoji-box" aria-hidden>
+                    {area.icon}
+                  </span>
+                  <span style={{ minWidth: 0, flex: 1 }}>
+                    <Typography.Text strong style={{ display: 'block' }}>
+                      {area.name}
+                    </Typography.Text>
+                    {area.description && (
+                      <Typography.Text
+                        type="secondary"
+                        ellipsis
+                        style={{ fontSize: 12, display: 'block' }}
+                      >
+                        {area.description}
+                      </Typography.Text>
+                    )}
+                    <Typography.Text
+                      type="secondary"
+                      style={{
+                        fontSize: 12,
+                        display: 'block',
+                        fontFamily: token.fontFamilyCode,
+                        fontVariantNumeric: 'tabular-nums'
+                      }}
+                    >
+                      {areaSummary(areaCounts(area, data.projects, data.goals))}
+                    </Typography.Text>
+                  </span>
+                </button>
+                <Dropdown menu={areaMenu(area)} trigger={['click']} placement="bottomRight">
+                  <Button
+                    size="small"
+                    type="text"
+                    aria-label={`Mais ações de ${area.name}`}
+                    icon={<Ellipsis {...ICON} />}
+                  />
+                </Dropdown>
+              </div>
+            </Dropdown>
+          )
+        })}
+      </div>
+    ) : (
+      empty('Nenhuma área de foco.')
+    ),
+    () => setAreaEdit(areaDraft())
+  )
+
+  const goalMenu = (goal: Goal): MenuProps => ({
+    items: [
+      { key: 'edit', icon: <Pencil {...ICON} />, label: 'Editar' },
+      {
+        key: 'move',
+        icon: <ArrowLeftRight {...ICON} />,
+        label: 'Mover para',
+        children: GOAL_HORIZONS.map((lv) => ({
+          key: `move:${lv.h}`,
+          label: `${goal.horizon === lv.h ? '✓ ' : ''}H${lv.h} — ${lv.label}`
+        }))
+      },
+      { type: 'divider' },
+      { key: 'delete', icon: <Trash2 {...ICON} />, label: 'Excluir…', danger: true }
+    ],
+    onClick: ({ key, domEvent }) => {
+      domEvent.stopPropagation()
+      const [kind, value] = key.split(':')
+      if (kind === 'edit') setGoalEdit(goalDraft(goal))
+      if (kind === 'move') {
+        const horizon = Number(value) as GoalHorizon
+        if (horizon === goal.horizon) return
+        window.api
+          .updateGoal(goal.id, { horizon })
+          .then(() => {
+            message.success(`Movida para H${horizon}`)
+            load()
+          })
+          .catch((error) => message.error(errorMessage(error)))
+      }
+      if (kind === 'delete') {
+        modal.confirm({
+          title: `Excluir "${goal.name}"?`,
+          content: 'Só esta meta é apagada; áreas e projetos não mudam.',
+          okText: 'Excluir',
+          okButtonProps: { danger: true },
+          cancelText: 'Cancelar',
+          onOk: () =>
+            window.api
+              .deleteGoal(goal.id)
+              .then(() => {
+                message.success('Meta excluída')
+                load()
+              })
+              .catch((error) => message.error(errorMessage(error)))
+        })
+      }
+    }
+  })
+
+  const goalLevel = (lv: HorizonDef & { h: GoalHorizon }): React.ReactNode => {
+    const list = view.goals[lv.h]
+    return level(
+      lv,
+      list.length,
+      list.length ? (
+        <div>
+          {list.map((goal) => (
+            <Dropdown key={goal.id} menu={goalMenu(goal)} trigger={['contextMenu']}>
+              <div className="ct-hzgoal">
+                <span style={{ fontSize: 18 }} aria-hidden>
+                  {lv.emoji}
+                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <Flex align="center" gap={8} wrap>
+                    <Typography.Text strong style={{ fontWeight: 500 }}>
+                      {goal.name}
+                    </Typography.Text>
+                    {areaTag(goal.area_id)}
+                  </Flex>
+                  {goal.description && (
+                    <Typography.Text
+                      type="secondary"
+                      style={{
+                        whiteSpace: 'pre-wrap',
+                        fontSize: 13,
+                        display: 'block',
+                        marginTop: 2
+                      }}
+                    >
+                      {goal.description}
+                    </Typography.Text>
+                  )}
+                </div>
+                <Dropdown menu={goalMenu(goal)} trigger={['click']} placement="bottomRight">
+                  <Button
+                    size="small"
+                    type="text"
+                    aria-label={`Mais ações de ${goal.name}`}
+                    icon={<Ellipsis {...ICON} />}
+                  />
+                </Dropdown>
+              </div>
+            </Dropdown>
+          ))}
+        </div>
+      ) : (
+        empty(emptyLevelText(lv.label, filtered))
+      ),
+      () => newGoal(lv.h)
+    )
+  }
+
+  return (
+    <div className="h-full overflow-y-auto">
+      <PageContainer>
+        <Flex gap={8} wrap align="center" style={{ marginBottom: 16 }}>
+          <Select
+            allowClear
+            placeholder="Todas as áreas"
+            value={areaId ?? undefined}
+            onChange={(id?: number) => setAreaId(id ?? null)}
+            style={{ width: 240 }}
+            aria-label="Filtrar por área"
+            options={data.areas.map((a) => ({ value: a.id, label: `${a.icon} ${a.name}` }))}
+          />
+          <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+            {selectedArea
+              ? `Mostrando ações, projetos e metas de ${selectedArea.name}. Metas sem área aparecem em todas.`
+              : 'Escolha uma área para ver do propósito à ação de hoje.'}
+          </Typography.Text>
+          <div style={{ flex: 1 }} />
+          <Button icon={<Plus {...ICON} />} onClick={() => setAreaEdit(areaDraft())}>
+            Nova área
+          </Button>
+          <Button type="primary" icon={<Plus {...ICON} />} onClick={() => newGoal(3)}>
+            Nova meta
+          </Button>
+        </Flex>
+        <Flex gap={24} align="flex-start">
+          {screens.lg && (
+            <nav className="ct-hzrail" aria-label="Níveis">
+              {HORIZONS.map((lv) => (
+                <button key={lv.h} type="button" onClick={() => scrollTo(lv.h)}>
+                  <HorizonChip h={lv.h} />
+                  <span>{lv.label}</span>
+                </button>
+              ))}
+            </nav>
+          )}
+          <Flex vertical gap={16} style={{ flex: 1, minWidth: 0 }}>
+            {h0}
+            {h1}
+            {h2}
+            {GOAL_HORIZONS.map(goalLevel)}
+          </Flex>
+        </Flex>
+      </PageContainer>
+      <AreaModal
+        draft={areaEdit}
+        onClose={() => setAreaEdit(null)}
+        onSaved={() => {
+          setAreaEdit(null)
+          load()
+        }}
+      />
+      <GoalModal
+        draft={goalEdit}
+        areas={data.areas}
+        onClose={() => setGoalEdit(null)}
+        onSaved={() => {
+          setGoalEdit(null)
+          load()
+        }}
+      />
+    </div>
   )
 }

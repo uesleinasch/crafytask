@@ -25,7 +25,14 @@ Cada backup é uma pasta com data e hora (`AAAA-MM-DD_HHMMSS/`) contendo:
     pelo chaveiro do sistema e não abririam em outra máquina. Depois de restaurar em outro
     computador, conecte essas duas integrações de novo.
 
-O backup é sempre manual: não há backup automático nem limpeza de backups antigos.
+## Backup automático
+
+Ligue **Backup automático** em **Configurações → Backup** (precisa de uma pasta escolhida). Com o
+app aberto, ele confere a cada hora e cria um backup quando a pasta ainda não tem nenhum do dia,
+seja manual ou automático. Ligar já faz o de hoje, se faltar.
+
+Ele guarda os **14 backups automáticos** mais recentes e apaga os mais antigos. Os backups que você
+fez à mão, com **Fazer backup agora**, nunca são apagados.
 
 ## Restaurar
 

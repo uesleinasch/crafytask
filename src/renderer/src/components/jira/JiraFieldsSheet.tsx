@@ -1,15 +1,9 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, type SyntheticEvent } from 'react'
+import { App, Button, Drawer, Flex, Spin, Tooltip, Typography } from 'antd'
 import { ExternalLink, Loader2, RefreshCw } from 'lucide-react'
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle
-} from '@renderer/components/ui/sheet'
-import { toast } from '@renderer/components/ui/sonner'
 import { errorMessage } from '@renderer/components/settings/settingsStatus'
-import type { JiraFieldInput, JiraIssueFields } from '@shared/types'
+import { Field } from '@renderer/components/shell/SectionHeader'
+import type { JiraField, JiraFieldInput, JiraIssueFields } from '@shared/types'
 import { JiraFieldEditor } from './JiraFieldEditor'
 import { JiraStatusSelect } from './JiraStatusSelect'
 
@@ -19,11 +13,26 @@ interface JiraFieldsSheetProps {
   onOpenChange: (open: boolean) => void
 }
 
+const MULTILINE_KINDS = new Set<JiraField['kind']>(['text', 'user', 'multiselect', 'labels'])
+
+const stop = (event: SyntheticEvent): void => event.stopPropagation()
+
+function FieldLabel({ field, saving }: { field: JiraField; saving: boolean }): React.JSX.Element {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+      {field.name}
+      {field.required && <span aria-label="obrigatório">*</span>}
+      {saving && <Loader2 size={11} className="animate-spin" aria-label="Salvando" />}
+    </span>
+  )
+}
+
 export function JiraFieldsSheet({
   taskId,
   open,
   onOpenChange
 }: JiraFieldsSheetProps): React.JSX.Element {
+  const { message } = App.useApp()
   const [issue, setIssue] = useState<JiraIssueFields | null>(null)
   const [loading, setLoading] = useState(false)
   const [savingField, setSavingField] = useState<string | null>(null)
@@ -34,11 +43,11 @@ export function JiraFieldsSheet({
     try {
       setIssue(await window.api.jiraGetFields(taskId))
     } catch (error) {
-      toast.error(errorMessage(error))
+      message.error(errorMessage(error))
     } finally {
       setLoading(false)
     }
-  }, [taskId])
+  }, [taskId, message])
 
   useEffect(() => {
     if (open) void load()
@@ -49,7 +58,7 @@ export function JiraFieldsSheet({
     try {
       setIssue(await window.api.jiraUpdateField(taskId, fieldId, value))
     } catch (error) {
-      toast.error(errorMessage(error))
+      message.error(errorMessage(error))
       setRevision((r) => r + 1)
     } finally {
       setSavingField(null)
@@ -57,74 +66,75 @@ export function JiraFieldsSheet({
   }
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent onClick={(e) => e.stopPropagation()}>
-        <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
-            <span className="font-mono">{issue?.key ?? 'Jira'}</span>
+    <div onClick={stop} onContextMenu={stop} style={{ display: 'contents' }}>
+      <Drawer
+        open={open}
+        onClose={() => onOpenChange(false)}
+        size={380}
+        title={issue ? `Campos do Jira · ${issue.key}` : 'Campos do Jira'}
+        extra={
+          <Flex gap={4}>
             {issue && (
-              <button
-                type="button"
-                onClick={() => window.api.appOpenExternal(issue.url).catch(() => undefined)}
-                className="text-slate-400 hover:text-slate-700"
-                title="Abrir no Jira"
-              >
-                <ExternalLink size={14} />
-              </button>
+              <Tooltip title="Abrir no Jira">
+                <Button
+                  type="text"
+                  aria-label="Abrir no Jira"
+                  icon={<ExternalLink size={14} strokeWidth={1.75} />}
+                  onClick={() => window.api.appOpenExternal(issue.url).catch(() => undefined)}
+                />
+              </Tooltip>
             )}
-            <button
-              type="button"
-              onClick={load}
-              disabled={loading}
-              className="text-slate-400 hover:text-slate-700"
-              title="Recarregar"
-            >
-              <RefreshCw size={14} className={loading ? 'animate-spin' : undefined} />
-            </button>
-          </SheetTitle>
-          <SheetDescription>
-            Campos editáveis da issue. Cada mudança vai direto para o Jira.
-          </SheetDescription>
-          {issue && (
-            <div className="pt-1">
-              <JiraStatusSelect taskId={taskId} status={issue.statusName} onChanged={load} />
-            </div>
-          )}
-        </SheetHeader>
-
-        <div className="flex-1 overflow-y-auto px-5 py-4">
-          {!issue ? (
-            <div className="flex items-center gap-2 text-sm text-slate-500">
-              {loading && <Loader2 size={14} className="animate-spin" />}
+            <Tooltip title="Recarregar">
+              <Button
+                type="text"
+                aria-label="Recarregar"
+                loading={loading}
+                icon={<RefreshCw size={14} strokeWidth={1.75} />}
+                onClick={() => void load()}
+              />
+            </Tooltip>
+          </Flex>
+        }
+      >
+        {!issue ? (
+          <Flex align="center" gap={8}>
+            {loading && <Spin size="small" />}
+            <Typography.Text type="secondary">
               {loading ? 'Carregando campos…' : 'Não foi possível carregar a issue.'}
-            </div>
-          ) : (
-            <dl className="space-y-4">
-              {issue.fields.map((field) => (
-                <div key={field.id} className="space-y-1">
-                  <dt className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
-                    {field.name}
-                    {field.required && <span className="text-red-400">*</span>}
-                    {savingField === field.id && (
-                      <Loader2 size={11} className="animate-spin text-slate-400" />
-                    )}
-                  </dt>
-                  <dd>
-                    <JiraFieldEditor
-                      key={`${field.id}:${revision}:${JSON.stringify(field.value)}`}
-                      field={field}
-                      taskId={taskId}
-                      me={issue.me}
-                      saving={savingField !== null}
-                      onSave={(value) => save(field.id, value)}
-                    />
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          )}
-        </div>
-      </SheetContent>
-    </Sheet>
+            </Typography.Text>
+          </Flex>
+        ) : (
+          <Flex vertical gap={12}>
+            <Field label="Status">
+              <JiraStatusSelect
+                taskId={taskId}
+                status={issue.statusName}
+                onChanged={() => void load()}
+                style={{ width: '100%' }}
+              />
+            </Field>
+            {issue.fields.map((field) => (
+              <Field
+                key={field.id}
+                label={<FieldLabel field={field} saving={savingField === field.id} />}
+                align={MULTILINE_KINDS.has(field.kind) ? 'start' : 'center'}
+              >
+                <JiraFieldEditor
+                  key={`${field.id}:${revision}:${JSON.stringify(field.value)}`}
+                  field={field}
+                  taskId={taskId}
+                  me={issue.me}
+                  saving={savingField !== null}
+                  onSave={(value) => save(field.id, value)}
+                />
+              </Field>
+            ))}
+            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+              Campos lidos do editmeta da issue; cada um grava na hora (PUT na issue).
+            </Typography.Text>
+          </Flex>
+        )}
+      </Drawer>
+    </div>
   )
 }

@@ -10,7 +10,7 @@ import { registerTaskTools } from './tools/tasks'
 import { registerTimerTools } from './tools/timer'
 
 export function createMcpServer(bulkThreshold: number, confirmStore: ConfirmStore): McpServer {
-  const server = new McpServer({ name: 'ticktask', version: '1.0.0' })
+  const server = new McpServer({ name: 'crafytask', version: '1.0.0' })
   const ctx = { confirmStore, bulkThreshold }
 
   server.registerTool(
@@ -19,7 +19,7 @@ export function createMcpServer(bulkThreshold: number, confirmStore: ConfirmStor
       title: 'Informações do servidor',
       description: 'Confirma que o CrafyTask está aberto e respondendo.'
     },
-    async () => ok({ app: 'TickTask', status: 'ok' })
+    async () => ok({ app: 'CrafyTask', status: 'ok' })
   )
 
   registerTaskTools(server, ctx)

@@ -30,3 +30,5 @@ graphify-out/*
 
 # Site do MkDocs gerado localmente
 site/
+
+graphify-out/

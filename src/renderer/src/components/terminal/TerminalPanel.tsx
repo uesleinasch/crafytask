@@ -1,47 +1,48 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { App, Button, ConfigProvider, Input, Modal, Tooltip, theme, type InputRef } from 'antd'
 import {
   ChevronDown,
   Columns2,
-  PanelRight,
-  PanelRightClose,
-  Palette,
-  Shapes,
   Maximize2,
   Minimize2,
-  Pencil,
   Plus,
   RotateCcw,
   SquareTerminal,
-  Undo2,
   X
 } from 'lucide-react'
 import type { TerminalSession } from '@shared/types'
-import { DeleteConfirmDialog } from '@renderer/components/DeleteConfirmDialog'
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuRadioGroup,
-  ContextMenuRadioItem,
-  ContextMenuSeparator,
-  ContextMenuSub,
-  ContextMenuSubContent,
-  ContextMenuSubTrigger,
-  ContextMenuTrigger
-} from '@renderer/components/ui/context-menu'
 import { usePersistedState } from '@renderer/hooks/usePersistedState'
-import { TERMINAL_HEIGHT_KEY, TERMINAL_SPLIT_RATIO_KEY } from '@renderer/lib/terminalPrefs'
-import { cn } from '@renderer/lib/utils'
-import { useTerminalStore } from '@renderer/stores/terminalStore'
-import { DEFAULT_COLORS } from '@renderer/lib/colors'
-import { TERMINAL_TAB_ICONS } from '@shared/terminalTab'
+import { TERMINAL_HEIGHT_KEY } from '@renderer/lib/terminalPrefs'
+import { sameOwner, useTerminalStore } from '@renderer/stores/terminalStore'
+import { groupOf } from '@renderer/stores/terminalPanes'
+import { buildTheme } from '@renderer/theme/buildTheme'
+import { TERMINAL } from '@renderer/theme/semantic'
+import { useThemeSettings } from '@renderer/theme/themeSettings'
 import { TAB_ICON_COMPONENTS } from './tabIcons'
+import { TerminalSessionMenu } from './TerminalSessionMenu'
 import { TerminalView } from './TerminalView'
-import { TERMINAL_MAXIMIZE_SHORTCUT_LABEL, terminalShortcut } from './terminalKeys'
+import { RegionBoundary } from '@renderer/components/shell/RegionBoundary'
+import {
+  TERMINAL_MAXIMIZE_SHORTCUT_LABEL,
+  TERMINAL_SHORTCUT_LABEL,
+  terminalShortcut
+} from './terminalKeys'
+import { registerTerminalNotifier } from './terminalNotices'
 
 const MIN_HEIGHT = 120
-const MIN_SPLIT = 0.2
+const MIN_PANE_SHARE = 0.1
 const BUSY_POLL_MS = 2000
+const TERMINAL_CSS_VAR_KEY = 'ct-term-theme'
+
+const TERMINAL_VARS = {
+  '--ct-term-bg': TERMINAL.background,
+  '--ct-term-border': TERMINAL.border,
+  '--ct-term-hover': TERMINAL.hover,
+  '--ct-term-text': TERMINAL.text,
+  '--ct-term-text2': TERMINAL.text2,
+  '--ct-term-meta': TERMINAL.meta,
+  '--ct-term-accent': TERMINAL.accent
+} as React.CSSProperties
 
 function clampHeight(height: number): number {
   return Math.round(Math.min(Math.max(height, MIN_HEIGHT), window.innerHeight * 0.7))
@@ -49,12 +50,13 @@ function clampHeight(height: number): number {
 
 function defaultTabLabels(sessions: TerminalSession[]): Map<string, string> {
   const labels = new Map<string, string>()
-  const seen = new Map<number, number>()
+  const seen = new Map<string, number>()
   for (const session of sessions) {
-    const count = sessions.filter((s) => s.taskId === session.taskId).length
-    const index = (seen.get(session.taskId) ?? 0) + 1
-    seen.set(session.taskId, index)
-    labels.set(session.id, count > 1 ? `${session.taskName} (${index})` : session.taskName)
+    const key = `${session.owner.kind}:${session.owner.id}`
+    const count = sessions.filter((s) => sameOwner(s.owner, session.owner)).length
+    const index = (seen.get(key) ?? 0) + 1
+    seen.set(key, index)
+    labels.set(session.id, count > 1 ? `${session.ownerName} (${index})` : session.ownerName)
   }
   return labels
 }
@@ -66,14 +68,11 @@ function TabTitleInput({
   initial: string
   onDone: (value: string | null) => void
 }): React.JSX.Element {
-  const ref = useRef<HTMLInputElement>(null)
+  const ref = useRef<InputRef>(null)
   const done = useRef(false)
 
   useEffect(() => {
-    const frame = requestAnimationFrame(() => {
-      ref.current?.focus()
-      ref.current?.select()
-    })
+    const frame = requestAnimationFrame(() => ref.current?.select())
     return () => cancelAnimationFrame(frame)
   }, [])
 
@@ -84,10 +83,14 @@ function TabTitleInput({
   }
 
   return (
-    <input
+    <Input
       ref={ref}
+      size="small"
+      autoFocus
       defaultValue={initial}
       maxLength={60}
+      aria-label="Nome do terminal"
+      style={{ width: 160 }}
       onClick={(event) => event.stopPropagation()}
       onKeyDown={(event) => {
         event.stopPropagation()
@@ -95,68 +98,96 @@ function TabTitleInput({
         if (event.key === 'Escape') finish(null)
       }}
       onBlur={(event) => finish(event.currentTarget.value)}
-      className="h-5 w-32 rounded bg-slate-950 px-1 text-xs text-slate-100 outline-none ring-1 ring-orange-400/70"
     />
   )
 }
 
-function PaneHeader({
+function SessionIcon({
   session,
-  label,
-  onClose
+  size
 }: {
   session: TerminalSession
-  label: string
-  onClose?: () => void
+  size: number
 }): React.JSX.Element {
   const Icon = session.icon ? TAB_ICON_COMPONENTS[session.icon] : SquareTerminal
   return (
-    <div
-      className="flex items-center gap-1.5 h-6 shrink-0 px-2 text-[11px] text-slate-400 border-b border-slate-800"
-      style={session.color ? { boxShadow: `inset 0 -1px 0 ${session.color}` } : undefined}
-    >
-      <Icon size={12} className="shrink-0" style={{ color: session.color ?? undefined }} />
-      <span className={cn('truncate', session.exitCode !== null && 'line-through opacity-60')}>
-        {label}
-      </span>
-      <div className="ml-auto flex items-center gap-1">
-        {session.exitCode !== null && (
-          <button
-            type="button"
-            onClick={() => void useTerminalStore.getState().restart(session.id)}
-            className="flex items-center gap-1 h-5 px-1.5 rounded text-orange-300 hover:bg-slate-800"
-          >
-            <RotateCcw size={11} />
-            Reiniciar
-          </button>
-        )}
-        {onClose && (
-          <button
-            type="button"
-            title="Fechar a divisão (o terminal continua na aba)"
-            onClick={onClose}
-            className="flex items-center justify-center h-5 w-5 rounded text-slate-500 hover:text-slate-100 hover:bg-slate-700"
-          >
-            <X size={11} />
-          </button>
-        )}
-      </div>
-    </div>
+    <Icon
+      size={size}
+      strokeWidth={1.75}
+      aria-hidden
+      style={{ flex: 'none', color: session.color ?? undefined }}
+    />
+  )
+}
+
+function BusyDot({ session }: { session: TerminalSession }): React.JSX.Element | null {
+  if (!session.busy) return null
+  return (
+    <span
+      role="img"
+      aria-label="Processo em execução"
+      title="Processo em execução"
+      style={{
+        width: 6,
+        height: 6,
+        borderRadius: '50%',
+        flex: 'none',
+        background: TERMINAL.accent
+      }}
+    />
+  )
+}
+
+function connectorFor(index: number, size: number): string {
+  if (size < 2) return ''
+  if (index === 0) return '┌'
+  return index === size - 1 ? '└' : '├'
+}
+
+function BarButton({
+  title,
+  icon,
+  onClick
+}: {
+  title: string
+  icon: React.ReactNode
+  onClick: () => void
+}): React.JSX.Element {
+  return (
+    <Tooltip title={title}>
+      <Button type="text" size="small" aria-label={title} icon={icon} onClick={onClick} />
+    </Tooltip>
   )
 }
 
 export function TerminalPanel(): React.JSX.Element | null {
+  const { density } = useThemeSettings()
+  const { notification } = App.useApp()
+  useEffect(() => {
+    registerTerminalNotifier(notification)
+    return () => registerTerminalNotifier(null)
+  }, [notification])
+  const terminalTheme = useMemo(() => buildTheme('dark', density, TERMINAL_CSS_VAR_KEY), [density])
+  return (
+    <ConfigProvider theme={terminalTheme}>
+      <TerminalPanelBody />
+    </ConfigProvider>
+  )
+}
+
+function TerminalPanelBody(): React.JSX.Element | null {
+  const { token } = theme.useToken()
   const sessions = useTerminalStore((s) => s.sessions)
+  const groups = useTerminalStore((s) => s.groups)
   const activeId = useTerminalStore((s) => s.activeId)
-  const splitId = useTerminalStore((s) => s.splitId)
-  const [splitRatio, setSplitRatio] = usePersistedState(TERMINAL_SPLIT_RATIO_KEY, 0.5)
-  const [dragRatio, setDragRatio] = useState<number | null>(null)
-  const panesRef = useRef<HTMLDivElement>(null)
   const open = useTerminalStore((s) => s.open)
   const maximized = useTerminalStore((s) => s.maximized)
+  const [weights, setWeights] = useState<Record<string, number>>({})
+  const panesRef = useRef<HTMLDivElement>(null)
   const [height, setHeight] = usePersistedState(TERMINAL_HEIGHT_KEY, 280)
   const [dragHeight, setDragHeight] = useState<number | null>(null)
   const [pendingClose, setPendingClose] = useState<TerminalSession | null>(null)
+  const [confirmOpen, setConfirmOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -191,8 +222,9 @@ export function TerminalPanel(): React.JSX.Element | null {
   }, [open])
 
   const defaultLabels = useMemo(() => defaultTabLabels(sessions), [sessions])
+  const byId = useMemo(() => new Map(sessions.map((s) => [s.id, s])), [sessions])
   const labelOf = (session: TerminalSession): string =>
-    session.title ?? defaultLabels.get(session.id) ?? session.taskName
+    session.title ?? defaultLabels.get(session.id) ?? session.ownerName
 
   const finishRename = (session: TerminalSession, value: string | null): void => {
     setEditingId(null)
@@ -200,33 +232,42 @@ export function TerminalPanel(): React.JSX.Element | null {
     const title = value.trim() === defaultLabels.get(session.id) ? null : value
     void useTerminalStore.getState().customize(session.id, { title })
   }
-  const active = sessions.find((s) => s.id === activeId) ?? null
-  const split = sessions.find((s) => s.id === splitId) ?? null
+  const active = activeId ? (byId.get(activeId) ?? null) : null
+  const activeGroup = groupOf({ groups, activeId }, activeId) ?? []
+  const split = activeGroup.length > 1
 
-  if (!open || !active) return null
+  if (!active) return null
 
   const requestClose = async (session: TerminalSession): Promise<void> => {
     const fresh = (await window.api.terminalList()).find((s) => s.id === session.id)
-    if (fresh?.busy) setPendingClose(fresh)
-    else await useTerminalStore.getState().close(session.id)
+    if (fresh?.busy) {
+      setPendingClose(fresh)
+      setConfirmOpen(true)
+    } else await useTerminalStore.getState().close(session.id)
   }
 
-  const startSplitResize = (event: React.MouseEvent): void => {
+  const weightOf = (id: string): number => weights[id] ?? 1
+
+  const startPaneResize = (event: React.MouseEvent, index: number): void => {
     event.preventDefault()
     const container = panesRef.current
     if (!container) return
-    const rect = container.getBoundingClientRect()
-    let latest = splitRatio
+    const leftId = activeGroup[index]
+    const rightId = activeGroup[index + 1]
+    const total = activeGroup.reduce((sum, id) => sum + weightOf(id), 0)
+    const pair = weightOf(leftId) + weightOf(rightId)
+    const startLeft = weightOf(leftId)
+    const startX = event.clientX
+    const width = container.getBoundingClientRect().width
+    const min = total * MIN_PANE_SHARE
     const onMove = (move: MouseEvent): void => {
-      const ratio = (move.clientX - rect.left) / rect.width
-      latest = Math.min(Math.max(ratio, MIN_SPLIT), 1 - MIN_SPLIT)
-      setDragRatio(latest)
+      const delta = ((move.clientX - startX) / width) * total
+      const left = Math.min(Math.max(startLeft + delta, min), pair - min)
+      setWeights((prev) => ({ ...prev, [leftId]: left, [rightId]: pair - left }))
     }
     const onUp = (): void => {
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('mouseup', onUp)
-      setDragRatio(null)
-      setSplitRatio(latest)
     }
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup', onUp)
@@ -251,260 +292,258 @@ export function TerminalPanel(): React.JSX.Element | null {
     window.addEventListener('mouseup', onUp)
   }
 
+  const renderLabel = (session: TerminalSession, where: 'header' | 'list'): React.JSX.Element =>
+    editingId === `${where}:${session.id}` ? (
+      <TabTitleInput initial={labelOf(session)} onDone={(value) => finishRename(session, value)} />
+    ) : (
+      <span
+        title="Clique duas vezes para renomear"
+        onDoubleClick={(event) => {
+          event.stopPropagation()
+          setEditingId(`${where}:${session.id}`)
+        }}
+        className={session.exitCode !== null ? 'ct-ellipsis ct-term-exited' : 'ct-ellipsis'}
+      >
+        {labelOf(session)}
+      </span>
+    )
+
+  const canDetach = (id: string): boolean => (groupOf({ groups, activeId }, id)?.length ?? 0) > 1
+  const icon = (Icon: typeof Plus, size = 14): React.JSX.Element => (
+    <Icon size={size} strokeWidth={1.75} aria-hidden />
+  )
+
   return (
     <section
-      className={cn(
-        'flex flex-col bg-slate-900',
-        maximized ? 'fixed inset-0 z-40' : 'relative shrink-0 border-t border-slate-700'
-      )}
-      style={maximized ? undefined : { height: clampHeight(dragHeight ?? height) }}
+      aria-label="Terminal"
+      className={`ct-term ${TERMINAL_CSS_VAR_KEY}`}
+      style={{
+        ...TERMINAL_VARS,
+        ...(open ? {} : { display: 'none' }),
+        ...(maximized
+          ? { position: 'fixed', inset: 0, zIndex: 40 }
+          : {
+              position: 'relative',
+              flex: 'none',
+              borderTop: `1px solid ${TERMINAL.border}`,
+              height: clampHeight(dragHeight ?? height)
+            })
+      }}
     >
       {!maximized && (
         <div
           onMouseDown={startResize}
           title="Arraste para redimensionar o terminal"
-          className="absolute left-0 top-0 z-20 w-full h-1.5 -mt-[3px] cursor-row-resize hover:bg-orange-500/60 transition-colors"
+          className="ct-term-resize"
         />
       )}
-      <div className="flex items-center h-9 shrink-0 border-b border-slate-800 pl-2 pr-1 gap-1">
-        <SquareTerminal size={14} className="text-orange-400 shrink-0 mr-1" />
-        <div className="flex-1 min-w-0 flex items-center gap-1 overflow-x-auto">
+      <div className="ct-term-bar">
+        <TerminalSessionMenu
+          session={active}
+          canDetach={canDetach(active.id)}
+          onRename={() => setEditingId(`header:${active.id}`)}
+        >
+          <div
+            style={{
+              flex: 1,
+              minWidth: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              fontSize: 12
+            }}
+          >
+            <SessionIcon session={active} size={14} />
+            <BusyDot session={active} />
+            {renderLabel(active, 'header')}
+          </div>
+        </TerminalSessionMenu>
+        {!split && active.exitCode !== null && (
+          <Button
+            type="text"
+            size="small"
+            icon={icon(RotateCcw, 12)}
+            style={{ color: token.colorPrimary }}
+            onClick={() => void useTerminalStore.getState().restart(active.id)}
+          >
+            Reiniciar
+          </Button>
+        )}
+        <BarButton
+          title={
+            active.owner.kind === 'project'
+              ? 'Novo terminal para este projeto'
+              : 'Novo terminal para esta task'
+          }
+          icon={icon(Plus)}
+          onClick={() => void useTerminalStore.getState().createSession(active.owner)}
+        />
+        <BarButton
+          title="Dividir: novo terminal ao lado"
+          icon={icon(Columns2)}
+          onClick={() => void useTerminalStore.getState().splitNew(active.owner)}
+        />
+        <BarButton
+          title="Encerrar terminal"
+          icon={icon(X)}
+          onClick={() => void requestClose(active)}
+        />
+        <BarButton
+          title={`${maximized ? 'Restaurar' : 'Tela cheia'} (${TERMINAL_MAXIMIZE_SHORTCUT_LABEL})`}
+          icon={maximized ? icon(Minimize2) : icon(Maximize2)}
+          onClick={() => useTerminalStore.getState().toggleMaximized()}
+        />
+        <BarButton
+          title={`Minimizar (os processos continuam rodando) (${TERMINAL_SHORTCUT_LABEL})`}
+          icon={icon(ChevronDown, 16)}
+          onClick={() => useTerminalStore.getState().setOpen(false)}
+        />
+      </div>
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', overflow: 'clip' }}>
+        <div ref={panesRef} style={{ flex: 1, minWidth: 0, display: 'flex' }}>
           {sessions.map((session) => {
-            const TabIcon = session.icon ? TAB_ICON_COMPONENTS[session.icon] : null
+            const index = activeGroup.indexOf(session.id)
+            const focused = session.id === active.id
             return (
-              <ContextMenu key={session.id} modal={false}>
-                <ContextMenuTrigger asChild>
-                  <div
-                    onClick={() => useTerminalStore.getState().activate(session.id)}
-                    className={cn(
-                      'group flex items-center gap-1.5 h-7 pl-2.5 pr-1 rounded-md text-xs cursor-pointer shrink-0 max-w-56',
-                      session.id === active.id || session.id === split?.id
-                        ? 'bg-slate-800 text-slate-100'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-                    )}
-                    style={
-                      session.color ? { boxShadow: `inset 0 -2px 0 ${session.color}` } : undefined
-                    }
-                  >
-                    {TabIcon && (
-                      <TabIcon
-                        size={13}
-                        className="shrink-0"
-                        style={{ color: session.color ?? undefined }}
-                      />
-                    )}
-                    {session.busy && (
-                      <span
-                        title="Processo em execução"
-                        className="h-1.5 w-1.5 rounded-full bg-orange-400 shrink-0"
-                      />
-                    )}
-                    {editingId === session.id ? (
-                      <TabTitleInput
-                        initial={labelOf(session)}
-                        onDone={(value) => finishRename(session, value)}
-                      />
-                    ) : (
-                      <span
-                        title="Clique duas vezes para renomear"
-                        onDoubleClick={(event) => {
-                          event.stopPropagation()
-                          setEditingId(session.id)
-                        }}
-                        className={cn(
-                          'truncate',
-                          session.exitCode !== null && 'line-through opacity-60'
-                        )}
-                      >
-                        {labelOf(session)}
-                      </span>
-                    )}
-                    <button
-                      type="button"
-                      title="Encerrar terminal"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        void requestClose(session)
-                      }}
-                      className="flex items-center justify-center h-5 w-5 rounded text-slate-500 hover:text-slate-100 hover:bg-slate-700"
+              <div
+                key={session.id}
+                onMouseDownCapture={() => {
+                  if (!focused) useTerminalStore.getState().activate(session.id)
+                }}
+                style={{
+                  minWidth: 0,
+                  overflow: 'clip',
+                  display: index === -1 ? 'none' : 'flex',
+                  flexDirection: 'column',
+                  order: index * 2,
+                  flexGrow: weightOf(session.id),
+                  flexBasis: 0
+                }}
+              >
+                {split && (
+                  <div className={focused ? 'ct-term-pane-head focused' : 'ct-term-pane-head'}>
+                    <SessionIcon session={session} size={12} />
+                    <span
+                      className={
+                        session.exitCode !== null ? 'ct-ellipsis ct-term-exited' : 'ct-ellipsis'
+                      }
                     >
-                      <X size={12} />
-                    </button>
+                      {labelOf(session)}
+                    </span>
+                    {session.exitCode !== null && (
+                      <Button
+                        type="text"
+                        size="small"
+                        icon={icon(RotateCcw, 11)}
+                        style={{ marginLeft: 'auto', color: token.colorPrimary, height: 24 }}
+                        onClick={() => void useTerminalStore.getState().restart(session.id)}
+                      >
+                        Reiniciar
+                      </Button>
+                    )}
                   </div>
-                </ContextMenuTrigger>
-                <ContextMenuContent
-                  className="w-48"
-                  onCloseAutoFocus={(event) => event.preventDefault()}
-                >
-                  <ContextMenuItem onSelect={() => setEditingId(session.id)}>
-                    <Pencil /> Renomear
-                  </ContextMenuItem>
-                  <ContextMenuItem
-                    disabled={session.title === null}
-                    onSelect={() =>
-                      void useTerminalStore.getState().customize(session.id, { title: null })
-                    }
-                  >
-                    <Undo2 /> Restaurar nome
-                  </ContextMenuItem>
-                  <ContextMenuItem
-                    disabled={session.id === active.id || session.id === split?.id}
-                    onSelect={() => useTerminalStore.getState().openSplit(session.id)}
-                  >
-                    <PanelRight /> Abrir à direita
-                  </ContextMenuItem>
-                  <ContextMenuSeparator />
-                  <ContextMenuSub>
-                    <ContextMenuSubTrigger>
-                      <Palette /> Cor
-                    </ContextMenuSubTrigger>
-                    <ContextMenuSubContent className="w-40">
-                      <ContextMenuRadioGroup
-                        value={session.color ?? 'none'}
-                        onValueChange={(value) =>
-                          void useTerminalStore
-                            .getState()
-                            .customize(session.id, { color: value === 'none' ? null : value })
-                        }
-                      >
-                        <ContextMenuRadioItem value="none">Sem cor</ContextMenuRadioItem>
-                        {DEFAULT_COLORS.map((color) => (
-                          <ContextMenuRadioItem key={color} value={color}>
-                            <span
-                              className="h-3 w-3 rounded-full shrink-0"
-                              style={{ backgroundColor: color }}
-                            />
-                            {color}
-                          </ContextMenuRadioItem>
-                        ))}
-                      </ContextMenuRadioGroup>
-                    </ContextMenuSubContent>
-                  </ContextMenuSub>
-                  <ContextMenuSub>
-                    <ContextMenuSubTrigger>
-                      <Shapes /> Ícone
-                    </ContextMenuSubTrigger>
-                    <ContextMenuSubContent className="w-44">
-                      <ContextMenuRadioGroup
-                        value={session.icon ?? 'none'}
-                        onValueChange={(value) =>
-                          void useTerminalStore
-                            .getState()
-                            .customize(session.id, { icon: value === 'none' ? null : value })
-                        }
-                      >
-                        <ContextMenuRadioItem value="none">Sem ícone</ContextMenuRadioItem>
-                        {TERMINAL_TAB_ICONS.map(({ id, label }) => {
-                          const Icon = TAB_ICON_COMPONENTS[id]
-                          return (
-                            <ContextMenuRadioItem key={id} value={id}>
-                              <Icon /> {label}
-                            </ContextMenuRadioItem>
-                          )
-                        })}
-                      </ContextMenuRadioGroup>
-                    </ContextMenuSubContent>
-                  </ContextMenuSub>
-                </ContextMenuContent>
-              </ContextMenu>
+                )}
+                <div style={{ flex: 1, minHeight: 0 }}>
+                  <RegionBoundary region="terminal" resetKeys={[session.id]} surface>
+                    <TerminalView
+                      session={session}
+                      visible={open && index !== -1}
+                      focused={focused}
+                    />
+                  </RegionBoundary>
+                </div>
+              </div>
             )
           })}
-          <button
-            type="button"
-            title="Novo terminal para esta task"
-            onClick={() => void useTerminalStore.getState().createSession(active.taskId)}
-            className="flex items-center justify-center h-7 w-7 shrink-0 rounded-md text-slate-400 hover:text-slate-100 hover:bg-slate-800"
-          >
-            <Plus size={14} />
-          </button>
-        </div>
-        {!split && active.exitCode !== null && (
-          <button
-            type="button"
-            onClick={() => void useTerminalStore.getState().restart(active.id)}
-            className="flex items-center gap-1.5 h-7 px-2.5 rounded-md text-xs text-orange-300 hover:bg-slate-800"
-          >
-            <RotateCcw size={12} />
-            Reiniciar
-          </button>
-        )}
-        <button
-          type="button"
-          title={
-            split
-              ? 'Fechar a divisão (o terminal continua na aba)'
-              : 'Dividir: novo terminal à direita'
-          }
-          onClick={() => {
-            const store = useTerminalStore.getState()
-            if (split) store.closeSplit()
-            else void store.splitNew(active.taskId)
-          }}
-          className="flex items-center justify-center h-7 w-7 rounded-md text-slate-400 hover:text-slate-100 hover:bg-slate-800"
-        >
-          {split ? <PanelRightClose size={14} /> : <Columns2 size={14} />}
-        </button>
-        <button
-          type="button"
-          title={`${maximized ? 'Restaurar' : 'Tela cheia'} (${TERMINAL_MAXIMIZE_SHORTCUT_LABEL})`}
-          onClick={() => useTerminalStore.getState().toggleMaximized()}
-          className="flex items-center justify-center h-7 w-7 rounded-md text-slate-400 hover:text-slate-100 hover:bg-slate-800"
-        >
-          {maximized ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-        </button>
-        <button
-          type="button"
-          title="Minimizar (os processos continuam rodando)"
-          onClick={() => useTerminalStore.getState().setOpen(false)}
-          className="flex items-center justify-center h-7 w-7 rounded-md text-slate-400 hover:text-slate-100 hover:bg-slate-800"
-        >
-          <ChevronDown size={16} />
-        </button>
-      </div>
-      {split ? (
-        <div ref={panesRef} className="flex-1 min-h-0 flex">
-          <div
-            className="min-w-0 flex flex-col"
-            style={{ width: `${(dragRatio ?? splitRatio) * 100}%` }}
-          >
-            <PaneHeader session={active} label={labelOf(active)} />
-            <div className="flex-1 min-h-0">
-              <TerminalView key={active.id} session={active} />
-            </div>
-          </div>
-          <div
-            onMouseDown={startSplitResize}
-            title="Arraste para redimensionar os painéis"
-            className="w-1 shrink-0 cursor-col-resize bg-slate-800 hover:bg-orange-500/60 transition-colors"
-          />
-          <div className="flex-1 min-w-0 flex flex-col">
-            <PaneHeader
-              session={split}
-              label={labelOf(split)}
-              onClose={() => useTerminalStore.getState().closeSplit()}
+          {activeGroup.slice(1).map((id, i) => (
+            <div
+              key={`divider-${id}`}
+              onMouseDown={(event) => startPaneResize(event, i)}
+              title="Arraste para redimensionar os painéis"
+              className="ct-term-divider"
+              style={{ order: i * 2 + 1 }}
             />
-            <div className="flex-1 min-h-0">
-              <TerminalView key={split.id} session={split} />
-            </div>
-          </div>
+          ))}
         </div>
-      ) : (
-        <div className="flex-1 min-h-0">
-          <TerminalView key={active.id} session={active} />
-        </div>
-      )}
+        {sessions.length > 1 && (
+          <nav className="ct-term-list" aria-label="Terminais abertos">
+            {groups.map((group) =>
+              group.map((id, index) => {
+                const session = byId.get(id)
+                if (!session) return null
+                const inActiveGroup = activeGroup.includes(id)
+                const state = id === active.id ? ' active' : inActiveGroup ? ' grouped' : ''
+                return (
+                  <TerminalSessionMenu
+                    key={id}
+                    session={session}
+                    canDetach={group.length > 1}
+                    onRename={() => setEditingId(`list:${id}`)}
+                  >
+                    <div
+                      className={`ct-term-item${state}`}
+                      style={
+                        session.color ? { boxShadow: `inset 2px 0 0 ${session.color}` } : undefined
+                      }
+                    >
+                      {editingId === `list:${id}` ? (
+                        <div className="ct-term-item-main">
+                          <SessionIcon session={session} size={13} />
+                          {renderLabel(session, 'list')}
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          className="ct-term-item-main"
+                          aria-current={id === active.id ? 'true' : undefined}
+                          onClick={() => useTerminalStore.getState().activate(id)}
+                        >
+                          <span
+                            aria-hidden
+                            className="font-mono"
+                            style={{ width: 12, flex: 'none', textAlign: 'center', opacity: 0.6 }}
+                          >
+                            {connectorFor(index, group.length)}
+                          </span>
+                          <SessionIcon session={session} size={13} />
+                          <BusyDot session={session} />
+                          {renderLabel(session, 'list')}
+                        </button>
+                      )}
+                      <Button
+                        type="text"
+                        size="small"
+                        className="ct-term-item-close"
+                        aria-label={`Encerrar ${labelOf(session)}`}
+                        icon={icon(X, 12)}
+                        style={{ width: 24, height: 24, minWidth: 24 }}
+                        onClick={() => void requestClose(session)}
+                      />
+                    </div>
+                  </TerminalSessionMenu>
+                )
+              })
+            )}
+          </nav>
+        )}
+      </div>
 
-      <DeleteConfirmDialog
-        open={pendingClose !== null}
-        onOpenChange={(next) => !next && setPendingClose(null)}
-        onConfirm={() => {
-          if (pendingClose) void useTerminalStore.getState().close(pendingClose.id)
-          setPendingClose(null)
-        }}
+      <Modal
+        open={confirmOpen}
         title="Encerrar terminal?"
-        description="Há um processo rodando neste terminal. Encerrar mata o processo; o diretório de trabalho continua vinculado à task."
-        confirmLabel="Encerrar"
-      />
+        okText="Encerrar"
+        cancelText="Cancelar"
+        okButtonProps={{ danger: true }}
+        onCancel={() => setConfirmOpen(false)}
+        onOk={() => {
+          if (pendingClose) void useTerminalStore.getState().close(pendingClose.id)
+          setConfirmOpen(false)
+        }}
+        afterClose={() => setPendingClose(null)}
+      >
+        Há um processo rodando neste terminal. Encerrar mata o processo; o diretório de trabalho
+        continua vinculado {pendingClose?.owner.kind === 'project' ? 'ao projeto' : 'à task'}.
+      </Modal>
     </section>
   )
 }

@@ -1,7 +1,8 @@
 import { BrowserWindow, dialog, ipcMain } from 'electron'
 import { accessSync, constants, statSync } from 'fs'
-import type { TerminalCreateResult, TerminalTabCustomization } from '@shared/types'
-import { getTask, setTaskWorkspace } from './database'
+import type { TerminalCreateResult, TerminalOwner, TerminalTabCustomization } from '@shared/types'
+import { effectiveWorkingDir } from '@shared/workingDir'
+import { getProject, getTask, setTaskWorkspace, updateProject } from './database'
 import { TerminalManager, resolveShell, type SpawnPty } from './terminalSessions'
 
 let manager: TerminalManager | null = null
@@ -58,24 +59,56 @@ async function getManager(getWindow: () => BrowserWindow | null): Promise<Termin
   }
 }
 
+function resolveOwner(
+  owner: TerminalOwner
+): { cwd: string | null; name: string; startCommand: string | null } | null {
+  if (owner?.kind === 'project') {
+    const project = getProject(owner.id)
+    if (!project) return null
+    return { cwd: project.working_dir ?? null, name: project.name, startCommand: null }
+  }
+  if (owner?.kind !== 'task') return null
+  const task = getTask(owner.id)
+  if (!task) return null
+  return {
+    cwd: effectiveWorkingDir(task).dir,
+    name: task.name,
+    startCommand: task.start_command ?? null
+  }
+}
+
 export function registerTerminalIpc(getWindow: () => BrowserWindow | null): void {
   ipcMain.handle(
     'terminal:create',
     async (
       _,
-      taskId: number,
+      owner: TerminalOwner,
       options: { shell?: string | null; cols?: number; rows?: number }
     ): Promise<TerminalCreateResult> => {
-      const task = getTask(taskId)
-      if (!task) return { ok: false, reason: 'no-task', error: 'Task não encontrada.' }
-      if (!task.working_dir) {
-        return { ok: false, reason: 'no-dir', error: 'Defina o diretório de trabalho da task.' }
+      const target = resolveOwner(owner)
+      if (!target) {
+        return {
+          ok: false,
+          reason: 'not-found',
+          error: owner?.kind === 'project' ? 'Projeto não encontrado.' : 'Task não encontrada.'
+        }
       }
-      if (!isDirectory(task.working_dir)) {
+      const { cwd, name, startCommand } = target
+      if (!cwd) {
+        return {
+          ok: false,
+          reason: 'no-dir',
+          error:
+            owner.kind === 'project'
+              ? 'Defina o diretório de trabalho do projeto.'
+              : 'Defina o diretório de trabalho da task ou do projeto.'
+        }
+      }
+      if (!isDirectory(cwd)) {
         return {
           ok: false,
           reason: 'bad-dir',
-          error: `O diretório não existe ou não é uma pasta: ${task.working_dir}`
+          error: `O diretório não existe ou não é uma pasta: ${cwd}`
         }
       }
       const terminals = await getManager(getWindow)
@@ -94,11 +127,11 @@ export function registerTerminalIpc(getWindow: () => BrowserWindow | null): void
       )
       try {
         const session = terminals.create({
-          taskId,
-          taskName: task.name,
-          cwd: task.working_dir,
+          owner: { kind: owner.kind, id: owner.id },
+          ownerName: name,
+          cwd,
           shell,
-          startCommand: task.start_command,
+          startCommand,
           cols: options.cols,
           rows: options.rows
         })
@@ -122,20 +155,33 @@ export function registerTerminalIpc(getWindow: () => BrowserWindow | null): void
     manager ? manager.customize(id, patch) : null
   )
   ipcMain.handle('terminal:getBuffer', (_, id: string) => manager?.getBuffer(id) ?? null)
-  ipcMain.handle('terminal:pickDirectory', async (_, taskId: number) => {
-    const task = getTask(taskId)
-    if (!task) return null
+  const pickDirectory = async (
+    title: string,
+    defaultPath: string | null
+  ): Promise<string | null> => {
     const window = getWindow()
     const options: Electron.OpenDialogOptions = {
-      title: 'Diretório de trabalho da task',
-      defaultPath: task.working_dir ?? undefined,
+      title,
+      defaultPath: defaultPath ?? undefined,
       properties: ['openDirectory']
     }
     const result = window
       ? await dialog.showOpenDialog(window, options)
       : await dialog.showOpenDialog(options)
-    const dir = result.canceled ? null : (result.filePaths[0] ?? null)
+    return result.canceled ? null : (result.filePaths[0] ?? null)
+  }
+  ipcMain.handle('terminal:pickDirectory', async (_, taskId: number) => {
+    const task = getTask(taskId)
+    if (!task) return null
+    const dir = await pickDirectory('Diretório de trabalho da task', effectiveWorkingDir(task).dir)
     if (dir) setTaskWorkspace(taskId, { working_dir: dir })
+    return dir
+  })
+  ipcMain.handle('terminal:pickProjectDirectory', async (_, projectId: number) => {
+    const project = getProject(projectId)
+    if (!project) return null
+    const dir = await pickDirectory('Diretório de trabalho do projeto', project.working_dir ?? null)
+    if (dir) updateProject(projectId, { working_dir: dir })
     return dir
   })
   ipcMain.handle(
@@ -149,7 +195,11 @@ export function registerTerminalIpc(getWindow: () => BrowserWindow | null): void
 }
 
 export function disposeTerminalsForTasks(taskIds: number[]): void {
-  manager?.disposeForTasks(taskIds)
+  manager?.disposeFor('task', taskIds)
+}
+
+export function disposeTerminalsForProjects(projectIds: number[]): void {
+  manager?.disposeFor('project', projectIds)
 }
 
 export function killAllTerminals(): void {

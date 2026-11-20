@@ -27,20 +27,29 @@ function FontSizePicker({ editor }: { editor: Editor }): React.JSX.Element {
   return (
     <div className="relative">
       <button
-        className={`p-1.5 rounded hover:bg-slate-100 text-slate-700 ${
-          current ? 'bg-slate-200 text-slate-900' : ''
-        }`}
+        className={current ? 'ct-tool active' : 'ct-tool'}
+        aria-label="Tamanho da fonte"
+        aria-haspopup="menu"
+        aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
         title="Tamanho da fonte"
       >
         <ALargeSmall size={16} />
       </button>
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-1 w-28 rounded-md border border-slate-200 bg-white p-1">
+        <div
+          className="ct-popup"
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: '100%',
+            zIndex: 50,
+            marginTop: 4,
+            width: 112
+          }}
+        >
           <button
-            className={`block w-full rounded px-2 py-1 text-left text-sm ${
-              current ? 'text-slate-700 hover:bg-slate-100' : 'bg-slate-100 text-slate-900'
-            }`}
+            className={current ? 'ct-popup-item' : 'ct-popup-item active'}
             onClick={() => apply(null)}
           >
             Padrão
@@ -48,11 +57,7 @@ function FontSizePicker({ editor }: { editor: Editor }): React.JSX.Element {
           {FONT_SIZES.map((size) => (
             <button
               key={size}
-              className={`block w-full rounded px-2 py-1 text-left text-sm ${
-                current === size
-                  ? 'bg-slate-100 text-slate-900'
-                  : 'text-slate-700 hover:bg-slate-100'
-              }`}
+              className={current === size ? 'ct-popup-item active' : 'ct-popup-item'}
               onClick={() => apply(size)}
             >
               {parseInt(size, 10)}
@@ -66,46 +71,54 @@ function FontSizePicker({ editor }: { editor: Editor }): React.JSX.Element {
 
 export function BubbleToolbar({ editor }: { editor: Editor | null }): React.JSX.Element | null {
   if (!editor) return null
-  const btn = 'p-1.5 rounded hover:bg-slate-100 text-slate-700'
-  const active = 'bg-slate-200 text-slate-900'
+  const tool = (name: string): string => (editor.isActive(name) ? 'ct-tool active' : 'ct-tool')
   return (
-    <BubbleMenu
-      editor={editor}
-      className="flex gap-0.5 rounded-md border border-slate-200 bg-white p-1 shadow-md"
-    >
+    <BubbleMenu editor={editor} className="ct-popup flex gap-0.5">
       <button
-        className={`${btn} ${editor.isActive('bold') ? active : ''}`}
+        className={tool('bold')}
+        aria-label="Negrito"
+        aria-pressed={editor.isActive('bold')}
         onClick={() => editor.chain().focus().toggleBold().run()}
       >
         <Bold size={16} />
       </button>
       <button
-        className={`${btn} ${editor.isActive('italic') ? active : ''}`}
+        className={tool('italic')}
+        aria-label="Itálico"
+        aria-pressed={editor.isActive('italic')}
         onClick={() => editor.chain().focus().toggleItalic().run()}
       >
         <Italic size={16} />
       </button>
       <button
-        className={`${btn} ${editor.isActive('strike') ? active : ''}`}
+        className={tool('strike')}
+        aria-label="Tachado"
+        aria-pressed={editor.isActive('strike')}
         onClick={() => editor.chain().focus().toggleStrike().run()}
       >
         <Strikethrough size={16} />
       </button>
       <button
-        className={`${btn} ${editor.isActive('code') ? active : ''}`}
+        className={tool('code')}
+        aria-label="Código"
+        aria-pressed={editor.isActive('code')}
         onClick={() => editor.chain().focus().toggleCode().run()}
       >
         <Code size={16} />
       </button>
       <button
-        className={`${btn} ${editor.isActive('highlight') ? active : ''}`}
+        className={tool('highlight')}
+        aria-label="Marca-texto"
+        aria-pressed={editor.isActive('highlight')}
         onClick={() => editor.chain().focus().toggleHighlight().run()}
       >
         <Highlighter size={16} />
       </button>
       <FontSizePicker editor={editor} />
       <button
-        className={`${btn} ${editor.isActive('link') ? active : ''}`}
+        className={tool('link')}
+        aria-label="Link"
+        aria-pressed={editor.isActive('link')}
         onClick={() => {
           const prev = editor.getAttributes('link').href as string | undefined
           const url = window.prompt('URL do link:', prev ?? '')

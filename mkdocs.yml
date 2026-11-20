@@ -90,6 +90,8 @@ nav:
       - Fluxo git: desenvolvimento/fluxo-git.md
   - Releases:
       - releases/index.md
+      - v3.17.0: releases/v3.17.0.md
+      - v3.16.0: releases/v3.16.0.md
       - v3.15.0: releases/v3.15.0.md
   - Referência técnica:
       - Servidor MCP: mcp-server.md
@@ -105,7 +107,7 @@ nav:
           - Revisão semanal: ui/07-revisao-semanal.md
           - Dashboard: ui/08-dashboard.md
           - Contextos e tags: ui/09-contextos-e-tags.md
-          - Arquivadas: ui/10-arquivadas.md
+          - Arquivo: ui/10-arquivadas.md
           - Configurações: ui/11-configuracoes.md
           - Janelas auxiliares: ui/12-janelas-auxiliares.md
           - Biblioteca de componentes: ui/13-biblioteca-de-componentes.md
@@ -113,5 +115,18 @@ nav:
           - Inconsistências: ui/15-inconsistencias.md
           - Terminal: ui/16-terminal.md
           - Cadernos: ui/17-cadernos.md
+      - Identidade visual:
+          - design/index.md
+          - Guia de design: design/guia-de-design.md
+          - Plano de refatoração: design/plano-de-refatoracao.md
+          - Pesquisa:
+              - design/pesquisa/README.md
+              - GTD e cognição: design/pesquisa/01-gtd-e-cognicao.md
+              - Referências de mercado: design/pesquisa/02-referencias-de-mercado.md
+              - Cor, acessibilidade e modo escuro: design/pesquisa/03-cor-acessibilidade-e-modo-escuro.md
+              - Ant Design: design/pesquisa/04-ant-design.md
+              - Resiliência e responsividade: design/pesquisa/05-resiliencia-e-responsividade.md
+              - Referências: design/pesquisa/referencias.md
       - Decisões (ADR):
           - 0001 — Cadernos: adr/0001-cadernos.md
+          - 0002 — Ant Design na interface: adr/0002-ant-design.md

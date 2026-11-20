@@ -1,5 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { WeeklyReview, ReviewHealthIndicators } from '@shared/types'
+import type {
+  ReviewCounterKey,
+  ReviewHealthIndicators,
+  ReviewStepKey,
+  ReviewStepStatus,
+  WeeklyReview
+} from '@shared/types'
 
 interface UseWeeklyReviewReturn {
   currentReview: WeeklyReview | null
@@ -7,14 +13,14 @@ interface UseWeeklyReviewReturn {
   healthIndicators: ReviewHealthIndicators | null
   loading: boolean
   startReview: () => Promise<WeeklyReview>
-  updateReview: (data: {
-    inbox_cleared?: boolean
-    notes?: string
-    checklist_state?: string
-    completed_at?: string
-  }) => Promise<void>
+  saveNotes: (notes: string) => Promise<void>
+  setStep: (key: ReviewStepKey, status: ReviewStepStatus | null) => Promise<void>
+  goToStep: (key: ReviewStepKey) => Promise<void>
+  discardReview: () => Promise<void>
+  bumpCounter: (key: ReviewCounterKey, taskId?: number) => Promise<void>
   completeReview: (notes?: string) => Promise<void>
   refreshData: () => Promise<void>
+  refreshHealth: () => Promise<void>
 }
 
 export function useWeeklyReview(): UseWeeklyReviewReturn {
@@ -31,14 +37,7 @@ export function useWeeklyReview(): UseWeeklyReviewReturn {
         window.api.listWeeklyReviews(),
         window.api.getReviewHealthIndicators()
       ])
-
-      // Se a última revisão não foi concluída, ela é a revisão atual
-      if (lastReview && !lastReview.completed_at) {
-        setCurrentReview(lastReview)
-      } else {
-        setCurrentReview(null)
-      }
-
+      setCurrentReview(lastReview && !lastReview.completed_at ? lastReview : null)
       setReviews(allReviews)
       setHealthIndicators(health)
     } catch (error) {
@@ -52,6 +51,10 @@ export function useWeeklyReview(): UseWeeklyReviewReturn {
     refreshData()
   }, [refreshData])
 
+  const refreshHealth = useCallback(async (): Promise<void> => {
+    setHealthIndicators(await window.api.getReviewHealthIndicators())
+  }, [])
+
   const startReview = useCallback(async (): Promise<WeeklyReview> => {
     const review = await window.api.createWeeklyReview()
     setCurrentReview(review)
@@ -59,32 +62,56 @@ export function useWeeklyReview(): UseWeeklyReviewReturn {
     return review
   }, [refreshData])
 
-  const updateReview = useCallback(
-    async (data: {
-      inbox_cleared?: boolean
-      notes?: string
-      checklist_state?: string
-      completed_at?: string
-    }): Promise<void> => {
-      if (!currentReview) return
-      await window.api.updateWeeklyReview(currentReview.id, data)
-      const updated = await window.api.getWeeklyReview(currentReview.id)
-      if (updated) setCurrentReview(updated)
+  const reviewId = currentReview?.id
+
+  const saveNotes = useCallback(
+    async (notes: string): Promise<void> => {
+      if (!reviewId) return
+      await window.api.updateWeeklyReviewNotes(reviewId, notes)
+      setCurrentReview((review) => (review?.id === reviewId ? { ...review, notes } : review))
     },
-    [currentReview]
+    [reviewId]
+  )
+
+  const setStep = useCallback(
+    async (key: ReviewStepKey, status: ReviewStepStatus | null): Promise<void> => {
+      if (!reviewId) return
+      setCurrentReview(await window.api.setWeeklyReviewStep(reviewId, key, status))
+    },
+    [reviewId]
+  )
+
+  const goToStep = useCallback(
+    async (key: ReviewStepKey): Promise<void> => {
+      if (!reviewId) return
+      setCurrentReview(await window.api.setWeeklyReviewCurrentStep(reviewId, key))
+    },
+    [reviewId]
+  )
+
+  const discardReview = useCallback(async (): Promise<void> => {
+    if (!reviewId) return
+    await window.api.discardWeeklyReview(reviewId)
+    setCurrentReview(null)
+    await refreshData()
+  }, [reviewId, refreshData])
+
+  const bumpCounter = useCallback(
+    async (key: ReviewCounterKey, taskId?: number): Promise<void> => {
+      if (!reviewId) return
+      setCurrentReview(await window.api.bumpWeeklyReviewCounter(reviewId, key, taskId))
+    },
+    [reviewId]
   )
 
   const completeReview = useCallback(
     async (notes?: string): Promise<void> => {
-      if (!currentReview) return
-      await window.api.updateWeeklyReview(currentReview.id, {
-        completed_at: new Date().toISOString(),
-        notes
-      })
+      if (!reviewId) return
+      await window.api.completeWeeklyReview(reviewId, notes)
       setCurrentReview(null)
       await refreshData()
     },
-    [currentReview, refreshData]
+    [reviewId, refreshData]
   )
 
   return {
@@ -93,8 +120,13 @@ export function useWeeklyReview(): UseWeeklyReviewReturn {
     healthIndicators,
     loading,
     startReview,
-    updateReview,
+    saveNotes,
+    setStep,
+    goToStep,
+    discardReview,
+    bumpCounter,
     completeReview,
-    refreshData
+    refreshData,
+    refreshHealth
   }
 }

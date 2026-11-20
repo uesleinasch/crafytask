@@ -7,17 +7,18 @@ import {
   useRef,
   useState
 } from 'react'
-import { Download, Loader2, RefreshCw } from 'lucide-react'
+import { App, Button, Empty, Flex, Grid, Input, Spin, Tooltip, theme } from 'antd'
+import { Download, RefreshCw } from 'lucide-react'
 import type { NotebookPage } from '@shared/types'
-import { NotesPanel, type NotesTab } from '@renderer/components/editor/NotesPanel'
+import type { NotesTab } from '@renderer/components/editor/NotesPanel'
 import type { TaskNotesEditorHandle } from '@renderer/components/editor/TaskNotesEditor'
 import type { TaskDrawingEditorHandle } from '@renderer/components/editor/TaskDrawingEditor'
 import { parseNotes } from '@renderer/components/editor/notesFormat'
-import type { NotesViewMode } from '@renderer/components/editor/notesLayout'
+import { TaskWorkspace } from '@renderer/components/tasks/TaskWorkspace'
 import { usePersistedState } from '@renderer/hooks/usePersistedState'
-import { toast } from '@renderer/components/ui/sonner'
 import { errorMessage } from '@renderer/components/settings/settingsStatus'
 import { UNTITLED_PAGE } from './notebookUi'
+import { inlineEditStyle } from '@renderer/lib/inlineEdit'
 
 export interface PageEditorHandle {
   flush: () => Promise<void>
@@ -25,13 +26,10 @@ export interface PageEditorHandle {
 
 interface PageEditorProps {
   pageId: number
-  viewMode: NotesViewMode
-  zenWidth: number
-  onMaximize: () => void
-  onZen: () => void
 }
 
 const TITLE_DEBOUNCE_MS = 500
+const ICON = { size: 16, strokeWidth: 1.75, 'aria-hidden': true } as const
 
 // CURRENT_TIMESTAMP do SQLite é UTC sem fuso ("AAAA-MM-DD HH:MM:SS"); sem o Z vira hora local.
 function fromSqlite(value: string): Date {
@@ -39,23 +37,28 @@ function fromSqlite(value: string): Date {
 }
 
 function formatStamp(date: Date): string {
-  return date.toLocaleString('pt-BR', {
+  const day = date.toLocaleDateString('pt-BR', {
     day: '2-digit',
     month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
+    year: 'numeric'
   })
+  const time = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  return `${day} ${time}`
 }
 
 export const PageEditor = forwardRef<PageEditorHandle, PageEditorProps>(function PageEditor(
-  { pageId, viewMode, zenWidth, onMaximize, onZen },
+  { pageId },
   ref
 ) {
+  const { token } = theme.useToken()
+  const { message } = App.useApp()
+  const screens = Grid.useBreakpoint()
   const [page, setPage] = useState<NotebookPage | null>(null)
   const [missing, setMissing] = useState(false)
   const [title, setTitle] = useState('')
   const [editedAt, setEditedAt] = useState<Date | null>(null)
+  const [focus, setFocus] = useState(false)
+  const [syncing, setSyncing] = useState(false)
   const [tab, setTab] = usePersistedState<NotesTab>('ticktask.notebooks.tab', 'notes')
   const notesRef = useRef<TaskNotesEditorHandle>(null)
   const drawingRef = useRef<TaskDrawingEditorHandle>(null)
@@ -96,6 +99,13 @@ export const PageEditor = forwardRef<PageEditorHandle, PageEditorProps>(function
   useEffect(
     () => () => {
       if (titleTimer.current) clearTimeout(titleTimer.current)
+      const next = pendingTitle.current
+      pendingTitle.current = null
+      if (next !== null) {
+        window.api
+          .updatePageTitle(pageId, next)
+          .catch((e) => console.error('Falha ao salvar o título:', e))
+      }
     },
     [pageId]
   )
@@ -115,14 +125,13 @@ export const PageEditor = forwardRef<PageEditorHandle, PageEditorProps>(function
 
   useImperativeHandle(ref, () => ({ flush }), [flush])
 
-  const [syncing, setSyncing] = useState(false)
   const handleExport = async (): Promise<void> => {
     try {
       await flush()
       const filePath = await window.api.exportPageLocal(pageId)
-      if (filePath) toast.success(`Página exportada em ${filePath}`)
+      if (filePath) message.success(`Página exportada em ${filePath}`)
     } catch (error) {
-      toast.error(errorMessage(error))
+      message.error(errorMessage(error))
     }
   }
 
@@ -139,89 +148,107 @@ export const PageEditor = forwardRef<PageEditorHandle, PageEditorProps>(function
     }
   }
 
-  const initialContent = useMemo(() => parseNotes(page?.notes), [page])
+  const [savedNotes, setSavedNotes] = useState<string | null>(null)
+  const [savedDrawing, setSavedDrawing] = useState<string | null>(null)
+  const initialContent = useMemo(() => parseNotes(savedNotes ?? page?.notes), [savedNotes, page])
   const owner = useMemo(() => ({ kind: 'page' as const, id: pageId }), [pageId])
   const touch = useCallback(() => setEditedAt(new Date()), [])
 
   if (missing) {
     return (
-      <div className="flex-1 flex items-center justify-center text-sm text-slate-400">
-        Página não encontrada.
-      </div>
+      <Flex align="center" justify="center" style={{ height: '100%' }}>
+        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Página não encontrada." />
+      </Flex>
     )
   }
 
   if (!page) {
     return (
-      <div className="flex-1 flex items-center justify-center text-slate-400">
-        <Loader2 size={18} className="animate-spin" />
-      </div>
+      <Flex align="center" justify="center" style={{ height: '100%' }}>
+        <Spin />
+      </Flex>
     )
   }
 
-  return (
-    <div className="flex-1 min-w-0 min-h-0 flex flex-col bg-white">
-      {viewMode === 'normal' && (
-        <div className="shrink-0 px-6 pt-5 pb-3">
-          <input
-            value={title}
-            onChange={(e) => handleTitleChange(e.target.value)}
-            onBlur={() => void saveTitle()}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
-            }}
-            placeholder={UNTITLED_PAGE}
-            className="w-full text-2xl font-bold text-slate-900 placeholder:text-slate-300 bg-transparent focus:outline-none"
-          />
-          <p className="mt-1 text-xs text-slate-400 font-mono">
-            criada {formatStamp(fromSqlite(page.created_at))}
-            {editedAt && ` · editada ${formatStamp(editedAt)}`}
-          </p>
-        </div>
-      )}
-      <div
-        className={
-          viewMode === 'zen' ? 'flex-1 min-h-0 flex justify-center pt-6' : 'flex-1 min-h-0 flex'
-        }
-      >
-        <NotesPanel
-          owner={owner}
-          initialContent={initialContent}
-          editorRef={notesRef}
-          onChange={() => undefined}
-          onSaved={touch}
-          viewMode={viewMode}
-          onMaximize={onMaximize}
-          onZen={onZen}
-          actions={
-            <>
-              <button
-                onClick={() => void handleExport()}
-                title="Exportar a página em Markdown"
-                className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium text-slate-600 border border-slate-200 hover:bg-slate-50 transition-colors"
-              >
-                <Download size={13} />
-                Exportar
-              </button>
-              <button
-                onClick={() => void handleSync()}
-                disabled={syncing}
-                className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium text-emerald-600 border border-emerald-200 hover:bg-emerald-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                <RefreshCw size={13} className={syncing ? 'animate-spin' : ''} />
-                {syncing ? 'Sincronizando...' : 'Sincronizar com o Notion'}
-              </button>
-            </>
-          }
-          zenWidth={zenWidth}
-          tab={tab}
-          onTabChange={setTab}
-          initialDrawing={page.drawing}
-          drawingRef={drawingRef}
-          onDrawingChange={() => undefined}
-          onDrawingSaved={touch}
+  const actions = (
+    <Flex gap={2} align="center">
+      <Tooltip title="Exportar a página em Markdown">
+        <Button
+          type="text"
+          aria-label="Exportar a página em Markdown"
+          icon={<Download {...ICON} />}
+          onClick={() => void handleExport()}
         />
-      </div>
+      </Tooltip>
+      <Tooltip title={syncing ? 'Sincronizando…' : 'Salvar e sincronizar com o Notion'}>
+        <Button
+          type="text"
+          aria-label="Salvar e sincronizar com o Notion"
+          disabled={syncing}
+          icon={
+            <RefreshCw
+              {...ICON}
+              className={syncing ? 'animate-spin motion-reduce:animate-none' : undefined}
+            />
+          }
+          onClick={() => void handleSync()}
+        />
+      </Tooltip>
+    </Flex>
+  )
+
+  const heading = (
+    <div style={{ padding: '16px 24px 8px' }}>
+      <Input
+        variant="borderless"
+        value={title}
+        placeholder={UNTITLED_PAGE}
+        aria-label="Título da página"
+        onChange={(e) => handleTitleChange(e.target.value)}
+        onBlur={() => void saveTitle()}
+        onPressEnter={(e) => e.currentTarget.blur()}
+        style={inlineEditStyle({ fontSize: 20, fontWeight: 600 })}
+      />
+      <span
+        style={{
+          fontFamily: token.fontFamilyCode,
+          fontVariantNumeric: 'tabular-nums',
+          fontSize: 12,
+          color: token.colorTextTertiary
+        }}
+      >
+        criada {formatStamp(fromSqlite(page.created_at))}
+        {editedAt && ` · editada ${formatStamp(editedAt)}`}
+      </span>
     </div>
+  )
+
+  return (
+    <TaskWorkspace
+      owner={owner}
+      title={title || UNTITLED_PAGE}
+      heading={heading}
+      fill
+      showLabels={!!screens.sm}
+      tab={tab}
+      onTabChange={setTab}
+      focus={focus}
+      onFocusChange={setFocus}
+      notesActions={actions}
+      initialContent={initialContent}
+      editorRef={notesRef}
+      onChange={() => undefined}
+      onSaved={(notes) => {
+        setSavedNotes(notes)
+        touch()
+      }}
+      initialDrawing={savedDrawing ?? page.drawing}
+      drawingRef={drawingRef}
+      onDrawingChange={() => undefined}
+      onDrawingSaved={(drawing) => {
+        setSavedDrawing(drawing)
+        touch()
+      }}
+    />
   )
 })

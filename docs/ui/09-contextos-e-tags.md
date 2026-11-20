@@ -1,163 +1,73 @@
-# Contextos e Tags — `/contexts` e `/tags`
+# Contextos e tags — `/contexts` e `/tags`
 
-`src/renderer/src/pages/ContextsPage.tsx` · `src/renderer/src/pages/TagsPage.tsx`
+`src/renderer/src/pages/LabelsPage.tsx` · `src/renderer/src/components/labels/` ·
+`src/renderer/src/hooks/useLabels.ts`
 
-Duas telas de taxonomia com estrutura quase idêntica: cabeçalho, faixa azul explicativa, grade de
-cartões e diálogos. Estão documentadas juntas porque um redesenho provavelmente deveria unificá-las.
-
----
-
-# Contextos — `/contexts`
-
-## Função
-
-Gerenciar os contextos GTD — *onde* ou *com o que* uma ação pode ser executada. Uma tarefa pode ter
-vários; o filtro por contexto na lista de tarefas é o que torna o conceito útil.
-
-Oito contextos são criados na primeira execução: `@computador` 💻, `@telefone` 📱, `@reunião` 👥,
-`@email` 📧, `@leitura` 📖, `@compras` 🛒, `@casa` 🏠, `@escritório` 🏢.
-
-## Cabeçalho
-
-`← Voltar` · divisor · `MapPin` · "Contextos" · botão **Novo Contexto** (`bg-slate-900`).
-
-## Faixa explicativa
-
-`bg-blue-50 border-blue-200 rounded-sm p-4`, texto azul:
-
-> **Contextos GTD** definem *onde* ou *com o que* uma ação pode ser executada. Filtre suas tarefas
-> por contexto para ver o que fazer agora, dado seu ambiente atual.
-
-## Grade de cartões
-
-`grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3`. Cada cartão:
-
-```
-┌─────────────────────────────────┐
-│ ┌────┐                     ✎ 🗑 │   ← ações no hover
-│ │ 💻 │  @computador             │
-│ └────┘                          │
-└─────────────────────────────────┘
-```
-
-- quadrado de 40px com o emoji, fundo na **cor do contexto a 12% de opacidade** (`{cor}20`);
-- nome em `font-semibold text-slate-900`;
-- editar (`Pencil`) e excluir (`Trash2`) em `opacity-0 group-hover:opacity-100`.
-
-**O cartão não mostra quantas tarefas usam o contexto** — informação que a tela de tags exibe.
-
-Estado vazio: `MapPin` num círculo cinza + "Nenhum contexto cadastrado." Sem botão de ação.
-
-## Diálogo Novo / Editar Contexto
-
-Descrição: "Contextos definem onde ou com o que uma ação pode ser executada."
-
-| Campo | Controle |
-| --- | --- |
-| Nome * | `Input`, placeholder "Ex: @computador" |
-| Ícone | 16 emojis em botões de 40px: 💻 📱 👥 📧 📖 🛒 🏠 🏢 🚗 🏋️ ☎️ 📝 🎯 💬 🔧 📋. Selecionado: `bg-slate-900 ring-2 ring-offset-2` |
-| Cor | 12 círculos de 32px. Selecionado: `ring-2 ring-offset-2 scale-110` |
-| **Preview** | Bloco `bg-slate-50` reproduzindo o cartão final: quadrado tingido + emoji + nome (ou "Nome do contexto") |
-
-O preview ao vivo é exclusivo desta tela — nenhum outro diálogo do app tem um.
-
-Excluir passa pelo `DeleteConfirmDialog` com o texto genérico (que fala em "deletar permanentemente a
-tarefa" — ver [15-inconsistencias.md](15-inconsistencias.md)).
-
-### Duas paletas de cor no mesmo app
-
-`ContextsPage` define suas próprias `CONTEXT_COLORS` e `CONTEXT_ICONS` como constantes locais, em vez
-de usar `DEFAULT_COLORS` de `lib/colors.ts`. Os doze valores são **os mesmos**, na mesma ordem — é
-duplicação literal, não divergência.
-
----
-
-# Tags — `/tags`
+Uma tela só para as duas taxonomias, com os mesmos recursos (guia §8 "Contextos e tags"). As duas
+rotas montam a mesma página: `/contexts` abre a aba **Contextos** e `/tags` a aba **Tags**. Trocar de
+aba troca a rota (`replace`) e limpa a busca e o "Só sem uso". O título no Header é "Contextos e tags"
+nas duas.
 
 ## Função
 
-Higienizar a taxonomia livre. Tags nascem enquanto o usuário digita no `TagInput`, então variações de
-grafia ("urgente", "Urgente", "urgentes") viram tags diferentes. Esta tela existe principalmente para
-**mesclar**.
+- **Contextos** — *onde* ou *com o que* uma ação pode ser feita. Uma tarefa pode ter vários; o
+  filtro por contexto na lista é o que torna o conceito útil. Oito são criados na primeira execução
+  (`@computador` 💻, `@telefone` 📱, `@reunião` 👥, `@email` 📧, `@leitura` 📖, `@compras` 🛒,
+  `@casa` 🏠, `@escritório` 🏢).
+- **Tags** — rótulos livres que nascem enquanto se digita na pílula Tags do detalhe (no modal Nova tarefa, só ao criar a tarefa), então variações de grafia
+  viram tags diferentes. A tela serve para limpar e **mesclar**.
 
-## Cabeçalho
+## Dados
 
-`← Voltar` · divisor · `Tag` · "Tags" · botão **Nova Tag** (`bg-slate-900`).
+`useLabels` lê `context:listWithUsage` e `tag:listWithUsage` juntos e relê a cada `tasks:refresh`.
+Cada rótulo traz `task_count` (tarefas com ele) e `open_count` (as não finalizadas e não
+arquivadas), contados no SQL (`contextQueries.ts`, `tagQueries.ts`). Falha de leitura vai para o
+`RegionBoundary` da rota. As regras puras (busca, ordenação, texto de uso, nome repetido, rota da
+lista filtrada) ficam em `components/labels/labels.ts`, com teste.
 
-## Faixa explicativa
+## Abas e barra
 
-Mesmo estilo azul dos contextos:
+- `Tabs` com ícone (`MapPin` / `Tags`) e o total de cada uma em mono.
+- Uma frase do que é cada um, em texto secundário.
+- Busca por nome (`Input` com `Search`), ordenar (`Mais usados`, `Nome`, `Menos usados`; desempate
+  pelo nome), `Checkbox` **Só sem uso** com o contador, `Segmented` Cards/Tabela (salvo em
+  `ticktask:labelsView`; some abaixo de `md`, onde é sempre Cards) e **Novo contexto**/**Nova tag**
+  (só o ícone abaixo de `sm`).
 
-> Tags nascem enquanto você digita nas tarefas, então variações de grafia acabam virando tags
-> diferentes. **Mesclar** move as tarefas de uma tag para outra e descarta a primeira.
+## Cards e tabela
 
-## Grade de cartões
+- **Card** (grade de `minmax(230px, 1fr)`): marca de 40px — contexto com o emoji num quadrado com a
+  cor a ~14% (`userColorTint`), tag com o ponto de 12px da cor —, nome (tag com `#`) e "em N
+  tarefas · M abertas" ou "não usado/não usada". Clicar abre a lista filtrada; sem uso, abre a
+  edição. `⋯` e botão direito abrem o menu.
+- **Tabela:** rótulo (marca de 28px + nome clicável), Tarefas, Abertas (mono), `⋯`. Botão direito na
+  linha abre o mesmo menu.
+- **Menu:** Ver tarefas (`ListTodo`, desabilitado sem uso) · Editar (`Pencil`) · Mesclar em…
+  (`Merge`, desabilitado com menos de dois) · Excluir… (`Trash2`, perigo).
+- Vazio: `Empty` com "Nenhum contexto ainda." / "Nenhuma tag ainda." ou "Nada com esses filtros.".
 
-Mesma grade dos contextos. Cada cartão:
+**Ver tarefas** navega para `/?context=<id>` ou `/?tag=<id>`; a lista de tarefas lê a query
+(`listIntentFromSearch`), aplica o filtro e muda a aba de status para **Todas**.
 
-```
-┌─────────────────────────────────┐
-│ ● trabalho              ✎ ⇄ 🗑 │
-│   em 14 tarefas                 │
-└─────────────────────────────────┘
-```
+## Criar e editar (`LabelEditModal`)
 
-- bolinha de 12px na cor da tag;
-- nome em `font-semibold truncate`;
-- **contagem de uso** em `text-xs text-slate-500`: `não usada`, `em 1 tarefa` ou `em N tarefas`;
-- três ações no hover: **editar** (`Pencil`), **mesclar** (`Merge`, desabilitado com menos de duas
-  tags) e **excluir** (`Trash2`).
+- Em edição com uso: "O novo nome vale para as N tarefas que já usam este contexto/esta tag."
+- Nome (`#` inicial da tag é ignorado). Nome igual a outro do mesmo tipo, sem diferenciar
+  maiúsculas, é recusado com "Já existe … com esse nome. Use Mesclar." — no renderer e, ao renomear,
+  também no main (`updateTag`, `assertContextNameFree`).
+- Ícone (só contexto): 18 emojis em botões de 36px; o escolhido ganha borda e fundo primários.
+- Cor: as dez `USER_COLORS` de `theme/semantic.ts`. Cor gravada fora delas continua valendo e
+  aparece na prévia, sem nenhum círculo marcado. Novo rótulo começa em `#2A62D6` e, contexto, em 💻.
+- **Prévia** ao vivo da marca e do nome, nos dois tipos.
 
-Estado vazio: `Tag` num círculo cinza + "Nenhuma tag cadastrada."
+## Mesclar (`LabelMergeModal`)
 
-## Diálogo Nova / Editar Tag
+"As **N tarefas** com X passam para o destino, e **X** deixa de existir" (ou "não está em nenhuma
+tarefa e deixa de existir"). `Select` com busca, listando os outros rótulos com o uso em mono.
+Contextos usam `context:merge` (novo); tags, `tag:merge`. As tarefas afetadas são reenviadas ao
+Notion quando o auto-sync está ligado. Ao concluir: "Mesclado em Y: N tarefas atualizadas".
 
-| Campo | Controle |
-| --- | --- |
-| Nome | `Input` com `autoFocus`, placeholder "urgente" |
-| Cor | `ColorPicker` (`DEFAULT_COLORS`, 12 cores). Padrão: `#6366f1` |
+## Excluir
 
-A descrição do diálogo muda conforme o modo: em edição, *"O novo nome vale para todas as tarefas que
-já usam esta tag."*; em criação, *"Escolha um nome e uma cor."*
-
-Erros de gravação (nome duplicado, por exemplo) chegam como toast vermelho com a mensagem do backend.
-
-## Diálogo Mesclar
-
-Título: `Mesclar "{nome da tag}"`. Descrição dinâmica:
-
-> As **em 14 tarefas** passam para a tag escolhida, e **"trabalho"** deixa de existir.
-
-Um único campo: `SearchableSelect` "Mesclar em", listando todas as outras tags no formato
-`nome (em N tarefas)`. Botão **Mesclar** habilitado só com um destino escolhido.
-
-Ao concluir, o toast informa quantas tarefas foram afetadas:
-`Tags mescladas — 14 tarefas atualizadas`.
-
-## Diálogo Excluir
-
-Único lugar do app com **`DeleteConfirmDialog` de texto customizado**:
-
-- título: `Excluir "{nome}"?`
-- descrição com uso: *"A tag sai de 14 tarefas. As tarefas em si não são afetadas."*
-- ou, sem uso: *"Esta tag não está em nenhuma tarefa."*
-
-É o melhor padrão de confirmação do app e vale generalizar.
-
----
-
-## Comparação direta
-
-| Aspecto | Contextos | Tags |
-| --- | --- | --- |
-| Identidade visual | emoji + cor | só cor |
-| Contagem de uso no cartão | ✗ | ✓ |
-| Preview no diálogo | ✓ | ✗ |
-| Mesclar | ✗ | ✓ |
-| Confirmação de exclusão | genérica | contextualizada |
-| Paleta de cores | constante local duplicada | `DEFAULT_COLORS` |
-| Criação implícita ao digitar | ✗ (só nesta tela) | ✓ (via `TagInput`) |
-| Rótulo no filtro da lista | "Contexto" | "Fonte / Tag" |
-
-Nenhuma das duas telas permite **navegar do rótulo para as tarefas que o usam** — clicar num contexto
-ou numa tag não filtra nada.
+`modal.confirm` de `App.useApp()`: "Excluir X?" e "O contexto/A tag sai de N tarefas. As tarefas em
+si não são afetadas." ou "Este contexto não está/Esta tag não está em nenhuma tarefa.".

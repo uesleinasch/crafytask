@@ -35,11 +35,12 @@ export function createSuggestionRenderer<T>(Component: ComponentType<PopupCompon
     return {
       onStart: (props: SuggestionProps<T>) => {
         el = document.createElement('div')
-        // marcador lido por SingleTaskPage: com o popup aberto, Esc não sai do modo Zen/maximizado
+        // marcador lido por FocusOverlay e NotebooksPage: com o popup aberto, Esc não sai do modo foco
         el.dataset.suggestionPopup = 'true'
         el.style.position = 'fixed'
         el.style.zIndex = '9999'
-        document.body.appendChild(el)
+        const host = props.editor.view.dom.closest('[data-popup-root]') ?? document.body
+        host.appendChild(el)
         root = createRoot(el)
         render(props)
       },

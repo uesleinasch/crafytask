@@ -1,14 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Button } from '@renderer/components/ui/button'
-import { Input } from '@renderer/components/ui/input'
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle
-} from '@renderer/components/ui/dialog'
-import { ColorPicker } from '@renderer/components/ColorPicker'
+import { Form, Input, Modal } from 'antd'
+import { ColorSwatches } from '@renderer/components/color/ColorSwatches'
 
 export interface NameColorValue {
   name: string
@@ -20,7 +12,7 @@ interface NameColorDialogProps {
   title: string
   initial: NameColorValue
   placeholder?: string
-  onOpenChange: (open: boolean) => void
+  onCancel: () => void
   onSubmit: (value: NameColorValue) => Promise<void>
 }
 
@@ -29,7 +21,7 @@ export function NameColorDialog({
   title,
   initial,
   placeholder,
-  onOpenChange,
+  onCancel,
   onSubmit
 }: NameColorDialogProps): React.JSX.Element {
   const [name, setName] = useState(initial.name)
@@ -42,45 +34,43 @@ export function NameColorDialog({
     setColor(initial.color)
   }, [open, initial.name, initial.color])
 
-  const handleSubmit = async (event: React.FormEvent): Promise<void> => {
-    event.preventDefault()
-    if (!name.trim()) return
+  const submit = async (): Promise<void> => {
+    if (!name.trim() || saving) return
     setSaving(true)
     try {
       await onSubmit({ name: name.trim(), color })
-      onOpenChange(false)
     } finally {
       setSaving(false)
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Nome</label>
-            <Input
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder={placeholder}
-              autoFocus
-            />
-          </div>
-          <ColorPicker value={color} onChange={setColor} />
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={!name.trim() || saving}>
-              Salvar
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <Modal
+      open={open}
+      title={title}
+      okText="Salvar"
+      cancelText="Cancelar"
+      onOk={() => void submit()}
+      onCancel={onCancel}
+      confirmLoading={saving}
+      okButtonProps={{ disabled: !name.trim() }}
+      width={420}
+      destroyOnHidden
+    >
+      <Form layout="vertical" requiredMark={false}>
+        <Form.Item label="Nome" required>
+          <Input
+            autoFocus
+            value={name}
+            placeholder={placeholder}
+            onChange={(event) => setName(event.target.value)}
+            onPressEnter={() => void submit()}
+          />
+        </Form.Item>
+        <Form.Item label="Cor" style={{ marginBottom: 0 }}>
+          <ColorSwatches value={color} onChange={setColor} />
+        </Form.Item>
+      </Form>
+    </Modal>
   )
 }

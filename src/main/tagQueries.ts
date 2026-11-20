@@ -21,6 +21,7 @@ export interface TagUsageRow {
   color: string
   created_at: string
   task_count: number
+  open_count: number
 }
 
 export function updateTag(db: SqliteLike, id: number, data: UpdateTagInput): void {
@@ -52,13 +53,19 @@ export function updateTag(db: SqliteLike, id: number, data: UpdateTagInput): voi
   db.prepare(`UPDATE tags SET ${updates.join(', ')} WHERE id = ?`).run(...values)
 }
 
+export const OPEN_COUNT =
+  "COALESCE(SUM(CASE WHEN tk.status != 'finalizada' AND tk.is_archived = 0 THEN 1 ELSE 0 END), 0)"
+
 export function listTagsWithUsage(db: SqliteLike): TagUsageRow[] {
   return db
     .prepare(
       `
-    SELECT t.id, t.name, t.color, t.created_at, COUNT(tt.task_id) as task_count
+    SELECT t.id, t.name, t.color, t.created_at,
+      COUNT(tk.id) AS task_count,
+      ${OPEN_COUNT} AS open_count
     FROM tags t
     LEFT JOIN task_tags tt ON tt.tag_id = t.id
+    LEFT JOIN tasks tk ON tk.id = tt.task_id
     GROUP BY t.id
     ORDER BY t.name COLLATE NOCASE ASC
   `

@@ -2,6 +2,12 @@ import type { GcalStatus, JiraStatus, McpStatus } from '@shared/types'
 
 export type StatusTone = 'on' | 'off' | 'error'
 
+export const STATUS_BADGE: Record<StatusTone, 'success' | 'default' | 'error'> = {
+  on: 'success',
+  off: 'default',
+  error: 'error'
+}
+
 export interface StatusInfo {
   tone: StatusTone
   label: string

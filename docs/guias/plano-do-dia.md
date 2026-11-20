@@ -10,12 +10,15 @@ Uma tarefa entra no plano de hoje quando a data **Programado para** é hoje. Voc
 - arrastando a tarefa para o dia de hoje na visão mensal do calendário;
 - pelo MCP, com a ferramenta `plan_day`.
 
-A tela **Hoje** tem duas abas:
+A tela **Hoje** tem dois cartões:
 
-- **Hoje** — a lista do dia, que você ordena arrastando. No topo, o **indicador de carga** soma os
-  limites de tempo das tarefas do dia contra uma jornada de 8 h (fica vermelho quando passa) e
-  conta quantas já foram feitas.
-- **Esta Semana** — panorama dos próximos sete dias, só leitura.
+- **Plano do dia** — as tarefas de hoje, em ordem automática: primeiro as que têm horário, pela
+  hora; depois as com prazo hoje e hora; o resto pela ordem do `plan_day` e pela data de criação.
+  Para mudar a posição de uma tarefa, dê um horário a ela. No topo do cartão, a **carga** soma os
+  blocos de tempo de hoje (os do calendário) contra uma jornada de 8 h; quando passa, fica em
+  âmbar com "passa da jornada".
+- **Semana** — as horas planejadas em blocos de tempo de segunda a domingo, com os dias acima da
+  jornada em âmbar.
 
 ## Horários e prazos
 
@@ -30,14 +33,27 @@ Uma tarefa conta como **atrasada** quando o prazo é anterior a hoje, ou é hoje
 
 ## Calendário
 
-A tela **Calendário** tem duas visões:
+A tela **Calendário** tem as visões **Dia**, **3 dias**, **Semana**, **Mês** e **Agenda**. Ela abre na Semana
+em janela larga, em 3 dias numa média e no Dia numa estreita.
 
-- **Semana** (padrão) — *time blocking*: uma grade das 07:00 às 22:00. Clique num espaço vazio
-  para criar um **bloco de tempo** (o app propõe 1 hora, arredondada a 30 minutos) e escolha a
-  tarefa. Para mover ou encurtar um bloco, abra-o e edite. A faixa **Dia**, acima da grade, mostra
-  as tarefas agendadas para cada dia.
-- **Mês** — panorama dos agendamentos. **Arraste** uma tarefa de um dia para outro para
-  reagendar.
+- **Dia, 3 dias e Semana** — *time blocking*: uma grade do dia inteiro, de 00:00 a 24:00, que abre
+  rolada até a hora atual. Clique num espaço vazio para criar um **bloco de tempo** de 1 hora em volta do ponto clicado e escolha a tarefa.
+  **Arraste** o bloco (ou a tarefa com horário) para mudar a hora ou o dia e puxe a borda de baixo
+  para mudar o fim; clique nele para ajustar o horário, iniciar o timer, abrir a tarefa ou excluir
+  (Delete também exclui).
+  O botão direito tem **Repetir no dia seguinte**. Mover e excluir podem ser desfeitos na
+  mensagem que aparece. O painel **A agendar** lista as próximas ações sem tempo reservado nos dias
+  visíveis: arraste uma delas para a grade ou use o `+` para reservar 1 hora. Acima da grade, cada dia mostra quantas horas já estão em blocos contra a jornada de
+  8 h (âmbar quando passa) e a faixa **Dia** com as tarefas agendadas sem horário e os prazos.
+  Tarefas com horário aparecem como compromisso, e as sessões do timer como uma faixa fina na borda
+  da coluna. Em **Mostrar** você escolhe o que aparece (blocos, tarefas com horário, agendadas,
+  prazos, sessões, fins de semana) e vê a legenda.
+- **Mês** — panorama do mês, com a semana começando na segunda. Cada dia mostra quantos blocos tem e
+  quantas horas somam, as tarefas agendadas e os prazos. **Arraste** uma tarefa ou um prazo de um dia
+  para outro para reagendar, ou solte ali uma tarefa de **A agendar** para reservar 1 hora às 09:00.
+  Clique no número do dia para abrir o Dia.
+- **Agenda** — lista dos próximos 14 dias que têm algo marcado: agendadas, prazos e itens com
+  horário, em ordem. Boa para ler de relance e no celular.
 
 Blocos de tempo, datas agendadas e prazos podem ir para o Google Calendar, tarefa por tarefa —
 veja a [integração com o Google Calendar](../integracoes/google-calendar.md).

@@ -72,13 +72,13 @@ export function TableContextMenu({ editor }: { editor: Editor | null }): React.J
 
   return (
     <div
-      style={{ position: 'fixed', left, top, zIndex: 9999 }}
-      className="w-52 rounded-md border border-slate-200 bg-white p-1 shadow-lg"
+      style={{ position: 'fixed', left, top, zIndex: 9999, width: 208 }}
+      className="ct-popup"
       onClick={(e) => e.stopPropagation()}
     >
       {items.map((it, i) =>
         it === 'divider' ? (
-          <div key={`d${i}`} className="my-1 h-px bg-slate-100" />
+          <div key={`d${i}`} className="ct-popup-divider" />
         ) : (
           <button
             key={it.label}
@@ -86,9 +86,7 @@ export function TableContextMenu({ editor }: { editor: Editor | null }): React.J
               it.run(editor)
               setMenu(null)
             }}
-            className={`block w-full rounded px-2 py-1.5 text-left text-sm ${
-              it.danger ? 'text-red-600 hover:bg-red-50' : 'text-slate-700 hover:bg-slate-100'
-            }`}
+            className={it.danger ? 'ct-popup-item danger' : 'ct-popup-item'}
           >
             {it.label}
           </button>

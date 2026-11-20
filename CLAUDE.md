@@ -8,18 +8,20 @@ CrafyTask (antigo TickTask) is an Electron desktop app for personal task and tim
 
 ## Rebrand: só visual
 
-O nome visível é **CrafyTask** (título das janelas, TitleBar, bandeja, autostart, notificações,
+O nome visível é **CrafyTask** (título das janelas, sidebar, bandeja, autostart, notificações,
 textos de Configurações, nome do atalho no menu do Linux e dos pacotes `crafytask-<versão>.*`). A
 logo é só texto, na fonte **Denk One** (`@fontsource/denk-one`, empacotada — o app é offline e a CSP
-não deixa buscar fonte remota), classes `font-brand` e `text-brand` (`#705EFF`) em `main.css`.
+não deixa buscar fonte remota), classe `font-brand` em `main.css` e cor `PALETTE[mode].brand` (`theme/tokens.ts`).
 
 Por compatibilidade com instalações e dados existentes, **não renomeie**: `name: ticktask` (define a
 pasta de dados `~/.config/ticktask` e o pacote deb que faz upgrade do antigo) e `productName: "TickTask
 App"` (`/opt/TickTask App` e o perfil AppArmor), `app.setName('TickTask App')`,
 `appId`/`AppUserModelId` `com.ticktask.app`, `ticktask.db`, `ticktask-dev`, `TICKTASK_USER_DATA`,
 `ticktask-asset://`, `scripts/ticktask-backup.sh`, a agenda "TickTask" do Google e a descrição
-`TickTask #id` dos eventos, a raiz "Cadernos TickTask" e o banco "GTD APP" do Notion, `app:
-'TickTask'` do `server_info` do MCP. Identificadores de código também ficam como estão.
+`TickTask #id` dos eventos, a raiz "Cadernos TickTask" e o banco "GTD APP" do Notion.
+Identificadores de código também ficam como estão. O servidor MCP, ao contrário, já se chama
+`crafytask` (nome no `McpServer`, no comando de registro e no `server_info`): é o nome que o usuário
+fala com o assistente, e o antigo `ticktask` confundia.
 
 ## Where the docs are
 
@@ -31,14 +33,24 @@ App"` (`/opt/TickTask App` e o perfil AppArmor), `app.setName('TickTask App')`,
   interactive element, plus the component library, the real design tokens and a catalogue of
   inconsistencies. Start at `docs/ui/README.md`. **Read the relevant screen doc before touching a
   page** — it records behaviour that isn't obvious from the JSX (persisted preferences, why the float
-  appears, which colors disagree with which).
+  appears).
+- **Design review is mandatory.** Every change to a screen, visual component, theme, tokens or
+  design docs loads the project skill `design-crafytask` before starting and runs the project
+  agent `design-reviewer` (`.claude/agents/`) on the branch diff before opening the PR; fix what it
+  reports or write down why not in the PR. A prototype feature that doesn't exist in the code and
+  has no subtask becomes a new subtask of CrafyTask #745 (the visual refactor epic).
+- **`docs/design/`** — the **target** interface of the visual refactor to Ant Design (pt-BR):
+  `guia-de-design.md` (rules), `plano-de-refatoracao.md` (phases F0–F9, one subtask per PR, where the
+  code lives), `prototipo/index.html` (the prototype the user approved) and `prototipo/checklist.json`,
+  audited by `npm run design:audit`. Before touching any screen, load the project skill
+  `design-crafytask` (`.claude/skills/`); it lists the sources of truth and the checks.
 - **`docs/mcp-server.md`** — embedded MCP server: tool list and known limitations.
-- **`ui-ux/`** — original design system and mockups; see the caveat under **Conventions**.
+- **`ui-ux/`** — original (pre-antd) design system and mockups, superseded by `docs/design/`.
 
 ## Commands
 
 ```bash
-npm run dev          # Run app with hot reload (electron-vite)
+npm run dev          # Run app with hot reload (electron-vite), com ELECTRON_DISABLE_SANDBOX=1
 npm run build        # typecheck (node + web) then build to out/
 npm run typecheck    # tsc for both tsconfig.node.json and tsconfig.web.json
 npm run lint         # eslint --cache
@@ -92,32 +104,43 @@ renderer (React)  →  preload (window.api)  →  main (ipcMain.handle)  →  da
 
 - **src/main/** — Node side. `index.ts` (windows, lifecycle, ~130 `ipcMain.handle` registrations in `setupIpcHandlers()`, global shortcut, PDF export via `webContents.printToPDF`). `database.ts` owns the schema + every query as an exported function. `notion.ts` is the Notion client/sync. Around it sit the pure/leaf modules: `taskQuery.ts` (WHERE/ORDER builder), `tagQueries.ts` (tag CRUD/merge over an injected `SqliteLike`), `notesMarkdown.ts` (ProseMirror JSON ↔ Markdown), `notionBlocks.ts` (ProseMirror → Notion blocks), `notionFileUpload.ts` (image upload to Notion), `notesAssets.ts` (local image store + `ticktask-asset://` protocol), `localExport.ts` (task → Markdown file with YAML frontmatter + copied assets).
 - **src/preload/index.ts** — exposes a single `api` object on `window.api` via `contextBridge` (and `@electron-toolkit/preload`'s `electron`). Every method is a thin `ipcRenderer.invoke('domain:action', …)` wrapper. `index.d.ts` types `window.api` for the renderer.
-- **src/renderer/src/** — React 19 app. `main.tsx` → `App.tsx` (uses **`HashRouter`** — required because Electron loads the renderer over `file://`). Pages in `pages/`, reusable components in `components/` (shadcn/Radix primitives under `components/ui/`), data-fetching logic in `hooks/` (one hook per domain: `useTasks`, `useProjects`, `useContexts`, `useTags`, `useCalendar`, `useHorizons`, `useWeeklyReview`, `useTaskDetail`, `useTimer`, `useNotification`, plus the UI-only `useIncrementalList` — IntersectionObserver paging of an already-loaded array — and `usePersistedState` for view preferences), Zustand `stores/timerStore.ts` for the live timer.
+- **src/renderer/src/** — React 19 app. `main.tsx` → `App.tsx` (uses **`HashRouter`** — required because Electron loads the renderer over `file://`). Pages in `pages/`, reusable components in `components/` (antd is the component base; own pieces such as `chips/` and `shell/` sit on its tokens), data-fetching logic in `hooks/` (one hook per domain: `useTasks`, `useProjects`, `useLabels`, `useCalendar`, `useWeeklyReview`, `useTaskDetail`, `useTimer`, `useNotification`, plus the UI-only `useIncrementalList` — IntersectionObserver paging of an already-loaded array — and `usePersistedState` for view preferences), Zustand `stores/timerStore.ts` for the live timer.
 - **src/shared/types.ts** — the single source of truth for domain types (`Task`, `Project`, `Context`, `Area`, `Goal`, `TimeBlock`, `WeeklyReview`, the `Create*/Update*Input` variants, and the status/category/energy unions). Imported by all three contexts.
 
 ### IPC conventions
 
-- Channels are named `domain:action` — e.g. `task:create`, `project:getTasks`, `schedule:getWeekly`, `notion:syncAllTasks`, `timeBlock:getForMonth`, `stats:gtdMetrics`. Adding a backend capability almost always means adding a matching channel in all three places.
-- Renderer→main is request/response via `invoke`/`handle`. Main→renderer pushes are **events** sent with `webContents.send`: `tasks:refresh`, `float:update`, `float:clear`, `timer:stopped`, `task:unblocked`, and `notion:syncStart`/`syncSuccess`/`syncError`. The renderer subscribes via `window.api.on*` listeners (e.g. `SyncNotification`, the float timer). `lib/syncEvents.ts` helps bridge these.
+- Channels are named `domain:action` — e.g. `task:create`, `project:getTasks`, `schedule:getWeekly`, `notion:syncAllTasks`, `timeBlock:getForMonth`, `stats:period`. Adding a backend capability almost always means adding a matching channel in all three places.
+- Renderer→main is request/response via `invoke`/`handle`. Main→renderer pushes are **events** sent with `webContents.send`: `tasks:refresh`, `float:update`, `float:clear`, `timer:stopped`, `task:unblocked`, and `notion:syncStart`/`syncSuccess`/`syncError`. The renderer subscribes via `window.api.on*` listeners (e.g. the shell's `StatusBar`, which turns the Notion/Jira/Google sync events into per-integration state, and the float timer).
 - Task mutation handlers in `index.ts` call `autoSyncToNotion(...)` after the DB write when Notion auto-sync is enabled — keep that side effect in mind when touching task handlers.
 
 ### Adding a feature (the cross-cutting path)
 
 A typical new capability touches, in order: `src/shared/types.ts` → a query fn in `src/main/database.ts` → an `ipcMain.handle('domain:action', …)` in `src/main/index.ts` (inside `setupIpcHandlers`) → a wrapper in `src/preload/index.ts` **and** its type in `index.d.ts` → a hook in `src/renderer/src/hooks/` → page/component + (if a new screen) a `<Route>` in `App.tsx`.
 
-A **new screen** needs three more touches in `App.tsx`/`TitleBar.tsx`, all easy to miss:
-its `<Route>`; the `isSubPage` list in `AppContent` (which decides whether the `FloatingTimer`
-overlay renders); and a button in `TitleBar` — whose whole nav bar only renders on `/`, so a screen
-with no `TitleBar` entry is reachable only by code. The page shell itself must use `h-full`, never
-`h-screen`: `<main>` already subtracted the TitleBar, and the extra 56px can be scrolled by a
-programmatic `scrollIntoView` (see `docs/ui/02-detalhe-da-tarefa.md`).
+A **new screen** needs two more touches: its `<Route>` nested under `<AppShell>` in `App.tsx`
+(`/float` and `/quick-capture` stay outside the shell), and an entry in
+`components/shell/navigation.ts` (`NAV_GROUPS`/`NAV_FOOTER`, plus `navKeyFor`/`screenTitle` if the
+route has an id) with its lucide icon in `SiderNav.tsx`. `AppShell` (antd `Layout`) renders the
+sidebar, the header (screen title + "Nova tarefa") and the route inside a `RegionBoundary`, on every
+route. The page itself must use `h-full`, never `h-screen`: the `Content` already subtracted the
+header, and the extra height can be scrolled by a programmatic `scrollIntoView` (see
+`docs/ui/02-detalhe-da-tarefa.md`).
 
 ## Database
 
 - File: `app.getPath('userData')/ticktask.db` (em dev, `ticktask-dev/` — ver **Commands**). Opened with `journal_mode = WAL` and `foreign_keys = ON`. `initDatabase()` runs at startup.
-- 16 tables: `tasks`, `time_entries`, `tags`, `task_tags`, `projects`, `contexts`, `task_contexts`, `weekly_reviews`, `task_dependencies`, `areas`, `goals`, `time_blocks`, `note_assets`, `notebooks`, `notebook_sections`, `notebook_pages`.
+- 18 tables: `tasks`, `time_entries`, `tags`, `task_tags`, `projects`, `contexts`, `task_contexts`, `weekly_reviews`, `task_dependencies`, `areas`, `goals`, `time_blocks`, `note_assets`, `notebooks`, `notebook_sections`, `notebook_pages`, `task_status_events`, `app_prefs`.
 - **Migrations are imperative, inline in `initDatabase()`** — `CREATE TABLE IF NOT EXISTS` plus guarded `ALTER TABLE`s. Changing a `CHECK` constraint requires the create-new-table-and-copy dance (see the `tasks_new` rebuild around `src/main/database.ts:375`, used to widen the task `status` CHECK). There is no migration framework — follow the existing pattern.
 - All queries use better-sqlite3 prepared statements; multi-step writes use `db.transaction(...)`.
+- `tasks.status_changed_at` (when the status last changed, used by the health indicators in
+  `healthQueries.ts`) is kept by two SQLite triggers, not by the handlers, so every writer (IPC, MCP,
+  Jira import) is covered. Two more triggers append every status change (and the creation) to
+  `task_status_events` (`from_status`, `to_status`, `changed_at`), the history behind the weekly
+  Inbox rate; it only starts when the triggers are installed. A `tasks` rebuild drops triggers:
+  `ensureStatusChangedAt` runs at the end of `initDatabase()` and recreates all four.
+- Dashboard period stats (`stats:period`, `StatsPeriod` → `PeriodStats`) come from
+  `statsQueries.ts` (pure, tested): sessions clipped to the period and to now, split per local day
+  and hour, compared with the previous period of the same length, project filter in SQL.
 
 ### Task listings
 
@@ -139,8 +162,8 @@ Each task carries a `notes` column holding **ProseMirror JSON** (migrated away f
 Editor.js format). The editor lives in `src/renderer/src/components/editor/`: `TaskNotesEditor.tsx`
 mounts Tiptap with the extension set in `extensions.ts` (starter kit, tables, highlight, images,
 file handler, drag handle, mention), plus a slash menu (`slash/`), `@` mentions of other tasks
-(`mention/`, backed by `notes:searchMentions`), a bubble toolbar, and `NotesFocusBar` for the
-zen/maximized modes. `notesFormat.ts` and `notesLayout.ts` hold the pure bits and are unit-tested.
+(`mention/`, backed by `notes:searchMentions`), a bubble toolbar, and `FocusOverlay` for the
+task detail's focus mode. `notesFormat.ts` holds the pure bits and is unit-tested.
 
 The JSON is converted, never stored twice: `notesMarkdown.ts` for Markdown (local export),
 `notionBlocks.ts` for Notion blocks. Pasted/dropped images go through `notesAssets.ts` — bytes land
@@ -192,13 +215,17 @@ Notas e Desenho da task. Decisões em `docs/adr/0001-cadernos.md`; tela em `docs
 
 ## Terminal embutido
 
-Cada task pode ter `working_dir` e `start_command` (colunas locais: não vão ao Notion nem ao Jira). O
+Cada task pode ter `working_dir` e `start_command` (colunas locais: não vão ao Notion nem ao Jira); sem
+`working_dir`, a task herda `projects.working_dir` (`effectiveWorkingDir` em `shared/workingDir.ts`). O
 painel (`components/terminal/`, montado em `App.tsx`) usa `@xterm/xterm`; o PTY é `node-pty`, só no
 main. `terminalSessions.ts` é puro e testado (sessões, ring buffer de ~200 KB, coalescência de
 output a cada 10 ms, `seq` por envio para o replay não duplicar); `terminal.ts` é o lado Electron e
 importa `node-pty` sob demanda, para um binário com ABI errada degradar só o painel. As sessões
-morrem no `before-quit` e quando a task é apagada: `task:delete`, `task:bulkDelete` e o
-`delete_tasks` do MCP (`afterTasksDeleted`) chamam `disposeTerminalsForTasks`. Shell e "timer no
+morrem no `before-quit` e quando o dono é apagado. A sessão tem um dono (`TerminalOwner`: task ou
+projeto; a de projeto abre em `projects.working_dir`, pelo botão no cabeçalho do projeto):
+`task:delete`, `task:bulkDelete` e o `delete_tasks` do MCP (`afterTasksDeleted`) chamam
+`disposeTerminalsForTasks`; `project:delete` e o `manage_structure` do MCP (`afterProjectDeleted`)
+chamam `disposeTerminalsForProjects`. Shell e "timer no
 primeiro comando" ficam em `localStorage`. Ver `docs/ui/16-terminal.md`.
 
 ## Notion sync (src/main/notion.ts)
@@ -248,7 +275,9 @@ todos puros e testados — e `jira.ts` (lado Electron: `userData/jira-config.jso
   que envia cada sessão de tempo encerrada (≥ 1 min, posterior a ligar) e guarda o id em
   `time_entries.jira_worklog_id` — a coluna é o que impede envio duplo. `task:reset` captura esses
   ids **antes** de apagar as sessões e depois os apaga no Jira (`captureJiraWorklogs` →
-  `deleteJiraWorklogs`). Regras puras em `jiraWorklog.ts`.
+  `deleteJiraWorklogs`). Editar ou excluir uma sessão (`timeEntry:update`/`timeEntry:delete`,
+  `timeEntryQueries.ts`) atualiza ou apaga o worklog dela (`syncEditedTimeEntry`/
+  `syncDeletedTimeEntry`). Regras puras em `jiraWorklog.ts`.
 - O painel lateral (`components/jira/JiraFieldsSheet.tsx`) lê `issue?expand=editmeta` e grava cada
   campo com PUT na issue (`jira:updateField`). Depois de transição ou edição, a task é relida do
   Jira (nome, prazo, status Jira).
@@ -275,6 +304,12 @@ nomes ou rótulos do manifest exige mudar os dois. Restaurar fecha o banco, guar
 em `userData/pre-restore-*/` e reinicia o app. `gcal-config.json` fica de fora de propósito: o
 token é cifrado com `safeStorage` e não abre em outra máquina.
 
+Backup automático (opt-in, `autoBackup` em `app_prefs`): o main confere a cada hora e cria um
+snapshot quando a pasta não tem nenhum de hoje. Os nomes dos automáticos ficam em
+`backup-config.json` (`autoSnapshots`) e só eles são podados (guarda 14); backup manual nunca é
+apagado. `createBackup` não roda duas vezes ao mesmo tempo, e `backup:restore` recusa enquanto um
+backup está em andamento.
+
 ## MCP server
 
 Lives in `src/main/mcp/`, embedded in the main process. It speaks MCP over HTTP on loopback
@@ -286,16 +321,30 @@ confirmation guard in `confirmGuard.ts` (preview + `confirm_token`, then repeat 
 
 ## Windows & shortcuts
 
-`index.ts` manages three `BrowserWindow`s: `mainWindow`, an always-on-top `floatWindow` (the floating timer, route `/float`), and `quickCaptureWindow` (route `/quick-capture`). Global shortcut **`CommandOrControl+Shift+Space`** toggles quick capture. The float and quick-capture windows are `frame: false`; the main window keeps its OS frame with `autoHideMenuBar` and renders its own in-app `TitleBar`. The `window:minimize`/`maximize`/`close` channels exist in the preload but no button in the current UI is wired to them.
+`index.ts` manages three `BrowserWindow`s: `mainWindow`, an always-on-top `floatWindow` (the floating timer, route `/float`), and `quickCaptureWindow` (route `/quick-capture`). Global shortcut **`CommandOrControl+Shift+Space`** (default; user-editable in Settings → Geral, stored as `captureShortcut` in `app_prefs`, validated by `shared/accelerator.ts`, re-registered by `changeCaptureShortcut`, which rolls back if the OS refuses) toggles quick capture. On GNOME Wayland Electron 38 cannot register global shortcuts at all (not even with the GlobalShortcuts portal), so the same action writes a GNOME custom keybinding via `gsettings` (`gnomeKeybinding.ts`) whose command launches the app with `--quick-capture` (`launchArgs.ts`; handled on first launch and in `second-instance`). The float and quick-capture windows are `frame: false`; the main window keeps its OS frame with `autoHideMenuBar` and renders its own in-app `TitleBar`. The `window:minimize`/`maximize`/`close` channels exist in the preload but no button in the current UI is wired to them.
 
 The float is driven by `mainWindow` events, not by the renderer: `minimize` **and `close`** show it
 **only when a timer is running**, `restore` and `focus` hide it. Its size is derived from the timer
 count (`FLOAT_WIDTH = 300`, 44px per row, max 5 rows) and only re-set when that count changes.
-A due-date notification sweep (`startNotificationScheduler`) runs every minute from the main process; which notices fire (day-of, eve, 15 min before and at `due_time`) is decided by the pure `dueNotifications.ts`.
+A due-date notification sweep (`startNotificationScheduler`) runs every minute from the main process; which notices fire (day-of, eve, 15 min before and at `due_time`) is decided by the pure `dueNotifications.ts`, each one switchable in Settings → Fluxo de trabalho.
+
+Workflow preferences (workday, week start, time-leak levels and repeat, calendar hour range, due
+notices, notes sync interval) are one JSON row in the `app_prefs` table: rules and defaults in
+`src/shared/workflowPrefs.ts` (pure, tested), storage in `src/main/workflowPrefsStore.ts`, IPC
+`prefs:getWorkflow`/`prefs:setWorkflow` plus the `prefs:workflowChanged` event to every window. The
+renderer reads them through `lib/workflowPrefs.ts` (`useWorkflowPrefs`, `useCalendarPrefs`,
+`useTimeLeakThresholds`; `getWorkflowPrefs()` outside React, e.g. the timer store).
 
 Closing the main window **hides** it — the app lives on in a tray icon (`src/main/tray.ts`: Abrir
 CrafyTask / Captura rápida / Sair); only "Sair" actually quits. Autostart is toggled from Settings
 (`app:getAutostart` / `app:setAutostart`) and launches the app straight into the tray.
+
+Falhas: `RegionBoundary` (`components/shell/`, sobre `react-error-boundary` + `Result` do antd)
+isola regiões — raiz em `main.tsx`, rota atual em `App.tsx` com reset por `pathname + search`. Erro
+assíncrono (IPC) chega ao boundary por `useErrorBoundary().showBoundary`. `createRoot` manda todo
+erro ao main (`app:logRendererError`). `rendererGuard.ts` recarrega a janela cujo renderer morreu
+(até 3 vezes por minuto, regra em `rendererRecovery.ts`), oferece recarregar quando ela trava e
+avisa o renderer (`app:rendererRecovered`).
 
 All three windows load the **same renderer bundle**, so anything that runs at module scope runs
 three times. `stores/timerWindow.ts` (`shouldBootstrapTimerStore`) is the guard: the auxiliary
@@ -311,18 +360,25 @@ Defined in `electron.vite.config.ts` and the tsconfigs:
 
 ## Conventions
 
-- Pages: `*Page.tsx`; hooks: `useX.ts`; stores: `xStore.ts`. shadcn config in `components.json` (new-york style, lucide icons, `@renderer/components/ui`).
+- Pages: `*Page.tsx`; hooks: `useX.ts`; stores: `xStore.ts`. Components come from Ant Design; icons from `lucide-react`. shadcn, Radix and sonner were removed in F9-a: feedback goes through `App.useApp()` (`message`, `modal`).
 - No global app store beyond the timer — screen data is fetched on demand inside hooks via `window.api`; cross-screen freshness comes from the `tasks:refresh` event, not shared state.
-- Visual language: **`docs/ui/14-design-tokens.md` describes what the code actually uses** and is the
-  practical reference before inventing colors, radii or spacing.
-  `ui-ux/TickTask - Design System & Guia de Estilo.md` is the original intent and is partly stale
-  (it prescribes `rounded-xl` + shadows; the app moved to `rounded-sm` and dropped `shadow-sm`).
-  Two gotchas worth knowing: `--radius: 0.75rem` makes `rounded-sm` resolve to **8px**, not
-  Tailwind's 2px; and `--font-sans`/`--font-mono` point at `--font-geist-*` variables that are never
-  defined.
-- Status/category colors are declared in several places at once (`shared/types.ts`, `StatusBadge`,
-  `CategoryBadge`, plus local copies in `DashboardPage` and `CalendarPage`) and they **disagree** —
-  check `docs/ui/14-design-tokens.md` before assuming a single source of truth.
+- Visual language: new UI work follows **`docs/design/guia-de-design.md`** and the prototype (skill
+  `design-crafytask`); no hex or Tailwind color classes (Tailwind stays for layout only).
+  `docs/ui/14-design-tokens.md` maps where each token lives in `theme/`.
+  `ui-ux/TickTask - Design System & Guia de Estilo.md` is the pre-antd intent, superseded by
+  `docs/design/`.
+  Fonts are Geist and Geist Mono from `@fontsource-variable/*` (`--font-sans`/`--font-mono`).
+  `main.css` declares `@layer theme, base, antd, components, utilities` and `main.tsx` wraps the app
+  in `StyleProvider layer`, so antd styles sit in their own layer above Tailwind's preflight.
+- New colors live in `src/renderer/src/theme/`: `tokens.ts` (palette + antd seed tokens) and
+  `semantic.ts` (status, category, time leak, energy, charts, horizons), with a WCAG contrast test.
+  `ThemeProvider` (mounted in `main.tsx`) wraps the app in antd's `ConfigProvider` + `App`, built by
+  `buildTheme(mode, density)`. Preferences `ticktask:theme` (default `system`; Settings →
+  Aparência, the header's appearance menu and the command palette) and `ticktask:density` live
+  in `localStorage`; the main window sends the theme to `app:setThemeSource` (`nativeTheme.themeSource`). Use `App.useApp()` for message/modal.
+  Status, category and energy render through `components/chips/` (`StatusChip`, `CategoryChip`,
+  `EnergyMeter`: icon + text, never color alone). The dashboard
+  (`components/dashboard/`) draws bars, columns and heatmaps in HTML with `CHART_COLORS`.
 - Carried over from `.github/copilot-instructions.md`: change only what the task requires, keep the
   code simple over clever, and reserve inline comments for genuinely non-obvious constraints.
 

@@ -61,7 +61,12 @@ ou mais** (play/pause ou tempo adicionado à mão) numa tarefa vinculada vira um
 
 - Tempo registrado **antes** de ligar a opção nunca é enviado.
 - Cada sessão é enviada uma vez só.
-- **Resetar** o timer da tarefa apaga no Jira os worklogs que o app criou.
+- **Zerar o tempo** da tarefa apaga no Jira os worklogs que o app criou.
+- **Editar** uma sessão já enviada atualiza o worklog dela no Jira (se ficar com menos de 1 minuto,
+  o worklog é apagado; se alguém apagou o worklog no Jira, ele é criado de novo). **Excluir** a
+  sessão apaga o worklog.
+- Com o worklog desligado (ou sem conexão com o Jira), editar, excluir ou zerar não mexe no Jira:
+  os worklogs já criados ficam lá.
 - **Ajustar total** (definir o tempo direto) não gera worklog: não há sessão para enviar.
 
 ## Limites

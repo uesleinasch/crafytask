@@ -13,13 +13,17 @@ import {
   getTimeBlocksForDate,
   getTimeBlocksForMonth,
   getTimeBlocksForWeek,
-  getWeeklyReview,
   getWeeklySchedule,
   listWeeklyReviews,
+  completeWeeklyReview,
+  getReviewPastWeek,
+  setWeeklyReviewStep,
   updateDayOrder,
   updateTask,
-  updateWeeklyReview
+  updateWeeklyReviewNotes
 } from '../../database'
+import { REVIEW_STEP_KEYS } from '@shared/reviewSteps'
+import type { ReviewStepKey } from '@shared/types'
 import { mergeTaskTimes, taskTimeError } from '@shared/taskTime'
 import { needsConfirmation } from '../confirmGuard'
 import { afterCalendarChange, afterTaskWrite, broadcastRefresh } from '../effects'
@@ -201,24 +205,62 @@ export function registerPlanningTools(server: McpServer, ctx: ToolContext): void
     {
       title: 'Revisão semanal',
       description:
-        'Lê as revisões anteriores e os indicadores de saúde, ou registra uma nova revisão.',
+        'Revisão semanal: status (revisão em andamento, última e indicadores de saúde), list ' +
+        '(concluídas), ' +
+        'past_week (sessões, conclusões e blocos dos últimos 7 dias), start (abre a revisão ou ' +
+        'devolve a que está em andamento), step (marca um passo como feito, pulado ou pendente), ' +
+        'notes e complete (conclui; passos pendentes ficam como pulados).',
       inputSchema: {
-        action: z.enum(['status', 'list', 'create']),
+        action: z.enum(['status', 'list', 'past_week', 'start', 'step', 'notes', 'complete']),
+        step: z.enum(REVIEW_STEP_KEYS as [ReviewStepKey, ...ReviewStepKey[]]).optional(),
+        step_status: z.enum(['done', 'skipped', 'pending']).optional(),
         notes: z.string().optional()
       }
     },
-    async ({ action, notes }) => {
+    async ({ action, step, step_status, notes }) => {
       if (action === 'status') {
-        return ok({ last: getLastWeeklyReview(), health: getReviewHealthIndicators() })
+        const last = getLastWeeklyReview()
+        return ok({
+          open: last && !last.completed_at ? last : null,
+          last,
+          health: getReviewHealthIndicators()
+        })
       }
-      if (action === 'list') {
-        return ok({ reviews: listWeeklyReviews() })
+      if (action === 'list') return ok({ reviews: listWeeklyReviews() })
+      if (action === 'past_week') return ok(getReviewPastWeek())
+
+      if (action === 'start') {
+        const before = getLastWeeklyReview()
+        if (before && !before.completed_at) return ok({ review: before, already_open: true })
+        const review = createWeeklyReview()
+        if (notes !== undefined) updateWeeklyReviewNotes(review.id, notes)
+        broadcastRefresh()
+        return ok({ review: notes !== undefined ? { ...review, notes } : review })
       }
 
-      const review = createWeeklyReview()
-      if (notes) updateWeeklyReview(review.id, { notes })
+      const open = getLastWeeklyReview()
+      if (!open || open.completed_at) {
+        return fail('app_state', 'Nenhuma revisão em andamento. Use action=start.')
+      }
+      if (action === 'step') {
+        if (!step || !step_status) return fail('validation', 'Informe step e step_status.')
+        const review = setWeeklyReviewStep(
+          open.id,
+          step,
+          step_status === 'pending' ? null : step_status
+        )
+        broadcastRefresh()
+        return ok({ review })
+      }
+      if (action === 'notes') {
+        if (notes === undefined) return fail('validation', 'Informe notes.')
+        updateWeeklyReviewNotes(open.id, notes)
+        broadcastRefresh()
+        return ok({ updated: open.id })
+      }
+      const review = completeWeeklyReview(open.id, notes)
       broadcastRefresh()
-      return ok({ created: notes ? getWeeklyReview(review.id) : review })
+      return ok({ completed: review })
     }
   )
 }

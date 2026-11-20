@@ -13,11 +13,11 @@ O **status** da tarefa é a etapa do GTD em que ela está. Uma tarefa tem exatam
 | **Próximas** | próxima ação clara, pronta para ser feita |
 | **Executando** | em andamento agora |
 | **Aguardando** | delegada ou esperando outra pessoa |
-| **Someday/Maybe** | talvez um dia; fora do radar ativo |
+| **Someday** | talvez um dia (o *Someday/Maybe* do GTD); fora do radar ativo |
 | **Finalizada** | concluída |
 
 Independente do status, cada tarefa tem uma **categoria** (Urgente, Prioridade, Normal ou
-**Time Leak** — tarefa que consome tempo sem gerar valor), um **nível de energia** opcional
+**Time leak** — tarefa que consome tempo sem gerar valor), um **nível de energia** opcional
 (alta, média, baixa), **contextos** (`@computador`, `@telefone`…), **tags** livres e, se fizer
 parte de algo maior, um **projeto**.
 
@@ -25,8 +25,8 @@ parte de algo maior, um **projeto**.
 
 Tire da cabeça tudo o que chamar sua atenção, sem decidir nada ainda.
 
-- **Captura rápida** — `Ctrl + Shift + Space` de qualquer lugar do sistema (ou **Captura rápida**
-  no ícone da bandeja). Digite e tecle `Enter`; `Esc` fecha. A tarefa entra no Inbox só com o nome.
+- **Captura rápida** — `Ctrl + Shift + Space` de qualquer lugar do sistema (troque o atalho em
+  Configurações → Geral), ou **Captura rápida** no ícone da bandeja. Digite e tecle `Enter`; `Esc` fecha. A tarefa entra no Inbox só com o nome.
 - **Nova Tarefa** — botão na barra superior; abre o diálogo completo, para quando você já sabe os
   detalhes.
 - **Assistentes de IA** — com o [servidor MCP](../integracoes/mcp.md) ligado, o Claude Code (ou
@@ -39,7 +39,7 @@ Tire da cabeça tudo o que chamar sua atenção, sem decidir nada ainda.
 Abra a aba **Inbox** da lista de tarefas e processe item por item. Para cada um, pergunte "isso
 exige ação?":
 
-- **Não** → exclua, ou mova para **Someday/Maybe** se quiser guardar a ideia.
+- **Não** → exclua, ou mova para **Someday** se quiser guardar a ideia.
 - **Sim, e leva mais de um passo** → crie (ou escolha) um **projeto** e defina a primeira ação.
 - **Sim, eu mesmo faço** → mude para **Próximas**.
 - **Sim, mas depende de alguém** → mude para **Aguardando**.
@@ -54,7 +54,9 @@ status, arquivar e excluir.
 Dê a cada ação o lugar certo. No **detalhe da tarefa** (clique no nome):
 
 - **Projeto** — agrupa as ações de um resultado. Na tela **Projetos** cada projeto tem descrição,
-  *resultado desejado*, cor, data limite e área de foco.
+  *resultado desejado*, cor, data limite e área de foco. A lista avisa quantos projetos ativos estão
+  **sem próxima ação** (e filtra só esses), busca, ordena, mostra em cards ou tabela e agrupa por
+  área; o botão direito num projeto muda o status, a área ou o exclui (as tarefas ficam sem projeto).
 - **Contextos** — onde ou com o que a ação pode ser feita. Gerencie em **Contextos**.
 - **Tags** — rótulos livres ("Fonte / Tag"), criados enquanto você digita.
 - **Programado para** e **Prazo** — datas (e horários opcionais) que alimentam o
@@ -70,7 +72,7 @@ A tela **Horizontes** reúne as seis alturas de perspectiva do GTD — da ação
 
 !!! tip "Arquivar não é finalizar"
     Finalizar muda o status. **Arquivar** tira a tarefa de todas as listagens, em qualquer
-    status. As arquivadas ficam em **Arquivadas** ("Arquivo Morto"), de onde podem ser restauradas.
+    status. As arquivadas ficam no **Arquivo**, de onde podem ser restauradas ou apagadas de vez.
 
 ## 4. Revisar
 
@@ -81,7 +83,7 @@ relatório semanal em PDF.
 
 ## 5. Executar
 
-- Abra **Hoje** para ver o que está planejado para o dia, na ordem que você definiu
+- Abra **Hoje** para ver o que está planejado para o dia, com as de horário primeiro
   ([plano do dia](plano-do-dia.md)).
 - Filtre a lista por **contexto**, **projeto**, **categoria** ou **tag** no painel **Filtros**
   para achar o que dá para fazer agora.

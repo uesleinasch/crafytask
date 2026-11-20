@@ -1,5 +1,12 @@
 import type { Task } from '@shared/types'
-import type { TaskGroup } from '@renderer/components/TaskGroups'
+
+export interface TaskGroup {
+  key: string
+  label: string
+  color?: string
+  icon?: string
+  tasks: Task[]
+}
 
 export type GroupBy = 'project' | 'context' | 'jira_space' | 'jira_parent'
 

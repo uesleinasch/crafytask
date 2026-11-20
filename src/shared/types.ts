@@ -24,6 +24,7 @@ export interface Tag {
 
 export interface TagWithUsage extends Tag {
   task_count: number
+  open_count: number
 }
 
 export interface UpdateTagInput {
@@ -39,6 +40,11 @@ export interface Context {
   icon: string
   color: string
   created_at: string
+}
+
+export interface ContextWithUsage extends Context {
+  task_count: number
+  open_count: number
 }
 
 // ===================== PROJECT =====================
@@ -57,7 +63,13 @@ export interface Project {
   updated_at: string
   task_count?: number
   completed_task_count?: number
+  open_task_count?: number
+  total_seconds?: number
   next_action?: string
+  next_action_id?: number
+  last_activity_at?: string
+  next_task_id?: number | null
+  working_dir?: string | null
 }
 
 export interface CreateProjectInput {
@@ -68,6 +80,7 @@ export interface CreateProjectInput {
   color?: string
   due_date?: string
   area_id?: number
+  working_dir?: string | null
 }
 
 export interface UpdateProjectInput {
@@ -76,8 +89,10 @@ export interface UpdateProjectInput {
   outcome?: string
   status?: ProjectStatus
   color?: string
-  due_date?: string
+  due_date?: string | null
   area_id?: number | null
+  working_dir?: string | null
+  next_task_id?: number | null
 }
 
 // ===================== AREA (GTD Horizonte 2) =====================
@@ -148,6 +163,13 @@ export interface TaskDependency {
   depends_on_task_name?: string
 }
 
+export interface FloatTimerData {
+  taskId: number
+  taskName: string
+  category: TaskCategory
+  seconds: number
+}
+
 // ===================== TASK =====================
 
 export interface Task {
@@ -160,6 +182,8 @@ export interface Task {
   category: TaskCategory
   is_running: boolean
   is_archived: boolean
+  archived_at?: string | null
+  status_changed_at?: string | null
   project_id?: number
   project_name?: string
   project_color?: string
@@ -177,6 +201,7 @@ export interface Task {
   subtask_count?: number // computed
   completed_subtask_count?: number // computed
   is_blocked?: boolean // computed from dependencies
+  blocked_by?: number[]
   // FASE 4.2: Energy Tracking
   energy_level?: EnergyLevel
   // FASE 5: Notas ricas (JSON serializado — ProseMirror/Tiptap; legado Editor.js)
@@ -190,7 +215,9 @@ export interface Task {
   scheduled_end_time?: string | null
   due_time?: string | null
   external_url?: string | null
+  waiting_for?: string | null
   working_dir?: string | null
+  project_working_dir?: string | null
   start_command?: string | null
   jira_key?: string | null
   jira_status?: string | null
@@ -240,6 +267,7 @@ export interface CreateTaskInput {
   scheduled_end_time?: string | null
   due_time?: string | null
   external_url?: string | null
+  waiting_for?: string | null
 }
 
 export interface UpdateTaskInput {
@@ -264,6 +292,7 @@ export interface UpdateTaskInput {
   scheduled_end_time?: string | null
   due_time?: string | null
   external_url?: string | null
+  waiting_for?: string | null
 }
 
 export interface GcalStatus {
@@ -403,9 +432,21 @@ export interface TimeEntry {
   duration_seconds: number | null
 }
 
+export interface TimeEntrySpan extends TimeEntry {
+  task_name: string
+  task_category: TaskCategory
+  project_color: string | null
+}
+
 // ===================== TASK LIST FILTERS =====================
 
-export type TaskSort = 'updated' | 'due_date'
+export type TaskSort =
+  | 'updated'
+  | 'due_date'
+  | 'archived'
+  | 'name'
+  | 'total_time'
+  | 'status_changed'
 
 export interface TaskListFilters {
   archived?: boolean
@@ -418,9 +459,12 @@ export interface TaskListFilters {
   blockedOnly?: boolean
   dueBefore?: string
   dueAfter?: string
+  archivedBefore?: string
+  archivedAfter?: string
   overdueAt?: { date: string; time: string }
   energy?: EnergyLevel
   excludeStatus?: TaskStatus[]
+  staleDays?: number
   sort?: TaskSort
   limit?: number
   offset?: number
@@ -430,21 +474,147 @@ export type TaskListItem = Pick<Task, 'id' | 'name' | 'status' | 'category' | 'p
 
 // ===================== WEEKLY REVIEW =====================
 
+export type ReviewStepKey =
+  | 'collect'
+  | 'inbox'
+  | 'mind'
+  | 'next'
+  | 'past'
+  | 'upcoming'
+  | 'waiting'
+  | 'projects'
+  | 'someday'
+  | 'creative'
+
+export type ReviewStepStatus = 'done' | 'skipped'
+
+export type ReviewSteps = Partial<Record<ReviewStepKey, ReviewStepStatus>>
+
+export type ReviewCounterKey = 'collected' | 'processed' | 'nextSet' | 'chased' | 'cleaned'
+
+export type ReviewCounters = Record<ReviewCounterKey, number>
+
 export interface WeeklyReview {
   id: number
   started_at: string
   completed_at?: string
   inbox_cleared: boolean
   notes?: string
-  checklist_state: string
+  steps: ReviewSteps
+  current_step: ReviewStepKey | null
+  step_total: number
+  counters: ReviewCounters
+  captured: number[]
+  start_health: ReviewHealthIndicators | null
+}
+
+export interface ReviewPastItem {
+  kind: 'work' | 'event'
+  task_id: number
+  name: string
+  seconds: number
+  done: boolean
+  time?: string
+}
+
+export interface ReviewPastDay {
+  day: string
+  items: ReviewPastItem[]
+}
+
+export interface ReviewPastWeek {
+  from: string
+  to: string
+  days: ReviewPastDay[]
 }
 
 export interface ReviewHealthIndicators {
   inboxCount: number
+  oldestInboxDays: number | null
   projectsWithoutNextAction: number
+  stalledProjects: number
   staleWaitingTasks: number
   staleNextTasks: number
+  overdueTasks: number
   somedayCount: number
+  daysSinceLastReview: number | null
+  inboxProcessedWeek: number
+  inboxProcessedRate: number | null
+}
+
+// ===================== STATS POR PERÍODO (dashboard) =====================
+
+export interface StatsPeriod {
+  start: string
+  end: string
+  projectId: number | null
+}
+
+export type StatsGranularity = 'day' | 'week' | 'month'
+
+export interface StatsBucket {
+  key: string
+  seconds: number
+  current: boolean
+}
+
+export interface StatsComparison {
+  value: number
+  previous: number
+}
+
+export interface StatsTimeRow {
+  id: number | null
+  name: string
+  color: string | null
+  seconds: number
+}
+
+export interface StatsTaskRow {
+  taskId: number
+  name: string
+  projectName: string | null
+  projectColor: string | null
+  seconds: number
+}
+
+export interface StatsCategoryRow {
+  category: TaskCategory
+  seconds: number
+  taskCount: number
+}
+
+export interface StatsEnergyRow {
+  energy: EnergyLevel
+  seconds: number
+  taskCount: number
+  avgSeconds: number
+}
+
+export interface StatsHourCell {
+  weekday: number
+  hour: number
+  seconds: number
+}
+
+export interface PeriodStats {
+  period: StatsPeriod
+  previous: { start: string; end: string }
+  granularity: StatsGranularity
+  focusSeconds: StatsComparison
+  workdayAvgSeconds: number
+  buckets: StatsBucket[]
+  completedTasks: StatsComparison
+  sessions: StatsComparison
+  avgSessionSeconds: StatsComparison
+  byProject: StatsTimeRow[]
+  byArea: StatsTimeRow[]
+  byContext: StatsTimeRow[]
+  topTasks: StatsTaskRow[]
+  byCategory: StatsCategoryRow[]
+  byEnergy: StatsEnergyRow[]
+  hourly: StatsHourCell[]
+  daily: { date: string; seconds: number }[]
 }
 
 // ===================== TIME BLOCK (GTD Time Blocking) =====================
@@ -454,6 +624,12 @@ export interface TimeBlock {
   task_id: number
   task_name?: string
   task_category?: TaskCategory
+  task_status?: TaskStatus
+  task_running?: number
+  task_gcal_sync?: number
+  task_total_seconds?: number
+  project_name?: string | null
+  project_color?: string | null
   date: string // 'YYYY-MM-DD'
   start_time: string // 'HH:MM'
   end_time: string // 'HH:MM'
@@ -465,6 +641,12 @@ export interface CreateTimeBlockInput {
   date: string
   start_time: string
   end_time: string
+}
+
+export interface UnscheduledTaskFilters {
+  search?: string
+  projectId?: number | null
+  limit?: number
 }
 
 export interface UpdateTimeBlockInput {
@@ -484,29 +666,10 @@ export interface GtdMetrics {
   taskFlowCounts: Record<string, number>
 }
 
-export interface EnergyStats {
-  energy_level: EnergyLevel
-  totalSeconds: number
-  taskCount: number
-  avgSeconds: number
-}
-
 export const ENERGY_LABELS: Record<EnergyLevel, string> = {
-  alto: 'Alta Energia',
-  medio: 'Energia Média',
-  baixo: 'Baixa Energia'
-}
-
-export const ENERGY_COLORS: Record<EnergyLevel, string> = {
-  alto: '#22c55e',
-  medio: '#f59e0b',
-  baixo: '#94a3b8'
-}
-
-export const ENERGY_ICONS: Record<EnergyLevel, string> = {
-  alto: '⚡',
-  medio: '🔋',
-  baixo: '😴'
+  alto: 'Alta',
+  medio: 'Média',
+  baixo: 'Baixa'
 }
 
 // ===================== LABELS & COLORS =====================
@@ -517,30 +680,14 @@ export const STATUS_LABELS: Record<TaskStatus, string> = {
   proximas: 'Próximas',
   executando: 'Executando',
   finalizada: 'Finalizada',
-  someday: 'Someday/Maybe'
-}
-
-export const STATUS_COLORS: Record<TaskStatus, string> = {
-  inbox: 'bg-gray-500',
-  aguardando: 'bg-yellow-500',
-  proximas: 'bg-blue-500',
-  executando: 'bg-green-500',
-  finalizada: 'bg-purple-500',
-  someday: 'bg-teal-500'
+  someday: 'Someday'
 }
 
 export const CATEGORY_LABELS: Record<TaskCategory, string> = {
   urgente: 'Urgente',
   prioridade: 'Prioridade',
   normal: 'Normal',
-  time_leak: 'Time Leak'
-}
-
-export const CATEGORY_COLORS: Record<TaskCategory, string> = {
-  urgente: 'bg-red-500',
-  prioridade: 'bg-orange-500',
-  normal: 'bg-blue-500',
-  time_leak: 'bg-yellow-500'
+  time_leak: 'Time leak'
 }
 
 export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
@@ -548,13 +695,6 @@ export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
   someday: 'Someday',
   done: 'Concluído',
   archived: 'Arquivado'
-}
-
-export const PROJECT_STATUS_COLORS: Record<ProjectStatus, string> = {
-  active: 'bg-emerald-500',
-  someday: 'bg-teal-500',
-  done: 'bg-purple-500',
-  archived: 'bg-gray-500'
 }
 
 // ===================== MCP SERVER =====================
@@ -580,10 +720,15 @@ export const DEFAULT_CONTEXTS = [
   { name: '@escritório', icon: '🏢', color: '#6366f1' }
 ]
 
+export interface TerminalOwner {
+  kind: 'task' | 'project'
+  id: number
+}
+
 export interface TerminalSession {
   id: string
-  taskId: number
-  taskName: string
+  owner: TerminalOwner
+  ownerName: string
   cwd: string
   shell: string
   title: string | null
@@ -606,7 +751,7 @@ export interface TerminalBuffer {
 
 export type TerminalCreateResult =
   | { ok: true; session: TerminalSession; shellFallback: boolean }
-  | { ok: false; error: string; reason: 'no-task' | 'no-dir' | 'bad-dir' | 'pty-unavailable' }
+  | { ok: false; error: string; reason: 'not-found' | 'no-dir' | 'bad-dir' | 'pty-unavailable' }
 
 // ===================== CADERNOS =====================
 

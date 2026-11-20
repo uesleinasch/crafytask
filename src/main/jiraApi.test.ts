@@ -189,6 +189,19 @@ describe('createJiraApi', () => {
     })
   })
 
+  it('atualiza worklog com PUT no id', async () => {
+    const { api, calls } = setup(() => jsonResponse(200, { id: '10500' }))
+    await api.updateWorklog('ABC-1', '10500', {
+      started: '2026-11-13T10:00:00.000-0300',
+      timeSpentSeconds: 2400
+    })
+    expect(calls[0]).toMatchObject({
+      method: 'PUT',
+      url: 'https://jacto.atlassian.net/rest/api/3/issue/ABC-1/worklog/10500?adjustEstimate=auto',
+      body: { started: '2026-11-13T10:00:00.000-0300', timeSpentSeconds: 2400 }
+    })
+  })
+
   it('apagar worklog que já não existe não é erro', async () => {
     const { api, calls } = setup(() => jsonResponse(404, { errorMessages: ['não existe'] }))
     await expect(api.deleteWorklog('ABC-1', '10500')).resolves.toBeUndefined()

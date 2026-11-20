@@ -1,294 +1,217 @@
 # Detalhe da tarefa — `/task/:id`
 
-`src/renderer/src/pages/SingleTaskPage.tsx` (~1100 linhas) — a maior e mais densa tela do app.
+`src/renderer/src/pages/SingleTaskPage.tsx` orquestra a tela; as peças moram em `components/tasks/`
+(`TaskHeader`, `TaskWorkspace`, `TaskInspector`, `TaskTimePanel`, `TaskDetailsPanel`,
+`TaskRelationsPanel`) e em `components/editor/FocusOverlay.tsx`. O desenho-alvo está no guia de
+design (§7, "Detalhe da task"); esta página descreve o que o código faz hoje.
 
 ## Função
 
-Três coisas ao mesmo tempo:
+1. **Escrever e desenhar** sobre a tarefa — a área principal, porque é nas notas que o trabalho é
+   retomado.
+2. **Cronometrar** — o bloco do timer fica no cabeçalho, sempre visível.
+3. **Editar os dados** da tarefa — no inspetor.
 
-1. **Editar todos os metadados** da tarefa (painel esquerdo).
-2. **Cronometrar** o trabalho (coluna central).
-3. **Escrever e desenhar** sobre a tarefa (painel direito).
+## Layout por largura
 
-O ponto mais interessante do desenho atual é que essas três funções não são abas: são colunas
-simultâneas, e o usuário redistribui a largura entre elas.
-
-## Os três modos de layout
-
-O estado `viewMode` (`NotesViewMode`) governa a tela inteira.
-
-### `normal` — três colunas
+| Largura (`Grid.useBreakpoint`) | Onde fica o inspetor |
+| --- | --- |
+| `xl` ou mais | coluna à direita, 380px (420px em `xxl`), escondível pelo botão **Painel** do cabeçalho. Aberto/fechado fica em `ticktask:taskInspectorOpen` |
+| `md` e `lg` | `Drawer` de 400px à direita, com o nome da tarefa no título, aberto pelo botão **Painel** |
+| abaixo de `md` | não há inspetor: abas **Notas · Tempo · Detalhes · Relações** abaixo do cabeçalho |
 
 ```
-┌──────────────────┬──────────────────────────┬─────────────────────┐
-│ ASIDE 480px      │ CENTRO (flex-1)          │ NOTAS (redimen.)    │
-│ (fixo, rolável)  │                          │ padrão 550px        │
-│                  │            [Notas ⌃]     │ ┌─────────────────┐ │
-│ ▔▔▔ acento 3px   │                          │ │Notas  Desenho   │ │
-│ ← Voltar  [Cat▾] │        00:12:45          │ │  [ações][◎][⛶] │ │
-│                  │      em andamento        │ ├─────────────────┤ │
-│ Nome da tarefa   │  ▓▓▓▓▓▓░░░░ limite       │ │                 │ │
-│ descrição…       │                          │ │  editor Tiptap  │ │
-│                  │  [ ▶ Iniciar ] [ ↺ ]     │ │                 │ │
-│ ── ORGANIZAÇÃO   │                          │ │                 │ │
-│ Status  [▾]      │  ┌────────┬────────┐     │ │                 │ │
-│ Projeto [▾]      │  │ Total  │Sessões │     │ │                 │ │
-│ Contextos ●●●    │  └────────┴────────┘     │ │                 │ │
-│ Tags    [+]      │                          │ │                 │ │
-│                  │  + Adicionar tempo       │ │                 │ │
-│ ── AGENDA        │  ✎ Ajustar total         │ │                 │ │
-│ ── SUBTAREFAS    │  ⚠ Limite de tempo       │ │                 │ │
-│ ── DEPENDE DE    │                          │ │                 │ │
-│ ── HISTÓRICO     │                          │ │                 │ │
-│ [Arquivar][Del]  │                          │ └─────────────────┘ │
-└──────────────────┴──────────────────────────┴─────────────────────┘
-                                              ↑ alça de arraste 6px
+┌ Cabeçalho ───────────────────────────────────────────────────────────────┐
+│ ← Tarefas / Projeto                                                      │
+│ [Status▾] #711                          ● 02:32:10 [Pausar] [✓]  ⌨ ◧ ⋯ │
+│ Nome da tarefa                                                           │
+│ descrição                                                                │
+├ Área de trabalho ─────────────────────────────┬ Inspetor (380–420px) ────┤
+│ [Notas | Desenho]      [💾] [⟳] [Foco]        │ [Tempo|Detalhes|Relações]│
+│ editor                                        │ conteúdo da aba          │
+└───────────────────────────────────────────────┴──────────────────────────┘
 ```
 
-### `maximized` — o editor toma a tela
+A página tem `h-full` e rola na vertical (`PageContainer` com as margens do shell). De `md` para
+cima, a linha da área de trabalho ocupa o resto da altura (mínimo 520px): o editor e o inspetor
+rolam dentro dos seus cartões. Abaixo de `md`, a área de trabalho tem altura mínima de 360px (480px
+na aba Desenho) e cresce com o conteúdo.
 
-Aside e centro somem. No topo aparece a `NotesFocusBar` (48px), que devolve o essencial: voltar,
-nome da tarefa, cronômetro, iniciar/pausar, ações de nota, zen e restaurar. Sair com **Esc**.
+## Cabeçalho — `TaskHeader`
 
-### `zen` — coluna de leitura
+- **Linha 1:** botão **← Tarefas** (vai para `/`) e, com projeto, `/ Nome do projeto`, que abre o
+  projeto.
+- **Identidade:** **Status** (`Select` do antd, pequeno e preenchido, cada opção com o ícone e a
+  cor do status; Executando desabilitado quando a tarefa está bloqueada), `#id` em `Tag` mono (clique
+  ou Enter copia), etiqueta do Jira com tipo · chave · status Jira (só task do Jira), "Arquivada"
+  (só arquivada), o **nome** (`Input` sem borda, 22px/600; grava ao sair do campo ou com Enter; vazio volta
+  ao nome anterior) e a **descrição** (`TextArea` sem borda, 1 a 4 linhas, grava ao sair).
+- **Bloco do timer:** ponto ao vivo quando roda, cronômetro em Geist Mono tabular de 30px (24px
+  abaixo de `md`) — `colorTextTertiary` parado, `colorText` rodando, `colorError` a partir do
+  limite —, **Iniciar/Pausar** (primário; o texto aparece a partir de `lg`; desabilitado com o
+  tooltip "Bloqueada: depende de #id" quando há dependência aberta) e **Finalizar** (para o timer e
+  muda o status para Finalizada).
+- **Ações:** **Terminal** (`TerminalTaskButton`: sem diretório de trabalho, próprio ou herdado do
+  projeto, abre o seletor de pasta e depois o terminal; com diretório, alterna o painel de terminal
+  na sessão desta task; fica primário quando o painel mostra esta task; ver
+  [16-terminal.md](16-terminal.md)), **Campos do Jira** (só task do Jira, abre o `JiraFieldsSheet`),
+  **Painel** (de `md` para cima) e o menu **⋯**: Copiar `#id`, Zerar tempo… (confirmação), Arquivar
+  (fica na tela; o menu passa a oferecer Desarquivar) ou Desarquivar, Excluir tarefa… (confirmação que cita notas, desenho, Notion e
+  Google).
 
-Só o editor, centralizado numa coluna de `zenWidth` (padrão 640px, ou a largura que a coluna central
-tinha ao entrar no modo), com `pt-6 pb-20`. Um botão circular escuro flutua em `bottom-20 right-8`
-para restaurar. Sair com **Esc**.
+### Barra de propriedades — `TaskPropertyBar`
 
-> **Detalhe importante:** no modo zen a limitação de largura só se aplica à aba **Notas**. A aba
-> **Desenho** ocupa a tela inteira — o Excalidraw quer o oposto de uma coluna de leitura.
+As pílulas moram em `tasks/propertyPills.tsx`, com `value`/`onChange`, e o modal Nova tarefa usa as
+mesmas. A barra só liga cada uma ao `update` da task (e resolve as tags por id).
 
-O `Esc` é ignorado enquanto houver um popup de sugestão aberto (`[data-suggestion-popup]`), para não
-fechar o modo quando o usuário só queria fechar o menu de barra ou de menção.
+Pílulas de 28px (classe `.ct-prop` em `main.css`, sobre as variáveis do antd; vazia fica tracejada e
+apagada) que abrem um `Popover` de edição (`role="dialog"`, foco no primeiro controle, `aria-expanded`
+na pílula). Cada mudança grava na hora; campos de texto gravam ao sair ou com Enter.
 
----
-
-## Painel esquerdo — dados da tarefa
-
-`<aside class="w-[480px] shrink-0 overflow-y-auto bg-white border-r">`. Largura fixa: não
-redimensiona.
-
-### Faixa de acento
-
-`h-[3px]` no topo, colorida pela **categoria** da tarefa:
-
-| Categoria | Acento | Botão Iniciar | Glow do cronômetro |
-| --- | --- | --- | --- |
-| urgente | `#ef4444` | `#dc2626` | `rgba(239,68,68,.25)` |
-| prioridade | `#f59e0b` | `#d97706` | `rgba(245,158,11,.25)` |
-| normal | `#3b82f6` | `#2563eb` | `rgba(59,130,246,.25)` |
-| time_leak | `#a855f7` | `#9333ea` | `rgba(168,85,247,.25)` |
-
-Essa paleta **diverge** da usada nos badges de categoria (onde time leak é amarelo, não roxo).
-
-### Cabeçalho
-
-`← Voltar` (usa `navigate(-1)`, não uma rota fixa) e, à direita, o `TaskIdBadge` (`#id`, clique
-copia o número) seguido do `CategorySelect` reduzido a 90% (`scale-90 origin-right`).
-
-### Identidade
-
-- **Nome** — `input` sem moldura, `text-lg font-bold`, com borda inferior que aparece no hover e
-  escurece no foco. Salva no `blur`.
-- **Descrição** — `textarea` de 2 linhas, transparente, `text-sm text-slate-500`. Salva no `blur`.
-
-Ambos são "campos invisíveis" — o usuário só descobre que são editáveis ao passar o mouse.
-
-### Seções
-
-Cada uma abre com um `SectionHeader`: ícone 14px cinza + rótulo em
-`text-xs font-semibold uppercase tracking-widest text-slate-400` + linha divisória que preenche o
-resto da largura.
-
-#### ── ORGANIZAÇÃO (`FolderKanban`)
-
-Grade `[90px_1fr]` — rótulo cinza à esquerda, controle à direita.
-
-| Rótulo | Controle | Salvamento |
+| Pílula | Aparece | Edição |
 | --- | --- | --- |
-| Status | `StatusSelect` (180px, `bg-slate-100`) | imediato + toast "Status alterado" |
-| Jira | `JiraTaskControls` com tipo e chave da issue, sem o botão de campos (só em task do Jira; ver `01-lista-de-tarefas.md`) | transição direto no Jira |
-| Pai no Jira | chave + resumo da issue pai (épico/história); clique abre a issue pai no navegador. Só quando a issue tem pai | — |
-| Projeto | `SearchableSelect` + link **"Abrir projeto →"** abaixo quando há projeto | imediato + toast |
-| Contextos | pílulas alternáveis (emoji + nome), coloridas pela cor do contexto quando ativas | imediato |
-| Tags | `TagInput` | imediato |
+| Aguardando (`Hourglass`) | primeira, com status Aguardando ou texto salvo | campo de até 120 caracteres; grava `waiting_for` ao sair ou com Enter (vazio limpa). Com texto: "Aguardando: Revisor externo" na cor de Aguardando; vazia: "Aguardando quem?" |
+| Categoria | sempre | os quatro `CategoryChip` (Urgente, Prioridade, Normal, Time leak); Normal aparece como texto |
+| Projeto | sempre | `Select` com busca (ativos, someday e o atual, mesmo concluído ou arquivado, para não perder o vínculo) + "Abrir projeto →" |
+| Contextos (`MapPin` quando vazia) | sempre | `CheckableTag` por contexto; a pílula mostra dois e "+N"; sem contextos, `Empty` com o link "Criar em Contextos e tags" |
+| Prazo (`Flag`) | sempre | data + hora (`DatePicker`/`TimePicker`), "Remover prazo"; vermelha se vencido, âmbar se hoje |
+| Energia | sempre | três botões com `EnergyMeter`; clicar no ativo limpa |
+| Programado (`CalendarClock`) | com valor, ou por "+ Propriedade" | data + início/fim (`TimePicker.RangePicker`; o fim só libera com início, e fim antes do início avisa e não grava), "Remover agendamento" |
+| Recorrência (`Repeat`) | idem | `Select` (Não repete, diária, semanal, mensal; regra fora disso aparece como Personalizada) |
+| Tags (`Tags`) | idem | `Select` em modo tags; nome novo vira tag (`tag:getOrCreate`) |
+| Link externo (`Link`) | idem | URL `http(s)` gravada ao sair ou com Enter (inválida avisa e volta), botão abre no navegador por `appOpenExternal`; em task do Jira, avisa que é o link da issue |
 
-A lista de projetos do select inclui os `active`, os `someday` **e** o projeto atual, mesmo que
-concluído ou arquivado — assim uma tarefa vinculada a projeto arquivado não perde o vínculo ao ser
-editada.
-
-#### ── AGENDA (`CalendarDays`)
-
-- **Programado para** e **Prazo** — dois `input[type=date]` de 32px lado a lado, `bg-slate-50`.
-  Com a data preenchida, aparecem campos de hora (`TimeInput`, `input[type=time]` com `×` para
-  limpar): **Início** e, depois dele, **Fim** sob "Programado para"; **Hora** sob "Prazo". Fim ≤
-  início é descartado pelo main (`normalizeTaskTimes`) e o campo volta vazio.
-- **Recorrência** — `RecurrenceSelect`.
-- **Nível de energia** — três botões de largura igual (`flex-1 h-8`) com emoji + rótulo. O ativo
-  ganha fundo e borda coloridos (esmeralda / âmbar / slate). Clicar no ativo desmarca.
-- **Link externo** — `ExternalLinkField`: campo de URL `http(s)` salvo ao sair do campo ou com Enter
-  (valor inválido é descartado com aviso). Quando há link válido, um botão abre no navegador via
-  `appOpenExternal`, que revalida o esquema no main. Tasks importadas do Jira trazem o link da issue. Nelas, as **Notas** espelham a descrição da
-  issue: a importação as substitui quando a descrição muda no Jira, e salvar as notas envia a
-  descrição de volta (~2s depois). O editor aberto não recarrega sozinho se uma importação trouxer
-  descrição nova.
-- **Diretório de trabalho** — `WorkingDirField`: mostra o fim do caminho (`…/pasta/repo`, completo
-  no `title`) e um botão **Escolher/Alterar** que abre o seletor de pasta do sistema
-  (`terminal:pickDirectory`, grava na hora). Com diretório definido aparece **Comando ao abrir o
-  terminal**, gravado ao sair do campo. Os dois campos são locais: não vão ao Notion nem ao Jira.
-- **Google Calendar** — `GoogleCalendarTaskToggle`, só renderizado com o Google conectado: switch
-  que grava `gcal_sync` e sincroniza na hora (desligar apaga os eventos da task), mais um botão
-  `RefreshCw` de ressincronizar quando ligado.
-
-#### ── SUBTAREFAS (`ListChecks`)
-
-Renderizada **apenas se a tarefa não for ela mesma uma subtarefa** (`!task.parent_task_id`) — não há
-hierarquia de três níveis.
-
-`SubtaskList` mostra:
-- aviso laranja "Subtarefas bloqueadas — conclua as dependências da tarefa pai primeiro", quando a
-  tarefa-pai está bloqueada;
-- contador `{feitas}/{total} concluídas` + porcentagem + `Progress` de 6px;
-- cada subtarefa: checkbox (desabilitado se a pai está bloqueada) + nome clicável que **navega para a
-  subtarefa** (com sublinhado no hover);
-- botão "Nova subtarefa" que vira campo inline (Enter confirma, Esc cancela) com botões Adicionar /
-  Cancelar.
-
-Marcar o checkbox alterna entre `finalizada` e `inbox` — não devolve ao status anterior.
-
-#### ── DEPENDE DE (`Lock`)
-
-`DependencySelector`:
-- cada dependência é uma linha colorida — **verde** com "✓ concluída" se já finalizada, **laranja**
-  caso contrário — com cadeado, nome e "×" para remover;
-- botão "Adicionar dependência" abre um seletor embutido com campo de busca e até 10 resultados,
-  mostrando o status cru (`inbox`, `proximas`…) à direita de cada opção.
-
-> Esse seletor carrega **todas** as tarefas via `window.api.listTasks()` e filtra no cliente — é o
-> único lugar do app que ainda faz isso.
-
-#### ── HISTÓRICO DE SESSÕES (`Activity`)
-
-Só aparece se houver sessões. `TimeEntryList` lista as sessões **encerradas** numa área rolável de
-250px: data/hora de início à esquerda, `+ HH:MM:SS` em mono à direita.
-
-### Ações finais
-
-Dois botões de largura igual, presos ao fim do painel (`mt-auto`): **Arquivar** (contorno cinza) e
-**Deletar** (contorno e texto vermelhos, abre `DeleteConfirmDialog`). Ambos navegam para `/` ao
-concluir. Se a tarefa já está arquivada, o primeiro vira **Desarquivar** (`Undo2`): devolve a tarefa
-às listagens e fica na tela.
-
----
-
-## Coluna central — o timer herói
-
-`flex-1`, fundo `bg-slate-50`, conteúdo centralizado numa coluna de `max-w-sm`.
-
-### Issues filhas no Jira
-
-Seção da sidebar, antes de **Subtarefas**, em task do Jira que não é subtarefa
-(`JiraChildIssues`). Ao abrir, busca no Jira as issues com `parent = <chave>` (`jira:getChildren`)
-— **todas**, inclusive as de outras pessoas, que a importação não traz. Cada linha: tipo, chave,
-resumo e status Jira. Clique abre a task no CrafyTask se a issue já foi importada; senão abre a
-issue no navegador (ícone `ExternalLink`). Sem filhas, a seção some. Se o Jira falhar, mostra um
-aviso âmbar e só as filhas já importadas (`jira_parent_key` local).
-
-### Botão "Notas"
-
-Canto superior direito. Alterna o painel direito. Ativo: `bg-slate-900 text-white`.
-
-Em task do Jira, à esquerda dele fica o botão **Campos do Jira** (`SlidersHorizontal`, azul forte
-`bg-blue-700`), que abre o `JiraFieldsSheet`. Ele substitui, nesta tela, o ícone pequeno do
-`JiraTaskControls` da sidebar, que ficava apertado e às vezes oculto.
-
-À direita de **Notas** fica o botão **Terminal** (`TerminalTaskButton`, laranja). Sem diretório de
-trabalho, abre o seletor de pasta e, escolhida a pasta, o terminal. Com diretório, alterna o painel
-de terminal (rodapé da janela, `TerminalPanel` em `App.tsx`) na sessão desta task, criando uma se
-não houver. Preenchido quando o painel está mostrando esta task. Ver
-[16-terminal.md](16-terminal.md).
+Fim ≤ início do agendamento é descartado pelo main (`normalizeTaskTimes`). Tasks importadas do Jira
+trazem o link da issue, e nelas as **Notas** espelham a descrição da issue: a importação as
+substitui quando a descrição muda no Jira, e salvar as notas envia a descrição de volta (~2s
+depois). O editor aberto não recarrega sozinho se uma importação trouxer descrição nova.
 
 ### Aviso de bloqueio
 
-Se a tarefa está bloqueada: faixa laranja com cadeado e "Bloqueada por dependências".
+Com dependência aberta, um `Alert` de aviso (`Lock`) diz "Bloqueada por dependências: nome, nome"
+(os nomes vêm de `getDependencies`, filtrados pelos ids de `blocked_by`) e oferece **Ver
+dependências**, que abre a aba Relações (no inspetor lateral, no `Drawer` ou nas abas do estreito).
 
-### Cronômetro
+O cronômetro gigante da antiga coluna central, a faixa de acento colorida pela categoria e os botões
+Arquivar/Deletar no fim do painel saíram. Ao atingir o limite, o app ainda dispara a notificação do
+sistema uma única vez (até zerar o tempo ou trocar de tarefa).
 
-O elemento visualmente dominante do app.
+## Área de trabalho — `TaskWorkspace`
 
-- `font-mono font-bold tabular-nums tracking-tighter`
-- **`text-8xl`** abaixo de 1h, **`text-7xl`** a partir de 1h (para não estourar a coluna)
-- Cor: `text-red-500` se atingiu o limite; `text-slate-900` se rodando; `text-slate-300` se parado
-- Quando rodando, ganha `textShadow` duplo com o glow da categoria
+Cartão com as abas **Notas | Desenho**, as ações da nota (só na aba Notas) e o botão **Modo foco**
+(`Expand`, "Modo foco (Esc sai)").
 
-Abaixo, uma faixa de 28px alterna entre:
-- rodando: ponto esmeralda pulsante + "em andamento";
-- parado: "pronto para iniciar" em `text-xs uppercase tracking-widest`.
+As duas ações (`NotesActions`) são botões `text` com tooltip, também na barra do modo foco:
 
-### Barra de progresso do limite
+- **Salvar em arquivo local** (`Save`) — na primeira vez abre o seletor de arquivo e grava a nota
+  como Markdown com frontmatter YAML + imagens copiadas; depois cada auto-save (de nota ou desenho)
+  reexporta. Com arquivo escolhido, o nome aparece em mono ao lado do ícone a partir de `lg`, e o
+  tooltip mostra o caminho; clicar de novo escolhe outro arquivo.
+- **Salvar e sincronizar com o Notion** (`RefreshCw`, gira enquanto sincroniza) — força o save e
+  empurra a nota para o Notion. Além disso, a cada **60
+  segundos** a página sincroniza sozinha se houver alteração pendente e o Notion estiver configurado.
 
-Só quando há `time_limit_seconds`. Acima dela, `{porcentagem}%` à esquerda e
-`limite HH:MM:SS` à direita. A barra de 8px muda de cor: verde `#22c55e` até 80%, âmbar `#f59e0b`
-entre 80% e 100%, vermelho `#ef4444` a partir de 100%.
+### Modo foco — `FocusOverlay`
 
-Ao cruzar o limite pela primeira vez, o app dispara notificação do sistema — uma única vez, até que o
-timer seja resetado.
+Camada `position: fixed` sobre o shell inteiro (sidebar, header e barra de status somem), no
+`zIndexPopupBase` do tema. Barra de 48px: **Sair**, nome da tarefa, ponto ao vivo, cronômetro mono,
+Iniciar/Pausar, `Segmented` Notas/Desenho (rótulos a partir de `sm`), as ações da nota e o botão de
+sair (`Shrink`). As notas ficam numa coluna de leitura de 68 caracteres em 17px; o desenho usa a
+largura toda. **Esc** sai, menos com um popup de sugestão aberto (`[data-suggestion-popup]`), para
+não fechar o modo quando o usuário só queria fechar o menu de barra ou de menção.
 
-### Controles
+Ao abrir, o foco do teclado vai para a camada e o Tab fica preso nela; ao sair, volta para o botão
+Modo foco. O editor não é remontado ao entrar ou sair do foco: a camada é o próprio cartão da área de trabalho
+trocando de estilo, com o editor na mesma posição da árvore. O foco substituiu os modos
+**maximizado** e **zen** de antes, e a largura arrastável do painel de notas saiu junto.
 
-- **Iniciar** — botão largo de 52px, cor da categoria, com sombra colorida e `active:scale-[0.98]`.
-  Desabilitado (cinza `#94a3b8`) quando a tarefa está bloqueada.
-- **Pausar** — substitui Iniciar quando rodando; contorno branco de 2px, sem cor de categoria.
-- **Resetar** (`RotateCcw`) — botão quadrado ao lado, abre `AlertDialog` "Todo o tempo registrado
-  será zerado".
+## Inspetor — `TaskInspector`
 
-### Estatísticas
+Abas **Tempo** (`Timer`), **Detalhes** (`FileText`) e **Relações** (`Network`; vira um cadeado
+laranja quando a tarefa está bloqueada e mostra `feitas/total` das subtarefas em mono). Cada seção
+abre com um `SectionHeader` (`components/shell/`): rótulo 11px/600 em maiúsculas, linha até o fim e
+um número em mono à direita.
 
-Dois cartões lado a lado: **Tempo total** (o valor persistido, não o cronômetro ao vivo) e
-**Sessões** (quantidade de registros).
+### Tempo — `TaskTimePanel`
 
-### Ajustes de tempo
+- Barra do limite, só com limite: `colorSuccess` até 80%, `colorWarning` até 100%, `colorError`
+  depois; porcentagem em mono.
+- **Total** (o cronômetro ao vivo, em formato curto: `2h32`, `45 min`) e **Sessões** (quantidade),
+  em `Statistic` com valor mono. O rótulo do limite usa o mesmo formato curto.
+- **Sessões:** a em andamento no topo, com ponto ao vivo e "– agora"; as encerradas com dia,
+  início e fim e `+HH:MM:SS`. Cada encerrada tem **editar** (`Pencil`: início e fim em `HH:MM` no
+  dia da sessão, Enter ou Salvar grava, Esc ou Cancelar desiste; fim antes do início avisa) e
+  **excluir** (`Trash2`, `Popconfirm` que avisa que o tempo sai do total e o worklog do Jira é
+  apagado). O main (`timeEntry:update`/`timeEntry:delete`, regras em `timeEntryQueries.ts`) recusa
+  a sessão em andamento e ajusta `total_seconds` pela diferença.
+- **Ajustes de tempo:** Adicionar, Total e Limite, cada um com campo mono `HH:MM:SS` e botão (Enter
+  também confirma; valor fora do formato avisa e não grava). **Remover limite** grava 0.
 
-Três linhas, cada uma com rótulo pequeno + ícone, campo mono e botão:
+### Detalhes — `TaskDetailsPanel`
 
-| Rótulo | Ícone | Ação | Botão |
-| --- | --- | --- | --- |
-| Adicionar tempo | `Plus` | Soma o valor ao total (placeholder `01:30:00`) | "Adicionar", verde |
-| Ajustar total | `Edit3` | Substitui o total (pré-preenchido com o valor atual) | "Definir", cinza |
-| Limite de tempo | `AlertCircle` | Define/limpa o limite | "Salvar", cinza |
+Cada seção usa `Field` (rótulo de 92px à esquerda, controle à direita).
 
----
+- **Jira** (só task do Jira):
+  - **Issue:** o tipo (`tasks.jira_issue_type`) numa `Tag` e a chave em mono, que abre a issue no
+    navegador; o tooltip da chave diz o espaço (`tasks.jira_space`, ou o prefixo da chave antes da
+    primeira importação que o preenche).
+  - **Status Jira:** `JiraStatusSelect`, um `Select` que mostra o status atual e, ao abrir, busca as
+    transições da issue (`jira:listTransitions`) e aplica a escolhida (`jira:transition`). É
+    independente do status local: mudar um não muda o outro.
+  - **Pai:** chave + resumo da issue pai, que abre no navegador.
+  - Botão **Campos do Jira**, que abre o `JiraFieldsSheet` (o mesmo do cabeçalho): um `Drawer` do
+    antd de 380px, título "Campos do Jira · CHAVE", com Abrir no Jira e Recarregar no canto. Dentro,
+    o status Jira e os campos editáveis da issue (vindos do `editmeta`) em `Field`, um editor antd
+    por tipo (`Input`, `TextArea`, `InputNumber`, `DatePicker`, `Select` simples, múltiplo, de tags e
+    de pessoa com busca e "Atribuir a mim"); cada campo grava ao sair ou escolher; erro do Jira volta
+    por `message` e o campo retorna ao valor anterior.
+- **Google Calendar** — só com o Google conectado: `Switch` que grava `gcal_sync` e sincroniza na
+  hora (desligar apaga os eventos da task), o texto "Na agenda TickTask" / "Fora do Google
+  Calendar" e, ligado, o botão de ressincronizar (`RefreshCw`).
+- **Ambiente** — Diretório: o fim do caminho em mono (`…/pasta/repo`, completo no tooltip), etiqueta
+  "do projeto" quando herdado, **Escolher/Alterar** (seletor de pasta do sistema,
+  `terminal:pickDirectory`, grava na hora) e, com diretório próprio num projeto que também tem um,
+  o botão de voltar a herdar (`Undo2`). Com diretório, **Comando ao abrir o terminal** (mono, grava
+  ao sair ou com Enter). **Abrir terminal** mostra o painel de terminal na sessão desta task (sem
+  diretório, pede a pasta antes; se o painel já mostra esta task, não fecha). Erros dessas ações
+  aparecem como aviso. Diretório e comando são locais: não vão ao Notion nem ao Jira.
 
-## Painel direito — notas e desenho
+### Relações — `TaskRelationsPanel`
 
-Só existe com `notesOpen`. Em modo normal é `shrink-0` com largura controlada; nos outros modos vira
-`flex-1`.
+**Subtarefas** — só quando a tarefa não é ela mesma uma subtarefa (`!task.parent_task_id`): não há
+hierarquia de três níveis. O `SectionHeader` mostra `feitas/total`.
 
-### Redimensionamento
+- `Alert` "Subtarefas bloqueadas: conclua as dependências da tarefa pai primeiro." quando a pai está
+  bloqueada;
+- `Progress` pequeno com a porcentagem;
+- cada subtarefa: `Checkbox` (desabilitado para as abertas se a pai está bloqueada) + nome que
+  **navega para a subtarefa** (riscado quando finalizada);
+- botão tracejado **Nova subtarefa**, que vira campo inline (Enter confirma, Esc ou Cancelar
+  descartam o texto) com Adicionar (desabilitado com o nome vazio) / Cancelar.
 
-Alça invisível de 6px na borda esquerda (`cursor-col-resize`, escurece no hover). Durante o arraste a
-página inteira ganha `select-none cursor-col-resize`. Regras (`notesLayout.ts`):
+Marcar o checkbox alterna entre `finalizada` e `inbox` — não devolve ao status anterior.
 
-- mínimo **360px** para o painel;
-- mínimo **700px** reservado para o resto da tela;
-- padrão **550px**, persistido em `ticktask.notesWidth`;
-- a gravação em `localStorage` só acontece ao **soltar** o mouse (gravar a cada `mousemove` travava o
-  arraste);
-- redimensionar a janela re-aplica o clamp.
+**Depende de** — cada dependência é uma linha com fundo da cor de Executando e "✓ concluída" quando
+já não bloqueia, ou da cor de Prioridade e "pendente" quando bloqueia (vem de `blocked_by`), com
+cadeado, nome e "×" para remover. Abaixo, um `Select` "Adicionar dependência…" que **busca no main**
+(`listTasks` com `search` e `limit`, 250ms de debounce) e mostra até 10 tarefas com o `StatusChip` à
+direita.
 
-### Cabeçalho do painel (só no modo normal)
+**Issues filhas no Jira** — em task do Jira que não é subtarefa. Ao abrir, busca no Jira as issues
+com `parent = <chave>` (`jira:getChildren`) — **todas**, inclusive as de outras pessoas, que a
+importação não traz. Cada linha: tipo numa `Tag`, chave em mono, resumo e status Jira. A chave abre a task no
+CrafyTask se a issue já foi importada; senão abre a issue no navegador (ícone `ExternalLink`). Sem
+filhas, a seção some. Se o Jira falhar, mostra um aviso e só as filhas já importadas
+(`jira_parent_key` local).
 
-- **Abas** à esquerda: **NOTAS** | **DESENHO**, como texto
-  `text-xs font-semibold uppercase tracking-widest` — ativo em `text-slate-900`, inativo em
-  `text-slate-400`. Sem sublinhado, sem cápsula: é o padrão de aba mais discreto do app.
-- **Ações** à direita (só na aba Notas):
-  - **Salvar local** (`Save`) — na primeira vez abre o seletor de arquivo e grava a nota como
-    Markdown com frontmatter YAML + imagens copiadas; depois o botão exibe o nome do arquivo
-    (truncado em 140px) e cada auto-save reexporta;
-  - **Salvar e sincronizar** (`RefreshCw`, verde) — força o save e empurra a nota para o Notion;
-    o ícone gira durante a operação.
-- **Zen** (`Focus`) e **Maximizar** (`Maximize2`) — dois botões-ícone de 32px.
+## Notas e desenho
+
+O editor de notas, o de desenho e cada terminal ficam dentro de um `RegionBoundary` próprio
+("editor de notas", "editor de desenho", "terminal"): se um quebra, só aquela área mostra "Esta área
+falhou" com Tentar de novo, e o resto da tela continua. As cores do conteúdo do Tiptap e dos popups
+dele (classes `.ct-popup`, `.ct-popup-item` e `.ct-tool` em `main.css`) vêm das variáveis CSS do
+antd; o menu `/` e as menções são pendurados dentro do shell (`[data-popup-root]`) para herdá-las. O
+Excalidraw recebe o tema atual (`theme`).
 
 ### Editor de notas (Tiptap / ProseMirror)
 
@@ -323,25 +246,26 @@ um `Loader2` girando ocupa a área.
 - A biblioteca de formas prontas do Excalidraw é escondida por CSS (`.sidebar-trigger`) por não fazer
   parte do fluxo do app.
 
-### Persistência do conteúdo entre aberturas
+### Persistência do conteúdo entre remontagens
 
-O editor grava direto pelo IPC, sem passar pelo hook de detalhe da tarefa. Para que fechar e reabrir
-o painel não restaure um conteúdo velho, a página guarda o último JSON salvo em estado local
-(`savedNotes` / `savedDrawing`) e o usa na remontagem. Trocar de tarefa limpa esses caches e volta
-para a aba **Notas**.
+O editor grava direto pelo IPC, sem passar pelo hook de detalhe da tarefa. Para que uma remontagem
+(trocar entre Notas e Desenho, ou cruzar a largura `md`, que move a área de trabalho para dentro das
+abas) não restaure um conteúdo velho, a página guarda o último JSON salvo em estado local
+(`savedNotes` / `savedDrawing`) e o usa na remontagem. Trocar de tarefa limpa esses caches, sai do
+modo foco e volta para a aba **Notas**.
 
 ## Estados especiais
 
 | Situação | O que aparece |
 | --- | --- |
-| Carregando | "carregando..." em `font-mono text-sm text-slate-400`, centralizado |
-| Tarefa inexistente | "Tarefa não encontrada" + botão "Voltar" |
-| Tarefa bloqueada | Faixa laranja no centro + botão Iniciar cinza e desabilitado |
-| Limite atingido | Cronômetro vermelho + barra vermelha + notificação do sistema (uma vez) |
+| Carregando (primeira vez ou outra tarefa) | `Spin` centralizado. Recarregar a mesma tarefa depois de uma edição não troca a tela pelo spinner |
+| Tarefa inexistente | `Empty` "Tarefa não encontrada" + botão "Voltar para Tarefas" |
+| Tarefa bloqueada | Iniciar desabilitado com "Bloqueada: depende de #id"; cadeado na aba Relações |
+| Limite atingido | Cronômetro e barra em `colorError` + notificação do sistema (uma vez) |
+| Tarefa arquivada | Só leitura (`task.is_archived`). Acima do cabeçalho, `ArchivedTaskBanner`: `Alert` informativo "Arquivada em DD/MM/AAAA · só leitura", a frase do que fica travado e **Desarquivar**. Nome e descrição `readOnly`; status, Iniciar, Finalizar, terminal e Campos do Jira desabilitados (Pausar continua se o timer estava rodando); pílulas tracejadas, em cinza, sem popover e sem "+ Propriedade"; "Zerar tempo" desabilitado no `⋯`; Tiptap com `editable: false` e sem barra/alça; Excalidraw em `viewModeEnabled` (não grava); nada regrava as notas (clicar em menção só navega, exportar não salva antes); painéis do inspetor sob `ConfigProvider componentDisabled` (links continuam abrindo). Voltar, abas, modo foco, exportar as notas e o `⋯` (Desarquivar, Copiar, Excluir) continuam. Desarquivar relê a tarefa e libera tudo |
 
 ## Nota de arquitetura visível na UI
 
-A página usa `h-full`, nunca `h-screen`. Com `100vh` sobrariam 56px além do `<main>`, e um
-`scrollIntoView` (o Excalidraw dá foco ao canvas ao selecionar um elemento) rolaria esse excedente,
-escondendo a barra do modo foco atrás do TitleBar sem volta. Qualquer redesenho da casca precisa
-manter essa contenção de altura.
+A página usa `h-full`, nunca `h-screen`: o `Content` do `AppShell` já desconta o header. Com
+`100vh`, um `scrollIntoView` (o Excalidraw dá foco ao canvas ao selecionar um elemento) rolaria o
+excesso e esconderia parte da tela atrás do header. No modo foco a camada é `fixed` e não rola.

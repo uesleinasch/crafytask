@@ -2,9 +2,11 @@ import Database from 'better-sqlite3'
 import { app } from 'electron'
 import path from 'path'
 import { mergeTaskTimes, normalizeTaskTimes, type TaskTimeFields } from '@shared/taskTime'
+import { normalizeWaitingFor } from '@shared/waitingFor'
 import type {
   Task,
   TimeEntry,
+  TimeEntrySpan,
   CreateTaskInput,
   UpdateTaskInput,
   TaskStatus,
@@ -14,6 +16,12 @@ import type {
   UpdateProjectInput,
   ProjectStatus,
   WeeklyReview,
+  ReviewCounterKey,
+  ReviewPastWeek,
+  PeriodStats,
+  StatsPeriod,
+  ReviewStepKey,
+  ReviewStepStatus,
   ReviewHealthIndicators,
   TaskDependency,
   Area,
@@ -26,15 +34,20 @@ import type {
   CreateTimeBlockInput,
   UpdateTimeBlockInput,
   GtdMetrics,
-  EnergyStats,
-  EnergyLevel,
   TaskListFilters,
   UpdateTagInput,
   NotesOwner
 } from '@shared/types'
 import { DEFAULT_CONTEXTS } from '@shared/types'
+import { toStatusCounts, type TaskStatusCounts } from '@shared/taskStatusCounts'
 import { UNTITLED_PAGE } from '@shared/notebookTree'
-import { buildTaskCountQuery, buildTaskListQuery } from './taskQuery'
+import {
+  buildTaskCountQuery,
+  buildTaskIdsQuery,
+  buildTaskTotalsQuery,
+  buildTaskListQuery,
+  buildTaskStatusCountQuery
+} from './taskQuery'
 import type { LocalJiraChild } from './jiraPlan'
 import {
   listTagsWithUsage as listTagsWithUsageQuery,
@@ -44,7 +57,53 @@ import {
   type SqliteLike,
   type TagUsageRow
 } from './tagQueries'
+import {
+  assertContextNameFree,
+  listContextsWithUsage as listContextsWithUsageQuery,
+  listTaskIdsWithContext as listTaskIdsWithContextQuery,
+  mergeContexts as mergeContextsQuery,
+  type ContextUsageRow
+} from './contextQueries'
 import { ensureNotebookSchema } from './notebookQueries'
+import {
+  ensurePrefsSchema,
+  readAppPrefs,
+  readWorkflowPrefs,
+  writeAppPrefs,
+  writeWorkflowPrefs
+} from './workflowPrefsStore'
+import type { AppPrefs } from '@shared/appPrefs'
+import type { WorkflowPrefs } from '@shared/workflowPrefs'
+import { getProjectQuery, listProjectsQuery } from './projectQueries'
+import { ensureStatusChangedAt, healthIndicatorsQuery } from './healthQueries'
+import { periodStatsQuery } from './statsQueries'
+import {
+  bumpReviewCounter,
+  completeReview,
+  createReview,
+  discardReview,
+  ensureReviewSchema,
+  getReview,
+  lastReview,
+  listReviews,
+  reviewPastWeek,
+  setReviewCurrentStep,
+  setReviewStep,
+  updateReviewNotes
+} from './reviewQueries'
+import {
+  TIME_BLOCK_SELECT,
+  calendarTasksQuery,
+  listTimeBlocksInRange,
+  unscheduledTasksQuery,
+  type UnscheduledFilters
+} from './calendarQueries'
+import {
+  deleteTimeEntry as deleteTimeEntryQuery,
+  listTimeEntriesInRange,
+  updateTimeEntry as updateTimeEntryQuery,
+  type TimeEntryChange
+} from './timeEntryQueries'
 
 let db: Database.Database
 
@@ -288,6 +347,20 @@ export function initDatabase(): void {
     /* já existe */
   }
 
+  try {
+    db.exec('ALTER TABLE projects ADD COLUMN working_dir TEXT')
+  } catch {
+    /* já existe */
+  }
+
+  try {
+    db.exec(
+      'ALTER TABLE projects ADD COLUMN next_task_id INTEGER REFERENCES tasks(id) ON DELETE SET NULL'
+    )
+  } catch {
+    /* já existe */
+  }
+
   // ===================== FASE 4.2: Energy Tracking =====================
   try {
     db.exec(
@@ -332,7 +405,8 @@ export function initDatabase(): void {
     'jira_parent_key',
     'jira_parent_summary',
     'working_dir',
-    'start_command'
+    'start_command',
+    'waiting_for'
   ]) {
     try {
       db.exec(`ALTER TABLE tasks ADD COLUMN ${column} TEXT`)
@@ -342,6 +416,13 @@ export function initDatabase(): void {
   }
 
   db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_tasks_jira_key ON tasks(jira_key)')
+
+  try {
+    db.exec('ALTER TABLE tasks ADD COLUMN archived_at DATETIME')
+    db.exec('UPDATE tasks SET archived_at = updated_at WHERE is_archived = 1')
+  } catch {
+    /* já existe */
+  }
 
   try {
     db.exec('ALTER TABLE time_entries ADD COLUMN jira_worklog_id TEXT')
@@ -380,6 +461,9 @@ export function initDatabase(): void {
   `)
 
   ensureNotebookSchema(tagDb())
+  ensureStatusChangedAt(tagDb())
+  ensureReviewSchema(tagDb())
+  ensurePrefsSchema(tagDb())
 }
 
 // ===================== MIGRAÇÃO: someday status =====================
@@ -514,6 +598,22 @@ function tagDb(): SqliteLike {
   return db as unknown as SqliteLike
 }
 
+export function getWorkflowPrefs(): WorkflowPrefs {
+  return readWorkflowPrefs(tagDb())
+}
+
+export function setWorkflowPrefs(patch: unknown): WorkflowPrefs {
+  return writeWorkflowPrefs(tagDb(), patch)
+}
+
+export function getAppPrefs(): AppPrefs {
+  return readAppPrefs(tagDb())
+}
+
+export function setAppPrefs(patch: Partial<AppPrefs>): AppPrefs {
+  return writeAppPrefs(tagDb(), patch)
+}
+
 export function notebookDb(): SqliteLike {
   return tagDb()
 }
@@ -581,6 +681,7 @@ export interface ContextRow {
 }
 
 export function createContext(name: string, icon?: string, color?: string): ContextRow {
+  assertContextNameFree(tagDb(), name)
   const stmt = db.prepare('INSERT INTO contexts (name, icon, color) VALUES (?, ?, ?)')
   const result = stmt.run(name.trim(), icon || '📋', color || '#6366f1')
   return getContext(result.lastInsertRowid as number)!
@@ -604,6 +705,7 @@ export function updateContext(
   const values: unknown[] = []
 
   if (data.name !== undefined) {
+    assertContextNameFree(tagDb(), data.name, id)
     updates.push('name = ?')
     values.push(data.name.trim())
   }
@@ -621,6 +723,18 @@ export function updateContext(
     const stmt = db.prepare(`UPDATE contexts SET ${updates.join(', ')} WHERE id = ?`)
     stmt.run(...values)
   }
+}
+
+export function listContextsWithUsage(): ContextUsageRow[] {
+  return listContextsWithUsageQuery(tagDb())
+}
+
+export function listTaskIdsWithContext(contextId: number): number[] {
+  return listTaskIdsWithContextQuery(tagDb(), contextId)
+}
+
+export function mergeContexts(sourceId: number, targetId: number): number[] {
+  return mergeContextsQuery(tagDb(), sourceId, targetId)
 }
 
 export function deleteContext(id: number): void {
@@ -657,8 +771,8 @@ export function getTaskContexts(taskId: number): ContextRow[] {
 
 export function createProject(data: CreateProjectInput): Project {
   const stmt = db.prepare(`
-    INSERT INTO projects (name, description, outcome, status, color, due_date, area_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO projects (name, description, outcome, status, color, due_date, area_id, working_dir)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `)
   const result = stmt.run(
     data.name,
@@ -667,58 +781,18 @@ export function createProject(data: CreateProjectInput): Project {
     data.status || 'active',
     data.color || '#6366f1',
     data.due_date || null,
-    data.area_id || null
+    data.area_id || null,
+    data.working_dir || null
   )
   return getProject(result.lastInsertRowid as number)!
 }
 
 export function getProject(id: number): Project | undefined {
-  const stmt = db.prepare(`
-    SELECT p.*, a.name as area_name FROM projects p
-    LEFT JOIN areas a ON a.id = p.area_id
-    WHERE p.id = ?
-  `)
-  const row = stmt.get(id) as Project | undefined
-  if (!row) return undefined
-  return enrichProject(row)
+  return getProjectQuery(tagDb(), id)
 }
 
 export function listProjects(status?: ProjectStatus): Project[] {
-  if (status) {
-    const stmt = db.prepare(`
-      SELECT p.*, a.name as area_name FROM projects p
-      LEFT JOIN areas a ON a.id = p.area_id
-      WHERE p.status = ? ORDER BY p.updated_at DESC
-    `)
-    return (stmt.all(status) as Project[]).map(enrichProject)
-  }
-  const stmt = db.prepare(`
-    SELECT p.*, a.name as area_name FROM projects p
-    LEFT JOIN areas a ON a.id = p.area_id
-    ORDER BY p.updated_at DESC
-  `)
-  return (stmt.all() as Project[]).map(enrichProject)
-}
-
-function enrichProject(project: Project): Project {
-  const taskCountStmt = db.prepare('SELECT COUNT(*) as count FROM tasks WHERE project_id = ?')
-  const completedCountStmt = db.prepare(
-    "SELECT COUNT(*) as count FROM tasks WHERE project_id = ? AND status = 'finalizada'"
-  )
-  const nextActionStmt = db.prepare(
-    "SELECT name FROM tasks WHERE project_id = ? AND status = 'proximas' ORDER BY updated_at DESC LIMIT 1"
-  )
-
-  const taskCount = (taskCountStmt.get(project.id) as { count: number }).count
-  const completedCount = (completedCountStmt.get(project.id) as { count: number }).count
-  const nextAction = nextActionStmt.get(project.id) as { name: string } | undefined
-
-  return {
-    ...project,
-    task_count: taskCount,
-    completed_task_count: completedCount,
-    next_action: nextAction?.name
-  }
+  return listProjectsQuery(tagDb(), status)
 }
 
 export function updateProject(id: number, data: UpdateProjectInput): void {
@@ -752,6 +826,14 @@ export function updateProject(id: number, data: UpdateProjectInput): void {
   if (data.area_id !== undefined) {
     updates.push('area_id = ?')
     values.push(data.area_id)
+  }
+  if (data.working_dir !== undefined) {
+    updates.push('working_dir = ?')
+    values.push(data.working_dir || null)
+  }
+  if (data.next_task_id !== undefined) {
+    updates.push('next_task_id = ?')
+    values.push(data.next_task_id)
   }
 
   if (updates.length > 0) {
@@ -787,8 +869,9 @@ export function createTask(data: CreateTaskInput): Task {
     const stmt = db.prepare(`
       INSERT INTO tasks (name, description, time_limit_seconds, category, project_id,
                          scheduled_date, due_date, recurrence_rule, parent_task_id, recurrence_source_id,
-                         energy_level, gcal_sync, scheduled_time, scheduled_end_time, due_time, external_url)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                         energy_level, gcal_sync, scheduled_time, scheduled_end_time, due_time, external_url,
+                         waiting_for)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
     const result = stmt.run(
       data.name,
@@ -806,7 +889,8 @@ export function createTask(data: CreateTaskInput): Task {
       times.scheduled_time,
       times.scheduled_end_time,
       times.due_time,
-      data.external_url || null
+      data.external_url || null,
+      normalizeWaitingFor(data.waiting_for)
     )
     const taskId = result.lastInsertRowid as number
 
@@ -848,7 +932,7 @@ const TASK_LIST_COLUMNS = `
   t.recurrence_rule, t.parent_task_id, t.recurrence_source_id, t.day_order,
   t.energy_level, t.scheduled_time, t.scheduled_end_time, t.due_time,
   t.external_url, t.jira_key, t.jira_status, t.jira_space, t.jira_issue_type, t.jira_issue_kind,
-  t.jira_parent_key, t.jira_parent_summary,
+  t.jira_parent_key, t.jira_parent_summary, t.waiting_for, t.archived_at, t.status_changed_at,
   p.name as project_name, p.color as project_color
 `
 
@@ -912,20 +996,23 @@ function enrichTasks(rows: (Task & { project_name?: string })[]): Task[] {
     subtaskStats.set(stat.owner_task_id, { total: stat.total, completed: stat.completed })
   }
 
-  const blockedIds = new Set(
-    (
-      db
-        .prepare(
-          `
-    SELECT DISTINCT d.task_id as owner_task_id
+  const blockedBy = new Map<number, number[]>()
+  const blockerRows = db
+    .prepare(
+      `
+    SELECT d.task_id as owner_task_id, d.depends_on_task_id as blocker_id
     FROM task_dependencies d
     JOIN tasks dep ON dep.id = d.depends_on_task_id
     WHERE d.task_id IN (${placeholders}) AND dep.status != 'finalizada'
+    ORDER BY d.depends_on_task_id ASC
   `
-        )
-        .all(...ids) as { owner_task_id: number }[]
-    ).map((row) => row.owner_task_id)
-  )
+    )
+    .all(...ids) as { owner_task_id: number; blocker_id: number }[]
+  for (const { owner_task_id, blocker_id } of blockerRows) {
+    const list = blockedBy.get(owner_task_id)
+    if (list) list.push(blocker_id)
+    else blockedBy.set(owner_task_id, [blocker_id])
+  }
 
   return rows.map((row) => {
     const stats = subtaskStats.get(row.id)
@@ -938,7 +1025,8 @@ function enrichTasks(rows: (Task & { project_name?: string })[]): Task[] {
       contexts: contextsByTask.get(row.id) ?? [],
       subtask_count: stats?.total ?? 0,
       completed_subtask_count: stats?.completed ?? 0,
-      is_blocked: blockedIds.has(row.id)
+      is_blocked: blockedBy.has(row.id),
+      blocked_by: blockedBy.get(row.id) ?? []
     }
   })
 }
@@ -973,6 +1061,33 @@ export function countTasks(filters: TaskListFilters = {}): number {
   return row.total
 }
 
+export function taskTotals(filters: TaskListFilters): { count: number; seconds: number } {
+  const { sql, params } = buildTaskTotalsQuery(filters)
+  return db.prepare(sql).get(...params) as { count: number; seconds: number }
+}
+
+export function restoreArchived(entries: { id: number; archived_at: string | null }[]): void {
+  const stmt = db.prepare(
+    `UPDATE tasks SET is_archived = 1, archived_at = COALESCE(?, CURRENT_TIMESTAMP),
+      updated_at = CURRENT_TIMESTAMP
+    WHERE id = ?`
+  )
+  db.transaction(() => {
+    for (const entry of entries) stmt.run(entry.archived_at, entry.id)
+  })()
+}
+
+export function listTaskIds(filters: TaskListFilters): number[] {
+  const { sql, params } = buildTaskIdsQuery(filters)
+  return (db.prepare(sql).all(...params) as { id: number }[]).map((row) => row.id)
+}
+
+export function countTasksByStatus(filters: TaskListFilters = {}): TaskStatusCounts {
+  const { sql, params } = buildTaskStatusCountQuery(filters)
+  const rows = db.prepare(sql).all(...params) as { status: TaskStatus; total: number }[]
+  return toStatusCounts(rows)
+}
+
 export function listRunningTasks(): Task[] {
   const stmt = db.prepare(`
     SELECT ${TASK_LIST_COLUMNS}
@@ -1000,7 +1115,8 @@ export function listActiveTasksLight(): Pick<
 
 export function getTask(id: number): Task | undefined {
   const stmt = db.prepare(`
-    SELECT t.*, p.name as project_name, p.color as project_color
+    SELECT t.*, p.name as project_name, p.color as project_color,
+      p.working_dir as project_working_dir
     FROM tasks t
     LEFT JOIN projects p ON t.project_id = p.id
     WHERE t.id = ?
@@ -1066,6 +1182,10 @@ export function updateTask(id: number, data: UpdateTaskInput): void {
     if (data.external_url !== undefined) {
       updates.push('external_url = ?')
       values.push(data.external_url || null)
+    }
+    if (data.waiting_for !== undefined) {
+      updates.push('waiting_for = ?')
+      values.push(normalizeWaitingFor(data.waiting_for))
     }
     const touchesTime = (
       ['scheduled_date', 'scheduled_time', 'scheduled_end_time', 'due_date', 'due_time'] as const
@@ -1270,14 +1390,14 @@ export function deleteTasks(ids: number[]): void {
 
 export function archiveTask(id: number): void {
   const stmt = db.prepare(
-    'UPDATE tasks SET is_archived = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+    'UPDATE tasks SET is_archived = 1, archived_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
   )
   stmt.run(id)
 }
 
 export function unarchiveTask(id: number): void {
   const stmt = db.prepare(
-    'UPDATE tasks SET is_archived = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+    'UPDATE tasks SET is_archived = 0, archived_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
   )
   stmt.run(id)
 }
@@ -1287,10 +1407,13 @@ export function setTasksArchived(ids: number[], archived: boolean): void {
 
   const transaction = db.transaction((taskIds: number[], value: number) => {
     const stmt = db.prepare(
-      'UPDATE tasks SET is_archived = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+      `UPDATE tasks SET is_archived = ?,
+        archived_at = CASE WHEN ? = 1 THEN CURRENT_TIMESTAMP ELSE NULL END,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?`
     )
     for (const id of taskIds) {
-      stmt.run(value, id)
+      stmt.run(value, value, id)
     }
   })
 
@@ -1411,7 +1534,7 @@ export function listJiraWorklogEntries(taskId: number): JiraWorklogEntry[] {
     .all(taskId) as JiraWorklogEntry[]
 }
 
-export function setTimeEntryWorklogId(entryId: number, worklogId: string): void {
+export function setTimeEntryWorklogId(entryId: number, worklogId: string | null): void {
   db.prepare('UPDATE time_entries SET jira_worklog_id = ? WHERE id = ?').run(worklogId, entryId)
 }
 
@@ -1616,6 +1739,18 @@ export function addManualTimeEntry(taskId: number, seconds: number): void {
   transaction()
 }
 
+export function updateTimeEntry(id: number, startIso: string, endIso: string): TimeEntryChange {
+  return updateTimeEntryQuery(tagDb(), id, startIso, endIso)
+}
+
+export function deleteTimeEntry(id: number): TimeEntryChange {
+  return deleteTimeEntryQuery(tagDb(), id)
+}
+
+export function listTimeEntriesRange(fromIso: string, toIso: string): TimeEntrySpan[] {
+  return listTimeEntriesInRange(tagDb(), fromIso, toIso, new Date().toISOString())
+}
+
 export function setTaskTotalTime(taskId: number, totalSeconds: number): void {
   const stmt = db.prepare(`
     UPDATE tasks
@@ -1628,139 +1763,63 @@ export function setTaskTotalTime(taskId: number, totalSeconds: number): void {
 // ===================== WEEKLY REVIEWS =====================
 
 export function createWeeklyReview(): WeeklyReview {
-  const stmt = db.prepare("INSERT INTO weekly_reviews (started_at) VALUES (datetime('now'))")
-  const result = stmt.run()
-  return getWeeklyReview(result.lastInsertRowid as number)!
+  return createReview(tagDb(), new Date())
 }
 
 export function getWeeklyReview(id: number): WeeklyReview | undefined {
-  const stmt = db.prepare('SELECT * FROM weekly_reviews WHERE id = ?')
-  const row = stmt.get(id) as WeeklyReview | undefined
-  if (row) {
-    return {
-      ...row,
-      inbox_cleared: Boolean(row.inbox_cleared)
-    }
-  }
-  return undefined
+  return getReview(tagDb(), id)
 }
 
 export function listWeeklyReviews(): WeeklyReview[] {
-  const stmt = db.prepare('SELECT * FROM weekly_reviews ORDER BY started_at DESC LIMIT 20')
-  return (stmt.all() as WeeklyReview[]).map((row) => ({
-    ...row,
-    inbox_cleared: Boolean(row.inbox_cleared)
-  }))
+  return listReviews(tagDb())
 }
 
 export function getLastWeeklyReview(): WeeklyReview | undefined {
-  const stmt = db.prepare('SELECT * FROM weekly_reviews ORDER BY started_at DESC LIMIT 1')
-  const row = stmt.get() as WeeklyReview | undefined
-  if (row) {
-    return {
-      ...row,
-      inbox_cleared: Boolean(row.inbox_cleared)
-    }
-  }
-  return undefined
+  return lastReview(tagDb())
 }
 
-export function updateWeeklyReview(
+export function updateWeeklyReviewNotes(id: number, notes: string): void {
+  updateReviewNotes(tagDb(), id, notes)
+}
+
+export function setWeeklyReviewStep(
   id: number,
-  data: { inbox_cleared?: boolean; notes?: string; checklist_state?: string; completed_at?: string }
-): void {
-  const updates: string[] = []
-  const values: unknown[] = []
+  key: ReviewStepKey,
+  status: ReviewStepStatus | null
+): WeeklyReview {
+  return setReviewStep(tagDb(), id, key, status)
+}
 
-  if (data.inbox_cleared !== undefined) {
-    updates.push('inbox_cleared = ?')
-    values.push(data.inbox_cleared ? 1 : 0)
-  }
-  if (data.notes !== undefined) {
-    updates.push('notes = ?')
-    values.push(data.notes)
-  }
-  if (data.checklist_state !== undefined) {
-    updates.push('checklist_state = ?')
-    values.push(data.checklist_state)
-  }
-  if (data.completed_at !== undefined) {
-    updates.push('completed_at = ?')
-    values.push(data.completed_at)
-  }
+export function setWeeklyReviewCurrentStep(id: number, key: ReviewStepKey): WeeklyReview {
+  return setReviewCurrentStep(tagDb(), id, key)
+}
 
-  if (updates.length > 0) {
-    values.push(id)
-    const stmt = db.prepare(`UPDATE weekly_reviews SET ${updates.join(', ')} WHERE id = ?`)
-    stmt.run(...values)
-  }
+export function discardWeeklyReview(id: number): void {
+  discardReview(tagDb(), id)
+}
+
+export function bumpWeeklyReviewCounter(
+  id: number,
+  key: ReviewCounterKey,
+  taskId?: number
+): WeeklyReview {
+  return bumpReviewCounter(tagDb(), id, key, taskId)
+}
+
+export function completeWeeklyReview(id: number, notes?: string): WeeklyReview {
+  return completeReview(tagDb(), id, new Date(), notes)
+}
+
+export function getPeriodStats(period: StatsPeriod): PeriodStats {
+  return periodStatsQuery(tagDb(), period, new Date())
+}
+
+export function getReviewPastWeek(): ReviewPastWeek {
+  return reviewPastWeek(tagDb(), new Date())
 }
 
 export function getReviewHealthIndicators(): ReviewHealthIndicators {
-  const inboxCount = (
-    db
-      .prepare("SELECT COUNT(*) as count FROM tasks WHERE status = 'inbox' AND is_archived = 0")
-      .get() as { count: number }
-  ).count
-
-  const projectsWithoutNextAction = (
-    db
-      .prepare(
-        `
-      SELECT COUNT(*) as count FROM projects p
-      WHERE p.status = 'active'
-      AND NOT EXISTS (
-        SELECT 1 FROM tasks t WHERE t.project_id = p.id AND t.status = 'proximas'
-      )
-    `
-      )
-      .get() as { count: number }
-  ).count
-
-  const staleWaitingTasks = (
-    db
-      .prepare(
-        `
-      SELECT COUNT(*) as count FROM tasks
-      WHERE status = 'aguardando'
-      AND is_archived = 0
-      AND updated_at <= datetime('now', '-7 days')
-    `
-      )
-      .get() as { count: number }
-  ).count
-
-  const staleNextTasks = (
-    db
-      .prepare(
-        `
-      SELECT COUNT(*) as count FROM tasks
-      WHERE status = 'proximas'
-      AND is_archived = 0
-      AND updated_at <= datetime('now', '-14 days')
-    `
-      )
-      .get() as { count: number }
-  ).count
-
-  const somedayCount = (
-    db
-      .prepare(
-        `
-      SELECT COUNT(*) as count FROM tasks
-      WHERE status = 'someday' AND is_archived = 0
-    `
-      )
-      .get() as { count: number }
-  ).count
-
-  return {
-    inboxCount,
-    projectsWithoutNextAction,
-    staleWaitingTasks,
-    staleNextTasks,
-    somedayCount
-  }
+  return healthIndicatorsQuery(tagDb(), new Date())
 }
 
 // ===================== ESTATÍSTICAS =====================
@@ -1775,22 +1834,6 @@ export interface TaskTimeStats {
   taskId: number
   taskName: string
   totalSeconds: number
-}
-
-export interface StatusStats {
-  status: string
-  totalSeconds: number
-}
-
-export interface CategoryStats {
-  category: string
-  totalSeconds: number
-  taskCount: number
-}
-
-export interface HeatmapData {
-  date: string
-  count: number
 }
 
 export function getWeeklyStats(): DailyStats[] {
@@ -1820,45 +1863,6 @@ export function getTaskTimeStats(): TaskTimeStats[] {
     LIMIT 10
   `)
   return stmt.all() as TaskTimeStats[]
-}
-
-export function getCategoryStats(): CategoryStats[] {
-  const stmt = db.prepare(`
-    SELECT
-      COALESCE(category, 'normal') as category,
-      SUM(total_seconds) as totalSeconds,
-      COUNT(*) as taskCount
-    FROM tasks
-    WHERE total_seconds > 0
-    GROUP BY category
-  `)
-  return stmt.all() as CategoryStats[]
-}
-
-export function getStatusStats(): StatusStats[] {
-  const stmt = db.prepare(`
-    SELECT
-      status,
-      SUM(total_seconds) as totalSeconds
-    FROM tasks
-    WHERE total_seconds > 0
-    GROUP BY status
-  `)
-  return stmt.all() as StatusStats[]
-}
-
-export function getHeatmapData(): HeatmapData[] {
-  const stmt = db.prepare(`
-    SELECT
-      date(start_time) as date,
-      SUM(COALESCE(duration_seconds, 0)) as count
-    FROM time_entries
-    WHERE start_time >= date('now', '-365 days')
-      AND end_time IS NOT NULL
-    GROUP BY date(start_time)
-    ORDER BY date(start_time)
-  `)
-  return stmt.all() as HeatmapData[]
 }
 
 export interface GeneralStats {
@@ -1998,58 +2002,21 @@ export function getGtdMetrics(): GtdMetrics {
   }
 }
 
-export function getEnergyStats(): EnergyStats[] {
-  const rows = db
-    .prepare(
-      `
-    SELECT
-      energy_level,
-      SUM(total_seconds) as totalSeconds,
-      COUNT(*) as taskCount,
-      AVG(total_seconds) as avgSeconds
-    FROM tasks
-    WHERE energy_level IS NOT NULL
-    AND is_archived = 0
-    AND total_seconds > 0
-    GROUP BY energy_level
-    ORDER BY totalSeconds DESC
-  `
-    )
-    .all() as Array<{
-    energy_level: EnergyLevel
-    totalSeconds: number
-    taskCount: number
-    avgSeconds: number
-  }>
-
-  return rows.map((r) => ({
-    energy_level: r.energy_level,
-    totalSeconds: r.totalSeconds || 0,
-    taskCount: r.taskCount || 0,
-    avgSeconds: Math.round(r.avgSeconds || 0)
-  }))
-}
-
 // ===================== FASE 2: SUBTAREFAS =====================
 
 export function getSubtasks(parentId: number): Task[] {
-  const stmt = db.prepare(`
-    SELECT t.*, p.name as project_name, p.color as project_color
+  const rows = db
+    .prepare(
+      `
+    SELECT ${TASK_LIST_COLUMNS}
     FROM tasks t
     LEFT JOIN projects p ON t.project_id = p.id
     WHERE t.parent_task_id = ? AND t.is_archived = 0
     ORDER BY t.created_at ASC
-  `)
-  const rows = stmt.all(parentId) as (Task & { project_name?: string })[]
-  return rows.map((row) => ({
-    ...row,
-    category: row.category || 'normal',
-    is_running: Boolean(row.is_running),
-    is_archived: Boolean(row.is_archived),
-    subtask_count: 0,
-    completed_subtask_count: 0,
-    is_blocked: false
-  }))
+  `
+    )
+    .all(parentId) as (Task & { project_name?: string })[]
+  return enrichTasks(rows)
 }
 
 export function completeSubtasksCheck(parentId: number): boolean {
@@ -2113,21 +2080,22 @@ export function getTasksForDate(date: string): Task[] {
     FROM tasks t
     LEFT JOIN projects p ON t.project_id = p.id
     WHERE t.scheduled_date = ? AND t.is_archived = 0 AND t.parent_task_id IS NULL
-    ORDER BY t.scheduled_time IS NULL, t.scheduled_time, COALESCE(t.day_order, 999999),
-      t.created_at ASC
+    ORDER BY t.scheduled_time IS NULL, t.scheduled_time,
+      COALESCE(substr(t.due_date, 1, 10) = ? AND t.due_time IS NOT NULL, 0) DESC,
+      CASE WHEN substr(t.due_date, 1, 10) = ? THEN t.due_time END,
+      COALESCE(t.day_order, 999999), t.created_at ASC
   `)
-  const rows = stmt.all(date) as (Task & { project_name?: string })[]
+  const rows = stmt.all(date, date, date) as (Task & { project_name?: string })[]
   return enrichTasks(rows)
 }
 
 export function getWeeklySchedule(startDate: string): { date: string; tasks: Task[] }[] {
   const result: { date: string; tasks: Task[] }[] = []
-  const start = new Date(startDate)
 
   for (let i = 0; i < 7; i++) {
-    const d = new Date(start)
-    d.setDate(start.getDate() + i)
-    const dateStr = d.toISOString().split('T')[0]
+    const d = new Date(startDate + 'T12:00:00Z')
+    d.setUTCDate(d.getUTCDate() + i)
+    const dateStr = d.toISOString().slice(0, 10)
     result.push({ date: dateStr, tasks: getTasksForDate(dateStr) })
   }
 
@@ -2376,9 +2344,7 @@ export function createTimeBlock(data: CreateTimeBlockInput): TimeBlock {
 
 export function getTimeBlock(id: number): TimeBlock | undefined {
   const stmt = db.prepare(`
-    SELECT tb.*, t.name as task_name, t.category as task_category
-    FROM time_blocks tb
-    JOIN tasks t ON t.id = tb.task_id
+    ${TIME_BLOCK_SELECT}
     WHERE tb.id = ?
   `)
   return stmt.get(id) as TimeBlock | undefined
@@ -2386,9 +2352,7 @@ export function getTimeBlock(id: number): TimeBlock | undefined {
 
 export function getTimeBlocksForDate(date: string): TimeBlock[] {
   const stmt = db.prepare(`
-    SELECT tb.*, t.name as task_name, t.category as task_category
-    FROM time_blocks tb
-    JOIN tasks t ON t.id = tb.task_id
+    ${TIME_BLOCK_SELECT}
     WHERE tb.date = ?
     ORDER BY tb.start_time ASC
   `)
@@ -2396,27 +2360,40 @@ export function getTimeBlocksForDate(date: string): TimeBlock[] {
 }
 
 export function getTimeBlocksForWeek(startDate: string): TimeBlock[] {
-  const start = new Date(startDate + 'T00:00:00')
-  const end = new Date(start)
-  end.setDate(end.getDate() + 6)
-  const endDate = end.toISOString().split('T')[0]
+  const end = new Date(startDate + 'T12:00:00Z')
+  end.setUTCDate(end.getUTCDate() + 6)
+  const endDate = end.toISOString().slice(0, 10)
 
   const stmt = db.prepare(`
-    SELECT tb.*, t.name as task_name, t.category as task_category
-    FROM time_blocks tb
-    JOIN tasks t ON t.id = tb.task_id
+    ${TIME_BLOCK_SELECT}
     WHERE tb.date >= ? AND tb.date <= ?
     ORDER BY tb.date ASC, tb.start_time ASC
   `)
   return stmt.all(startDate, endDate) as TimeBlock[]
 }
 
+export function getTimeBlocksForRange(from: string, to: string): TimeBlock[] {
+  return listTimeBlocksInRange(tagDb(), from, to)
+}
+
+export function listCalendarTasks(from: string, to: string): Task[] {
+  const { sql, params } = calendarTasksQuery(TASK_LIST_COLUMNS, from, to)
+  return enrichTasks(db.prepare(sql).all(...params) as (Task & { project_name?: string })[])
+}
+
+export function listUnscheduledTasks(
+  from: string,
+  to: string,
+  filters?: UnscheduledFilters
+): Task[] {
+  const { sql, params } = unscheduledTasksQuery(TASK_LIST_COLUMNS, from, to, filters)
+  return enrichTasks(db.prepare(sql).all(...params) as (Task & { project_name?: string })[])
+}
+
 export function getTimeBlocksForMonth(yearMonth: string): TimeBlock[] {
   // yearMonth: 'YYYY-MM'
   const stmt = db.prepare(`
-    SELECT tb.*, t.name as task_name, t.category as task_category
-    FROM time_blocks tb
-    JOIN tasks t ON t.id = tb.task_id
+    ${TIME_BLOCK_SELECT}
     WHERE strftime('%Y-%m', tb.date) = ?
     ORDER BY tb.date ASC, tb.start_time ASC
   `)

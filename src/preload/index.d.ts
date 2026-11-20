@@ -3,6 +3,7 @@ import type {
   GcalStatus,
   TerminalBuffer,
   TerminalCreateResult,
+  TerminalOwner,
   TerminalSession,
   TerminalTabCustomization,
   JiraBoardSummary,
@@ -17,6 +18,7 @@ import type {
   JiraUser,
   Task,
   TimeEntry,
+  TimeEntrySpan,
   CreateTaskInput,
   UpdateTaskInput,
   TaskStatus,
@@ -28,6 +30,12 @@ import type {
   Context,
   WeeklyReview,
   ReviewHealthIndicators,
+  ReviewCounterKey,
+  ReviewPastWeek,
+  PeriodStats,
+  StatsPeriod,
+  ReviewStepKey,
+  ReviewStepStatus,
   TaskDependency,
   Area,
   CreateAreaInput,
@@ -38,11 +46,11 @@ import type {
   TimeBlock,
   CreateTimeBlockInput,
   UpdateTimeBlockInput,
-  GtdMetrics,
-  EnergyStats,
+  UnscheduledTaskFilters,
   TaskListFilters,
   TaskListItem,
   TagWithUsage,
+  ContextWithUsage,
   UpdateTagInput,
   McpStatus,
   BackupSnapshot,
@@ -59,50 +67,14 @@ import type {
   CreatePageInput,
   MovePageInput,
   PageLocation,
-  PageSearchResult
+  PageSearchResult,
+  FloatTimerData
 } from '../shared/types'
-
-interface FloatTimerData {
-  taskId: number
-  taskName: string
-  seconds: number
-}
-
-interface DailyStats {
-  date: string
-  dayOfWeek: number
-  totalSeconds: number
-}
-
-interface TaskTimeStats {
-  taskId: number
-  taskName: string
-  totalSeconds: number
-}
-
-interface StatusStats {
-  status: string
-  totalSeconds: number
-}
-
-interface CategoryStats {
-  category: string
-  totalSeconds: number
-  taskCount: number
-}
-
-interface HeatmapData {
-  date: string
-  count: number
-}
-
-interface GeneralStats {
-  totalTasks: number
-  completedTasks: number
-  totalTimeSeconds: number
-  totalSessions: number
-  avgSessionSeconds: number
-}
+import type { ThemePreference } from '../shared/themePreference'
+import type { WorkflowPrefs, WorkflowPrefsPatch } from '../shared/workflowPrefs'
+import type { AppPrefsStatus } from '../shared/appPrefs'
+import type { TaskStatusCounts } from '../shared/taskStatusCounts'
+import type { RendererErrorReport } from '../shared/rendererError'
 
 interface NotionConfig {
   apiKey: string
@@ -149,6 +121,7 @@ interface API {
   createTask: (data: CreateTaskInput) => Promise<Task>
   listTasks: (filters?: TaskListFilters) => Promise<Task[]>
   countTasks: (filters?: TaskListFilters) => Promise<number>
+  getTaskStatusCounts: (filters?: TaskListFilters) => Promise<TaskStatusCounts>
   listActiveTasksLight: () => Promise<TaskListItem[]>
   listRunningTasks: () => Promise<Task[]>
   getTask: (id: number) => Promise<Task | undefined>
@@ -169,10 +142,14 @@ interface API {
   syncTaskNotes: (id: number) => Promise<void>
   deleteTask: (id: number) => Promise<void>
   bulkDeleteTasks: (ids: number[]) => Promise<void>
+  countArchivedBefore: (cutoff: string) => Promise<number>
+  deleteArchivedBefore: (cutoff: string) => Promise<number>
   bulkUpdateStatus: (ids: number[], status: TaskStatus) => Promise<void>
   bulkMoveToProject: (ids: number[], projectId: number | null) => Promise<void>
   archiveTask: (id: number) => Promise<void>
   unarchiveTask: (id: number) => Promise<void>
+  taskTotals: (filters?: TaskListFilters) => Promise<{ count: number; seconds: number }>
+  restoreArchived: (entries: { id: number; archived_at: string | null }[]) => Promise<void>
   bulkSetArchived: (ids: number[], archived: boolean) => Promise<void>
   startTask: (id: number) => Promise<void>
   stopTask: (id: number) => Promise<void>
@@ -182,6 +159,9 @@ interface API {
   setTotalTime: (id: number, seconds: number) => Promise<void>
   updateStatus: (id: number, status: TaskStatus) => Promise<void>
   getTimeEntries: (taskId: number) => Promise<TimeEntry[]>
+  updateTimeEntry: (id: number, startIso: string, endIso: string) => Promise<void>
+  deleteTimeEntry: (id: number) => Promise<void>
+  listTimeEntriesRange: (fromIso: string, toIso: string) => Promise<TimeEntrySpan[]>
   getActiveTimeEntry: (taskId: number) => Promise<TimeEntry | undefined>
   showNotification: (title: string, body: string) => void
 
@@ -191,6 +171,7 @@ interface API {
   restoreFromFloat: () => Promise<void>
   stopFromFloat: (taskId: number) => Promise<void>
   stopAllFromFloat: () => Promise<void>
+  openTaskFromFloat: (taskId: number) => Promise<void>
   onFloatUpdate: (callback: (timers: FloatTimerData[]) => void) => () => void
   onFloatClear: (callback: () => void) => () => void
   onTimerStopped: (callback: (taskId: number) => void) => () => void
@@ -199,16 +180,9 @@ interface API {
   onTasksRefresh: (callback: () => void) => () => void
 
   // Statistics
-  getWeeklyStats: () => Promise<DailyStats[]>
-  getTaskTimeStats: () => Promise<TaskTimeStats[]>
-  getStatusStats: () => Promise<StatusStats[]>
-  getCategoryStats: () => Promise<CategoryStats[]>
-  getHeatmapData: () => Promise<HeatmapData[]>
-  getGeneralStats: () => Promise<GeneralStats>
   // FASE 4.2: Advanced stats
-  getGtdMetrics: () => Promise<GtdMetrics>
-  getEnergyStats: () => Promise<EnergyStats[]>
-  generateWeeklyPDF: () => Promise<void>
+  getPeriodStats: (period: StatsPeriod) => Promise<PeriodStats>
+  generateWeeklyPDF: (range?: { start: string; end: string }) => Promise<boolean>
 
   // Tags
   createTag: (name: string, color?: string) => Promise<Tag>
@@ -232,6 +206,8 @@ interface API {
   // Contexts
   createContext: (name: string, icon?: string, color?: string) => Promise<Context>
   listContexts: () => Promise<Context[]>
+  listContextsWithUsage: () => Promise<ContextWithUsage[]>
+  mergeContexts: (sourceId: number, targetId: number) => Promise<number>
   updateContext: (
     id: number,
     data: { name?: string; icon?: string; color?: string }
@@ -245,15 +221,21 @@ interface API {
   getWeeklyReview: (id: number) => Promise<WeeklyReview | undefined>
   listWeeklyReviews: () => Promise<WeeklyReview[]>
   getLastWeeklyReview: () => Promise<WeeklyReview | undefined>
-  updateWeeklyReview: (
+  updateWeeklyReviewNotes: (id: number, notes: string) => Promise<void>
+  setWeeklyReviewStep: (
     id: number,
-    data: {
-      inbox_cleared?: boolean
-      notes?: string
-      checklist_state?: string
-      completed_at?: string
-    }
-  ) => Promise<void>
+    key: ReviewStepKey,
+    status: ReviewStepStatus | null
+  ) => Promise<WeeklyReview>
+  setWeeklyReviewCurrentStep: (id: number, key: ReviewStepKey) => Promise<WeeklyReview>
+  discardWeeklyReview: (id: number) => Promise<void>
+  bumpWeeklyReviewCounter: (
+    id: number,
+    key: ReviewCounterKey,
+    taskId?: number
+  ) => Promise<WeeklyReview>
+  completeWeeklyReview: (id: number, notes?: string) => Promise<WeeklyReview>
+  getReviewPastWeek: () => Promise<ReviewPastWeek>
   getReviewHealthIndicators: () => Promise<ReviewHealthIndicators>
 
   // FASE 2: Subtarefas
@@ -267,8 +249,6 @@ interface API {
 
   // FASE 2: Agendamento
   getTasksForDate: (date: string) => Promise<Task[]>
-  getWeeklySchedule: (startDate: string) => Promise<{ date: string; tasks: Task[] }[]>
-  updateDayOrder: (taskId: number, order: number) => Promise<void>
   scheduleTaskForDate: (taskId: number, date: string | null) => Promise<void>
 
   // FASE 2: Eventos push
@@ -327,9 +307,15 @@ interface API {
   createTimeBlock: (data: CreateTimeBlockInput) => Promise<TimeBlock>
   getTimeBlocksForDate: (date: string) => Promise<TimeBlock[]>
   getTimeBlocksForWeek: (startDate: string) => Promise<TimeBlock[]>
-  getTimeBlocksForMonth: (yearMonth: string) => Promise<TimeBlock[]>
-  updateTimeBlock: (id: number, data: UpdateTimeBlockInput) => Promise<void>
-  deleteTimeBlock: (id: number) => Promise<void>
+  updateTimeBlock: (id: number, data: UpdateTimeBlockInput) => Promise<TimeBlock>
+  getTimeBlocksForRange: (from: string, to: string) => Promise<TimeBlock[]>
+  getCalendarTasks: (from: string, to: string) => Promise<Task[]>
+  getUnscheduledTasks: (
+    from: string,
+    to: string,
+    filters?: UnscheduledTaskFilters
+  ) => Promise<Task[]>
+  deleteTimeBlock: (id: number) => Promise<TimeBlock | null>
 
   // FASE 4: Áreas de Foco
   createArea: (data: CreateAreaInput) => Promise<Area>
@@ -358,6 +344,17 @@ interface API {
   appGetAutostart: () => Promise<boolean>
   appOpenExternal: (url: string) => Promise<void>
   appSetAutostart: (enabled: boolean) => Promise<boolean>
+  appSetThemeSource: (preference: ThemePreference) => Promise<void>
+  getWorkflowPrefs: () => Promise<WorkflowPrefs>
+  setWorkflowPrefs: (patch: WorkflowPrefsPatch) => Promise<WorkflowPrefs>
+  onWorkflowPrefsChanged: (callback: (prefs: WorkflowPrefs) => void) => () => void
+  getAppPrefs: () => Promise<AppPrefsStatus>
+  setCaptureShortcut: (accelerator: string) => Promise<AppPrefsStatus>
+  setAutoBackup: (enabled: boolean) => Promise<AppPrefsStatus>
+  onBackupChanged: (callback: () => void) => () => void
+  appLogRendererError: (report: RendererErrorReport) => Promise<void>
+  onRendererRecovered: (callback: () => void) => () => void
+  onNavigate: (callback: (path: string) => void) => () => void
 
   // Backup
   backupGetStatus: () => Promise<BackupStatus>
@@ -374,7 +371,7 @@ interface API {
 
   // Terminal embutido
   terminalCreate: (
-    taskId: number,
+    owner: TerminalOwner,
     options: { shell?: string | null; cols?: number; rows?: number }
   ) => Promise<TerminalCreateResult>
   terminalWrite: (id: string, data: string) => Promise<void>
@@ -384,6 +381,7 @@ interface API {
   terminalCustomize: (id: string, patch: TerminalTabCustomization) => Promise<TerminalSession | null>
   terminalGetBuffer: (id: string) => Promise<TerminalBuffer | null>
   terminalPickDirectory: (taskId: number) => Promise<string | null>
+  terminalPickProjectDirectory: (projectId: number) => Promise<string | null>
   terminalSetTaskWorkspace: (
     taskId: number,
     workspace: { working_dir?: string | null; start_command?: string | null }

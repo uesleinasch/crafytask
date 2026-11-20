@@ -11,8 +11,13 @@ Duas ideias convivem na interface e às vezes competem por espaço:
 1. **Sistema GTD completo** — inbox, contextos, projetos, áreas, horizontes, revisão semanal.
 2. **Cronômetro de tarefas** — timer por tarefa, sessões, limite de tempo, alerta de *time leak*.
 
-Toda a interface está em português. Não há tema escuro em uso (existem tokens `.dark` no CSS, mas
-nada aciona a classe).
+Toda a interface está em português. A janela principal tem tema claro e escuro (padrão: seguir o
+sistema), escolhido em Configurações → Aparência, no menu de aparência do header ou na paleta. O
+timer flutuante e a captura rápida seguem o mesmo tema e a mesma densidade (F8-a).
+
+A base visual é o Ant Design, com as cores, fontes e raios definidos em `src/renderer/src/theme/`
+(ver [14](14-design-tokens.md)). O Tailwind sobrou só para layout (`flex`, `h-full`, `overflow-*`);
+não há classe de cor do Tailwind nem hex solto em componente.
 
 ## Vocabulário do domínio
 
@@ -22,46 +27,61 @@ Estes termos aparecem literalmente na tela e devem ser preservados num redesenho
 
 O ciclo de vida GTD. Uma tarefa tem exatamente um status.
 
-| Valor | Rótulo na tela | Cor do badge | Significado |
-| --- | --- | --- | --- |
-| `inbox` | Inbox | slate (cinza) | Capturado, ainda não processado |
-| `aguardando` | Aguardando | amarelo | Delegado / esperando terceiro |
-| `proximas` | Próximas | azul | Próxima ação, pronta para execução |
-| `executando` | Executando | esmeralda (com `animate-pulse`) | Em andamento |
-| `finalizada` | Finalizada | roxo | Concluída |
-| `someday` | Someday/Maybe | teal | Talvez um dia |
+O `StatusChip` (`components/chips/`) mostra ícone e rótulo, nunca só a cor; as cores vêm de
+`STATUS_COLORS` em `theme/semantic.ts`, uma versão para cada tema.
+
+| Valor | Rótulo no chip | Ícone | Cor | Significado |
+| --- | --- | --- | --- | --- |
+| `inbox` | Inbox | `Inbox` | ardósia | Capturado, ainda não processado |
+| `aguardando` | Aguardando | `Hourglass` | âmbar | Delegado / esperando terceiro |
+| `proximas` | Próximas | `CircleArrowRight` | azul | Próxima ação, pronta para execução |
+| `executando` | Executando | `CirclePlay` | verde | Em andamento |
+| `finalizada` | Finalizada | `CircleCheck` | verde acinzentado | Concluída |
+| `someday` | Someday | `Lightbulb` | azul-petróleo | Talvez um dia |
+
+Chip, menus e seletores usam o mesmo `STATUS_LABELS` de `shared/types.ts`. O
+timer rodando aparece como `LiveDot` (ponto verde que pulsa), não como chip pulsando.
 
 ### Categoria da tarefa (`TaskCategory`)
 
 Prioridade/natureza. Independente do status.
 
-| Valor | Rótulo | Ícone | Cor |
+| Valor | Rótulo no chip | Ícone | Cor |
 | --- | --- | --- | --- |
-| `urgente` | Urgente | `AlertTriangle` | vermelho |
+| `urgente` | Urgente | `Flame` | vermelho |
 | `prioridade` | Prioridade | `Flag` | laranja |
-| `normal` | Normal | `Circle` | azul |
-| `time_leak` | Time Leak | `Clock` | amarelo |
+| `normal` | Normal | — | sem cor: só borda e texto secundário |
+| `time_leak` | Time leak | `Clock` | âmbar |
 
-**Time Leak** é a categoria mais visualmente carregada do app: identifica tarefas que consomem
+O `CategoryChip` lê `CATEGORY_COLORS` de `theme/semantic.ts`; chip e menus usam o mesmo
+`CATEGORY_LABELS` de `shared/types.ts`.
+
+**Time leak** é a categoria mais visualmente carregada do app: identifica tarefas que consomem
 tempo sem gerar valor. O fundo do card/linha muda conforme o tempo acumulado (amarelo → laranja →
-vermelho), e acima de 1h o cronômetro pulsa em vermelho e o sistema dispara notificação a cada 5
-minutos.
+vermelho; níveis em Configurações → Fluxo de trabalho, padrão 30 min, 1 h e 2 h), e a partir do
+nível laranja o sistema dispara notificação a cada 5 minutos (intervalo também configurável).
 
 ### Nível de energia (`EnergyLevel`)
 
 Quanto de disposição a tarefa exige. Usado como filtro mental e alimenta o gráfico do dashboard.
 
-| Valor | Rótulo | Emoji | Cor |
-| --- | --- | --- | --- |
-| `alto` | Alta Energia | ⚡ | `#22c55e` |
-| `medio` | Energia Média | 🔋 | `#f59e0b` |
-| `baixo` | Baixa Energia | 😴 | `#94a3b8` |
+O `EnergyMeter` desenha três barras na cor primária; o nível é quantas estão cheias, e o tooltip
+diz "Energia alta/média/baixa". Não há emoji nem cor própria por nível.
+
+| Valor | Rótulo (`ENERGY_LABELS`, `shared/types.ts`) | Barras cheias |
+| --- | --- | --- |
+| `alto` | Alta | 3 |
+| `medio` | Média | 2 |
+| `baixo` | Baixa | 1 |
+
+Onde o nível aparece sem o medidor (filtro, dashboard, tooltip), o texto é "Energia alta/média/
+baixa".
 
 ### Demais entidades
 
 - **Contexto** — *onde* ou *com o que* a ação pode ser feita (`@computador`, `@telefone`). Tem nome,
   emoji e cor. Uma tarefa pode ter vários. Oito contextos padrão são criados na primeira execução.
-- **Tag** ("Fonte / Tag") — rótulo livre, criado enquanto se digita. Tem nome e cor. Uma tarefa pode
+- **Tag** — rótulo livre, criado enquanto se digita. Tem nome e cor. Uma tarefa pode
   ter várias.
 - **Projeto** — resultado que exige mais de uma ação. Tem nome, descrição, *outcome* (resultado
   desejado), status (`active` / `someday` / `done` / `archived`), cor, data limite e área.
@@ -82,57 +102,104 @@ Quanto de disposição a tarefa exige. Usado como filtro mental e alimenta o gr�
 ## Estrutura da janela principal
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│ TitleBar — h-14, bg-white, border-b slate-200                │
-│ CrafyTask (logo em texto)          [ações — só na rota "/"]  │
-├──────────────────────────────────────────────────────────────┤
-│                                                              │
-│ <main class="flex-1 overflow-hidden">                        │
-│   ← a rota ativa ocupa 100% desta área (h-full, nunca 100vh) │
-│                                                              │
-├──────────────────────────────────────────────────────────────┤
-│ Sobrepostos (position: fixed):                               │
-│  • FloatingTimer   — bottom-6 right-6, só fora de sub-páginas│
-│  • SyncNotification— top-14 right-4                          │
-│  • Toaster (sonner)— bottom-right                            │
-└──────────────────────────────────────────────────────────────┘
+┌──────────┬───────────────────────────────────────────────────┐
+│ Sider    │ Header — 52px: título da tela · [Nova tarefa]     │
+│ 232px    ├───────────────────────────────────────────────────┤
+│ (64px    │ Content — a rota ativa (h-full, nunca 100vh)      │
+│ recolhida)│                                                  │
+│          ├───────────────────────────────────────────────────┤
+│          │ TerminalPanel (quando aberto)                     │
+│          ├───────────────────────────────────────────────────┤
+│          │ StatusBar — 28px: Notion · Google · Jira · MCP    │
+└──────────┴───────────────────────────────────────────────────┘
+Sobrepostos: message e modal do antd (App.useApp()), CommandPalette, NewTaskModal
 ```
 
-Dimensões da janela: `1024 × 700`, mínimo `800 × 600`, moldura nativa do SO com menu escondido
-(`autoHideMenuBar`). O `TitleBar` é conteúdo do app, não uma barra de título customizada — os canais
-`window:minimize` / `maximize` / `close` existem no preload mas **não estão ligados a nenhum botão**
-da interface atual.
+Dentro do `Content`, a página usa `PageContainer` (`components/shell/`): 24px de margem lateral,
+20px em cima e 32px embaixo (12, 12 e 24 abaixo de `md`), e largura máxima de 1480px centralizada; com
+`fullWidth` a largura é livre (calendário, cadernos, modo foco). `padBlock` deixa só o padding de
+cima ou de baixo, para telas com cabeçalho fixo e conteúdo rolável, como a lista de tarefas.
 
-### TitleBar (`components/TitleBar.tsx`)
+O shell é `components/shell/AppShell.tsx` (antd `Layout`), com as rotas aninhadas no `HashRouter`
+(`App.tsx`); `/float` e `/quick-capture` ficam fora dele. Sidebar, header e conteúdo têm cada um o
+seu `RegionBoundary`: se um quebra, os outros continuam.
 
-- **Esquerda:** o logo em texto "CrafyTask" em `font-brand text-2xl text-brand` (fonte Denk One,
-  cor `#705EFF`, tokens `--font-brand` e `--color-brand` em `main.css`).
-- **Direita:** a barra de navegação inteira, **renderizada apenas quando `location.pathname === '/'`**.
-  Em qualquer outra rota o lado direito fica vazio e a navegação depende do botão "Voltar" da própria
-  tela.
+Abaixo do breakpoint `lg` (992px) a sidebar fica sempre recolhida em 64px e o item "Recolher menu"
+some; abaixo de `md` (768px) ela sai e abre num `Drawer` pelo botão de menu do header, que fecha ao
+navegar (`Grid.useBreakpoint`).
 
-Ordem dos botões (todos `size="sm" h-9`):
+Dimensões da janela: `1024 × 700`, mínimo `400 × 600`, moldura nativa do SO com menu escondido
+(`autoHideMenuBar`). Os canais `window:minimize` / `maximize` / `close` existem no preload mas **não
+estão ligados a nenhum botão**.
 
-| # | Rótulo | Ícone | Destino | Variante |
+### Sidebar (`components/shell/SiderNav.tsx`)
+
+Em todas as rotas. Logo "CrafyTask" (Denk One; só "C" com a sidebar recolhida) e três grupos, como
+no guia de design §7. Itens e rotas em `navigation.ts`:
+
+| Grupo | Item | Ícone | Rota | Indicador |
 | --- | --- | --- | --- | --- |
-| 1 | *(só ícone)* | `Settings` | `/settings` | ghost |
-| 2 | Calendário | `Calendar` | `/calendar` | outline |
-| 3 | Hoje | `CalendarDays` | `/today` | outline |
-| 4 | Cadernos | `NotebookTabs` | `/notebooks` | outline |
-| 5 | Revisão | `ClipboardCheck` | `/review` | outline |
-| 6 | Contextos | `MapPin` | `/contexts` | outline |
-| 7 | Tags | `Tag` | `/tags` | outline |
-| 8 | Horizontes | `Mountain` | `/horizons` | outline |
-| 9 | Projetos | `FolderKanban` | `/projects` | outline |
-| 10 | Dashboard | `BarChart3` | `/dashboard` | outline |
-| 11 | Arquivadas | `Archive` | `/archived` | outline |
-| 12 | Nova Tarefa | `Plus` | *abre diálogo* | primária (`bg-slate-900`) |
+| Fluxo | Tarefas | `ListTodo` | `/` (marcado também em `/task/:id`) | tarefas no Inbox |
+| Fluxo | Hoje | `CalendarDays` | `/today` | tarefas não finalizadas no plano de hoje |
+| Fluxo | Calendário | `Calendar` | `/calendar` | — |
+| Fluxo | Revisão semanal | `ClipboardCheck` | `/review` | ponto âmbar sem revisão concluída em 7 dias |
+| Organizar | Projetos | `FolderKanban` | `/projects` (e `/project/:id`) | projetos ativos |
+| Organizar | Horizontes | `Mountain` | `/horizons` | — |
+| Organizar | Contextos e tags | `Tags` | `/contexts` (e `/tags`) | — |
+| Conhecimento | Cadernos | `NotebookTabs` | `/notebooks` | — |
+| Conhecimento | Dashboard | `BarChart3` | `/dashboard` | — |
+| Rodapé | Terminais | `SquareTerminal` | alterna o painel (`Ctrl + '`); desabilitado sem sessão | sessões abertas |
+| Rodapé | Arquivo | `Archive` | `/archived` | — |
+| Rodapé | Configurações | `Settings` | `/settings` | — |
+| Rodapé | Recolher menu | `PanelLeftClose` | alterna 232px ⇄ 64px (`ticktask:siderCollapsed`) | — |
 
-"Nova Tarefa" não navega: emite `open-new-task-dialog` num `eventEmitter` global definido em
-`App.tsx`, e a `TaskListPage` escuta esse evento para abrir o `TaskDialog`.
+Os contadores (`useNavCounts`) são relidos a cada troca de rota e a cada `tasks:refresh`.
 
-> **Doze botões numa linha só.** Em 1024px — a largura padrão da janela — essa barra é o principal
-> ponto de pressão do layout atual e o candidato mais óbvio a virar uma sidebar ou um menu agrupado.
+### Header (`components/shell/ShellHeader.tsx`)
+
+Grid de três zonas (`minmax(max-content, 1fr) · 200–520px · minmax(max-content, 1fr)`):
+
+- **Esquerda:** botão de menu (só abaixo de `md`, abre o `Drawer`) e o título da tela (`screenTitle`).
+- **Centro:** `HeaderCapture`, o campo "Capturar para o Inbox…": Enter grava pelo mesmo
+  `quickCapture` da janela de captura rápida e confirma com `message`. Some abaixo de `sm`.
+- **Direita:** `RunningTimersPill`: o tempo do timer iniciado por último e, com mais de um, o
+  número; abaixo de `md` fica compacta (ponto ao vivo e tempo, sem o número). O popover lista
+  todos, com link para a tarefa e botão de pausar. Substitui
+  o antigo `FloatingTimer`. Depois, **Buscar** (abre a paleta; mostra "Ctrl K" a partir de `xxl`),
+  **Aparência** (`Dropdown` com o grupo Tema — Seguir o sistema, Claro, Escuro, com o atual
+  marcado — e a troca de densidade; o ícone do botão segue o tema escolhido: `Monitor`, `Sun` ou
+  `Moon`) e **Nova tarefa** (só ícone com tooltip abaixo de `lg`), que abre o
+  `NewTaskModal` montado no shell, por cima da tela atual (`lib/newTaskRequest.ts`).
+
+As telas não têm mais botão "Voltar"; só os detalhes (tarefa e projeto) mantêm o seu.
+
+### Barra de status (`components/shell/StatusBar.tsx`)
+
+Faixa de 28px no pé da coluna de conteúdo, com indicadores passivos: Notion, Google Calendar e Jira
+(ponto + texto: sincronizando, sincronizado há X, não conectado, com erro) e o MCP (porta, parado
+ou desligado). Erro vira ponto vermelho com tooltip; clicar abre Configurações. À direita, a dica
+de que fechar a janela mantém o app na bandeja. Abaixo de `md` fica só o Notion. O estado inicial
+vem das configs (`notionGetConfig`, `gcalGetStatus`, `jiraGetStatus`, `mcpGetStatus`, relidas a
+cada troca de rota) e muda com os eventos de sync; as regras ficam em `integrationStatus.ts`
+(testado). Substituiu o banner `SyncNotification`.
+
+### Paleta de comandos (`components/shell/CommandPalette.tsx`)
+
+`Ctrl+K` (ou `Cmd+K`) em qualquer rota da janela principal, menos com o foco no terminal, onde o
+atalho é do shell. Um `Modal` com campo de busca e lista navegável por setas e Enter:
+
+- **Ações:** capturar o texto digitado no Inbox (o substituto da captura do header abaixo de `sm`)
+  alternar a densidade e trocar o tema ("Tema: Claro", "Tema: Escuro", "Tema: Seguir o sistema",
+  menos o que já está ativo).
+- **Ir para:** uma entrada por tela da sidebar.
+- **Tarefas:** `listTasks({ search, limit: 8 })`, com botão para iniciar o timer de quem não está
+  rodando.
+- **Projetos:** `listProjects` ao abrir a paleta, filtrado pelo nome (sem acento e caixa), até 5,
+  abrindo `/project/<id>`; arquivado leva a dica "Arquivado".
+- **Páginas:** `searchPages`, até 5, abrindo `/notebooks?page=<id>`.
+
+A busca espera 150 ms sem digitar e descarta respostas atrasadas. A filtragem de comandos ignora
+acento e caixa (`paletteCommands.ts`, testado).
 
 ## Rotas
 
@@ -148,15 +215,15 @@ Ordem dos botões (todos `size="sm" h-9`):
 | `/horizons` | Horizontes GTD | [06](06-horizontes.md) | sim |
 | `/review` | Revisão semanal | [07](07-revisao-semanal.md) | sim |
 | `/dashboard` | Dashboard | [08](08-dashboard.md) | sim |
-| `/contexts` | Contextos | [09](09-contextos-e-tags.md) | sim |
-| `/tags` | Tags | [09](09-contextos-e-tags.md) | sim |
-| `/archived` | Arquivadas | [10](10-arquivadas.md) | sim |
+| `/contexts` | Contextos e tags (aba Contextos) | [09](09-contextos-e-tags.md) | sim |
+| `/tags` | Contextos e tags (aba Tags) | [09](09-contextos-e-tags.md) | sim |
+| `/archived` | Arquivo | [10](10-arquivadas.md) | sim |
 | `/settings` | Configurações | [11](11-configuracoes.md) | sim |
 | `/float` | Timer flutuante | [12](12-janelas-auxiliares.md) | janela própria |
 | `/quick-capture` | Captura rápida | [12](12-janelas-auxiliares.md) | janela própria |
 
-¹ "Sub-página" controla apenas uma coisa: o `FloatingTimer` (a pílula preta no canto inferior
-direito) **não aparece** em sub-páginas. Fora isso, todas as rotas se comportam igual.
+¹ "Sub-página" decidia onde aparecia o antigo `FloatingTimer`. Com a pílula de timers no header
+(F1-d), todas as rotas se comportam igual.
 
 ## As três janelas
 
@@ -164,7 +231,7 @@ Todas as três carregam **o mesmo bundle do renderer** e se diferenciam pelo has
 
 | Janela | Rota | Dimensões | Características |
 | --- | --- | --- | --- |
-| Principal | `#/` | 1024×700 (mín. 800×600) | moldura do SO, menu escondido |
+| Principal | `#/` | 1024×700 (mín. 400×600) | moldura do SO, menu escondido |
 | Timer flutuante | `#/float` | 300 × dinâmica (44px por timer, até 5, + rodapé 44 + 16) | sem moldura, transparente, sempre no topo, fora da barra de tarefas, arrastável |
 | Captura rápida | `#/quick-capture` | 400×140, centralizada a 1/3 da altura | sem moldura, transparente, sempre no topo, fecha ao perder o foco |
 
@@ -175,76 +242,88 @@ Regras de exibição do float, decididas no processo principal (não pelo render
 - Fechar a janela principal não encerra o app: ele fica na bandeja.
 
 O app também registra um **ícone de bandeja** (Abrir CrafyTask · Captura rápida · Sair) e um **atalho
-global `Ctrl/Cmd + Shift + Space`** que abre a captura rápida de qualquer lugar do sistema.
+global** (padrão `Ctrl/Cmd + Shift + Space`, trocado em Configurações → Geral) que abre a captura
+rápida de qualquer lugar do sistema.
 
 ## Padrões que se repetem em toda tela
 
-Reconhecer estes padrões evita redesenhar a mesma coisa quinze vezes.
+Reconhecer estes padrões evita redesenhar a mesma coisa quinze vezes. A regra de cada um está no
+[guia de design](../design/guia-de-design.md) (§10 e §11); aqui fica onde ele aparece no código.
 
-### 1. Cabeçalho de sub-página
+### 1. Começo da página
 
-Presente em `/today`, `/calendar`, `/notebooks`, `/projects`, `/project/:id`, `/horizons`,
-`/review`, `/dashboard`, `/contexts`, `/tags`, `/archived`, `/settings`.
-
-```
-<header class="shrink-0 px-6 py-4 bg-white border-b border-slate-200
-               flex items-center justify-between">
-  [← Voltar] [divisor vertical] [ícone] [título]     [ação primária]
-</header>
-```
-
-Variações reais: o divisor `h-6 w-px bg-slate-200` existe em algumas telas e não em outras; o botão
-Voltar às vezes é `<Button variant="ghost">` e às vezes um `<button>` cru; o destino é quase sempre
-`/`, exceto no detalhe do projeto (volta para `/projects`) e no detalhe da tarefa (`navigate(-1)`).
+O título da tela fica no header do shell (`screenTitle`), não na página. A página começa direto
+pelo conteúdo ou por uma barra de ferramentas: um `Flex` com `wrap`, busca (`Input` com o ícone
+`Search`) e ordenação (`Select`) à esquerda, e o alternador de visão (`Segmented`, Cards/Tabela) à
+direita. Não há botão "Voltar" nas telas da sidebar; só os detalhes (tarefa e projeto) mantêm o seu.
 
 ### 2. Casca de página
 
-```
-<div class="flex flex-col h-full overflow-hidden bg-slate-50">
-  <header … />
-  <ScrollArea class="flex-1 h-0">
-    <div class="p-6 pb-24">  ← conteúdo
-  </ScrollArea>
+```tsx
+<div className="h-full overflow-y-auto">
+  <PageContainer>…</PageContainer>
 </div>
 ```
 
-O `h-full` (não `h-screen`) é deliberado: o `<main>` do App já descontou a altura do TitleBar. O
-`pb-24` reserva espaço para o `FloatingTimer` não cobrir a última linha.
+É o molde de Arquivo, Dashboard, Horizontes, Contextos e tags, Projetos, detalhe do projeto,
+Configurações, Hoje e da lista de tarefas. A rolagem é a nativa do navegador (não há mais
+`ScrollArea`). O `h-full` (não `h-screen`) é deliberado: o `Content` do shell já descontou a altura
+do header. Detalhe da tarefa, revisão semanal, calendário e cadernos dividem a altura em painéis e
+rolam cada painel por conta própria; calendário e cadernos usam `PageContainer fullWidth`.
 
-### 3. Abas em pílula
+### 3. Abas e alternadores
 
-Filtros de status na lista de tarefas, em projetos e no plano do dia usam o mesmo botão:
+Filtros de status (lista de tarefas, projetos, contextos e tags) são `Tabs` do antd com ícone,
+rótulo e contador (`StatusTabLabel`, `ProjectTabLabel`). Em Projetos, abaixo de `md`, as abas viram
+um `Select`. Alternar a forma de ver a mesma coisa (Tabela/Cards/Kanban, período do dashboard,
+Notas/Desenho) é `Segmented`.
 
-```
-ativo:   bg-slate-900 text-white shadow-md
-inativo: bg-white text-slate-600 border border-slate-200 hover:bg-slate-100
-formato: rounded-full px-4 py-2 text-sm font-medium
-```
+### 4. Superfície
 
-### 4. Cartão de superfície
+`Card` do antd, com o raio grande do tema (12px) e borda `colorBorderSecondary`, sem sombra. Sombra
+só no que flutua (popover, modal, barra de ações em massa, bloco arrastado), sempre a mesma
+`boxShadowSecondary`. Tabelas são `Table` do antd, com linha clicável e o menu da linha por
+`MenuRow`.
 
-`bg-white border border-slate-200 rounded-sm p-4` — o contêiner padrão de conteúdo. O `rounded-sm`
-é resultado de uma decisão de "design flat" que substituiu o `rounded-xl` + `shadow` originais.
+### 5. Menus e ações reveladas
 
-### 5. Ações reveladas no hover
-
-Editar/excluir em cartões de contexto, tag, área e meta ficam em `opacity-0
-group-hover:opacity-100`. O mesmo vale para o checkbox do `TaskCard` e o botão "Hoje".
+Cartões e linhas têm o botão `⋯` sempre visível e o mesmo menu no botão direito (`Dropdown` com
+`trigger={['contextMenu']}`; em tabela, `MenuRow`). Ação que só aparece no hover sobrou em listas
+densas: a árvore de páginas dos cadernos (`.ct-nb-act`), o fechar das abas do terminal
+(`.ct-term-item-close`) e a alça de redimensionar bloco no calendário. As duas primeiras também
+aparecem com o foco do teclado (`:focus-within`).
 
 ### 6. Estado vazio
 
-Ícone grande dentro de um círculo `bg-slate-100 p-4 rounded-full`, frase principal e, às vezes, um
-botão de ação. Formulações e tamanhos variam de tela para tela.
+`Empty` do antd com uma frase específica da tela ou da aba e, quando faz sentido, uma ação (ex.:
+"Abrir o plano do dia", "Abrir projetos" nos níveis de Horizontes). Usado na lista de tarefas, Hoje,
+Projetos, Horizontes, Contextos e tags, Arquivo, Cadernos, detalhe da tarefa, agenda do calendário,
+passos da revisão e cartões do dashboard.
 
-### 7. Diálogo de confirmação
+### 7. Confirmação
 
-`AlertDialog` (Radix) com título, descrição, "Cancelar" e ação destrutiva em vermelho. O
-`DeleteConfirmDialog` embrulha esse padrão com textos padrão.
+Destrutiva sempre confirma, citando o que será afetado. Exclusões e operações que mexem em muitos
+itens usam `modal.confirm` de `App.useApp()` (tarefa, projeto, área, meta, contexto, tag, caderno,
+arquivadas, restauração de backup, token do MCP, revisão). Ações curtas presas a um botão usam
+`Popconfirm` ("Excluir esta sessão?", limpar o Notion, desconectar Google Calendar e Jira).
 
 ### 8. Feedback de ação
 
-`toast` (sonner) no canto inferior direito para sucesso e erro. A sincronização com o Notion tem seu
-próprio banner (`SyncNotification`) no topo direito, logo abaixo do TitleBar.
+`message` de `App.useApp()` para sucesso e erro, no topo da janela. `notification` só no terminal.
+Sincronização (Notion, Google Calendar, Jira) não gera aviso: aparece na barra de status.
+Carregamento é `Spin` ou `Skeleton` no lugar do conteúdo.
+
+### 9. Falha isolada
+
+Cada região (sidebar, header, rota, editores, terminal, gráficos do dashboard, fluxo da revisão)
+fica dentro de um `RegionBoundary`: se quebra, mostra um `Result` "Esta área falhou" com "Tentar de
+novo" e "Copiar detalhes", e o resto da janela continua.
+
+### 10. Cor com significado
+
+Status, categoria e energia aparecem pelos chips de `components/chips/` (ícone e texto, nunca só a
+cor). Qualquer outra cor vem do token do antd (`theme.useToken()` ou `var(--ant-*)` no CSS) ou de
+`theme/semantic.ts`.
 
 ## Como os dados chegam à tela
 
@@ -255,10 +334,9 @@ busca o que precisa através de hooks que chamam `window.api.*` (IPC para o proc
 | --- | --- |
 | `useTasks(filters)` | Lista de tarefas filtrada + `createTask` / `refreshTasks` |
 | `useTaskDetail(id)` | Tarefa, sessões de tempo, update/status/arquivar/deletar |
-| `useProjects()` / `useProjectDetail(id)` | Projetos |
-| `useContexts()` / `useTags()` | Taxonomias |
-| `useHorizons()` → `useAreas()` / `useGoals()` | Áreas e metas |
-| `useCalendarWeek(inicio)` / `useCalendarMonth(ano-mês)` | Agenda e blocos de tempo |
+| `useProjects()` | Projetos |
+| `useLabels()` | Contextos e tags com uso e abertas |
+| `useCalendarRange(de, até)` | Blocos, tarefas e sessões do intervalo do Calendário |
 | `useWeeklyReview()` | Revisão corrente, histórico, indicadores de saúde |
 | `useTimer()` / `timerStore` | Cronômetros ativos |
 | `useNotification()` | Notificações do SO |
@@ -271,17 +349,32 @@ emite `tasks:refresh` e as telas interessadas recarregam. Outros eventos push: `
 
 ## O que a interface memoriza
 
-Chaves em `localStorage` (via `usePersistedState`):
+Chaves em `localStorage`, quase todas via `usePersistedState`:
 
 | Chave | Padrão | Efeito |
 | --- | --- | --- |
+| `ticktask:theme` | `'system'` | Tema (Seguir o sistema, Claro, Escuro) |
+| `ticktask:density` | `'comfortable'` | Densidade da interface |
+| `ticktask:siderCollapsed` | `false` | Sidebar recolhida em 64px |
 | `ticktask:taskListStatusFilter` | `'inbox'` | Aba de status ativa na lista |
-| `ticktask:taskListViewMode` | `'table'` | Cards ou tabela |
-| `ticktask:taskListGrouping` | `false` | Agrupamento ligado |
-| `ticktask:taskListGroupBy` | `'project'` | Agrupar por projeto ou contexto |
-| `ticktask:executandoKanban` | `false` | Kanban na aba Executando |
-| `ticktask:executandoKanbanGroupBy` | o `taskListGroupBy` atual | Colunas do Kanban (projeto, contexto, Jira) |
-| `ticktask.notesWidth` | `550` | Largura do painel de notas |
-| `ticktask.notesZenWidth` | `640` | Largura da coluna no modo zen |
+| `ticktask:taskListView` | `'table'` | Tabela, cards ou Kanban na lista |
+| `ticktask:taskListGroup` | `'none'` | Agrupamento da lista (projeto, contexto, espaço ou pai do Jira) |
+| `ticktask:taskListGroupOrder` | `{}` | Ordem dos grupos arrastados |
+| `ticktask:projectTaskView` / `projectTaskGroup` / `projectTaskGroupOrder` | tabela, sem grupo | O mesmo para a lista dentro do projeto |
+| `ticktask:projectListViewMode` | `'cards'` | Cards ou tabela em Projetos |
+| `ticktask:projects-sort` | `'due'` | Ordenação de Projetos |
+| `ticktask:labelsView` | `'cards'` | Cards ou tabela em Contextos e tags |
+| `ticktask:taskInspectorOpen` | `true` | Inspetor aberto no detalhe da tarefa (a partir de `xl`) |
+| `ticktask:calendar-show` | todas | O que o Calendário mostra (menu Mostrar) |
+| `ticktask:projects-by-area` | `false` | Agrupar Projetos por área |
+| `ticktask:review-active` | — | Id da revisão semanal aberta (em `sessionStorage`) |
+| `ticktask.notebooks.notebook` / `.section` / `.page` / `.tab` | — | Último caderno, seção, página e aba abertos |
+| `settings.section` | `'geral'` | Seção aberta em Configurações |
+| `terminal.shell` / `terminal.autoTimer` / `terminal.height` | — / `true` / 280 | Shell, timer no primeiro comando e altura do painel |
 
-Note a inconsistência de nomenclatura: cinco chaves usam `:` e duas usam `.`.
+As chaves antigas da lista (`ticktask:taskListViewMode`, `taskListGrouping`, `taskListGroupBy`,
+`executandoKanban`, `executandoKanbanGroupBy`) só são lidas uma vez, para montar o padrão das novas
+(`legacyListPrefs` em `lib/taskListView.ts`).
+
+Note a inconsistência de nomenclatura: a maioria usa `ticktask:`, os cadernos usam `ticktask.`, e
+Configurações e terminal não têm prefixo.

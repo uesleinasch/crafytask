@@ -4,6 +4,25 @@ Duas janelas sem moldura e um ícone de bandeja. As duas janelas carregam **o me
 renderer** que a janela principal, diferenciando-se pelo hash da URL — o que significa que qualquer
 efeito colateral executado no escopo de módulo roda três vezes.
 
+As duas seguem o guia de design (§8 "Janelas auxiliares") e o protótipo (`#janelas`): o mesmo
+`ThemeProvider` da janela principal, então tema (claro, escuro ou do sistema) e densidade valem para
+as três janelas. Nenhuma cor fixa.
+
+## O cartão
+
+As duas são um cartão `.ct-aux-win` (em `main.css`) que ocupa a janela transparente inteira:
+
+- fundo `colorBgElevated`, borda de 1px em `colorBorder` (o `borderStrong` dos tokens), raio 12;
+- **sem sombra**: a janela não tem sobra em volta do cartão para desenhá-la; a borda separa o
+  cartão do que está atrás. As duas janelas são criadas com `hasShadow: false`;
+- a página chama `useAuxWindow()`, que põe a classe `aux-window` no `<body>`. Ela zera o fundo de
+  `body` e `#root` e fixa a altura em `100vh`. Sem ela, o fundo do tema aparece nos cantos
+  arredondados.
+
+No Electron, clique dentro de uma região de arraste (`-webkit-app-region: drag`) não chega ao
+elemento. Por isso o arraste fica só em cabeçalho, linhas e rodapé, e todo `button` dentro deles é
+`no-drag` pela própria regra do CSS.
+
 ---
 
 # Timer flutuante — `/float`
@@ -32,7 +51,7 @@ Sem nenhum timer ativo, o float nunca aparece.
 | Propriedade | Valor |
 | --- | --- |
 | Largura | **300px** fixa |
-| Altura | `linhas × 44 + 44 (rodapé) + 16 (respiro)`, com no mínimo 1 e **no máximo 5** linhas |
+| Altura | `linhas × 44 + 44 (rodapé) + 2 (bordas)`, com no mínimo 1 e **no máximo 5** linhas |
 | Posição inicial | canto superior direito da área útil, com 20px de margem |
 | Janela | sem moldura, transparente, sempre no topo, fora da barra de tarefas, não redimensionável, arrastável, sem sombra |
 
@@ -41,42 +60,58 @@ de linhas muda — redimensionar a cada tique repintaria a janela transparente s
 
 ## Aparência
 
-Fundo `bg-slate-900/95` com `backdrop-blur`, borda `slate-700`, `rounded-sm`. O `<body>` recebe a
-classe `float-window`, que zera o fundo para deixar a transparência funcionar.
-
-A janela inteira é área de arraste (`WebkitAppRegion: drag`, `cursor: grab`); os botões marcam
-`no-drag` individualmente.
+```
+┌──────────────────────────────────────┐
+│ ● Nome da tarefa         02:32:10  ⏸ │
+│ ● Reunião diária         01:13:00  ⏸ │  ← fundo de time leak
+├──────────────────────────────────────┤
+│ 2 em andamento     ⏸ Pausar todos  ⤢ │
+└──────────────────────────────────────┘
+```
 
 ### Linha de timer (44px)
 
-```
-[◉] Nome da tarefa            00:12:45   [■]
-```
+- `LiveDot` (ponto verde que pulsa; parado com `prefers-reduced-motion`);
+- nome da tarefa como botão sem moldura (`.ct-aux-name`), focável, truncado, que fica na cor
+  primária no hover. Tooltip "Abrir a tarefa no CrafyTask"; o clique chama `float:openTask`;
+- tempo em Geist Mono tabular, 14/600;
+- **Pausar**: botão `text` só com ícone (`Pause`), tooltip "Pausar", `aria-label` "Pausar <nome>".
+  Sem vermelho, como na pílula de timers do header.
 
-- `Activity` esmeralda com um ponto pulsante sobreposto;
-- nome truncado em `text-xs text-slate-300`;
-- tempo em `font-mono text-sm font-bold tabular-nums`, branco;
-- botão quadrado de **parar** (`Square` preenchido), vermelho.
+Tarefa de categoria `time_leak` ganha o fundo do nível (`timeLeakBackground`), com os mesmos
+limiares da lista: `useTimeLeakThresholds()`, das preferências de fluxo de trabalho.
 
 ### Rodapé (44px)
 
-- esquerda: `N ativo` / `N ativos`;
-- direita: **Parar todos** (`StopCircle`, vermelho) e um botão-ícone **Abrir app** (`Maximize2`).
+Fundo `colorBgContainer`, borda de cima em `colorBorderSecondary`:
+
+- esquerda: "N em andamento";
+- **Pausar todos** (`Pause` + texto), só com mais de um timer;
+- **Abrir CrafyTask**: botão-ícone (`Maximize2`) com tooltip; chama `float:restore`.
 
 ### Estado de espera
 
-Se a janela existir mas ainda não recebeu dados: fundo escuro com "Aguardando..." em
-`text-slate-400`.
+Antes do primeiro `float:update`, uma linha "Carregando os timers…" em texto secundário.
 
 ## Comunicação
 
-O float **não consulta o banco**. Ele apenas escuta dois eventos vindos do processo principal:
+O float **não consulta o banco**. Ele escuta dois eventos vindos do processo principal:
 
-- `float:update` — lista `{ taskId, taskName, seconds }`, emitida a cada tique pelo `timerStore` da
-  janela principal;
+- `float:update` — lista de `FloatTimerData` (`{ taskId, taskName, category, seconds }`, em
+  `shared/types.ts`), emitida a cada tique pelo `timerStore` da janela principal. A categoria serve
+  ao nível de time leak;
 - `float:clear` — limpa a lista.
 
-E emite três comandos: `float:restore`, `float:stopTimer`, `float:stopAll`.
+E emite quatro comandos:
+
+| Canal | Efeito |
+| --- | --- |
+| `float:restore` | mostra a janela principal (restaura, mostra e foca, mesmo escondida na bandeja) |
+| `float:openTask(taskId)` | mostra a janela principal e manda `app:navigate` com `/task/<id>`; o `useShellEvents` navega. Se a janela principal não existe, ela nasce já com `#/task/<id>`, porque o evento chegaria antes de o React montar |
+| `float:stopTimer(taskId)` | pausa o timer da tarefa |
+| `float:stopAll` | pausa todos |
+
+Mostrar a janela principal a foca, e o foco esconde o float.
 
 Consequência: se a janela principal for fechada de fato (não escondida), o float congela.
 
@@ -93,49 +128,52 @@ sustenta o "mind like water" do GTD.
 
 ## Como abre
 
-- **Atalho global `Ctrl/Cmd + Shift + Space`**, registrado no sistema inteiro;
+- **Atalho global**, `Ctrl/Cmd + Shift + Space` por padrão, trocado em Configurações → Geral
+  (`app_prefs`). Em X11 o app registra no `globalShortcut`; no GNOME com Wayland vira um atalho
+  personalizado do GNOME que roda o app com `--quick-capture`;
 - item **"Captura rápida"** no menu da bandeja.
 
 ## Geometria
 
 400×140, centrada horizontalmente e posicionada a 1/3 da altura da tela. Sem moldura, transparente,
-sempre no topo, fora da barra de tarefas. **Fecha automaticamente ao perder o foco.**
+sempre no topo, fora da barra de tarefas, sem sombra. **Fecha ao perder o foco** (no main) e com
+`Esc` (no renderer, em qualquer ponto da janela).
 
 ## Aparência
 
-Cartão branco `rounded-2xl shadow-2xl` — o único `rounded-2xl` do app, em contraste com o
-`rounded-sm` de todo o resto.
-
 ```
 ┌────────────────────────────────────────────┐
-│ 📥 CAPTURA RÁPIDA                       ×  │
-│                                            │
-│ [O que precisa ser feito?      ] [Capturar]│
-│                                            │
-│      Enter para capturar | Esc para fechar │
+│ 📥 Capturar para o Inbox                ×  │  ← 36px, arrasta
+│ [O que precisa ser feito?                ] │
+│ Enter captura · Esc fecha       [Capturar] │
 └────────────────────────────────────────────┘
 ```
 
-- **Cabeçalho:** `Inbox` + "CAPTURA RÁPIDA" em `text-xs font-semibold uppercase tracking-wider
-  text-slate-500`; "×" à direita.
-- **Campo:** `autoFocus` (com um `setTimeout` de 100ms para garantir o foco após a janela aparecer),
-  placeholder "O que precisa ser feito?", `focus:ring-2 focus:ring-slate-900`.
-- **Botão Capturar:** `bg-slate-900`, desabilitado com campo vazio.
-- **Dica:** "Enter para capturar | Esc para fechar" em `text-[10px]`.
+- **Cabeçalho (36px):** `Inbox` em `colorTextTertiary` + "Capturar para o Inbox" em negrito;
+  fechar à direita (`X`, botão `text` só com ícone, tooltip "Fechar (Esc)"). É a única área de
+  arraste.
+- **Campo:** `Input` do antd, grande (médio na densidade compacta), placeholder e `aria-label`
+  "O que precisa ser feito?". Foco ao abrir (`autoFocus` e um `focus()` 100ms depois, para quando a
+  janela aparece depois de montar).
+- **Rodapé:** `Kbd` "Enter captura · Esc fecha" e o primário pequeno **Capturar**, desabilitado com
+  o campo vazio e em `loading` enquanto grava.
 
-Toda a janela é arrastável; o cabeçalho e a área do campo marcam `no-drag`.
+## Estados
 
-## Estado de sucesso
+| Estado | O que muda |
+| --- | --- |
+| Capturado | o corpo vira `CircleCheck` em `colorSuccess`, "Capturado no Inbox" e o texto em cinza (`role="status"`); a janela fecha sozinha em **1,2 s** |
+| Erro | o texto fica no campo (`status="error"`) e o rodapé troca as teclas por "Não foi possível capturar. Tente de novo." em `danger` (`role="alert"`), sem mudar a altura. Digitar volta ao normal |
 
-Após capturar, a janela inteira vira um retângulo `bg-emerald-600` com `Inbox` + **"Capturado para
-Inbox!"** em branco, e **fecha sozinha após 1,5 segundo**.
+O `quickCapture:capture` não fecha mais a janela: quem fecha é o renderer, depois da confirmação.
 
 ## O que a captura cria
 
 Uma tarefa apenas com o nome, status `inbox` e categoria padrão. Sem projeto, contexto, prazo ou
 tag — o processamento fica para depois, como manda o método.
 
-A criação emite `tasks:refresh`, então a lista de tarefas da janela principal se atualiza sozinha.
+A criação emite `tasks:refresh`, então a lista de tarefas da janela principal se atualiza sozinha,
+e mostra uma notificação do sistema.
 
 ---
 

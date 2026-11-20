@@ -2,7 +2,11 @@ import type { TaskListFilters, TaskSort } from '@shared/types'
 
 const ORDER_BY: Record<TaskSort, string> = {
   updated: 't.updated_at DESC',
-  due_date: 't.due_date IS NULL, t.due_date ASC'
+  due_date: 't.due_date IS NULL, t.due_date ASC',
+  archived: 't.archived_at IS NULL, t.archived_at DESC, t.id DESC',
+  name: 't.name COLLATE NOCASE ASC, t.id ASC',
+  total_time: 't.total_seconds DESC, t.id DESC',
+  status_changed: 'julianday(COALESCE(t.status_changed_at, t.updated_at)) ASC, t.id ASC'
 }
 
 export function escapeLike(value: string): string {
@@ -47,9 +51,15 @@ export function buildTaskListWhere(filters: TaskListFilters): {
 
   const search = filters.search?.trim()
   if (search) {
-    conditions.push("(t.name LIKE ? ESCAPE '\\' OR t.description LIKE ? ESCAPE '\\')")
     const pattern = `%${escapeLike(search)}%`
-    params.push(pattern, pattern)
+    const id = /^#?(\d+)$/.exec(search)?.[1]
+    if (id) {
+      conditions.push("(t.id = ? OR t.name LIKE ? ESCAPE '\\' OR t.description LIKE ? ESCAPE '\\')")
+      params.push(Number(id), pattern, pattern)
+    } else {
+      conditions.push("(t.name LIKE ? ESCAPE '\\' OR t.description LIKE ? ESCAPE '\\')")
+      params.push(pattern, pattern)
+    }
   }
 
   if (filters.blockedOnly) {
@@ -70,6 +80,16 @@ export function buildTaskListWhere(filters: TaskListFilters): {
     params.push(filters.dueBefore)
   }
 
+  if (filters.archivedAfter) {
+    conditions.push("t.archived_at IS NOT NULL AND date(t.archived_at, 'localtime') >= ?")
+    params.push(filters.archivedAfter)
+  }
+
+  if (filters.archivedBefore) {
+    conditions.push("t.archived_at IS NOT NULL AND date(t.archived_at, 'localtime') < ?")
+    params.push(filters.archivedBefore)
+  }
+
   if (filters.overdueAt) {
     conditions.push(
       't.due_date IS NOT NULL AND (substr(t.due_date, 1, 10) < ? OR (substr(t.due_date, 1, 10) = ? AND t.due_time IS NOT NULL AND t.due_time < ?))'
@@ -85,6 +105,11 @@ export function buildTaskListWhere(filters: TaskListFilters): {
   if (filters.excludeStatus && filters.excludeStatus.length > 0) {
     conditions.push(`t.status NOT IN (${filters.excludeStatus.map(() => '?').join(', ')})`)
     params.push(...filters.excludeStatus)
+  }
+
+  if (typeof filters.staleDays === 'number' && filters.staleDays > 0) {
+    conditions.push("julianday(COALESCE(t.status_changed_at, t.updated_at)) < julianday('now', ?)")
+    params.push(`-${Math.floor(filters.staleDays)} days`)
   }
 
   return { clause: conditions.join(' AND '), params }
@@ -118,6 +143,22 @@ export function buildTaskListQuery(
   return { sql, params }
 }
 
+export function buildTaskIdsQuery(filters: TaskListFilters): { sql: string; params: unknown[] } {
+  const { clause, params } = buildTaskListWhere(filters)
+  return { sql: `SELECT t.id FROM tasks t WHERE ${clause} ORDER BY t.id`, params }
+}
+
+export function buildTaskTotalsQuery(filters: TaskListFilters): {
+  sql: string
+  params: unknown[]
+} {
+  const { clause, params } = buildTaskListWhere(filters)
+  return {
+    sql: `SELECT COUNT(*) AS count, COALESCE(SUM(t.total_seconds), 0) AS seconds FROM tasks t WHERE ${clause}`,
+    params
+  }
+}
+
 export function buildTaskCountQuery(filters: TaskListFilters): {
   sql: string
   params: unknown[]
@@ -129,6 +170,23 @@ export function buildTaskCountQuery(filters: TaskListFilters): {
       SELECT COUNT(*) as total
       FROM tasks t
       WHERE ${clause}
+    `,
+    params
+  }
+}
+
+export function buildTaskStatusCountQuery(filters: TaskListFilters): {
+  sql: string
+  params: unknown[]
+} {
+  const { clause, params } = buildTaskListWhere({ ...filters, status: 'all' })
+
+  return {
+    sql: `
+      SELECT t.status as status, COUNT(*) as total
+      FROM tasks t
+      WHERE ${clause}
+      GROUP BY t.status
     `,
     params
   }

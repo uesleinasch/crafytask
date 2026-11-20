@@ -18,8 +18,8 @@ import {
   verticalListSortingStrategy
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { Button, Tooltip, theme } from 'antd'
 import { GripVertical } from 'lucide-react'
-import { cn } from '@renderer/lib/utils'
 
 interface HandleBinding {
   attributes: DraggableAttributes
@@ -34,6 +34,7 @@ interface SortableGroupsProps {
   direction: 'vertical' | 'horizontal'
   onReorder?: (activeKey: string, overKey: string) => void
   className?: string
+  style?: React.CSSProperties
   children: React.ReactNode
 }
 
@@ -42,6 +43,7 @@ export function SortableGroups({
   direction,
   onReorder,
   className,
+  style,
   children
 }: SortableGroupsProps): React.JSX.Element {
   const sensors = useSensors(
@@ -63,7 +65,9 @@ export function SortableGroups({
         }
         disabled={!onReorder}
       >
-        <div className={className}>{children}</div>
+        <div className={className} style={style}>
+          {children}
+        </div>
       </SortableContext>
     </DndContext>
   )
@@ -72,10 +76,12 @@ export function SortableGroups({
 interface SortableItemProps {
   id: string
   className?: string
+  style?: React.CSSProperties
   children: React.ReactNode
 }
 
-function SortableItem({ id, className, children }: SortableItemProps): React.JSX.Element {
+function SortableItem({ id, className, style, children }: SortableItemProps): React.JSX.Element {
+  const { token } = theme.useToken()
   const {
     attributes,
     listeners,
@@ -90,11 +96,15 @@ function SortableItem({ id, className, children }: SortableItemProps): React.JSX
     <div
       ref={setNodeRef}
       style={{
+        ...style,
         transform: CSS.Translate.toString(transform),
         transition,
-        opacity: isDragging ? 0.6 : 1
+        opacity: isDragging ? 0.6 : 1,
+        ...(isDragging
+          ? { position: 'relative', zIndex: 10, boxShadow: token.boxShadowSecondary }
+          : null)
       }}
-      className={cn(className, isDragging && 'relative z-10 shadow-lg')}
+      className={className}
     >
       <HandleContext.Provider value={{ attributes, listeners, setActivatorNodeRef }}>
         {children}
@@ -105,23 +115,22 @@ function SortableItem({ id, className, children }: SortableItemProps): React.JSX
 
 SortableGroups.Item = SortableItem
 
-export function GroupDragHandle({ className }: { className?: string }): React.JSX.Element | null {
+export function GroupDragButton({ label }: { label: string }): React.JSX.Element | null {
   const binding = useContext(HandleContext)
   if (!binding) return null
   return (
-    <button
-      type="button"
-      ref={binding.setActivatorNodeRef}
-      {...binding.attributes}
-      {...binding.listeners}
-      onClick={(event) => event.stopPropagation()}
-      title="Arrastar para reordenar"
-      className={cn(
-        'shrink-0 text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing',
-        className
-      )}
-    >
-      <GripVertical size={16} />
-    </button>
+    <Tooltip title="Arrastar para reordenar">
+      <Button
+        type="text"
+        size="small"
+        ref={binding.setActivatorNodeRef}
+        {...binding.attributes}
+        {...binding.listeners}
+        onClick={(event) => event.stopPropagation()}
+        aria-label={`Arrastar ${label} para reordenar`}
+        icon={<GripVertical size={14} strokeWidth={1.75} aria-hidden />}
+        style={{ cursor: 'grab', flex: 'none' }}
+      />
+    </Tooltip>
   )
 }

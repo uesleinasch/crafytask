@@ -1,219 +1,217 @@
 # Inconsistências e pontos de atrito
 
-Levantamento factual do que hoje está incoerente, duplicado ou ausente na interface. Não é uma lista
-de bugs — nada aqui quebra o app. É o insumo direto para decidir o escopo de uma refatoração visual.
+Este documento começou como o levantamento do que estava incoerente, duplicado ou ausente na
+interface legada, e serviu de insumo para a refatoração visual (fases F0–F9 do
+[plano de refatoração](../design/plano-de-refatoracao.md)). Agora cada item diz se foi resolvido e
+em que fase, ou se continua aberto. Nada aqui é bug: nenhum item quebra o app.
 
-Cada item traz **o que é**, **onde acontece** e, quando relevante, **por que importa**.
+Resumo: dos itens de A a E, sobram abertos C1 (sobreposição entre telas, decisão de produto), E3
+(metas sem destino) e E8 (idioma). A seção F reúne restrições que continuam
+valendo.
 
 ---
 
 ## A. Sistema visual
 
-### A1. Três paletas para status de tarefa, quatro para categoria
+### A1. Três paletas para status de tarefa, quatro para categoria — resolvida
 
-Ver a tabela completa em [14-design-tokens.md](14-design-tokens.md#5-paletas-semanticas).
+**F2-b, F4-b2 e F7-b3.** Status, categoria e energia passam pelos chips de `components/chips/`, com
+as cores de `theme/semantic.ts`; o calendário (F4-b2) e o dashboard (F7-b3) largaram as cópias
+locais, e a F9-a tirou o último hex solto de componente. Antes, time leak era amarelo em três
+lugares e roxo em dois, e `finalizada` era roxo no badge e esmeralda no dashboard.
 
-O caso mais visível: **time leak é amarelo** no badge, no `CategorySelect` e no bloco do calendário,
-mas **roxo** no acento da tela de tarefa e no gráfico do dashboard. E `finalizada` é roxo no badge,
-esmeralda no dashboard.
+### A2. Exports de cor mortos em `shared/types.ts` — resolvida
 
-### A2. Exports de cor mortos em `shared/types.ts`
+**F0-b**, com as últimas cópias saindo na F6-a (`CONTEXT_COLORS`), na F4-b2 (calendário) e na
+F7-b3 (dashboard). As cores de domínio moram só em `theme/semantic.ts`.
 
-`STATUS_COLORS` e `CATEGORY_COLORS` estão exportados e não são importados por ninguém. `CalendarPage`
-e `DashboardPage` declararam cópias locais em vez de usá-los. `ContextsPage` duplica literalmente
-`DEFAULT_COLORS` como `CONTEXT_COLORS`.
+### A3. Duas gramáticas de badge — resolvida
 
-### A3. Duas gramáticas de badge
+**F2-b.** Status de tarefa e de projeto usam o mesmo chip (`StatusChip` e `ProjectStatusChip`):
+fundo claro, texto na cor, ícone e rótulo. Antes, o de projeto era pílula sólida com texto branco.
 
-Status de **tarefa** é pílula clara com borda e texto escuro. Status de **projeto** é pílula sólida
-com texto branco. Ambos aparecem em listas do mesmo app.
+### A4. Cinco raios de borda sem regra — resolvida
 
-### A4. Cinco raios de borda sem regra
+**F0-b e a migração de cada tela (F1–F8).** O raio vem dos tokens do antd (4, 6, 8 e 12) e nenhum
+componente usa classe `rounded-*`, e a escala `--radius` do Tailwind saiu na F9-a.
 
-`rounded-sm` (65×), `rounded-md` (36×), `rounded-lg` (83×), `rounded-full` (82×) e `rounded-2xl`
-(2×, só na captura rápida). Um cartão pode ser `rounded-sm` e conter blocos `rounded-lg`.
+### A5. Sombras sobreviveram à migração "flat" — resolvida
 
-### A5. Sombras sobreviveram à migração "flat"
+**F0-e.** Uma sombra só, `boxShadowSecondary`, para o que flutua (popover, modal, barra de ações em
+massa, bloco arrastado). Não há classe `shadow-*` em componente.
 
-`shadow-sm` foi removido dos cartões, mas restam `shadow-xs`, `shadow-md`, `shadow-lg`, `shadow-xl` e
-`shadow-2xl` — cinco intensidades em circulação.
+### A6. Tokens de fonte apontam para variáveis inexistentes — resolvida
 
-### A6. Tokens de fonte apontam para variáveis inexistentes
+**F0-a.** Geist e Geist Mono empacotadas, e os tokens apontam para elas.
 
-`--font-sans: var(--font-geist-sans)` e `--font-mono: var(--font-geist-mono)`, e nenhuma das duas
-é definida. É provável que a utilidade `font-mono` não aplique família monoespaçada nenhuma — o que
-afetaria o cronômetro de `text-8xl`, o elemento mais proeminente do app.
-**Requer confirmação visual no app rodando.**
+### A7. Tema escuro definido e desligado — resolvida
 
-### A7. Tema escuro definido e desligado
+**F0-c e F7-d3.** O `ThemeProvider` monta o tema claro ou escuro do antd a partir de
+`theme/tokens.ts`, e a Aparência (F7-d3) libera o seletor em Configurações, no header e na paleta.
+O bloco `.dark` antigo saiu do CSS na F9-a (A10).
 
-O CSS traz o bloco `.dark` completo (20 tokens). Nada no app adiciona essa classe, e não há
-alternador em `/settings`.
+### A8. Primitivos do shadcn não usados — resolvida
 
-### A8. Três primitivos do shadcn não usados
+**F9-a.** Saíram shadcn, Radix e `components/ui/`. Cartões, abas e barras de progresso são `Card`,
+`Tabs` e `Progress` do antd.
 
-`Card`, `Badge` e `Tabs` estão no repositório e **nenhuma tela os importa**. Cada uma reimplementou o
-mesmo desenho na mão: cartões como `bg-white border border-slate-200 rounded-sm`, abas como botões
-`rounded-full`, badges como `<span>` com classes literais. Seis das oito barras de progresso do app
-são `<div>` com `width` inline em vez do primitivo `Progress`.
+### A9. Componentes mortos — resolvida
 
-### A9. Componentes mortos
+**F9-a.** Saíram `Timer.tsx`, `Versions.tsx` e, junto, `TimeEntryList`, `DueDateBadge`,
+`ScheduledTimeBadge`, `ColorPicker` e `lib/colors.ts`.
 
-`components/Timer.tsx` e `components/Versions.tsx` não são importados por nenhum arquivo.
+### A10. Variáveis do shadcn no `main.css` — resolvida
+
+**F9-a.** O bloco `:root`/`.dark` com `--background`, `--primary`, `--chart-*`, `--sidebar-*` e os
+mapeamentos do `@theme inline` que as expunham ao Tailwind saíram; o `@theme inline` ficou só com as
+fontes. A camada `base` pinta o `body` com
+`var(--ant-color-bg-layout)` e `var(--ant-color-text)`.
+
+### A11. Seletor de cor copiado em quatro lugares — resolvida
+
+**F9-c.** Os quatro (`LabelEditModal`, `ProjectHeader`, `NewProjectModal`, `NameColorDialog`) usam
+`components/color/ColorSwatches.tsx`: `radiogroup`, cada cor anunciada pelo nome
+(`userColorName`, em `theme/semantic.ts`), e a cor atual fora da paleta aparece como mais uma
+opção.
+
+### A12. Rótulo do chip difere do rótulo do menu — resolvida
+
+**F9-c.** Status, categoria e energia têm um rótulo só, em `shared/types.ts` (`STATUS_LABELS`,
+`CATEGORY_LABELS`, `ENERGY_LABELS`), com os textos do protótipo: "Someday", "Time leak", "Alta/Média/
+Baixa" (e "Energia alta" onde o nível aparece sozinho). Saíram `STATUS_CHIP_LABELS`,
+`CATEGORY_CHIP_LABELS` e o `ENERGY_LABELS` de `theme/semantic.ts`.
 
 ---
 
 ## B. Navegação e casca
 
-### B1. Onze botões numa barra única, só na home
+### B1. Onze botões numa barra única, só na home — resolvida
 
-O `TitleBar` renderiza a navegação **exclusivamente na rota `/`**. Em qualquer outra tela, ir de
-`/projects` para `/calendar` exige voltar à home primeiro. Em 1024px de largura (a largura padrão da
-janela), os onze botões ocupam praticamente toda a barra.
+**F1-b.** A sidebar do `AppShell` traz a navegação agrupada em todas as rotas. Antes, o `TitleBar`
+só mostrava a navegação em `/`.
 
-### B2. Botão "Voltar" com quatro implementações
+### B2. Botão "Voltar" com quatro implementações — resolvida
 
-| Tela | Implementação | Destino |
-| --- | --- | --- |
-| maioria | `<Button variant="ghost">` com "← Voltar" | `/` |
-| detalhe do projeto | `<Button variant="ghost">` com "← Projetos" | `/projects` |
-| detalhe da tarefa | `<button>` cru com "← Voltar" | `navigate(-1)` (histórico) |
-| calendário / horizontes | `<Button size="sm">` só com o ícone | `/` |
+**F1-b.** As telas da sidebar perderam o "Voltar"; só os detalhes mantêm o seu (tarefa em
+`navigate(-1)`, projeto em "← Projetos", F5-e).
 
-### B3. Ação primária em quatro cores
+### B3. Ação primária em quatro cores — resolvida
 
-`bg-slate-900` (maioria) · `bg-blue-600` (botão "+ Bloco" no calendário, "Salvar Alterações" e
-"Iniciar Revisão" do cartão azul) · `bg-emerald-600` ("Iniciar Revisão" do cabeçalho, "Sincronizar
-Todas as Tarefas") · `bg-indigo-600` ("Novo Objetivo" nos horizontes).
+**F4-b2, F5-b, F5-c3 e F7-d2**, fechada pela F9-a. Toda ação primária é `type="primary"`, na cor
+primária do tema, uma por tela. Antes havia preto, azul, esmeralda e índigo, e a revisão semanal
+mostrava o mesmo comando duas vezes em cores diferentes.
 
-Na revisão semanal, **o mesmo comando aparece duas vezes na mesma tela em duas cores diferentes**.
+### B4. Configurações escondidas atrás de um ícone sem rótulo — resolvida
 
-### B4. Configurações escondidas atrás de um ícone sem rótulo
+**F1-b.** Configurações é um item rotulado no rodapé da sidebar.
 
-É o único item do `TitleBar` sem texto, e o único `variant="ghost"` da barra.
+### B5. O comportamento de "fechar" nunca é explicado onde importa — resolvida
 
-### B5. O comportamento de "fechar" nunca é explicado onde importa
-
-Fechar a janela esconde o app na bandeja. O único lugar que diz isso é uma nota de rodapé em
-`/settings` — tela que o usuário pode nunca abrir.
+**F1-f.** A barra de status diz, em toda tela, que fechar a janela mantém o app na bandeja.
 
 ---
 
 ## C. Sobreposição funcional
 
-### C1. Quatro telas mostram tarefas agendadas
+### C1. Várias telas mostram tarefas agendadas — aberta (decisão de produto)
 
-| Tela | O que oferece que as outras não têm |
-| --- | --- |
-| `/today` aba Hoje | ordenação manual por arraste, indicador de carga vs. 8h |
-| `/today` aba Semana | 7 dias em colunas, somatório por dia |
-| `/calendar` semana | grade horária, blocos de tempo, linha do "agora" |
-| `/calendar` mês | arraste para reagendar entre dias |
-| `/horizons` H0 | contexto vertical (do H0 ao H5) |
+O calendário (F4-b2 a F4-b4) concentra blocos de tempo, arraste, redimensionamento e as visões Dia,
+3 dias, Semana, Mês e Agenda; Hoje (F4-a) ficou com o plano e a carga do dia contra a jornada; o H0
+dos Horizontes mostra as mesmas tarefas no contexto dos níveis. A divisão melhorou, mas as três
+telas ainda listam as mesmas tarefas por caminhos diferentes.
 
-Nenhuma delas faz o conjunto. Reagendar arrastando só existe no mês; ordenar o dia só existe em
-`/today`; ver blocos de tempo só existe no calendário.
+### C2. Três desenhos para "timers em execução" — resolvida
 
-### C2. Três desenhos para "timers em execução"
+**F1-d, F7-b2 e F8-a.** A pílula do header substituiu o `FloatingTimer`, o painel do dashboard
+saiu e a janela flutuante segue a pílula (ponto ao vivo, nome que abre a tarefa, tempo em mono).
 
-`FloatingTimer` (pílula preta fixa), `RunningNowPanel` (painel esmeralda no dashboard) e
-`FloatTimerPage` (janela escura). Mesma informação, três layouts, três conjuntos de ações.
+### C3. `/archived` é um filtro promovido a tela — resolvida
 
-### C3. `/archived` é um filtro promovido a tela
+**F6-b2.** O Arquivo é uma tabela com busca, filtros, grupos, menu e ações em massa.
 
-`listTasks` já aceita `archived: true`. A tela dedicada reimplementa uma listagem pobre: sem clique
-para abrir a tarefa, sem busca, sem filtro, sem ações em massa, sem projeto/tags/prazo no cartão.
+### C4. Contextos e Tags são a mesma tela duas vezes — resolvida
 
-### C4. Contextos e Tags são a mesma tela duas vezes
-
-Mesma estrutura (cabeçalho, faixa azul, grade de cartões, diálogo), com recursos distribuídos de
-forma arbitrária: contextos têm emoji e preview ao vivo mas não mostram uso; tags mostram uso e têm
-mesclagem, mas não têm ícone nem preview.
+**F6-a.** Uma tela só (`LabelsPage`), com abas e os mesmos recursos nas duas.
 
 ---
 
 ## D. Terminologia
 
-### D1. "Tag" tem três nomes
+### D1. "Tag" tem três nomes — resolvida
 
-- filtro na lista de tarefas: **"Fonte / Tag"**
-- campo no diálogo de nova tarefa: **"Fontes / Tags"**
-- tela dedicada e botão do TitleBar: **"Tags"**
+**F2-c e F6-a.** Filtro, diálogo e tela dizem "Tag(s)".
 
-### D2. "Arquivadas" vs. "Arquivo Morto"
+### D2. "Arquivadas" vs. "Arquivo Morto" — resolvida
 
-O botão que leva à tela diz "Arquivadas"; o título da tela diz "Arquivo Morto".
+**F6-b2.** Um nome só na interface: **Arquivo**.
 
-### D3. `DeleteConfirmDialog` genérico fala em "tarefa" para tudo
+### D3. `DeleteConfirmDialog` genérico fala em "tarefa" para tudo — resolvida
 
-O texto padrão é *"Esta ação não pode ser desfeita. Isso irá deletar permanentemente a tarefa."* —
-exibido também ao excluir **contextos** e ao apagar tarefas arquivadas. Só a tela de tags
-personaliza o texto (e o faz muito bem, citando quantas tarefas serão afetadas).
+**F6-a e F7-d2.** Cada exclusão tem o próprio `modal.confirm` ou `Popconfirm`, citando o que será
+afetado; o componente saiu.
 
-### D4. Legenda do calendário está incorreta
+### D4. Legenda do calendário está incorreta — resolvida
 
-O rodapé chama o quadrado laranja de **"Bloco urgente"**, mas laranja é a cor de **prioridade** —
-urgente é vermelho. A legenda também cita só duas das quatro cores de categoria.
+**F4-b2.** O rodapé saiu; "Mostrar" é filtro e legenda, com as amostras e os ícones de categoria.
 
-### D5. Dica com emoji que não existe na interface
+### D5. Dica com emoji que não existe na interface — resolvida
 
-O estado vazio de `/today` diz *"Use o botão 📅 nas tarefas para programá-las para hoje."* O botão
-real é textual ("Hoje") com um ícone `CalendarDays`, não um emoji.
+**F4-a.** O vazio de Hoje diz "Nada planejado para hoje.", explica o botão **Hoje** e leva às
+Tarefas.
 
 ---
 
 ## E. Lacunas funcionais
 
-### E1. Não se cria tarefa dentro de um projeto
+### E1. Não se cria tarefa dentro de um projeto — resolvida
 
-`/project/:id` lista as tarefas mas não tem botão de adicionar. O estado vazio instrui o usuário a
-sair, abrir cada tarefa e selecionar o projeto lá.
+**F5-e.** O detalhe do projeto tem "Adicionar tarefa a {projeto}…", que cria a tarefa em Próximas.
 
-### E2. Área de foco de projeto não é editável pela interface
+### E2. Área de foco de projeto não é editável pela interface — resolvida
 
-O campo existe, aparece como etiqueta em `/horizons`, e só o **servidor MCP** consegue gravá-lo. Um
-projeto criado pela interface nunca terá área — o que esvazia o H2 dos horizontes.
+**F5-a e F5-e.** A área se escolhe no "Novo projeto", no menu da lista de projetos e na pílula
+Área de foco do detalhe.
 
-### E3. Rótulos não navegam para o que rotulam
+### E3. Rótulos não navegam para o que rotulam — em parte
 
-Clicar num contexto, numa tag, numa área ou numa meta não filtra nem abre nada. As duas telas de
-taxonomia são becos sem saída.
+**F6-a e F5-b.** Contexto e tag abrem a lista filtrada (`/?context=<id>`, `/?tag=<id>`); a área
+abre os projetos dela pelo menu (`/projects?q=<área>`). **Aberto:** meta não tem destino, só o
+menu `⋯` de edição.
 
-### E4. O dashboard não leva a lugar nenhum
+### E4. O dashboard não leva a lugar nenhum — resolvida
 
-Nenhuma métrica, alerta ou item de lista é clicável (exceto o painel de timers). "3 projetos parados"
-não abre os projetos parados.
+**F5-g e F7-b2.** Os `HealthCard` abrem a lista já filtrada e as barras por status abrem a aba
+correspondente.
 
-### E5. A revisão semanal não conduz à revisão
+### E5. A revisão semanal não conduz à revisão — resolvida
 
-Nenhum dos 8 itens do checklist abre a tela correspondente. "Revisar Projetos" é apenas um texto com
-uma caixa de marcar.
+**F5-c4.** Cada passo traz a lista que revisa, as ações para resolver ali e "Abrir a tela".
 
-### E6. Áreas e metas se excluem sem confirmação
+### E6. Áreas e metas se excluem sem confirmação — resolvida
 
-Tarefas, projetos, contextos e tags pedem confirmação. Áreas e metas somem no clique.
+**F5-b.** Excluir área ou meta confirma e diz o que acontece com projetos e metas.
 
-### E7. Blocos de tempo não se arrastam nem se redimensionam
+### E7. Blocos de tempo não se arrastam nem se redimensionam — resolvida
 
-Mover um bloco de 09:00 para 10:00 exige abrir o diálogo e digitar os dois horários.
+**F4-b3.** A grade move, estica e edita blocos (e tarefas com horário) direto, com Desfazer.
 
-### E8. `/settings` não tem nenhuma preferência de aplicativo
+### E8. `/settings` não tem nenhuma preferência de aplicativo — em parte
 
-Além das integrações, só a inicialização com o sistema e a versão (seção Sobre). Não há tema,
-densidade, idioma, jornada de trabalho (fixa em 8h), limiares de time leak (1h/30min), faixa
-horária do calendário (07:00–22:00), intervalo de auto-sync (60s), atalho global (fixo) nem backup.
+**F7-d3, F7-f1 e F7-f2.** Aparência (tema e densidade), Fluxo de trabalho (jornada, início da
+semana, time leak, faixa do calendário, avisos de prazo, intervalo das notas), atalho da captura e
+backup automático. **Aberto:** não há escolha de idioma (a interface é só em português).
 
 ---
 
-## F. Comportamentos que merecem atenção no redesenho
+## F. Restrições que continuam valendo
 
-Não são defeitos, mas condicionam o desenho:
+Não são defeitos, mas condicionam qualquer mudança de tela.
 
 ### F1. Altura contida, nunca `100vh`
 
-As páginas usam `h-full` porque o `<main>` já desconta o TitleBar. Com `100vh` sobram 56px, e um
-`scrollIntoView` (o Excalidraw dá foco ao canvas ao selecionar) rola esse excedente e esconde a barra
-do modo foco atrás do TitleBar, sem volta.
+As páginas usam `h-full` porque o `Content` do `AppShell` já desconta o header de 52px. Com
+`100vh` sobra a altura do header, e um `scrollIntoView` (o Excalidraw dá foco ao canvas ao
+selecionar) rola esse excedente e esconde a barra do modo foco, sem volta.
 
 ### F2. As três janelas compartilham o bundle
 
@@ -221,44 +219,43 @@ Qualquer efeito colateral no escopo de módulo roda três vezes. A guarda é
 `shouldBootstrapTimerStore(hash)`, em `stores/timerWindow.ts`. Novos efeitos globais precisam da
 mesma proteção.
 
-### F3. Persistência de preferência com duas convenções de nome
+### F3. Chaves de preferência com três convenções de nome — aberta
 
-Cinco chaves usam `:` (`ticktask:taskListViewMode`) e duas usam `.` (`ticktask.notesWidth`).
+A maioria usa `ticktask:` (`ticktask:taskListView`), os cadernos usam `ticktask.`
+(`ticktask.notebooks.*`), e Configurações e terminal não têm prefixo (`settings.section`,
+`terminal.*`). Lista completa em [00](00-visao-geral.md#o-que-a-interface-memoriza).
 
-### F4. Agrupar por contexto duplica tarefas
+### F4. Agrupar por contexto repete tarefas
 
-Uma tarefa com três contextos aparece nos três grupos; a soma dos contadores de grupo excede o total
-real. É o comportamento correto para o caso de uso, mas precisa ser comunicado.
+Uma tarefa com três contextos aparece nos três grupos, e a soma dos grupos passa do total. É o
+comportamento certo para o caso de uso; desde a F2-e a lista avisa isso ao agrupar por contexto.
 
-### F5. A ordem do plano do dia grava uma chamada por tarefa
+### F5. A ordem do plano do dia grava uma chamada por tarefa — resolvida
 
-Reordenar uma lista de 40 itens dispara 40 chamadas IPC em paralelo.
+**F4-a.** O plano do dia não tem ordem manual; a ordem é automática, no SQL.
 
-### F6. A busca da lista de tarefas não tem debounce
+### F6. A busca da lista de tarefas não tem debounce — resolvida
 
-Cada tecla digitada refaz a consulta.
+**F2-c.** A busca espera 250 ms sem digitar.
 
-### F7. O seletor de dependências carrega todas as tarefas
+### F7. O seletor de dependências carrega todas as tarefas — resolvida
 
-`DependencySelector` chama `listTasks()` sem filtro e filtra no cliente — o único lugar do app que
-ainda faz isso.
+**F3-c.** "Adicionar dependência…" busca no main (`listTasks` com `search` e `limit`).
 
 ---
 
-## G. Onde a interface já acerta
-
-Para não perder na refatoração:
+## G. O que a interface legada acertava e foi mantido
 
 - **Botão "Hoje" em toda listagem** — agendar sem navegar, com alternância imediata.
 - **Expansão de subtarefas inline**, em card e em tabela, com carregamento sob demanda.
-- **Escala visual do Time Leak** — a única semântica que colore o fundo inteiro, e funciona.
-- **Painel de notas redimensionável com três modos** (normal, maximizado, zen) e `Esc` para sair.
-- **Modo foco com timer embutido** (`NotesFocusBar`) — escrever sem perder o cronômetro de vista.
-- **Confirmação de exclusão de tag** — cita quantas tarefas serão afetadas e o que *não* acontece.
-- **Preview ao vivo no diálogo de contexto.**
-- **Aviso "Sem próxima ação definida"** nos cartões de projeto — o único alerta GTD inline.
-- **Linha do "agora" com auto-scroll** na grade semanal.
-- **Captura rápida** — atalho global, `autoFocus`, Enter/Esc, confirmação verde e fechamento
-  automático. É o fluxo mais bem resolvido do app.
-- **Atualização por evento (`tasks:refresh`)** — o que o MCP ou a captura rápida cria aparece sozinho
-  na lista aberta.
+- **Escala visual do Time leak** — a única semântica que colore o fundo inteiro.
+- **Modo foco com timer embutido** (`FocusOverlay`) — escrever sem perder o cronômetro de vista, e
+  `Esc` para sair.
+- **Confirmação de exclusão que cita o efeito** — o modelo da tag virou a regra (guia §11).
+- **Prévia ao vivo no diálogo de contexto e tag.**
+- **Aviso "Sem próxima ação definida"** nos projetos — o alerta GTD inline.
+- **Linha do "agora" com auto-scroll** na grade do calendário.
+- **Captura rápida** — atalho global, `autoFocus`, Enter/Esc, confirmação "Capturado no Inbox" e
+  fechamento automático.
+- **Atualização por evento (`tasks:refresh`)** — o que o MCP ou a captura rápida cria aparece
+  sozinho na lista aberta.

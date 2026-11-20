@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { Project, CreateProjectInput, UpdateProjectInput, ProjectStatus, Task } from '@shared/types'
+import type { Project, CreateProjectInput, UpdateProjectInput, ProjectStatus } from '@shared/types'
 
 interface UseProjectsReturn {
   projects: Project[]
@@ -60,63 +60,6 @@ export function useProjects(statusFilter?: ProjectStatus): UseProjectsReturn {
     loading,
     refreshProjects,
     createProject,
-    updateProject,
-    deleteProject
-  }
-}
-
-interface UseProjectDetailReturn {
-  project: Project | null
-  tasks: Task[]
-  loading: boolean
-  refreshProject: () => Promise<void>
-  updateProject: (data: UpdateProjectInput) => Promise<void>
-  deleteProject: () => Promise<void>
-}
-
-export function useProjectDetail(projectId: number): UseProjectDetailReturn {
-  const [project, setProject] = useState<Project | null>(null)
-  const [tasks, setTasks] = useState<Task[]>([])
-  const [loading, setLoading] = useState(true)
-
-  const refreshProject = useCallback(async () => {
-    if (!projectId) return
-    setLoading(true)
-    try {
-      const [proj, projTasks] = await Promise.all([
-        window.api.getProject(projectId),
-        window.api.getProjectTasks(projectId)
-      ])
-      setProject(proj || null)
-      setTasks(projTasks)
-    } catch (error) {
-      console.error('Failed to load project:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [projectId])
-
-  useEffect(() => {
-    refreshProject()
-  }, [refreshProject])
-
-  const updateProject = useCallback(
-    async (data: UpdateProjectInput): Promise<void> => {
-      await window.api.updateProject(projectId, data)
-      await refreshProject()
-    },
-    [projectId, refreshProject]
-  )
-
-  const deleteProject = useCallback(async (): Promise<void> => {
-    await window.api.deleteProject(projectId)
-  }, [projectId])
-
-  return {
-    project,
-    tasks,
-    loading,
-    refreshProject,
     updateProject,
     deleteProject
   }

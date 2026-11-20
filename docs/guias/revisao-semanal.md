@@ -13,7 +13,7 @@ em destaque (âmbar) quando passam de zero:
 | Projetos sem ação | projetos ativos sem nenhuma tarefa em **Próximas** |
 | Aguardando >7d | tarefas em Aguardando paradas há mais de 7 dias |
 | Próximas >14d | tarefas em Próximas paradas há mais de 14 dias |
-| Someday/Maybe | total da lista Someday (nunca fica em alerta) |
+| Someday | total da lista Someday (nunca fica em alerta) |
 
 ## Passo a passo
 
@@ -28,7 +28,7 @@ em destaque (âmbar) quando passam de zero:
     | 3 | Revisar Próximas Ações | ainda são relevantes? alguma pode sair? |
     | 4 | Revisar Projetos | cada projeto ativo tem progresso e próxima ação? |
     | 5 | Revisar Aguardando | alguém respondeu? precisa cobrar? |
-    | 6 | Revisar Someday/Maybe | algo pronto para ativar? algo para descartar? |
+    | 6 | Revisar someday | algo pronto para ativar? algo para descartar? |
     | 7 | Revisar Calendário | o que vem na próxima semana? |
     | 8 | Pensamento Criativo | novos projetos ou ideias? |
 

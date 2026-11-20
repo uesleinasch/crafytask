@@ -31,7 +31,7 @@ O atalho é fixo; não há como trocá-lo pela interface.
 | ++slash++ | menu de comandos (títulos, listas, checklist, tabela, imagem…) |
 | `@` | menciona uma tarefa, projeto, contexto ou página de caderno |
 | ++arrow-up++ / ++arrow-down++ e ++enter++ | navegam e escolhem nos menus `/` e `@` |
-| ++esc++ | sai do modo Zen ou Maximizado (de tarefas e de páginas de caderno) |
+| ++esc++ | sai do Modo foco (de tarefas e de páginas de caderno) |
 
 O editor também aceita os atalhos comuns de formatação de texto (negrito, itálico etc.).
 

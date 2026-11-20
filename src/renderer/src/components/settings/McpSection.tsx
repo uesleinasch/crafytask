@@ -1,11 +1,9 @@
 import { useState } from 'react'
-import { Copy, KeyRound, Loader2, Server } from 'lucide-react'
-import { Button } from '@renderer/components/ui/button'
-import { toast } from '@renderer/components/ui/sonner'
-import { DeleteConfirmDialog } from '@renderer/components/DeleteConfirmDialog'
+import { App, Button, Flex, Switch, Typography, theme } from 'antd'
+import { KeyRound } from 'lucide-react'
 import type { McpStatus } from '@shared/types'
-import { SectionHeader, ToggleRow } from './SettingsPrimitives'
-import { errorMessage, mcpStatusInfo } from './settingsStatus'
+import { SettingRow, SettingsCard } from './SettingsLayout'
+import { errorMessage } from './settingsStatus'
 
 export function McpSection({
   status,
@@ -14,96 +12,104 @@ export function McpSection({
   status: McpStatus
   onStatusChange: (status: McpStatus) => void
 }): React.JSX.Element {
+  const { token } = theme.useToken()
+  const { message, modal } = App.useApp()
   const [regenerating, setRegenerating] = useState(false)
-  const [confirmRegenerate, setConfirmRegenerate] = useState(false)
+  const [switching, setSwitching] = useState(false)
+
+  async function toggle(checked: boolean): Promise<void> {
+    setSwitching(true)
+    try {
+      onStatusChange(await window.api.mcpSetEnabled(checked))
+    } catch (error) {
+      message.error(errorMessage(error))
+    } finally {
+      setSwitching(false)
+    }
+  }
+  const mono = { fontFamily: token.fontFamilyCode, fontVariantNumeric: 'tabular-nums' as const }
 
   async function regenerate(): Promise<void> {
     setRegenerating(true)
     try {
       onStatusChange(await window.api.mcpRegenerateToken())
-      toast.success('Token regenerado. Registre o servidor de novo com o comando novo.')
+      message.success('Token regenerado.')
     } catch (error) {
-      toast.error(`Erro ao regenerar token: ${errorMessage(error)}`)
+      message.error(`Erro ao regenerar token: ${errorMessage(error)}`)
     } finally {
       setRegenerating(false)
     }
   }
 
-  async function copyCommand(): Promise<void> {
-    try {
-      await navigator.clipboard.writeText(status.command)
-      toast.success('Comando copiado para a área de transferência')
-    } catch {
-      toast.error('Não foi possível copiar o comando')
-    }
+  const confirmRegenerate = (): void => {
+    modal.confirm({
+      title: 'Regenerar o token do MCP?',
+      content:
+        'O token atual deixa de valer. Clientes que você configurou à mão por HTTP com ele param até receber o novo. Quem registrou com o comando acima continua funcionando, e suas tarefas não mudam.',
+      okText: 'Regenerar',
+      okButtonProps: { danger: true },
+      cancelText: 'Cancelar',
+      onOk: regenerate
+    })
   }
 
   const stateText = !status.enabled ? (
     'Desligado'
   ) : status.running ? (
-    <span className="text-emerald-600">Rodando em 127.0.0.1:{status.port}</span>
-  ) : (
-    <span className="text-red-600">
-      Falha ao iniciar na porta {status.port}. Verifique se ela já está em uso.
+    <span>
+      Rodando em <span style={mono}>127.0.0.1:{status.port}</span>
     </span>
+  ) : (
+    <Typography.Text type="danger">
+      Falha ao iniciar na porta <span style={mono}>{status.port}</span>. Verifique se ela já está em
+      uso.
+    </Typography.Text>
   )
 
   return (
-    <div className="space-y-6">
-      <SectionHeader
-        icon={Server}
-        title="Servidor MCP"
-        description="Exponha o CrafyTask para assistentes como o Claude Code via MCP."
-        status={mcpStatusInfo(status)}
-      />
-
-      <ToggleRow
-        title="Servidor MCP"
-        description={stateText}
-        checked={status.enabled}
-        onChange={async () => onStatusChange(await window.api.mcpSetEnabled(!status.enabled))}
-      />
-
-      <div className="space-y-2">
-        <p className="text-sm font-medium text-slate-700">Comando para registrar no Claude Code</p>
-        <div className="flex items-start gap-2">
-          <pre className="flex-1 overflow-x-auto bg-slate-900 text-slate-100 text-xs rounded-lg p-3 whitespace-pre-wrap break-all">
-            {status.command}
-          </pre>
-          <Button onClick={copyCommand} variant="outline" className="shrink-0" title="Copiar">
-            <Copy size={16} />
-          </Button>
-        </div>
-        <p className="text-xs text-slate-500">
-          Rode esse comando no terminal para registrar o servidor. Ele contém o token de acesso; não
-          compartilhe.
-        </p>
-      </div>
-
-      <div className="pt-4 border-t border-slate-200 flex items-center justify-between gap-4">
-        <p className="text-xs text-slate-500">
-          Regenerar o token invalida o atual: clientes já registrados param de funcionar até serem
-          registrados de novo.
-        </p>
-        <Button
-          onClick={() => setConfirmRegenerate(true)}
-          disabled={regenerating}
-          variant="outline"
-          className="shrink-0"
+    <Flex vertical gap={16}>
+      <SettingsCard title="Servidor">
+        <SettingRow title="Servidor MCP" description={stateText}>
+          <Switch
+            checked={status.enabled}
+            aria-label="Servidor MCP"
+            loading={switching}
+            onChange={(checked) => void toggle(checked)}
+          />
+        </SettingRow>
+      </SettingsCard>
+      <SettingsCard title="Registrar no Claude Code">
+        <SettingRow
+          title="Comando de registro"
+          description="Rode uma vez no terminal: registra a ponte local do CrafyTask no Claude Code."
+          vertical
         >
-          {regenerating ? <Loader2 size={16} className="animate-spin" /> : <KeyRound size={16} />}
-          Regenerar token
-        </Button>
-      </div>
-
-      <DeleteConfirmDialog
-        open={confirmRegenerate}
-        onOpenChange={setConfirmRegenerate}
-        onConfirm={regenerate}
-        title="Regenerar o token do MCP?"
-        description="Todo cliente já registrado (Claude Code, ponte stdio) deixa de funcionar até você registrá-lo de novo com o comando novo."
-        confirmLabel="Regenerar"
-      />
-    </div>
+          <Typography.Paragraph
+            className="ct-codeblock"
+            copyable={{ text: status.command, tooltips: ['Copiar', 'Copiado'] }}
+          >
+            {status.command}
+          </Typography.Paragraph>
+          <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+            Registrou antes com o nome antigo? Remova com{' '}
+            <Typography.Text code>claude mcp remove ticktask --scope user</Typography.Text> antes de
+            registrar de novo, ou o Claude Code verá o servidor duas vezes.
+          </Typography.Text>
+        </SettingRow>
+        <SettingRow
+          title="Regenerar token"
+          description="Só param os clientes configurados à mão por HTTP com o token atual. A ponte registrada pelo comando continua valendo."
+        >
+          <Button
+            danger
+            icon={<KeyRound size={16} strokeWidth={1.75} aria-hidden />}
+            loading={regenerating}
+            onClick={confirmRegenerate}
+          >
+            Regenerar
+          </Button>
+        </SettingRow>
+      </SettingsCard>
+    </Flex>
   )
 }

@@ -1,11 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { UserRound, X } from 'lucide-react'
-import { cn } from '@renderer/lib/utils'
-import { SearchableSelect } from '@renderer/components/ui/searchable-select'
-import type { JiraField, JiraFieldInput, JiraFieldOption, JiraUser } from '@shared/types'
-
-const inputClass =
-  'h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-sm text-slate-800 outline-none focus:border-slate-400 disabled:opacity-60'
+import { Button, DatePicker, Flex, Input, InputNumber, Select, Typography } from 'antd'
+import dayjs from 'dayjs'
+import type { JiraField, JiraFieldInput, JiraUser } from '@shared/types'
 
 interface EditorProps {
   field: JiraField
@@ -15,25 +11,17 @@ interface EditorProps {
   onSave: (value: JiraFieldInput) => void
 }
 
-function toLocalDateTime(iso: string | null): string {
-  if (!iso) return ''
-  const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return ''
-  const pad = (n: number): string => String(n).padStart(2, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
-}
+const FULL = { width: '100%' }
 
-function DraftInput({
+function TextEditor({
   initial,
-  type,
-  saving,
   multiline,
+  saving,
   onCommit
 }: {
   initial: string
-  type: 'text' | 'number' | 'date' | 'datetime-local'
+  multiline: boolean
   saving: boolean
-  multiline?: boolean
   onCommit: (value: string) => void
 }): React.JSX.Element {
   const [draft, setDraft] = useState(initial)
@@ -43,19 +31,17 @@ function DraftInput({
   }
   if (multiline) {
     return (
-      <textarea
+      <Input.TextArea
         value={draft}
         disabled={saving}
+        autoSize={{ minRows: 3, maxRows: 10 }}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={commit}
-        rows={3}
-        className={cn(inputClass, 'h-auto py-1.5')}
       />
     )
   }
   return (
-    <input
-      type={type}
+    <Input
       value={draft}
       disabled={saving}
       onChange={(e) => setDraft(e.target.value)}
@@ -64,114 +50,42 @@ function DraftInput({
         if (e.key === 'Enter') e.currentTarget.blur()
         if (e.key === 'Escape') setDraft(initial)
       }}
-      className={inputClass}
     />
   )
 }
 
-function LabelsEditor({
-  value,
+function NumberEditor({
+  initial,
   saving,
-  onSave
+  onCommit
 }: {
-  value: string[]
+  initial: number | null
   saving: boolean
-  onSave: (value: string[]) => void
+  onCommit: (value: number | null) => void
 }): React.JSX.Element {
-  const [draft, setDraft] = useState('')
-  const add = (): void => {
-    const label = draft.trim().replace(/\s+/g, '_')
-    setDraft('')
-    if (label && !value.includes(label)) onSave([...value, label])
+  const [draft, setDraft] = useState<number | null>(initial)
+  useEffect(() => setDraft(initial), [initial])
+  const commit = (): void => {
+    if (draft !== initial) onCommit(draft)
   }
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
-      {value.map((label) => (
-        <span
-          key={label}
-          className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs text-slate-700"
-        >
-          {label}
-          <button
-            type="button"
-            disabled={saving}
-            onClick={() => onSave(value.filter((l) => l !== label))}
-            className="text-slate-400 hover:text-slate-700"
-            aria-label={`Remover ${label}`}
-          >
-            <X size={11} />
-          </button>
-        </span>
-      ))}
-      <input
-        value={draft}
-        disabled={saving}
-        placeholder="Adicionar…"
-        onChange={(e) => setDraft(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') add()
-        }}
-        onBlur={add}
-        className="h-7 min-w-[7rem] flex-1 rounded-md border border-dashed border-slate-200 bg-white px-2 text-xs outline-none focus:border-slate-400"
-      />
-    </div>
+    <InputNumber
+      value={draft}
+      disabled={saving}
+      style={FULL}
+      onChange={(value) => setDraft(typeof value === 'number' ? value : null)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') e.currentTarget.blur()
+        if (e.key === 'Escape') setDraft(initial)
+      }}
+    />
   )
 }
 
-function MultiSelectEditor({
-  value,
-  options,
-  saving,
-  onSave
-}: {
-  value: string[]
-  options: JiraFieldOption[]
-  saving: boolean
-  onSave: (value: string[]) => void
-}): React.JSX.Element {
-  const selected = value.map(
-    (id) => options.find((option) => option.id === id) ?? { id, label: id }
-  )
-  const available = options
-    .filter((option) => !value.includes(option.id))
-    .map((option) => ({ value: option.id, label: option.label }))
-
-  return (
-    <div className="space-y-1.5">
-      {selected.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {selected.map((option) => (
-            <span
-              key={option.id}
-              className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs text-slate-700"
-            >
-              {option.label}
-              <button
-                type="button"
-                disabled={saving}
-                onClick={() => onSave(value.filter((id) => id !== option.id))}
-                className="text-slate-400 hover:text-slate-700"
-                aria-label={`Remover ${option.label}`}
-              >
-                <X size={11} />
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
-      {available.length > 0 ? (
-        <SearchableSelect
-          options={available}
-          value=""
-          onChange={(id) => id && !saving && onSave([...value, id])}
-          placeholder="Adicionar opção…"
-          searchPlaceholder="Buscar opção…"
-        />
-      ) : (
-        options.length === 0 && <span className="text-xs text-slate-400">Sem opções</span>
-      )}
-    </div>
-  )
+function normalizeLabels(labels: string[]): string[] {
+  const clean = labels.map((label) => label.trim().replace(/\s+/g, '_')).filter(Boolean)
+  return [...new Set(clean)]
 }
 
 function UserEditor({
@@ -210,6 +124,15 @@ function UserEditor({
     }
   }, [query, taskId, field.id])
 
+  const known = new Map<string, string>()
+  for (const user of [value, ...(results ?? [])]) {
+    if (user) known.set(user.accountId, user.displayName)
+  }
+  const options = [...known].map(([accountId, displayName]) => ({
+    value: accountId,
+    label: displayName
+  }))
+
   const pick = (accountId: string | null): void => {
     setQuery('')
     setResults(null)
@@ -217,60 +140,36 @@ function UserEditor({
   }
 
   return (
-    <div className="space-y-1.5">
-      <div className="flex items-center gap-2 text-sm text-slate-800">
-        <UserRound size={14} className="text-slate-400" />
-        <span className="flex-1 truncate">{value?.displayName ?? 'Ninguém'}</span>
-        {me && value?.accountId !== me.accountId && (
-          <button
-            type="button"
-            disabled={saving}
-            onClick={() => pick(me.accountId)}
-            className="text-xs font-medium text-blue-600 hover:underline"
-          >
-            Atribuir a mim
-          </button>
-        )}
-        {value && !field.required && (
-          <button
-            type="button"
-            disabled={saving}
-            onClick={() => pick(null)}
-            className="text-xs text-slate-400 hover:text-slate-700"
-          >
-            Remover
-          </button>
-        )}
-      </div>
-      <div className="relative">
-        <input
-          value={query}
+    <Flex vertical gap={4}>
+      <Select
+        showSearch={{ filterOption: false, onSearch: setQuery, searchValue: query }}
+        value={value?.accountId ?? null}
+        placeholder="Ninguém"
+        allowClear={!field.required}
+        disabled={saving}
+        options={options}
+        style={FULL}
+        notFoundContent={
+          query.trim().length < 2
+            ? 'Digite ao menos 2 letras'
+            : results === null
+              ? 'Buscando…'
+              : 'Ninguém encontrado'
+        }
+        onChange={(accountId) => pick(accountId ?? null)}
+      />
+      {me && value?.accountId !== me.accountId && (
+        <Button
+          type="link"
+          size="small"
           disabled={saving}
-          placeholder="Buscar pessoa…"
-          onChange={(e) => setQuery(e.target.value)}
-          className={inputClass}
-        />
-        {results && (
-          <ul className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-md border border-slate-200 bg-white py-1 shadow-md">
-            {results.length === 0 ? (
-              <li className="px-2 py-1 text-xs text-slate-500">Ninguém encontrado</li>
-            ) : (
-              results.map((user) => (
-                <li key={user.accountId}>
-                  <button
-                    type="button"
-                    onClick={() => pick(user.accountId)}
-                    className="w-full px-2 py-1 text-left text-sm text-slate-700 hover:bg-slate-100"
-                  >
-                    {user.displayName}
-                  </button>
-                </li>
-              ))
-            )}
-          </ul>
-        )}
-      </div>
-    </div>
+          onClick={() => pick(me.accountId)}
+          style={{ alignSelf: 'start', paddingInline: 0 }}
+        >
+          Atribuir a mim
+        </Button>
+      )}
+    </Flex>
   )
 }
 
@@ -285,66 +184,75 @@ export function JiraFieldEditor({
     case 'string':
     case 'text':
       return (
-        <DraftInput
+        <TextEditor
           initial={field.value ?? ''}
-          type="text"
           multiline={field.kind === 'text'}
           saving={saving}
           onCommit={onSave}
         />
       )
     case 'number':
-      return (
-        <DraftInput
-          initial={field.value === null ? '' : String(field.value)}
-          type="number"
-          saving={saving}
-          onCommit={onSave}
-        />
-      )
+      return <NumberEditor initial={field.value} saving={saving} onCommit={onSave} />
     case 'date':
       return (
-        <DraftInput initial={field.value ?? ''} type="date" saving={saving} onCommit={onSave} />
+        <DatePicker
+          format="DD/MM/YYYY"
+          value={field.value ? dayjs(field.value) : null}
+          disabled={saving}
+          style={FULL}
+          onChange={(value) => onSave(value ? value.format('YYYY-MM-DD') : null)}
+        />
       )
     case 'datetime':
       return (
-        <DraftInput
-          initial={toLocalDateTime(field.value)}
-          type="datetime-local"
-          saving={saving}
-          onCommit={onSave}
+        <DatePicker
+          showTime={{ format: 'HH:mm' }}
+          format="DD/MM/YYYY HH:mm"
+          value={field.value ? dayjs(field.value) : null}
+          disabled={saving}
+          style={FULL}
+          onChange={(value) => onSave(value ? value.format('YYYY-MM-DDTHH:mm') : null)}
         />
       )
     case 'select':
-    case 'sprint': {
-      const current = field.value === null ? '' : String(field.value)
+    case 'sprint':
       return (
-        <select
-          value={current}
+        <Select
+          showSearch={{ optionFilterProp: 'label' }}
+          value={field.value === null ? null : String(field.value)}
+          placeholder="Nenhum"
+          allowClear={!field.required}
           disabled={saving}
-          onChange={(e) => onSave(e.target.value || null)}
-          className={inputClass}
-        >
-          {(!field.required || current === '') && <option value="">Nenhum</option>}
-          {field.options.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          options={field.options.map((option) => ({ value: option.id, label: option.label }))}
+          style={FULL}
+          onChange={(id) => onSave(id ?? null)}
+        />
       )
-    }
     case 'multiselect':
       return (
-        <MultiSelectEditor
+        <Select
+          mode="multiple"
+          showSearch={{ optionFilterProp: 'label' }}
           value={field.value}
-          options={field.options}
-          saving={saving}
-          onSave={onSave}
+          placeholder={field.options.length === 0 ? 'Sem opções' : 'Adicionar opção…'}
+          disabled={saving}
+          options={field.options.map((option) => ({ value: option.id, label: option.label }))}
+          style={FULL}
+          onChange={(ids: string[]) => onSave(ids)}
         />
       )
     case 'labels':
-      return <LabelsEditor value={field.value} saving={saving} onSave={onSave} />
+      return (
+        <Select
+          mode="tags"
+          value={field.value}
+          placeholder="Adicionar…"
+          notFoundContent={null}
+          disabled={saving}
+          style={FULL}
+          onChange={(labels: string[]) => onSave(normalizeLabels(labels))}
+        />
+      )
     case 'user':
       return (
         <UserEditor
@@ -357,6 +265,6 @@ export function JiraFieldEditor({
         />
       )
     case 'readonly':
-      return <p className="text-sm text-slate-600">{field.value || '—'}</p>
+      return <Typography.Text type="secondary">{field.value || '—'}</Typography.Text>
   }
 }
