@@ -1,9 +1,9 @@
 import { theme } from 'antd'
-import type { TaskStatus } from '@shared/types'
+import { STATUS_LABELS, type TaskStatus } from '@shared/types'
 import { STATUS_COLORS } from '@renderer/theme/semantic'
 import { useThemeSettings } from '@renderer/theme/themeSettings'
 import { chipStyle } from './chipStyle'
-import { STATUS_CHIP_LABELS, STATUS_ICONS } from './statusMeta'
+import { STATUS_ICONS } from './statusMeta'
 
 export function StatusChip({ status }: { status: TaskStatus }): React.JSX.Element {
   const { token } = theme.useToken()
@@ -13,7 +13,7 @@ export function StatusChip({ status }: { status: TaskStatus }): React.JSX.Elemen
   return (
     <span style={chipStyle(fg, bg, 'transparent', token.borderRadiusSM)}>
       <Icon size={13} strokeWidth={2} aria-hidden />
-      {STATUS_CHIP_LABELS[status]}
+      {STATUS_LABELS[status]}
     </span>
   )
 }

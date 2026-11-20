@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { USER_COLORS } from '@renderer/theme/semantic'
-import { colorName, moveIdOnto, plural, shiftId } from './notebookUi'
+import { USER_COLORS, userColorName } from '@renderer/theme/semantic'
+import { moveIdOnto, plural, shiftId } from './notebookUi'
 
 describe('moveIdOnto', () => {
   it('ocupa o lugar do alvo, para cima ou para baixo', () => {
@@ -25,9 +25,9 @@ describe('shiftId', () => {
 
 describe('rótulos', () => {
   it('toda cor da paleta tem nome', () => {
-    for (const color of USER_COLORS) expect(colorName(color.toLowerCase())).not.toBe('atual')
-    expect(colorName('#2a62d6')).toBe('azul')
-    expect(colorName('#123456')).toBe('atual')
+    for (const color of USER_COLORS) expect(userColorName(color.toLowerCase())).not.toBe('atual')
+    expect(userColorName('#2a62d6')).toBe('azul')
+    expect(userColorName('#123456')).toBe('atual')
   })
 
   it('plural', () => {

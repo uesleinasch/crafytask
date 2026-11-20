@@ -2,6 +2,7 @@ import { Badge, Button, Checkbox, Drawer, Flex, Grid, Popover, Select, Typograph
 import { ListFilter } from 'lucide-react'
 import { useState } from 'react'
 import {
+  CATEGORY_LABELS,
   ENERGY_LABELS,
   type Context,
   type EnergyLevel,
@@ -15,7 +16,6 @@ import {
   activeFilterCount,
   type TaskFiltersValue
 } from './taskFilterState'
-import { CATEGORY_CHIP_LABELS } from '@renderer/components/chips/categoryMeta'
 
 const NO_PROJECT = -1
 const CATEGORIES: TaskCategory[] = ['urgente', 'prioridade', 'normal', 'time_leak']
@@ -58,7 +58,7 @@ export function TaskFilters({
         onChange={(category) => onChange({ category: category ?? 'all' })}
         options={CATEGORIES.map((category) => ({
           value: category,
-          label: CATEGORY_CHIP_LABELS[category]
+          label: CATEGORY_LABELS[category]
         }))}
       />
       <Select
@@ -69,7 +69,7 @@ export function TaskFilters({
         onChange={(energy: EnergyLevel | undefined) => onChange({ energy: energy ?? null })}
         options={ENERGIES.map((energy) => ({
           value: energy,
-          label: ENERGY_LABELS[energy]
+          label: `Energia ${ENERGY_LABELS[energy].toLowerCase()}`
         }))}
       />
       <Select

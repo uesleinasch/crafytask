@@ -7,7 +7,7 @@ import {
   Lightbulb,
   type LucideIcon
 } from 'lucide-react'
-import type { TaskStatus } from '@shared/types'
+import { STATUS_LABELS, type TaskStatus } from '@shared/types'
 
 export const STATUS_ICONS: Record<TaskStatus, LucideIcon> = {
   inbox: Inbox,
@@ -18,15 +18,6 @@ export const STATUS_ICONS: Record<TaskStatus, LucideIcon> = {
   someday: Lightbulb
 }
 
-export const STATUS_CHIP_LABELS: Record<TaskStatus, string> = {
-  inbox: 'Inbox',
-  aguardando: 'Aguardando',
-  proximas: 'Próximas',
-  executando: 'Executando',
-  finalizada: 'Finalizada',
-  someday: 'Someday'
-}
-
 export function statusTabText(status: TaskStatus | 'all'): string {
-  return status === 'all' ? 'Todas' : STATUS_CHIP_LABELS[status]
+  return status === 'all' ? 'Todas' : STATUS_LABELS[status]
 }

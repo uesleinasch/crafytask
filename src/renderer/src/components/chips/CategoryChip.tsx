@@ -1,8 +1,8 @@
 import { theme } from 'antd'
-import type { TaskCategory } from '@shared/types'
+import { CATEGORY_LABELS, type TaskCategory } from '@shared/types'
 import { CATEGORY_COLORS } from '@renderer/theme/semantic'
 import { useThemeSettings } from '@renderer/theme/themeSettings'
-import { CATEGORY_CHIP_LABELS, CATEGORY_ICONS } from './categoryMeta'
+import { CATEGORY_ICONS } from './categoryMeta'
 import { chipStyle } from './chipStyle'
 
 export function CategoryChip({ category }: { category: TaskCategory }): React.JSX.Element {
@@ -19,7 +19,7 @@ export function CategoryChip({ category }: { category: TaskCategory }): React.JS
           token.borderRadiusSM
         )}
       >
-        {CATEGORY_CHIP_LABELS.normal}
+        {CATEGORY_LABELS.normal}
       </span>
     )
   }
@@ -29,7 +29,7 @@ export function CategoryChip({ category }: { category: TaskCategory }): React.JS
   return (
     <span style={chipStyle(fg, bg, 'transparent', token.borderRadiusSM)}>
       <Icon size={13} strokeWidth={2} aria-hidden />
-      {CATEGORY_CHIP_LABELS[category]}
+      {CATEGORY_LABELS[category]}
     </span>
   )
 }

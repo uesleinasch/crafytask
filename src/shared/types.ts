@@ -667,9 +667,9 @@ export interface GtdMetrics {
 }
 
 export const ENERGY_LABELS: Record<EnergyLevel, string> = {
-  alto: 'Alta Energia',
-  medio: 'Energia Média',
-  baixo: 'Baixa Energia'
+  alto: 'Alta',
+  medio: 'Média',
+  baixo: 'Baixa'
 }
 
 // ===================== LABELS & COLORS =====================
@@ -680,14 +680,14 @@ export const STATUS_LABELS: Record<TaskStatus, string> = {
   proximas: 'Próximas',
   executando: 'Executando',
   finalizada: 'Finalizada',
-  someday: 'Someday/Maybe'
+  someday: 'Someday'
 }
 
 export const CATEGORY_LABELS: Record<TaskCategory, string> = {
   urgente: 'Urgente',
   prioridade: 'Prioridade',
   normal: 'Normal',
-  time_leak: 'Time Leak'
+  time_leak: 'Time leak'
 }
 
 export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {

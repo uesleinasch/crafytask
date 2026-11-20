@@ -28,7 +28,13 @@ import {
   Tags,
   type LucideIcon
 } from 'lucide-react'
-import type { Context, EnergyLevel, Project, TaskCategory } from '@shared/types'
+import {
+  ENERGY_LABELS,
+  type Context,
+  type EnergyLevel,
+  type Project,
+  type TaskCategory
+} from '@shared/types'
 import { isSafeHttpUrl } from '@shared/externalUrl'
 import {
   RECURRENCE_OPTIONS,
@@ -37,7 +43,6 @@ import {
 } from '@shared/recurrenceOptions'
 import { CategoryChip } from '@renderer/components/chips/CategoryChip'
 import { EnergyMeter } from '@renderer/components/chips/EnergyMeter'
-import { ENERGY_LABELS } from '@renderer/theme/semantic'
 import { ProjectLabel } from './ProjectLabel'
 import { dueTone, formatDueShort } from './taskTableFormat'
 

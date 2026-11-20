@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { App, Flex, Form, Input, Modal, Select, theme } from 'antd'
+import { App, Form, Input, Modal, Select } from 'antd'
 import type { Area, CreateProjectInput, Project } from '@shared/types'
 import { errorMessage } from '@renderer/components/settings/settingsStatus'
 import { USER_COLORS } from '@renderer/theme/semantic'
+import { ColorSwatches } from '@renderer/components/color/ColorSwatches'
 
 interface NewProjectModalProps {
   open: boolean
@@ -19,7 +20,6 @@ export function NewProjectModal({
   onCancel,
   onCreated
 }: NewProjectModalProps): React.JSX.Element {
-  const { token } = theme.useToken()
   const { message } = App.useApp()
   const [draft, setDraft] = useState<CreateProjectInput>(EMPTY)
   const [saving, setSaving] = useState(false)
@@ -97,31 +97,7 @@ export function NewProjectModal({
           />
         </Form.Item>
         <Form.Item label="Cor" style={{ marginBottom: 0 }}>
-          <Flex gap={8} wrap role="group" aria-label="Cor">
-            {USER_COLORS.map((color) => {
-              const on = draft.color === color
-              return (
-                <button
-                  key={color}
-                  type="button"
-                  aria-pressed={on}
-                  aria-label={`Cor ${color}`}
-                  onClick={() => set({ color })}
-                  style={{
-                    width: 26,
-                    height: 26,
-                    borderRadius: '50%',
-                    cursor: 'pointer',
-                    background: color,
-                    border: 'none',
-                    boxShadow: on
-                      ? `0 0 0 2px ${token.colorBgElevated}, 0 0 0 4px ${token.colorText}`
-                      : undefined
-                  }}
-                />
-              )
-            })}
-          </Flex>
+          <ColorSwatches value={draft.color ?? ''} onChange={(color) => set({ color })} />
         </Form.Item>
       </Form>
     </Modal>

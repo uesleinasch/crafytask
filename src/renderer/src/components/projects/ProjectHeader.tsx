@@ -24,10 +24,11 @@ import {
 import { PROJECT_STATUS_ICONS } from '@renderer/components/chips/projectStatusMeta'
 import { PropPill } from '@renderer/components/tasks/propertyPills'
 import { TerminalProjectButton } from '@renderer/components/terminal/TerminalProjectButton'
-import { PROJECT_STATUS_COLORS, USER_COLORS } from '@renderer/theme/semantic'
+import { PROJECT_STATUS_COLORS } from '@renderer/theme/semantic'
 import { useThemeSettings } from '@renderer/theme/themeSettings'
 import { NO_AREA, daysUntil, deleteWarning, dueTone } from './projectList'
 import { inlineEditStyle } from '@renderer/lib/inlineEdit'
+import { ColorSwatches } from '@renderer/components/color/ColorSwatches'
 
 const ICON = { size: 14, strokeWidth: 1.75, 'aria-hidden': true } as const
 const STATUSES = Object.keys(PROJECT_STATUS_LABELS) as ProjectStatus[]
@@ -275,31 +276,11 @@ export function ProjectHeader({
         <PropPill
           label="Cor"
           content={
-            <Flex gap={8} wrap role="group" aria-label="Cor">
-              {USER_COLORS.map((color) => {
-                const on = project.color.toLowerCase() === color.toLowerCase()
-                return (
-                  <button
-                    key={color}
-                    type="button"
-                    aria-pressed={on}
-                    aria-label={`Cor ${color}`}
-                    onClick={() => void onSave({ color })}
-                    style={{
-                      width: 24,
-                      height: 24,
-                      borderRadius: '50%',
-                      cursor: 'pointer',
-                      background: color,
-                      border: 'none',
-                      boxShadow: on
-                        ? `0 0 0 2px ${token.colorBgElevated}, 0 0 0 4px ${token.colorText}`
-                        : undefined
-                    }}
-                  />
-                )
-              })}
-            </Flex>
+            <ColorSwatches
+              size={24}
+              value={project.color}
+              onChange={(color) => void onSave({ color })}
+            />
           }
         >
           <span
