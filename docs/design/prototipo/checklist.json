@@ -1412,7 +1412,17 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/{pages/NotebooksPage.tsx,components/notebooks/*.tsx}",
-        "padroes": ["<Tree\\b|<Menu\\b", "<RegionBoundary"]
+        "padroes": ["<Tree\\b", "<Menu\\b", "<RegionBoundary"]
+      }
+    },
+    {
+      "id": "F7.20",
+      "fase": "F7",
+      "titulo": "Cadernos: busca em AutoComplete, seções em Tabs, vazios com Empty e Modo foco",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/{pages/NotebooksPage.tsx,components/notebooks/*.tsx}",
+        "padroes": ["<AutoComplete", "editable-card", "<Empty", "Modo foco"]
       }
     },
     {

@@ -551,6 +551,36 @@ Mesmo esqueleto das outras telas, com navegação própria porque são muitas se
   ao Notion). Também novos: alterar o atalho da captura e backup automático (diário, guarda 14).
   Tudo isso hoje é fixo no código (E8) e precisa de backend; no protótipo leva a etiqueta "novo".
 
+### Cadernos
+
+Anotações livres no molde do OneNote: caderno → seção → página, com até 2 níveis de subpágina.
+Variante de largura total, em colunas que ocupam a altura da área (sem rolar a página):
+
+- **Coluna de cadernos** (248px, a partir de `lg`): busca nas páginas no topo (`AutoComplete` com
+  título, caderno › seção e um trecho; o título que bate vem primeiro), `Menu` com os cadernos
+  (ícone `BookOpen` na cor do caderno) e "Novo caderno" no pé. Cada caderno tem `⋯` no hover e o
+  mesmo menu no botão direito: Sincronizar com o Notion, Exportar em Markdown, Renomear e mudar a
+  cor, Excluir. Arrastar reordena. Abaixo de `lg` a coluna vira uma barra: `Select` do caderno
+  (com "Novo caderno" no fim da lista), `⋯` e a busca.
+- **Seções** em `Tabs` `editable-card` acima das páginas e do editor: ponto na cor da seção e nome,
+  `+` cria, arrastar reordena, `⋯` à direita e botão direito na aba (Renomear e mudar a cor,
+  Excluir). Soltar uma página numa aba move a página, com as subpáginas, para o fim daquela seção;
+  a aba ganha um contorno tracejado enquanto a página está por cima.
+- **Páginas** num `Tree` (card de 280px com "Páginas" e "Nova página"): linhas-guia, subpáginas
+  recolhíveis, arrastar entre páginas reordena e soltar sobre uma página a torna subpágina; a
+  soltura que passaria de 2 níveis não é aceita. Cada linha tem "Nova subpágina" e `⋯` no hover
+  (Promover, Tornar subpágina da anterior, Excluir) e o mesmo menu no botão direito. Página sem
+  título aparece em itálico, em `colorTextTertiary`. Abaixo de `md` a árvore vai para um `Drawer`
+  aberto pelo botão "Páginas".
+- **Editor** no molde do detalhe da tarefa: título grande sem borda (salva sozinho), "criada ·
+  editada" em mono, abas Notas e Desenho, ações das notas (Exportar em Markdown, Salvar e
+  sincronizar com o Notion) e **Modo foco**, o mesmo da tarefa sem o timer. Ele substitui os
+  antigos Maximizar e Zen da página.
+- **Vazios** com `Empty` e o próximo passo: sem caderno ("Novo caderno"), sem seção ("Nova
+  seção"), seção sem página ("Nova página").
+- **Excluir** confirma dizendo o que vai junto (seções, páginas, subpáginas, notas, imagens e
+  desenhos) e que no Notion as páginas vão para o arquivo.
+
 ### Arquivo
 
 Arquivar tira a tarefa de todas as listas sem apagar nada. A tela deixa de ser a "Arquivo Morto"
