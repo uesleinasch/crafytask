@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
-import { DatabaseBackup, FolderOpen, Loader2, RotateCcw, Save } from 'lucide-react'
+import { Alert, App, Button, Flex, Space, Table, Typography, theme } from 'antd'
+import { FolderOpen, RotateCcw, Save } from 'lucide-react'
 import type { BackupCounts, BackupSnapshot, BackupStatus } from '@shared/types'
-import { Button } from '@renderer/components/ui/button'
-import { toast } from '@renderer/components/ui/sonner'
-import { DeleteConfirmDialog } from '@renderer/components/DeleteConfirmDialog'
-import { Callout, SectionHeader } from './SettingsPrimitives'
+import { SettingRow, SettingsCard } from './SettingsLayout'
 import { errorMessage } from './settingsStatus'
+
+const ICON = { size: 16, strokeWidth: 1.75, 'aria-hidden': true } as const
 
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
@@ -20,30 +20,32 @@ function formatDate(iso: string): string {
 function describeCounts(counts: BackupCounts): string {
   const part = (value: number | null, label: string): string => `${value ?? '?'} ${label}`
   return [
-    part(counts.tasks, 'tasks'),
+    part(counts.tasks, 'tarefas'),
     part(counts.projects, 'projetos'),
     part(counts.timeEntries, 'registros de tempo')
   ].join(' · ')
 }
 
 export function BackupSection(): React.JSX.Element {
+  const { token } = theme.useToken()
+  const { message, modal } = App.useApp()
   const [status, setStatus] = useState<BackupStatus | null>(null)
   const [busy, setBusy] = useState<'backup' | 'restore' | null>(null)
-  const [pending, setPending] = useState<BackupSnapshot | null>(null)
+  const mono = { fontFamily: token.fontFamilyCode, fontVariantNumeric: 'tabular-nums' as const }
 
   useEffect(() => {
     window.api
       .backupGetStatus()
       .then(setStatus)
-      .catch((error) => toast.error(errorMessage(error)))
-  }, [])
+      .catch((error) => message.error(errorMessage(error)))
+  }, [message])
 
   async function chooseFolder(): Promise<void> {
     try {
       const next = await window.api.backupChooseFolder()
       if (next) setStatus(next)
     } catch (error) {
-      toast.error(errorMessage(error))
+      message.error(errorMessage(error))
     }
   }
 
@@ -52,20 +54,40 @@ export function BackupSection(): React.JSX.Element {
     try {
       const snapshot = await window.api.backupCreate()
       setStatus(await window.api.backupGetStatus())
-      toast.success(`Backup criado: ${describeCounts(snapshot.counts)}.`)
+      message.success(`Backup criado: ${describeCounts(snapshot.counts)}.`)
     } catch (error) {
-      toast.error(errorMessage(error))
+      message.error(errorMessage(error))
     } finally {
       setBusy(null)
     }
   }
 
-  async function askRestore(dir: string): Promise<void> {
+  async function restore(snapshot: BackupSnapshot): Promise<void> {
+    setBusy('restore')
     try {
-      setPending(await window.api.backupInspect(dir))
+      await window.api.backupRestore(snapshot.path)
     } catch (error) {
-      toast.error(errorMessage(error))
+      message.error(errorMessage(error))
+      setBusy(null)
     }
+  }
+
+  async function askRestore(dir: string): Promise<void> {
+    let snapshot: BackupSnapshot
+    try {
+      snapshot = await window.api.backupInspect(dir)
+    } catch (error) {
+      message.error(errorMessage(error))
+      return
+    }
+    modal.confirm({
+      title: 'Restaurar este backup?',
+      content: `Backup de ${formatDate(snapshot.createdAt)}: ${describeCounts(snapshot.counts)}. Os dados atuais são substituídos, mas uma cópia fica numa pasta pre-restore dentro da pasta de dados do app. A conexão com o Google Calendar não volta com o backup. O CrafyTask reinicia em seguida.`,
+      okText: 'Restaurar e reiniciar',
+      okButtonProps: { danger: true },
+      cancelText: 'Cancelar',
+      onOk: () => restore(snapshot)
+    })
   }
 
   async function restoreFromOtherFolder(): Promise<void> {
@@ -73,124 +95,119 @@ export function BackupSection(): React.JSX.Element {
     if (dir) await askRestore(dir)
   }
 
-  async function confirmRestore(): Promise<void> {
-    if (!pending) return
-    setBusy('restore')
-    try {
-      await window.api.backupRestore(pending.path)
-    } catch (error) {
-      toast.error(errorMessage(error))
-      setBusy(null)
-    }
-  }
-
   const disabled = busy !== null
   const snapshots = status?.snapshots ?? []
 
   return (
-    <div className="space-y-6">
-      <SectionHeader
-        icon={DatabaseBackup}
-        title="Backup"
-        description="Cópia dos dados locais para restaurar depois de formatar ou em outro computador."
-      />
+    <Flex vertical gap={16}>
+      <SettingsCard title="Pasta de backup">
+        <SettingRow
+          title={
+            <span style={mono} title={status?.folder ?? undefined}>
+              {status?.folder ?? 'Nenhuma pasta escolhida'}
+            </span>
+          }
+          description={
+            status?.folder
+              ? 'Cada backup vira uma pasta com data e hora dentro dela.'
+              : 'Prefira um HD externo ou uma pasta sincronizada na nuvem.'
+          }
+        >
+          <Space wrap>
+            <Button icon={<FolderOpen {...ICON} />} onClick={chooseFolder} disabled={disabled}>
+              {status?.folder ? 'Trocar' : 'Escolher pasta'}
+            </Button>
+            <Button
+              type="primary"
+              icon={<Save {...ICON} />}
+              loading={busy === 'backup'}
+              disabled={disabled || !status?.folder}
+              onClick={backupNow}
+            >
+              Fazer backup agora
+            </Button>
+          </Space>
+        </SettingRow>
+      </SettingsCard>
 
-      <div className="p-4 rounded-sm border border-slate-200 flex items-center justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-slate-700">Pasta de backup</p>
-          <p className="text-xs text-slate-500 mt-1 truncate" title={status?.folder ?? undefined}>
-            {status?.folder ?? 'Nenhuma pasta escolhida. Prefira um HD externo ou pasta na nuvem.'}
-          </p>
-        </div>
-        <Button variant="outline" size="sm" onClick={chooseFolder} disabled={disabled}>
-          <FolderOpen size={14} className="mr-1.5" />
-          {status?.folder ? 'Trocar' : 'Escolher pasta'}
-        </Button>
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        <Button onClick={backupNow} disabled={disabled || !status?.folder}>
-          {busy === 'backup' ? (
-            <Loader2 size={14} className="mr-1.5 animate-spin" />
-          ) : (
-            <Save size={14} className="mr-1.5" />
-          )}
-          Fazer backup agora
-        </Button>
-        <Button variant="outline" onClick={restoreFromOtherFolder} disabled={disabled}>
-          <RotateCcw size={14} className="mr-1.5" />
-          Restaurar de outra pasta…
-        </Button>
-      </div>
-
-      {status?.folder && (
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
-            Backups nesta pasta
-          </p>
-          {snapshots.length === 0 ? (
-            <p className="text-sm text-slate-500">Nenhum backup ainda.</p>
-          ) : (
-            <ul className="divide-y divide-slate-200 border border-slate-200 rounded-sm">
-              {snapshots.map((snapshot) => (
-                <li
-                  key={snapshot.path}
-                  className="flex items-center justify-between gap-4 px-4 py-3"
-                >
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-slate-700">
-                      {formatDate(snapshot.createdAt)}
-                    </p>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      {describeCounts(snapshot.counts)} · {formatSize(snapshot.sizeBytes)}
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => askRestore(snapshot.path)}
-                    disabled={disabled}
-                  >
-                    Restaurar
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
+      <SettingsCard
+        title="Backups nesta pasta"
+        extra={
+          <Button
+            size="small"
+            type="link"
+            icon={<RotateCcw size={14} strokeWidth={1.75} aria-hidden />}
+            disabled={disabled}
+            onClick={restoreFromOtherFolder}
+          >
+            Restaurar de outra pasta…
+          </Button>
+        }
+      >
+        <Table<BackupSnapshot>
+          size="small"
+          rowKey="path"
+          pagination={false}
+          style={{ margin: '0 -16px' }}
+          scroll={{ x: 'max-content' }}
+          locale={{
+            emptyText: status?.folder ? 'Nenhum backup ainda.' : 'Escolha uma pasta de backup.'
+          }}
+          dataSource={snapshots}
+          columns={[
+            {
+              title: 'Criado em',
+              key: 'created',
+              render: (_, row) => <span style={mono}>{formatDate(row.createdAt)}</span>
+            },
+            {
+              title: 'Tarefas',
+              key: 'tasks',
+              align: 'right',
+              render: (_, row) => <span style={mono}>{row.counts.tasks ?? '?'}</span>
+            },
+            {
+              title: 'Projetos',
+              key: 'projects',
+              align: 'right',
+              responsive: ['md'],
+              render: (_, row) => <span style={mono}>{row.counts.projects ?? '?'}</span>
+            },
+            {
+              title: 'Tamanho',
+              key: 'size',
+              align: 'right',
+              render: (_, row) => <span style={mono}>{formatSize(row.sizeBytes)}</span>
+            },
+            {
+              title: '',
+              key: 'action',
+              align: 'right',
+              render: (_, row) => (
+                <Button size="small" disabled={disabled} onClick={() => void askRestore(row.path)}>
+                  Restaurar
+                </Button>
+              )
+            }
+          ]}
+        />
+      </SettingsCard>
 
       {busy === 'restore' && (
-        <p className="flex items-center gap-2 text-sm text-slate-600">
-          <Loader2 size={14} className="animate-spin" /> Restaurando… o CrafyTask vai reiniciar.
-        </p>
+        <Typography.Text type="secondary">Restaurando… o CrafyTask vai reiniciar.</Typography.Text>
       )}
 
-      <div>
-        <Callout tone="info">
-          O backup leva o banco (tasks, projetos, tempos, notas e desenhos), as imagens das notas e
-          as configurações do Notion e do servidor MCP. A conexão com o Google Calendar não vai
-          junto: depois de restaurar em outro computador, reconecte na seção Google Calendar.
-        </Callout>
-        <Callout tone="warn">
-          O backup contém a API Key do Notion e o token do MCP. Guarde a pasta em local seguro.
-        </Callout>
-      </div>
-
-      <DeleteConfirmDialog
-        open={pending !== null}
-        onOpenChange={(open) => {
-          if (!open) setPending(null)
-        }}
-        onConfirm={() => void confirmRestore()}
-        title="Restaurar este backup?"
-        description={
-          pending
-            ? `Backup de ${formatDate(pending.createdAt)}: ${describeCounts(pending.counts)}. Os dados atuais serão substituídos (uma cópia fica em uma pasta pre-restore dentro da pasta de dados do app) e o CrafyTask vai reiniciar.`
-            : ''
-        }
-        confirmLabel="Restaurar e reiniciar"
+      <Alert
+        type="info"
+        showIcon
+        title="O que vai no backup"
+        description="O banco (tarefas, projetos, tempos, notas e desenhos), as imagens das notas e as configurações do Notion e do servidor MCP. A conexão com o Google Calendar não vai junto: depois de restaurar em outro computador, reconecte na seção Google Calendar."
       />
-    </div>
+      <Alert
+        type="warning"
+        showIcon
+        title="O backup contém a API Key do Notion e o token do MCP. Guarde a pasta em local seguro."
+      />
+    </Flex>
   )
 }

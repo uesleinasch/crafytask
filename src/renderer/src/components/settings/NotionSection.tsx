@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import {
-  BookOpen,
   ChevronDown,
   ChevronRight,
   Database,
@@ -14,8 +13,8 @@ import { Input } from '@renderer/components/ui/input'
 import { toast } from '@renderer/components/ui/sonner'
 import { DeleteConfirmDialog } from '@renderer/components/DeleteConfirmDialog'
 import { SetupSteps, type SetupStep } from './SetupSteps'
-import { Callout, OutLink, SectionHeader, ToggleRow } from './SettingsPrimitives'
-import { errorMessage, notionStatus, type NotionConfig } from './settingsStatus'
+import { Callout, OutLink, ToggleRow } from './SettingsPrimitives'
+import { errorMessage, type NotionConfig } from './settingsStatus'
 
 export function NotionSection({
   config,
@@ -201,17 +200,8 @@ export function NotionSection({
     }
   ]
 
-  const status = notionStatus(config)
-
   return (
     <div className="space-y-6">
-      <SectionHeader
-        icon={BookOpen}
-        title="Notion"
-        description="Sincronize suas tarefas com o banco de dados GTD APP no Notion."
-        status={status}
-      />
-
       {config?.databaseId ? (
         <>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">

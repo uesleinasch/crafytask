@@ -1,20 +1,12 @@
 import { useState } from 'react'
-import {
-  CalendarDays,
-  ChevronDown,
-  ChevronRight,
-  Link2,
-  Loader2,
-  LogOut,
-  RefreshCw
-} from 'lucide-react'
+import { ChevronDown, ChevronRight, Link2, Loader2, LogOut, RefreshCw } from 'lucide-react'
 import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
 import { toast } from '@renderer/components/ui/sonner'
 import type { GcalStatus } from '@shared/types'
 import { SetupSteps, type SetupStep } from './SetupSteps'
-import { Callout, OutLink, SectionHeader, ToggleRow } from './SettingsPrimitives'
-import { errorMessage, gcalStatusInfo } from './settingsStatus'
+import { Callout, OutLink, ToggleRow } from './SettingsPrimitives'
+import { errorMessage } from './settingsStatus'
 
 export function GoogleCalendarSection({
   status,
@@ -233,13 +225,6 @@ export function GoogleCalendarSection({
 
   return (
     <div className="space-y-6">
-      <SectionHeader
-        icon={CalendarDays}
-        title="Google Calendar"
-        description="Blocos, datas agendadas e prazos das tarefas marcadas vão para a agenda “TickTask”."
-        status={gcalStatusInfo(status)}
-      />
-
       {status.connected ? (
         <>
           <ToggleRow
