@@ -91,7 +91,6 @@ primeira vista.
 | --- | --- |
 | `TagInput` | pílulas removíveis + campo livre. Enter cria ou seleciona; Backspace com campo vazio remove a última; ↑↓ navegam nas sugestões; Esc fecha. Sem sugestão, oferece **"Criar tag «x»"**. Cria a tag via `getOrCreateTag` |
 | `TimeEntryList` | sessões encerradas, `max-h-[250px]`, data à esquerda e `+ HH:MM:SS` à direita |
-| `DeleteConfirmDialog` | `AlertDialog` com título e descrição padrão sobrescrevíveis |
 
 ### Cronômetro
 

@@ -11,12 +11,16 @@ export interface ResolvedStep {
 }
 
 export function resolveSteps(steps: StepDefinition[], doneIds: string[]): ResolvedStep[] {
-  const resolved = steps.map((step) => ({
-    id: step.id,
-    manual: step.autoDone === undefined,
-    done: step.autoDone ?? doneIds.includes(step.id),
-    current: false
-  }))
+  const lastAutoDone = steps.findLastIndex((step) => step.autoDone === true)
+  const resolved = steps.map((step, index) => {
+    const implied = step.autoDone === undefined && index < lastAutoDone
+    return {
+      id: step.id,
+      manual: step.autoDone === undefined && !implied,
+      done: implied || (step.autoDone ?? doneIds.includes(step.id)),
+      current: false
+    }
+  })
   const current = resolved.find((step) => !step.done)
   if (current) current.current = true
   return resolved

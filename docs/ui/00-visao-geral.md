@@ -286,8 +286,8 @@ botão de ação. Formulações e tamanhos variam de tela para tela.
 
 ### 7. Diálogo de confirmação
 
-`AlertDialog` (Radix) com título, descrição, "Cancelar" e ação destrutiva em vermelho. O
-`DeleteConfirmDialog` embrulha esse padrão com textos padrão.
+`AlertDialog` (Radix) com título, descrição, "Cancelar" e ação destrutiva em vermelho. As telas já
+migradas usam `modal.confirm` ou `Popconfirm` do antd; o `DeleteConfirmDialog` saiu na F7-d2.
 
 ### 8. Feedback de ação
 
