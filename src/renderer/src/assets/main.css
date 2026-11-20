@@ -6,7 +6,6 @@
   --font-sans: 'Geist Variable', system-ui, sans-serif;
   --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
   --font-brand: 'Denk One', sans-serif;
-  --color-brand: #705eff;
 }
 
 @layer base {
@@ -43,7 +42,6 @@
   }
 }
 
-/* Animações customizadas */
 @keyframes pulse-slow {
   0%,
   100% {
@@ -550,16 +548,6 @@ button.ct-calnum.sm:hover:not(.today) {
 
 .ct-calplan:hover {
   border-color: var(--ant-color-border);
-}
-
-/* Scrollbar hide utility */
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
 }
 
 #root {
