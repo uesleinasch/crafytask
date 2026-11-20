@@ -82,7 +82,7 @@ export function BackupSection(): React.JSX.Element {
     }
     modal.confirm({
       title: 'Restaurar este backup?',
-      content: `Backup de ${formatDate(snapshot.createdAt)}: ${describeCounts(snapshot.counts)}. Os dados atuais são substituídos, mas uma cópia fica numa pasta pre-restore dentro da pasta de dados do app. A conexão com o Google Calendar não volta com o backup. O CrafyTask reinicia em seguida.`,
+      content: `Backup de ${formatDate(snapshot.createdAt)}, banco conferido (integrity_check ok): ${describeCounts(snapshot.counts)}. Os dados atuais são substituídos, mas uma cópia fica numa pasta pre-restore dentro da pasta de dados do app. A conexão com o Google Calendar não volta com o backup. O CrafyTask reinicia em seguida.`,
       okText: 'Restaurar e reiniciar',
       okButtonProps: { danger: true },
       cancelText: 'Cancelar',
@@ -91,8 +91,12 @@ export function BackupSection(): React.JSX.Element {
   }
 
   async function restoreFromOtherFolder(): Promise<void> {
-    const dir = await window.api.backupChooseSnapshot()
-    if (dir) await askRestore(dir)
+    try {
+      const dir = await window.api.backupChooseSnapshot()
+      if (dir) await askRestore(dir)
+    } catch (error) {
+      message.error(errorMessage(error))
+    }
   }
 
   const disabled = busy !== null

@@ -166,9 +166,14 @@ Valores em `localStorage` (`lib/terminalPrefs.ts`).
 - Card **Servidor**: `Switch` com o estado na descrição: "Desligado", `Rodando em 127.0.0.1:{porta}`
   ou a falha na porta (texto de erro).
 - Card **Registrar no Claude Code**: o comando num bloco mono copiável (`Typography.Paragraph
-  copyable`), a nota de que ele contém o token e a dica para remover o registro antigo `ticktask`;
-  **Regenerar** (perigo) pede confirmação dizendo que clientes registrados param e que as tarefas
-  não mudam.
+  copyable`) e a dica para remover o registro antigo `ticktask`. O comando registra a **ponte
+  stdio** (`mcp-bridge`), que lê o token de `mcp-config.json` a cada mensagem: ele não contém o
+  token e continua valendo depois de regenerar.
+- **Regenerar** (perigo) pede confirmação dizendo o que acontece (o token atual deixa de valer e
+  param os clientes configurados à mão por HTTP com ele) e o que não acontece (a ponte registrada
+  continua, as tarefas não mudam).
+- Falhas ao ler o estado de uma integração não derrubam a página: a seção mostra um `Alert` de erro e
+  a navegação, o ponto vermelho "Erro ao ler". Enquanto carrega, nenhum ponto aparece.
 
 ### Sobre
 

@@ -3,6 +3,10 @@ import { Input, Switch, theme } from 'antd'
 import { usePersistedState } from '@renderer/hooks/usePersistedState'
 import { TERMINAL_AUTO_TIMER_KEY, TERMINAL_SHELL_KEY } from '@renderer/lib/terminalPrefs'
 import { KeyCombo } from '@renderer/components/shell/Kbd'
+import {
+  TERMINAL_MAXIMIZE_SHORTCUT_LABEL,
+  TERMINAL_SHORTCUT_LABEL
+} from '@renderer/components/terminal/terminalKeys'
 import { SettingRow, SettingsCard } from './SettingsLayout'
 
 export function TerminalSection(): React.JSX.Element {
@@ -40,7 +44,10 @@ export function TerminalSection(): React.JSX.Element {
         />
       </SettingRow>
       <SettingRow title="Atalho do painel" description="Mostra e esconde o painel de terminais.">
-        <KeyCombo keys={['Ctrl', "'"]} />
+        <KeyCombo keys={TERMINAL_SHORTCUT_LABEL.split(' + ')} />
+      </SettingRow>
+      <SettingRow title="Tela cheia" description="Abre o painel ocupando a janela inteira.">
+        <KeyCombo keys={TERMINAL_MAXIMIZE_SHORTCUT_LABEL.split(' + ')} />
       </SettingRow>
     </SettingsCard>
   )

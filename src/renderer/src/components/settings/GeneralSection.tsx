@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { App, Flex, Switch, Tag } from 'antd'
 import { Info } from 'lucide-react'
 import { KeyCombo } from '@renderer/components/shell/Kbd'
@@ -11,13 +12,20 @@ export function GeneralSection({
   onAutostartChange: (enabled: boolean) => void
 }): React.JSX.Element {
   const { message } = App.useApp()
-  const mod = window.electron.process.platform === 'darwin' ? '⌘' : 'Ctrl'
+  const [saving, setSaving] = useState(false)
 
   async function toggleAutostart(checked: boolean): Promise<void> {
-    const next = await window.api.appSetAutostart(checked)
-    onAutostartChange(next)
-    if (next !== checked) message.error('Não foi possível alterar a inicialização automática')
-    else message.success(next ? 'Vai iniciar com o sistema' : 'Não inicia mais com o sistema')
+    setSaving(true)
+    try {
+      const next = await window.api.appSetAutostart(checked)
+      onAutostartChange(next)
+      if (next !== checked) message.error('Não foi possível alterar a inicialização automática')
+      else message.success(next ? 'Vai iniciar com o sistema' : 'Não inicia mais com o sistema')
+    } catch {
+      message.error('Não foi possível alterar a inicialização automática')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -29,6 +37,7 @@ export function GeneralSection({
         >
           <Switch
             checked={autostart}
+            loading={saving}
             onChange={(checked) => void toggleAutostart(checked)}
             aria-label="Iniciar com o sistema"
           />
@@ -47,7 +56,7 @@ export function GeneralSection({
           title="Captura rápida"
           description="Abre de qualquer lugar do sistema e manda direto para o Inbox."
         >
-          <KeyCombo keys={[mod, 'Shift', 'Space']} />
+          <KeyCombo keys={['Ctrl', 'Shift', 'Space']} />
         </SettingRow>
       </SettingsCard>
     </Flex>

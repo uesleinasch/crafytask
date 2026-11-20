@@ -15,13 +15,25 @@ export function McpSection({
   const { token } = theme.useToken()
   const { message, modal } = App.useApp()
   const [regenerating, setRegenerating] = useState(false)
-  const mono = { fontFamily: token.fontFamilyCode }
+  const [switching, setSwitching] = useState(false)
+
+  async function toggle(checked: boolean): Promise<void> {
+    setSwitching(true)
+    try {
+      onStatusChange(await window.api.mcpSetEnabled(checked))
+    } catch (error) {
+      message.error(errorMessage(error))
+    } finally {
+      setSwitching(false)
+    }
+  }
+  const mono = { fontFamily: token.fontFamilyCode, fontVariantNumeric: 'tabular-nums' as const }
 
   async function regenerate(): Promise<void> {
     setRegenerating(true)
     try {
       onStatusChange(await window.api.mcpRegenerateToken())
-      message.success('Token regenerado. Registre o servidor de novo com o comando novo.')
+      message.success('Token regenerado.')
     } catch (error) {
       message.error(`Erro ao regenerar token: ${errorMessage(error)}`)
     } finally {
@@ -33,7 +45,7 @@ export function McpSection({
     modal.confirm({
       title: 'Regenerar o token do MCP?',
       content:
-        'Todo cliente já registrado (Claude Code, ponte stdio) para de funcionar até você registrá-lo de novo com o comando novo. Suas tarefas não mudam.',
+        'O token atual deixa de valer. Clientes que você configurou à mão por HTTP com ele param até receber o novo. Quem registrou com o comando acima continua funcionando, e suas tarefas não mudam.',
       okText: 'Regenerar',
       okButtonProps: { danger: true },
       cancelText: 'Cancelar',
@@ -61,14 +73,15 @@ export function McpSection({
           <Switch
             checked={status.enabled}
             aria-label="Servidor MCP"
-            onChange={async (checked) => onStatusChange(await window.api.mcpSetEnabled(checked))}
+            loading={switching}
+            onChange={(checked) => void toggle(checked)}
           />
         </SettingRow>
       </SettingsCard>
       <SettingsCard title="Registrar no Claude Code">
         <SettingRow
           title="Comando de registro"
-          description="Rode no terminal. Contém o token de acesso: não compartilhe."
+          description="Rode uma vez no terminal: registra a ponte local do CrafyTask no Claude Code."
           vertical
         >
           <Typography.Paragraph
@@ -85,7 +98,7 @@ export function McpSection({
         </SettingRow>
         <SettingRow
           title="Regenerar token"
-          description="Clientes já registrados param de funcionar até rodar o comando de novo."
+          description="Só param os clientes configurados à mão por HTTP com o token atual. A ponte registrada pelo comando continua valendo."
         >
           <Button
             danger

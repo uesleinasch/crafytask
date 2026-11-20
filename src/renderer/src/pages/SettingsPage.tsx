@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
+  Alert,
   Badge,
   Card,
   Flex,
@@ -72,23 +73,32 @@ export function SettingsPage(): React.JSX.Element {
   const [mcp, setMcp] = useState<McpStatus | null>(null)
   const [autostart, setAutostart] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [failed, setFailed] = useState<SectionId[]>([])
+  const statusOf = (id: SectionId, info: StatusInfo): StatusInfo | undefined =>
+    isLoading ? undefined : failed.includes(id) ? { tone: 'error', label: 'Erro ao ler' } : info
 
   useEffect(() => {
-    Promise.all([
+    Promise.allSettled([
       window.api.notionGetConfig(),
       window.api.gcalGetStatus(),
       window.api.mcpGetStatus(),
       window.api.appGetAutostart(),
       window.api.jiraGetStatus()
-    ])
-      .then(([notionConfig, gcalStatus, mcpStatus, autostartEnabled, jiraStatus]) => {
-        setNotion(notionConfig)
-        setGcal(gcalStatus)
-        setJira(jiraStatus)
-        setMcp(mcpStatus)
-        setAutostart(autostartEnabled)
-      })
-      .finally(() => setIsLoading(false))
+    ]).then(([notionConfig, gcalStatus, mcpStatus, autostartEnabled, jiraStatus]) => {
+      const failures: SectionId[] = []
+      if (notionConfig.status === 'fulfilled') setNotion(notionConfig.value)
+      else failures.push('notion')
+      if (gcalStatus.status === 'fulfilled') setGcal(gcalStatus.value)
+      else failures.push('google')
+      if (mcpStatus.status === 'fulfilled') setMcp(mcpStatus.value)
+      else failures.push('mcp')
+      if (autostartEnabled.status === 'fulfilled') setAutostart(autostartEnabled.value)
+      else failures.push('geral')
+      if (jiraStatus.status === 'fulfilled') setJira(jiraStatus.value)
+      else failures.push('jira')
+      setFailed(failures)
+      setIsLoading(false)
+    })
   }, [])
 
   const groups: { label: string; items: NavItem[] }[] = [
@@ -128,7 +138,7 @@ export function SettingsPage(): React.JSX.Element {
           keywords: 'sincronizar banco api key cadernos',
           description:
             'Envia as tarefas para um banco "GTD APP" no Notion. Só ida: o Notion não altera o app.',
-          status: notionStatus(notion)
+          status: statusOf('notion', notionStatus(notion))
         },
         {
           id: 'google',
@@ -137,7 +147,7 @@ export function SettingsPage(): React.JSX.Element {
           keywords: 'agenda oauth client eventos',
           description:
             'Coloca tarefas marcadas numa agenda "TickTask" criada pelo app no seu Google Calendar.',
-          status: gcalStatusInfo(gcal)
+          status: statusOf('google', gcalStatusInfo(gcal))
         },
         {
           id: 'jira',
@@ -145,7 +155,7 @@ export function SettingsPage(): React.JSX.Element {
           icon: Plug,
           keywords: 'boards worklog importar token issues',
           description: 'Importa as issues atribuídas a você e devolve tempo, descrição e status.',
-          status: jiraStatusInfo(jira)
+          status: statusOf('jira', jiraStatusInfo(jira))
         },
         {
           id: 'mcp',
@@ -154,7 +164,7 @@ export function SettingsPage(): React.JSX.Element {
           keywords: 'token claude porta assistente',
           description:
             'Deixa assistentes como o Claude Code lerem e alterarem suas tarefas, só nesta máquina.',
-          status: mcpStatusInfo(mcp)
+          status: statusOf('mcp', mcpStatusInfo(mcp))
         }
       ]
     },
@@ -183,7 +193,10 @@ export function SettingsPage(): React.JSX.Element {
       <span className="ct-ellipsis">{item.label}</span>
       {item.status && (
         <Tooltip title={item.status.label} placement="right">
-          <Badge status={STATUS_BADGE[item.status.tone]} aria-label={item.status.label} />
+          <Badge
+            status={STATUS_BADGE[item.status.tone]}
+            text={<span className="sr-only">{item.status.label}</span>}
+          />
         </Tooltip>
       )}
     </Flex>
@@ -234,6 +247,13 @@ export function SettingsPage(): React.JSX.Element {
     <Flex justify="center" style={{ padding: 48 }}>
       <Spin />
     </Flex>
+  ) : failed.includes(current.id) ? (
+    <Alert
+      type="error"
+      showIcon
+      title={`Não foi possível ler o estado de ${current.label}.`}
+      description="Feche e abra Configurações de novo. Se continuar, veja o log do app."
+    />
   ) : (
     <RegionBoundary region={`configurações de ${current.label}`} resetKeys={[current.id]}>
       {current.id === 'geral' && (
@@ -269,7 +289,7 @@ export function SettingsPage(): React.JSX.Element {
   return (
     <div className="h-full overflow-y-auto">
       <PageContainer>
-        {screens.md ? (
+        {screens.md !== false ? (
           <Flex gap={24} align="start">
             {nav}
             {content}
@@ -291,7 +311,12 @@ export function SettingsPage(): React.JSX.Element {
                       <Space>
                         <Icon {...ICON} />
                         {item.label}
-                        {item.status && <Badge status={STATUS_BADGE[item.status.tone]} />}
+                        {item.status && (
+                          <Badge
+                            status={STATUS_BADGE[item.status.tone]}
+                            text={<span className="sr-only">{item.status.label}</span>}
+                          />
+                        )}
                       </Space>
                     )
                   }
