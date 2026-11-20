@@ -22,7 +22,7 @@ import {
   type UpdateProjectInput
 } from '@shared/types'
 import { PROJECT_STATUS_ICONS } from '@renderer/components/chips/projectStatusMeta'
-import { PropPill } from '@renderer/components/tasks/TaskPropertyBar'
+import { PropPill } from '@renderer/components/tasks/propertyPills'
 import { TerminalProjectButton } from '@renderer/components/terminal/TerminalProjectButton'
 import { PROJECT_STATUS_COLORS, USER_COLORS } from '@renderer/theme/semantic'
 import { useThemeSettings } from '@renderer/theme/themeSettings'
