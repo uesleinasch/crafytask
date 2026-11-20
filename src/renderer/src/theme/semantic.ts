@@ -59,12 +59,6 @@ export function timeLeakBackground(mode: ThemeMode, level: TimeLeakLevel): strin
 
 export const ENERGY_BARS: Record<EnergyLevel, 1 | 2 | 3> = { alto: 3, medio: 2, baixo: 1 }
 
-export const ENERGY_LABELS: Record<EnergyLevel, string> = {
-  alto: 'Alta',
-  medio: 'Média',
-  baixo: 'Baixa'
-}
-
 export interface ChartColors {
   single: string
   muted: string
@@ -158,6 +152,11 @@ export const USER_COLOR_NAMES: Record<(typeof USER_COLORS)[number], string> = {
   '#7647B0': 'roxo',
   '#B8327A': 'magenta',
   '#5D6B82': 'ardósia'
+}
+
+export function userColorName(color: string): string {
+  const match = USER_COLORS.find((c) => c.toLowerCase() === color.toLowerCase())
+  return match ? USER_COLOR_NAMES[match] : 'atual'
 }
 
 export function userColorTint(color: string): string | undefined {

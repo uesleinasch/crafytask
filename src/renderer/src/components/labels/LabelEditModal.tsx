@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { App, Flex, Input, Modal, Typography, theme } from 'antd'
 import { errorMessage } from '@renderer/components/settings/settingsStatus'
-import { USER_COLORS } from '@renderer/theme/semantic'
 import { LabelMark } from './LabelMark'
 import {
   CONTEXT_EMOJIS,
@@ -12,6 +11,7 @@ import {
   type LabelDraft,
   type LabelKind
 } from './labels'
+import { ColorSwatches } from '@renderer/components/color/ColorSwatches'
 
 interface LabelEditModalProps {
   kind: LabelKind
@@ -140,31 +140,12 @@ export function LabelEditModal({
           )}
           <div>
             <Caption>Cor</Caption>
-            <Flex gap={8} wrap style={{ marginTop: 6 }}>
-              {USER_COLORS.map((color) => {
-                const on = draft.color.toLowerCase() === color.toLowerCase()
-                return (
-                  <button
-                    key={color}
-                    type="button"
-                    aria-pressed={on}
-                    aria-label={`Cor ${color}`}
-                    onClick={() => setDraft({ ...draft, color })}
-                    style={{
-                      width: 26,
-                      height: 26,
-                      borderRadius: '50%',
-                      cursor: 'pointer',
-                      background: color,
-                      border: 'none',
-                      boxShadow: on
-                        ? `0 0 0 2px ${token.colorBgElevated}, 0 0 0 4px ${token.colorText}`
-                        : undefined
-                    }}
-                  />
-                )
-              })}
-            </Flex>
+            <div style={{ marginTop: 6 }}>
+              <ColorSwatches
+                value={draft.color}
+                onChange={(color) => setDraft({ ...draft, color })}
+              />
+            </div>
           </div>
           <div
             style={{

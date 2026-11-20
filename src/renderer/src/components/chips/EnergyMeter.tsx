@@ -1,6 +1,6 @@
 import { Tooltip, theme } from 'antd'
-import type { EnergyLevel } from '@shared/types'
-import { ENERGY_BARS, ENERGY_LABELS } from '@renderer/theme/semantic'
+import { ENERGY_LABELS, type EnergyLevel } from '@shared/types'
+import { ENERGY_BARS } from '@renderer/theme/semantic'
 
 interface EnergyMeterProps {
   level: EnergyLevel

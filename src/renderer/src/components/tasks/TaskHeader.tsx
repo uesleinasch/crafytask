@@ -32,9 +32,9 @@ import {
   SlidersHorizontal,
   Trash2
 } from 'lucide-react'
-import type { Task, TaskStatus, UpdateTaskInput } from '@shared/types'
+import { STATUS_LABELS, type Task, type TaskStatus, type UpdateTaskInput } from '@shared/types'
 import { effectiveWorkingDir } from '@shared/workingDir'
-import { STATUS_CHIP_LABELS, STATUS_ICONS } from '@renderer/components/chips/statusMeta'
+import { STATUS_ICONS } from '@renderer/components/chips/statusMeta'
 import { STATUS_COLORS } from '@renderer/theme/semantic'
 import { useThemeSettings } from '@renderer/theme/themeSettings'
 import { LiveDot } from '@renderer/components/chips/LiveDot'
@@ -275,7 +275,7 @@ export function TaskHeader({
                         aria-hidden
                         color={STATUS_COLORS[status][mode].fg}
                       />
-                      {STATUS_CHIP_LABELS[status]}
+                      {STATUS_LABELS[status]}
                     </Space>
                   )
                 }

@@ -465,7 +465,7 @@ function PeriodContent({
 
   const energyRows: HBarRow[] = stats.byEnergy.map((row) => ({
     key: row.energy,
-    label: ENERGY_LABELS[row.energy],
+    label: `Energia ${ENERGY_LABELS[row.energy].toLowerCase()}`,
     lead: (
       <Label lead={<EnergyMeter level={row.energy} tooltip={false} />}>
         {ENERGY_LABELS[row.energy]}{' '}

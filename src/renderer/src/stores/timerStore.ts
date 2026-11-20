@@ -86,7 +86,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
       const hours = Math.floor(seconds / 3600)
       const minutes = Math.floor((seconds % 3600) / 60)
       window.api.showNotification(
-        '⚠️ Time Leak Alert!',
+        'Time leak',
         `A tarefa "${timer.task.name}" já está em ${hours}h${minutes}min. Considere finalizá-la!`
       )
     }

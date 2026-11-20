@@ -17,6 +17,7 @@ import {
   Trash2
 } from 'lucide-react'
 import {
+  CATEGORY_LABELS,
   STATUS_LABELS,
   type JiraTransitionOption,
   type Task,
@@ -25,7 +26,6 @@ import {
 } from '@shared/types'
 import { localDateString } from '@shared/dueState'
 import { TaskMenuChangedContext, TaskMenuDataContext } from '@renderer/components/taskMenuContext'
-import { CATEGORY_CHIP_LABELS } from '@renderer/components/chips/categoryMeta'
 import { STATUS_ICONS } from '@renderer/components/chips/statusMeta'
 import { useTimerStore } from '@renderer/stores/timerStore'
 import { STATUS_COLORS } from '@renderer/theme/semantic'
@@ -186,7 +186,7 @@ export function TaskContextMenu({
       label: tag('Categoria'),
       children: CATEGORIES.map((category) => ({
         key: `category:${category}`,
-        label: `${check((task.category ?? 'normal') === category)}${CATEGORY_CHIP_LABELS[category]}`
+        label: `${check((task.category ?? 'normal') === category)}${CATEGORY_LABELS[category]}`
       }))
     },
     {

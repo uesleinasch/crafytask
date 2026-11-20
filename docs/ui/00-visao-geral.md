@@ -39,7 +39,7 @@ O `StatusChip` (`components/chips/`) mostra ícone e rótulo, nunca só a cor; a
 | `finalizada` | Finalizada | `CircleCheck` | verde acinzentado | Concluída |
 | `someday` | Someday | `Lightbulb` | azul-petróleo | Talvez um dia |
 
-Menus e seletores usam `STATUS_LABELS` de `shared/types.ts`, onde `someday` é "Someday/Maybe". O
+Chip, menus e seletores usam o mesmo `STATUS_LABELS` de `shared/types.ts`. O
 timer rodando aparece como `LiveDot` (ponto verde que pulsa), não como chip pulsando.
 
 ### Categoria da tarefa (`TaskCategory`)
@@ -53,10 +53,10 @@ Prioridade/natureza. Independente do status.
 | `normal` | Normal | — | sem cor: só borda e texto secundário |
 | `time_leak` | Time leak | `Clock` | âmbar |
 
-O `CategoryChip` lê `CATEGORY_COLORS` de `theme/semantic.ts`. Menus usam `CATEGORY_LABELS`
-("Time Leak", com maiúscula).
+O `CategoryChip` lê `CATEGORY_COLORS` de `theme/semantic.ts`; chip e menus usam o mesmo
+`CATEGORY_LABELS` de `shared/types.ts`.
 
-**Time Leak** é a categoria mais visualmente carregada do app: identifica tarefas que consomem
+**Time leak** é a categoria mais visualmente carregada do app: identifica tarefas que consomem
 tempo sem gerar valor. O fundo do card/linha muda conforme o tempo acumulado (amarelo → laranja →
 vermelho; níveis em Configurações → Fluxo de trabalho, padrão 30 min, 1 h e 2 h), e a partir do
 nível laranja o sistema dispara notificação a cada 5 minutos (intervalo também configurável).
@@ -68,14 +68,14 @@ Quanto de disposição a tarefa exige. Usado como filtro mental e alimenta o gr�
 O `EnergyMeter` desenha três barras na cor primária; o nível é quantas estão cheias, e o tooltip
 diz "Energia alta/média/baixa". Não há emoji nem cor própria por nível.
 
-| Valor | Rótulo curto (`theme/semantic.ts`) | Rótulo longo (`shared/types.ts`) | Barras cheias |
-| --- | --- | --- | --- |
-| `alto` | Alta | Alta Energia | 3 |
-| `medio` | Média | Energia Média | 2 |
-| `baixo` | Baixa | Baixa Energia | 1 |
+| Valor | Rótulo (`ENERGY_LABELS`, `shared/types.ts`) | Barras cheias |
+| --- | --- | --- |
+| `alto` | Alta | 3 |
+| `medio` | Média | 2 |
+| `baixo` | Baixa | 1 |
 
-Há dois `ENERGY_LABELS`: o curto vai no `EnergyMeter` e nas pílulas do detalhe; o longo, nos filtros
-da lista e no dashboard. Unificar é a A12 de [15](15-inconsistencias.md).
+Onde o nível aparece sem o medidor (filtro, dashboard, tooltip), o texto é "Energia alta/média/
+baixa".
 
 ### Demais entidades
 

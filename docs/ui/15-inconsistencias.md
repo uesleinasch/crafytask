@@ -6,7 +6,7 @@ interface legada, e serviu de insumo para a refatoração visual (fases F0–F9 
 em que fase, ou se continua aberto. Nada aqui é bug: nenhum item quebra o app.
 
 Resumo: dos itens de A a E, sobram abertos C1 (sobreposição entre telas, decisão de produto), E3
-(metas sem destino), E8 (idioma) e os novos A11–A12. A seção F reúne restrições que continuam
+(metas sem destino) e E8 (idioma). A seção F reúne restrições que continuam
 valendo.
 
 ---
@@ -67,17 +67,19 @@ mapeamentos do `@theme inline` que as expunham ao Tailwind saíram; o `@theme in
 fontes. A camada `base` pinta o `body` com
 `var(--ant-color-bg-layout)` e `var(--ant-color-text)`.
 
-### A11. Seletor de cor copiado em quatro lugares — aberta
+### A11. Seletor de cor copiado em quatro lugares — resolvida
 
-Os círculos de `USER_COLORS` com anel na cor escolhida estão escritos em `LabelEditModal`,
-`ProjectHeader`, `NewProjectModal` e `NameColorDialog`. Os três primeiros anunciam a cor ao leitor
-de tela pelo hex (`Cor #E5484D`); só o dos cadernos usa o nome (`USER_COLOR_NAMES`).
+**F9-c.** Os quatro (`LabelEditModal`, `ProjectHeader`, `NewProjectModal`, `NameColorDialog`) usam
+`components/color/ColorSwatches.tsx`: `radiogroup`, cada cor anunciada pelo nome
+(`userColorName`, em `theme/semantic.ts`), e a cor atual fora da paleta aparece como mais uma
+opção.
 
-### A12. Rótulo do chip difere do rótulo do menu — aberta
+### A12. Rótulo do chip difere do rótulo do menu — resolvida
 
-O chip diz "Someday" e "Time leak" (`statusMeta.ts`, `categoryMeta.ts`); menus, seletores e ações em
-massa dizem "Someday/Maybe" e "Time Leak" (`STATUS_LABELS` e `CATEGORY_LABELS` de
-`shared/types.ts`).
+**F9-c.** Status, categoria e energia têm um rótulo só, em `shared/types.ts` (`STATUS_LABELS`,
+`CATEGORY_LABELS`, `ENERGY_LABELS`), com os textos do protótipo: "Someday", "Time leak", "Alta/Média/
+Baixa" (e "Energia alta" onde o nível aparece sozinho). Saíram `STATUS_CHIP_LABELS`,
+`CATEGORY_CHIP_LABELS` e o `ENERGY_LABELS` de `theme/semantic.ts`.
 
 ---
 
@@ -246,7 +248,7 @@ comportamento certo para o caso de uso; desde a F2-e a lista avisa isso ao agrup
 
 - **Botão "Hoje" em toda listagem** — agendar sem navegar, com alternância imediata.
 - **Expansão de subtarefas inline**, em card e em tabela, com carregamento sob demanda.
-- **Escala visual do Time Leak** — a única semântica que colore o fundo inteiro.
+- **Escala visual do Time leak** — a única semântica que colore o fundo inteiro.
 - **Modo foco com timer embutido** (`FocusOverlay`) — escrever sem perder o cronômetro de vista, e
   `Esc` para sair.
 - **Confirmação de exclusão que cita o efeito** — o modelo da tag virou a regra (guia §11).

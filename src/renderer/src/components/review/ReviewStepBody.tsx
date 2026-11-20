@@ -36,13 +36,14 @@ import {
   User,
   type LucideIcon
 } from 'lucide-react'
-import type {
-  Project,
-  ReviewCounterKey,
-  ReviewPastWeek,
-  ReviewStepKey,
-  Task,
-  TaskStatus
+import {
+  STATUS_LABELS,
+  type Project,
+  type ReviewCounterKey,
+  type ReviewPastWeek,
+  type ReviewStepKey,
+  type Task,
+  type TaskStatus
 } from '@shared/types'
 import { PROJECT_STATUS_LABELS } from '@shared/types'
 import { HEALTH_LIMITS } from '@shared/healthLimits'
@@ -53,7 +54,6 @@ import { STATUS_COLORS } from '@renderer/theme/semantic'
 import { useThemeSettings } from '@renderer/theme/themeSettings'
 import { chipStyle } from '@renderer/components/chips/chipStyle'
 import { StatusChip } from '@renderer/components/chips/StatusChip'
-import { STATUS_CHIP_LABELS } from '@renderer/components/chips/statusMeta'
 import {
   COLLECT_PLACES,
   MIND_TRIGGERS,
@@ -439,7 +439,7 @@ function useTaskActions(
       void window.api
         .updateTask(task.id, { status })
         .then(() => {
-          message.success(text ?? `${task.name} → ${STATUS_CHIP_LABELS[status]}`)
+          message.success(text ?? `${task.name} → ${STATUS_LABELS[status]}`)
           after(counter)
         })
         .catch(showBoundary)

@@ -15,7 +15,7 @@ import {
 } from 'antd'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { TaskTable } from '@renderer/components/tasks/TaskTable'
-import { STATUS_CHIP_LABELS, STATUS_ICONS } from '@renderer/components/chips/statusMeta'
+import { STATUS_ICONS } from '@renderer/components/chips/statusMeta'
 import { errorMessage } from '@renderer/components/settings/settingsStatus'
 import { STATUS_COLORS } from '@renderer/theme/semantic'
 import { useThemeSettings } from '@renderer/theme/themeSettings'
@@ -62,6 +62,7 @@ import {
 import { TASK_STATUSES, type TaskStatusCounts } from '@shared/taskStatusCounts'
 import { localDateString } from '@shared/dueState'
 import {
+  STATUS_LABELS,
   type Task,
   type TaskStatus,
   type Tag,
@@ -97,7 +98,7 @@ interface TaskListViewProps {
 function statusColumns(tasks: Task[]): TaskGroup[] {
   return TASK_STATUSES.map((status) => ({
     key: status,
-    label: STATUS_CHIP_LABELS[status],
+    label: STATUS_LABELS[status],
     tasks: tasks.filter((task) => task.status === status)
   }))
 }

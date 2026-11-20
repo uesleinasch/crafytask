@@ -87,6 +87,7 @@ o antd está no guia de design, §10.
 | Componente | Para que serve | Onde é usado |
 | --- | --- | --- |
 | `SortableGroups` (`components/`) | grupos reordenáveis por arraste | cards agrupados e Kanban |
+| `color/ColorSwatches` | seletor de cor de `USER_COLORS` (`radiogroup`, cor anunciada pelo nome; a cor atual fora da paleta vira mais uma opção) | rótulo, projeto (criar e cabeçalho), caderno e seção |
 | `health/HealthCard`, `HealthGrid` | indicador de saúde clicável que abre a lista filtrada | dashboard (Agora) e entrada da revisão |
 | `dashboard/ChartCard`, `HBarList` | cartão de gráfico com "Ver como tabela" e vazio; barras horizontais em HTML com `CHART_COLORS` | dashboard |
 | `projects/ProjectCells` (`ProjectProgress`, `NextActionCell`, `ProjectDue`, `ProjectGroupHeader`, `ProjectTabLabel`) | peças comuns de cartão e linha de projeto | Projetos, Horizontes |
@@ -100,10 +101,6 @@ o antd está no guia de design, §10.
 | `settings/SetupGuide` (`GuideLink`, `GuideField`) | guia de conexão em `Steps` | Notion, Google Calendar |
 | `jira/JiraStatusSelect`, `JiraFieldsSheet`, `JiraFieldEditor` | transição de status e campos do Jira | inspetor da tarefa |
 | `terminal/TerminalTaskButton`, `TerminalProjectButton` | abre o terminal no diretório da tarefa ou do projeto | cabeçalho da tarefa e do projeto |
-
-O seletor de cor (círculos de `USER_COLORS` com anel na escolhida) não tem componente próprio: está
-copiado em `LabelEditModal`, `ProjectHeader`, `NewProjectModal` e `NameColorDialog` (ver
-[15](15-inconsistencias.md)).
 
 ---
 
@@ -150,7 +147,7 @@ terminal (`stores/terminalStore.ts`), com as sessões e o layout do painel.
 - **Timers paralelos por padrão** — iniciar um não para os outros.
 - Um único `setInterval` de 1s recalcula todos os cronômetros a partir do horário de início gravado
   (não por acumulação), e empurra o estado para a janela flutuante.
-- **Alerta de Time Leak:** para tarefas dessa categoria, a partir do nível laranja (padrão 1h)
+- **Alerta de Time leak:** para tarefas dessa categoria, a partir do nível laranja (padrão 1h)
   dispara notificação do sistema e repete no intervalo das preferências (padrão 5 minutos;
   `timeLeakNoticeStep` em `shared/workflowPrefs.ts`): *"A tarefa X já está em 1h23min. Considere finalizá-la!"*
 - `syncWithDatabase()` reconstrói o estado a partir das tarefas com `is_running` — chamado no boot e

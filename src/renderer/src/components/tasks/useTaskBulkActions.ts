@@ -1,9 +1,8 @@
 import { useContext } from 'react'
 import { App } from 'antd'
-import { STATUS_LABELS, type TaskCategory, type TaskStatus } from '@shared/types'
+import { CATEGORY_LABELS, STATUS_LABELS, type TaskCategory, type TaskStatus } from '@shared/types'
 import { localDateString } from '@shared/dueState'
 import { TaskMenuChangedContext } from '@renderer/components/taskMenuContext'
-import { CATEGORY_CHIP_LABELS } from '@renderer/components/chips/categoryMeta'
 import { plural, todayToggle } from './bulkActionText'
 
 export interface TaskBulkActions {
@@ -44,7 +43,7 @@ export function useTaskBulkActions(onDone?: () => void): TaskBulkActions {
     setCategory: (ids, category) =>
       run(
         () => Promise.all(ids.map((id) => window.api.updateTask(id, { category }))),
-        `Categoria: ${CATEGORY_CHIP_LABELS[category]}`
+        `Categoria: ${CATEGORY_LABELS[category]}`
       ),
     moveToProject: (ids, projectId, projectName) =>
       run(

@@ -1296,9 +1296,9 @@
       "fase": "F6",
       "titulo": "Paleta fixa de dez cores (USER_COLORS) nos seletores de contexto e tag",
       "check": {
-        "tipo": "contem",
-        "arquivos": "src/renderer/src/{pages/LabelsPage.tsx,components/labels/**/*.tsx}",
-        "padrao": "USER_COLORS"
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/{pages/LabelsPage.tsx,components/labels/**/*.tsx,components/color/ColorSwatches.tsx}",
+        "padroes": ["<ColorSwatches", "USER_COLORS"]
       }
     },
     {
