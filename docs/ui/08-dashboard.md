@@ -1,31 +1,37 @@
 # Dashboard — `/dashboard`
 
-`src/renderer/src/pages/DashboardPage.tsx` (~850 linhas). Gráficos com **Recharts**.
+`src/renderer/src/pages/DashboardPage.tsx` e `components/dashboard/`. Gráficos com **Recharts**.
 
 ## Função
 
-Analítica retrospectiva: quanto tempo foi para onde, e quão saudável está o sistema GTD. Oito blocos
-empilhados numa coluna de `max-w-6xl`, todos carregados de uma vez ao abrir (`Promise.all` com oito
-consultas). Enquanto carrega: "Carregando estatísticas..." ocupando a tela inteira.
+Analítica retrospectiva: quanto tempo foi para onde, e quão saudável está o sistema GTD. A página
+usa o `PageContainer` (até 1480px). A seção Agora carrega sozinha; os blocos antigos de "No
+período" vêm de um `Promise.all` com sete consultas e mostram "Carregando estatísticas…" sob o
+cabeçalho da seção, sem esconder a Agora.
 
-## Cabeçalho
+## Agora (F7-b2)
 
-`← Voltar` · `TrendingUp` esmeralda · **"Dashboard Avançado"** em `text-xl font-bold`. À direita,
-**Exportar PDF** (`FileDown`, contorno) — gera o relatório semanal via `webContents.printToPDF`,
-com o rótulo virando "Gerando..." durante a operação.
+Seção do topo, sem filtro: o estado atual do sistema (`components/dashboard/DashboardNow.tsx`,
+dentro de um `RegionBoundary` "Agora"). Recarrega com o evento `tasks:refresh`.
 
-## Ordem dos blocos
+- **Saúde do sistema:** os seis `HealthCard` de `DASHBOARD_HEALTH` (Inbox, sem próxima ação,
+  projetos parados, aguardando, prazos vencidos, revisão), da mesma consulta da revisão semanal
+  (`review:healthIndicators`). O Inbox mostra o item mais antigo e a taxa processada na semana.
+  Cada cartão leva à lista já filtrada (`HEALTH_TARGETS`).
+- **Tarefas abertas por status:** barras horizontais (`HBarList`) na ordem do fluxo (Inbox,
+  Próximas, Executando, Aguardando, Someday), chip do status, contagem e %. Contagem de
+  `task:statusCounts`, a mesma das abas da lista; clicar abre a aba. O card (`ChartCard`) tem
+  "Ver como tabela".
 
-### 0. Em execução agora (`RunningNowPanel`)
+Saíram o título "Dashboard Avançado", o painel "Em execução agora" (o timer já está no header e na
+barra de status), as métricas GTD antigas e o funil de fluxo.
 
-Só aparece quando há timer rodando. `bg-emerald-50/60 border-emerald-200`:
+## No período (legado até a F7-b3)
 
-- título "Em execução agora (N)" com um ponto pulsante duplo (`animate-ping` sobre um círculo);
-- botão **Parar todos** (`StopCircle`, vermelho);
-- uma linha por timer: `Activity` esmeralda, nome clicável (navega para a tarefa), tempo em
-  `font-mono font-bold` e botão quadrado de parar.
-
-É o único elemento **operacional** de uma tela de leitura.
+Abaixo do cabeçalho "No período", uma linha com **Exportar PDF** (relatório semanal via
+`webContents.printToPDF`, aviso por `App.useApp()`), seguida dos blocos antigos, que a F7-b3 troca
+pelos de período (`stats:period`). A numeração abaixo é a dos blocos originais; os que saíram na
+F7-b2 (0, 2 e 3) não aparecem.
 
 ### 1. Quatro cartões de resumo (`StatCard`)
 
@@ -38,37 +44,6 @@ rótulo em `text-xs`.
 | Concluídas | `CheckCircle` esmeralda | contagem |
 | Tempo Total | `Clock` roxo | `HH:MM:SS` |
 | Sessões | `Activity` laranja | contagem |
-
-### 2. Métricas GTD
-
-Título de seção com `Target` índigo. Quatro cartões:
-
-| Cartão | Conteúdo | Estado de alerta |
-| --- | --- | --- |
-| **Taxa do Inbox** (`InboxIcon` índigo) | porcentagem + "processado esta semana" + barra índigo de 6px | — |
-| **Tempo Médio** (`Timer` teal) | duração formatada (`45min`, `2.3h`) + "da criação à conclusão" | — |
-| **Projetos Parados** (`FolderX`) | contagem + "sem atividade > 7 dias" | `bg-orange-50 border-orange-200`, número laranja |
-| **Aguardando Paradas** (`Hourglass`) | contagem + "sem resposta > 14 dias" | `bg-red-50 border-red-200`, número vermelho |
-
-Quando há itens parados, aparecem abaixo **duas listas de alerta** lado a lado:
-
-- **Projetos sem atividade** (`AlertTriangle`, borda laranja) — nome + `{N}d` em laranja;
-- **Aguardando sem resposta** (`Hourglass`, borda vermelha) — nome + `{N}d` em vermelho.
-
-Os itens dessas listas **não são clicáveis** — o dashboard mostra o problema mas não leva até ele.
-
-### 3. Fluxo de Tarefas (Funil GTD)
-
-`FunnelChart` do Recharts, 280px, com rótulos à direita, ao lado de uma legenda vertical
-(bolinha + nome + contagem).
-
-Ordem e cores do funil (só entram os status com contagem > 0):
-
-`Inbox` `#94a3b8` → `Próximas` `#3b82f6` → `Executando` `#22c55e` → `Aguardando` `#f59e0b` →
-`Finalizada` `#10b981` → `Someday` `#14b8a6`
-
-O funil trata `aguardando` como um estágio **depois** de `executando`, o que não corresponde ao
-fluxo GTD real (aguardando é uma bifurcação, não uma etapa tardia).
 
 ### 4. Análise de Energia
 

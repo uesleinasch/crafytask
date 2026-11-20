@@ -47,7 +47,6 @@ import type {
   CreateTimeBlockInput,
   UpdateTimeBlockInput,
   UnscheduledTaskFilters,
-  GtdMetrics,
   EnergyStats,
   TaskListFilters,
   TaskListItem,
@@ -227,7 +226,6 @@ interface API {
   getHeatmapData: () => Promise<HeatmapData[]>
   getGeneralStats: () => Promise<GeneralStats>
   // FASE 4.2: Advanced stats
-  getGtdMetrics: () => Promise<GtdMetrics>
   getEnergyStats: () => Promise<EnergyStats[]>
   getPeriodStats: (period: StatsPeriod) => Promise<PeriodStats>
   generateWeeklyPDF: () => Promise<void>

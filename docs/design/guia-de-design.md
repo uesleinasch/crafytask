@@ -250,6 +250,7 @@ só porque roda de CDN; os nomes lucide de cada lugar estão nas tabelas acima e
 | Arquivo               | busca `Search` · abrir `FileText` · desarquivar `ArchiveRestore` · excluir de vez `Trash2` · limpar o arquivo `Eraser` · mais `Ellipsis` · grupo por mês `CalendarDays` · grupo sem projeto `Folder` |
 | Legenda do calendário | urgente `Flame` · prioridade `Flag` · time leak `Clock` · no Google `CalendarSync`                                                                                                                                                             |
 | Cadernos              | caderno `BookOpen` · busca `Search` · novo `Plus` · mais `Ellipsis` · sincronizar `RefreshCw` · exportar `Download` · editar `Pencil` · mover `ArrowUp`/`ArrowDown` (abas: `ArrowLeft`/`ArrowRight`) · mover para a seção `ArrowLeftRight` · nova subpágina `FilePlus2` · promover `IndentDecrease` · tornar subpágina `IndentIncrease` · excluir `Trash2` · Páginas (abaixo de `md`) `ListTree` · Notas `FileText` · Desenho `PenTool` · modo foco `Expand`/`Shrink` |
+| Dashboard             | Agora `Gauge` · tarefas abertas `ListTodo` · No período `CalendarRange` · Exportar PDF `FileDown` · alternar gráfico e tabela `ChartColumn`/`Table2` |
 | Calendário            | painel A agendar `PanelLeftOpen`/`PanelLeftClose` · gaveta `ListTodo` · alça `GripVertical` · reservar `Plus` · repetir `Copy` · abrir `FileText` · timer `Play` · excluir `Trash2` · tarefa com horário `Calendar` |
 
 ## 7. AppShell

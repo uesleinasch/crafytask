@@ -53,6 +53,16 @@ describe('healthItems', () => {
     expect(healthItem(h, 'overdue').tone).toBe('error')
   })
 
+  it('o Inbox mostra a taxa processada na semana quando há histórico', () => {
+    const h = { ...CLEAN, inboxCount: 2, oldestInboxDays: 4, inboxProcessedRate: 82 }
+    expect(healthItem(h, 'inbox').text).toBe(
+      'O item mais antigo chegou há 4 dias · 82% processado nesta semana'
+    )
+    expect(healthItem({ ...h, inboxCount: 0, oldestInboxDays: null }, 'inbox').text).toBe(
+      'Inbox zero'
+    )
+  })
+
   it('revisão atrasada ou nunca feita pede atenção', () => {
     expect(healthItem({ ...CLEAN, daysSinceLastReview: 8 }, 'review')).toMatchObject({
       tone: 'warning',

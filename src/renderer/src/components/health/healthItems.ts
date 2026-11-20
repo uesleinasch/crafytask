@@ -61,9 +61,13 @@ const days = (n: number): string => (n === 1 ? '1 dia' : `${n} dias`)
 
 function inboxText(h: ReviewHealthIndicators): string {
   if (h.oldestInboxDays === null) return 'Inbox zero'
-  return h.oldestInboxDays === 0
-    ? 'O item mais antigo chegou hoje'
-    : `O item mais antigo chegou há ${days(h.oldestInboxDays)}`
+  const oldest =
+    h.oldestInboxDays === 0
+      ? 'O item mais antigo chegou hoje'
+      : `O item mais antigo chegou há ${days(h.oldestInboxDays)}`
+  return h.inboxProcessedRate === null
+    ? oldest
+    : `${oldest} · ${h.inboxProcessedRate}% processado nesta semana`
 }
 
 function reviewItem(h: ReviewHealthIndicators): HealthItem {

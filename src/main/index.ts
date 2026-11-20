@@ -66,7 +66,6 @@ import {
   getCategoryStats,
   getHeatmapData,
   getGeneralStats,
-  getGtdMetrics,
   getEnergyStats,
   getPeriodStats,
   // Tags
@@ -1024,7 +1023,6 @@ function setupIpcHandlers(): void {
   ipcMain.handle('stats:heatmap', () => getHeatmapData())
   ipcMain.handle('stats:general', () => getGeneralStats())
   // FASE 4.2: Advanced stats
-  ipcMain.handle('stats:gtdMetrics', () => getGtdMetrics())
   ipcMain.handle('stats:energy', () => getEnergyStats())
   ipcMain.handle('stats:period', (_, period: StatsPeriod) =>
     getPeriodStats({

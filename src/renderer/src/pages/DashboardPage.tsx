@@ -1,22 +1,16 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { Button } from '@renderer/components/ui/button'
-import { ScrollArea } from '@renderer/components/ui/scroll-area'
 import {
   Clock,
   CheckCircle,
   Activity,
   Target,
-  TrendingUp,
   Calendar,
   AlertTriangle,
   Flag,
   Circle,
   Zap,
   FileDown,
-  InboxIcon,
-  Timer,
-  FolderX,
-  Hourglass
+  CalendarRange
 } from 'lucide-react'
 import { formatTime } from '@renderer/lib/utils'
 import {
@@ -30,17 +24,16 @@ import {
   PieChart,
   Pie,
   Cell,
-  Legend,
-  FunnelChart,
-  Funnel,
-  LabelList
+  Legend
 } from 'recharts'
-import type { GtdMetrics, EnergyStats } from '@shared/types'
+import type { EnergyStats } from '@shared/types'
 import { ENERGY_LABELS, ENERGY_COLORS } from '@shared/types'
 import { EnergyMeter } from '@renderer/components/chips/EnergyMeter'
-import { toast } from '@renderer/components/ui/sonner'
-import { cn } from '@renderer/lib/utils'
-import { RunningNowPanel } from '@renderer/components/RunningNowPanel'
+import { App, Button as AntButton, Flex, Typography } from 'antd'
+import { RegionBoundary } from '@renderer/components/shell/RegionBoundary'
+import { SectionHeader } from '@renderer/components/shell/SectionHeader'
+import { PageContainer } from '@renderer/components/shell/PageContainer'
+import { DashboardNow } from '@renderer/components/dashboard/DashboardNow'
 
 interface DailyStats {
   date: string
@@ -125,18 +118,14 @@ const CHART_COLORS = [
   '#84cc16'
 ]
 
-// Flow order for funnel
-const FLOW_ORDER = ['inbox', 'proximas', 'executando', 'aguardando', 'finalizada', 'someday']
-const FLOW_COLORS = ['#94a3b8', '#3b82f6', '#22c55e', '#f59e0b', '#10b981', '#14b8a6']
-
 export function DashboardPage(): React.JSX.Element {
+  const { message } = App.useApp()
   const [weeklyStats, setWeeklyStats] = useState<DailyStats[]>([])
   const [taskTimeStats, setTaskTimeStats] = useState<TaskTimeStats[]>([])
   const [statusStats, setStatusStats] = useState<StatusStats[]>([])
   const [categoryStats, setCategoryStats] = useState<CategoryStats[]>([])
   const [heatmapData, setHeatmapData] = useState<HeatmapData[]>([])
   const [generalStats, setGeneralStats] = useState<GeneralStats | null>(null)
-  const [gtdMetrics, setGtdMetrics] = useState<GtdMetrics | null>(null)
   const [energyStats, setEnergyStats] = useState<EnergyStats[]>([])
   const [loading, setLoading] = useState(true)
   const [pdfLoading, setPdfLoading] = useState(false)
@@ -144,17 +133,15 @@ export function DashboardPage(): React.JSX.Element {
   useEffect(() => {
     async function loadStats(): Promise<void> {
       try {
-        const [weekly, taskTime, status, category, heatmap, general, gtd, energy] =
-          await Promise.all([
-            window.api.getWeeklyStats(),
-            window.api.getTaskTimeStats(),
-            window.api.getStatusStats(),
-            window.api.getCategoryStats(),
-            window.api.getHeatmapData(),
-            window.api.getGeneralStats(),
-            window.api.getGtdMetrics(),
-            window.api.getEnergyStats()
-          ])
+        const [weekly, taskTime, status, category, heatmap, general, energy] = await Promise.all([
+          window.api.getWeeklyStats(),
+          window.api.getTaskTimeStats(),
+          window.api.getStatusStats(),
+          window.api.getCategoryStats(),
+          window.api.getHeatmapData(),
+          window.api.getGeneralStats(),
+          window.api.getEnergyStats()
+        ])
 
         setWeeklyStats(weekly)
         setTaskTimeStats(taskTime)
@@ -162,7 +149,6 @@ export function DashboardPage(): React.JSX.Element {
         setCategoryStats(category)
         setHeatmapData(heatmap)
         setGeneralStats(general)
-        setGtdMetrics(gtd)
         setEnergyStats(energy)
       } catch (error) {
         console.error('Erro ao carregar estatísticas:', error)
@@ -178,13 +164,13 @@ export function DashboardPage(): React.JSX.Element {
     setPdfLoading(true)
     try {
       await window.api.generateWeeklyPDF()
-      toast.success('Relatório gerado com sucesso!')
+      message.success('Relatório gerado com sucesso!')
     } catch {
-      toast.error('Erro ao gerar relatório PDF.')
+      message.error('Erro ao gerar relatório PDF.')
     } finally {
       setPdfLoading(false)
     }
-  }, [])
+  }, [message])
 
   // Agrupar dados por dia da semana
   const weekdayData = useMemo(() => {
@@ -233,16 +219,6 @@ export function DashboardPage(): React.JSX.Element {
       color: CATEGORY_COLORS[stat.category] || '#94a3b8'
     }))
   }, [categoryStats])
-
-  // Funnel de fluxo de tarefas
-  const taskFlowData = useMemo(() => {
-    if (!gtdMetrics) return []
-    return FLOW_ORDER.filter((s) => (gtdMetrics.taskFlowCounts[s] || 0) > 0).map((s, i) => ({
-      name: STATUS_LABELS[s] || s,
-      value: gtdMetrics.taskFlowCounts[s] || 0,
-      fill: FLOW_COLORS[i % FLOW_COLORS.length]
-    }))
-  }, [gtdMetrics])
 
   // Dados de energia para gráfico
   const energyChartData = useMemo(() => {
@@ -300,47 +276,27 @@ export function DashboardPage(): React.JSX.Element {
     return 'bg-emerald-600'
   }
 
-  const formatDuration = (seconds: number): string => {
-    if (seconds < 60) return `${seconds}s`
-    if (seconds < 3600) return `${Math.round(seconds / 60)}min`
-    return `${(seconds / 3600).toFixed(1)}h`
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full bg-slate-50">
-        <p className="text-slate-400">Carregando estatísticas...</p>
-      </div>
-    )
-  }
-
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-slate-50">
-      {/* Header */}
-      <header className="shrink-0 px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-            <TrendingUp size={24} className="text-emerald-600" />
-            Dashboard Avançado
-          </h1>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleGeneratePDF}
-          disabled={pdfLoading}
-          className="h-9 border-slate-200 gap-2"
-        >
-          <FileDown size={16} />
-          {pdfLoading ? 'Gerando...' : 'Exportar PDF'}
-        </Button>
-      </header>
+    <div className="h-full overflow-y-auto">
+      <PageContainer>
+        <div className="space-y-6">
+          <RegionBoundary region="Agora">
+            <DashboardNow />
+          </RegionBoundary>
 
-      <ScrollArea className="flex-1 h-0">
-        <div className="max-w-6xl mx-auto p-6 pb-16 space-y-6">
-
-          {/* Timers em execução (só aparece se houver algum) */}
-          <RunningNowPanel />
+          <SectionHeader title="No período" icon={CalendarRange} />
+          <Flex align="center" justify="space-between" gap={8} wrap>
+            <Typography.Text type="secondary">
+              {loading ? 'Carregando estatísticas…' : null}
+            </Typography.Text>
+            <AntButton
+              icon={<FileDown size={16} strokeWidth={1.75} aria-hidden />}
+              loading={pdfLoading}
+              onClick={handleGeneratePDF}
+            >
+              Exportar PDF
+            </AntButton>
+          </Flex>
 
           {/* ==================== STATS CARDS ==================== */}
           {generalStats && (
@@ -369,162 +325,6 @@ export function DashboardPage(): React.JSX.Element {
                 value={generalStats.totalSessions}
                 label="Sessões"
               />
-            </div>
-          )}
-
-          {/* ==================== GTD MÉTRICAS ==================== */}
-          {gtdMetrics && (
-            <div className="space-y-4">
-              <h2 className="text-base font-semibold text-slate-700 flex items-center gap-2">
-                <Target size={18} className="text-indigo-600" />
-                Métricas GTD
-              </h2>
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {/* Taxa de conclusão do Inbox */}
-                <div className="bg-white border border-slate-200 rounded-sm p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="p-1.5 bg-indigo-100 rounded-lg">
-                      <InboxIcon size={16} className="text-indigo-600" />
-                    </div>
-                    <span className="text-xs text-slate-500 font-medium">Taxa do Inbox</span>
-                  </div>
-                  <p className="text-2xl font-bold text-slate-900">{gtdMetrics.inboxCompletionRate}%</p>
-                  <p className="text-xs text-slate-400 mt-1">processado esta semana</p>
-                  <div className="mt-2 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-indigo-500 rounded-full transition-all"
-                      style={{ width: `${gtdMetrics.inboxCompletionRate}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Tempo médio de processamento */}
-                <div className="bg-white border border-slate-200 rounded-sm p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="p-1.5 bg-teal-100 rounded-lg">
-                      <Timer size={16} className="text-teal-600" />
-                    </div>
-                    <span className="text-xs text-slate-500 font-medium">Tempo Médio</span>
-                  </div>
-                  <p className="text-2xl font-bold text-slate-900">
-                    {formatDuration(gtdMetrics.avgProcessingTimeSeconds)}
-                  </p>
-                  <p className="text-xs text-slate-400 mt-1">da criação à conclusão</p>
-                </div>
-
-                {/* Projetos parados */}
-                <div className={cn(
-                  'border rounded-sm p-4',
-                  gtdMetrics.staleProjects.length > 0
-                    ? 'bg-orange-50 border-orange-200'
-                    : 'bg-white border-slate-200'
-                )}>
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className={cn('p-1.5 rounded-lg', gtdMetrics.staleProjects.length > 0 ? 'bg-orange-100' : 'bg-slate-100')}>
-                      <FolderX size={16} className={gtdMetrics.staleProjects.length > 0 ? 'text-orange-600' : 'text-slate-400'} />
-                    </div>
-                    <span className="text-xs text-slate-500 font-medium">Projetos Parados</span>
-                  </div>
-                  <p className={cn('text-2xl font-bold', gtdMetrics.staleProjects.length > 0 ? 'text-orange-700' : 'text-slate-900')}>
-                    {gtdMetrics.staleProjects.length}
-                  </p>
-                  <p className="text-xs text-slate-400 mt-1">sem atividade &gt; 7 dias</p>
-                </div>
-
-                {/* Tarefas aguardando paradas */}
-                <div className={cn(
-                  'border rounded-sm p-4',
-                  gtdMetrics.staleWaitingTasks.length > 0
-                    ? 'bg-red-50 border-red-200'
-                    : 'bg-white border-slate-200'
-                )}>
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className={cn('p-1.5 rounded-lg', gtdMetrics.staleWaitingTasks.length > 0 ? 'bg-red-100' : 'bg-slate-100')}>
-                      <Hourglass size={16} className={gtdMetrics.staleWaitingTasks.length > 0 ? 'text-red-600' : 'text-slate-400'} />
-                    </div>
-                    <span className="text-xs text-slate-500 font-medium">Aguardando Paradas</span>
-                  </div>
-                  <p className={cn('text-2xl font-bold', gtdMetrics.staleWaitingTasks.length > 0 ? 'text-red-700' : 'text-slate-900')}>
-                    {gtdMetrics.staleWaitingTasks.length}
-                  </p>
-                  <p className="text-xs text-slate-400 mt-1">sem resposta &gt; 14 dias</p>
-                </div>
-              </div>
-
-              {/* Alertas detalhados */}
-              {(gtdMetrics.staleProjects.length > 0 || gtdMetrics.staleWaitingTasks.length > 0) && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {gtdMetrics.staleProjects.length > 0 && (
-                    <div className="bg-white border border-orange-200 rounded-sm p-4">
-                      <h3 className="text-sm font-semibold text-orange-700 mb-3 flex items-center gap-2">
-                        <AlertTriangle size={16} />
-                        Projetos sem atividade
-                      </h3>
-                      <ul className="space-y-2">
-                        {gtdMetrics.staleProjects.map((p) => (
-                          <li key={p.id} className="flex items-center justify-between text-sm">
-                            <span className="text-slate-700 truncate flex-1">{p.name}</span>
-                            <span className="text-orange-600 font-medium shrink-0 ml-2">
-                              {p.daysSinceActivity}d
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {gtdMetrics.staleWaitingTasks.length > 0 && (
-                    <div className="bg-white border border-red-200 rounded-sm p-4">
-                      <h3 className="text-sm font-semibold text-red-700 mb-3 flex items-center gap-2">
-                        <Hourglass size={16} />
-                        Aguardando sem resposta
-                      </h3>
-                      <ul className="space-y-2">
-                        {gtdMetrics.staleWaitingTasks.map((t) => (
-                          <li key={t.id} className="flex items-center justify-between text-sm">
-                            <span className="text-slate-700 truncate flex-1">{t.name}</span>
-                            <span className="text-red-600 font-medium shrink-0 ml-2">
-                              {t.daysSinceUpdate}d
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ==================== FLUXO DE TAREFAS ==================== */}
-          {taskFlowData.length > 0 && (
-            <div className="bg-white border border-slate-200 rounded-sm p-6">
-              <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                <TrendingUp size={20} className="text-blue-600" />
-                Fluxo de Tarefas (Funil GTD)
-              </h3>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
-                <ResponsiveContainer width="100%" height={280}>
-                  <FunnelChart>
-                    <Tooltip
-                      formatter={(value: number) => [value, 'Tarefas']}
-                      contentStyle={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px' }}
-                    />
-                    <Funnel dataKey="value" data={taskFlowData} isAnimationActive>
-                      <LabelList position="right" fill="#64748b" stroke="none" dataKey="name" />
-                    </Funnel>
-                  </FunnelChart>
-                </ResponsiveContainer>
-                <div className="space-y-2">
-                  {taskFlowData.map((item) => (
-                    <div key={item.name} className="flex items-center gap-3 py-1.5">
-                      <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: item.fill }} />
-                      <span className="text-sm text-slate-600 flex-1">{item.name}</span>
-                      <span className="text-sm font-semibold text-slate-900">{item.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
           )}
 
@@ -814,7 +614,7 @@ export function DashboardPage(): React.JSX.Element {
           </div>
 
         </div>
-      </ScrollArea>
+      </PageContainer>
     </div>
   )
 }
