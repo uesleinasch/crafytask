@@ -1,8 +1,7 @@
 import { useContext, useEffect, useRef, useState } from 'react'
-import { Flex, Popover, Tag, Typography, theme } from 'antd'
+import { App, Flex, Popover, Tag, Typography, theme } from 'antd'
 import type { Context } from '@shared/types'
 import { TaskMenuChangedContext } from '@renderer/components/taskMenuContext'
-import { toast } from '@renderer/components/ui/sonner'
 
 interface ContextsCellProps {
   taskId: number
@@ -14,6 +13,7 @@ const label = (context: Context): string =>
   context.icon ? `${context.icon} ${context.name}` : context.name
 
 export function ContextsCell({ taskId, value, options }: ContextsCellProps): React.JSX.Element {
+  const { message } = App.useApp()
   const { token } = theme.useToken()
   const onChanged = useContext(TaskMenuChangedContext)
   const [open, setOpen] = useState(false)
@@ -39,7 +39,7 @@ export function ContextsCell({ taskId, value, options }: ContextsCellProps): Rea
       console.error('[ContextsCell]', error)
       selectedRef.current = previous
       setSelected(previous)
-      toast.error('Não foi possível alterar os contextos')
+      message.error('Não foi possível alterar os contextos')
     }
   }
 

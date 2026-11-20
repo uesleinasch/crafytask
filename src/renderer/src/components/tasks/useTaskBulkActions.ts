@@ -3,7 +3,6 @@ import { App } from 'antd'
 import { STATUS_LABELS, type TaskCategory, type TaskStatus } from '@shared/types'
 import { localDateString } from '@shared/dueState'
 import { TaskMenuChangedContext } from '@renderer/components/taskMenuContext'
-import { toast } from '@renderer/components/ui/sonner'
 import { CATEGORY_CHIP_LABELS } from '@renderer/components/chips/categoryMeta'
 import { plural, todayToggle } from './bulkActionText'
 
@@ -17,16 +16,16 @@ export interface TaskBulkActions {
 }
 
 export function useTaskBulkActions(onDone?: () => void): TaskBulkActions {
-  const { modal } = App.useApp()
+  const { message, modal } = App.useApp()
   const onChanged = useContext(TaskMenuChangedContext)
 
   const run = async (action: () => Promise<unknown>, success: string): Promise<void> => {
     try {
       await action()
-      toast.success(success)
+      message.success(success)
     } catch (error) {
       console.error('[useTaskBulkActions]', error)
-      toast.error(error instanceof Error ? error.message : 'Não foi possível concluir a ação')
+      message.error(error instanceof Error ? error.message : 'Não foi possível concluir a ação')
     } finally {
       onChanged()
       onDone?.()

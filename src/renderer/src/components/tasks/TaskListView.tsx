@@ -14,7 +14,6 @@ import {
   Typography
 } from 'antd'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { toast } from '@renderer/components/ui/sonner'
 import { TaskTable } from '@renderer/components/tasks/TaskTable'
 import { STATUS_CHIP_LABELS, STATUS_ICONS } from '@renderer/components/chips/statusMeta'
 import { errorMessage } from '@renderer/components/settings/settingsStatus'
@@ -247,8 +246,8 @@ export function TaskListView({ project, onChanged }: TaskListViewProps): React.J
   }, [tasks, projectId])
 
   useEffect(() => {
-    if (error) toast.error(error)
-  }, [error])
+    if (error) message.error(error)
+  }, [error, message])
 
   useEffect(() => {
     const unsubscribe = window.api.onTasksRefresh(() => {
@@ -346,13 +345,13 @@ export function TaskListView({ project, onChanged }: TaskListViewProps): React.J
       try {
         await window.api.scheduleTaskForDate(taskId, isAlreadyToday ? null : today)
         await refreshTasks()
-        toast.success(isAlreadyToday ? 'Fora do plano de hoje' : 'No plano de hoje')
+        message.success(isAlreadyToday ? 'Fora do plano de hoje' : 'No plano de hoje')
       } catch (err) {
         console.error('Erro ao programar tarefa:', err)
-        toast.error('Erro ao atualizar agendamento')
+        message.error('Erro ao atualizar agendamento')
       }
     },
-    [refreshTasks, tasks]
+    [refreshTasks, tasks, message]
   )
 
   const addToProject = async (): Promise<void> => {

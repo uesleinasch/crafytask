@@ -20,7 +20,6 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { Button, Tooltip, theme } from 'antd'
 import { GripVertical } from 'lucide-react'
-import { cn } from '@renderer/lib/utils'
 
 interface HandleBinding {
   attributes: DraggableAttributes
@@ -115,27 +114,6 @@ function SortableItem({ id, className, style, children }: SortableItemProps): Re
 }
 
 SortableGroups.Item = SortableItem
-
-export function GroupDragHandle({ className }: { className?: string }): React.JSX.Element | null {
-  const binding = useContext(HandleContext)
-  if (!binding) return null
-  return (
-    <button
-      type="button"
-      ref={binding.setActivatorNodeRef}
-      {...binding.attributes}
-      {...binding.listeners}
-      onClick={(event) => event.stopPropagation()}
-      title="Arrastar para reordenar"
-      className={cn(
-        'shrink-0 text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing',
-        className
-      )}
-    >
-      <GripVertical size={16} />
-    </button>
-  )
-}
 
 export function GroupDragButton({ label }: { label: string }): React.JSX.Element | null {
   const binding = useContext(HandleContext)

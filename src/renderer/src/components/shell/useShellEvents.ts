@@ -1,7 +1,6 @@
 import { App } from 'antd'
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { toast } from '@renderer/components/ui/sonner'
 import { useTimerStore } from '@renderer/stores/timerStore'
 
 export function useShellEvents(): void {
@@ -21,9 +20,9 @@ export function useShellEvents(): void {
   useEffect(
     () =>
       window.api.onTaskUnblocked((_taskId, taskName) => {
-        toast.success(`"${taskName}" foi desbloqueada!`, { description: 'Dependência concluída.' })
+        message.success(`"${taskName}" foi desbloqueada: dependência concluída.`)
       }),
-    []
+    [message]
   )
 
   useEffect(

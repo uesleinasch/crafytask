@@ -1,7 +1,6 @@
 import { Drawer, Grid, Layout, theme } from 'antd'
 import { useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
-import { Toaster } from '@renderer/components/ui/sonner'
 import { TerminalPanel } from '@renderer/components/terminal/TerminalPanel'
 import { NewTaskModal } from '@renderer/components/tasks/NewTaskModal'
 import { usePersistedState } from '@renderer/hooks/usePersistedState'
@@ -91,7 +90,6 @@ export function AppShell(): React.JSX.Element {
       <RegionBoundary region="nova tarefa">
         <NewTaskModal />
       </RegionBoundary>
-      <Toaster position="bottom-right" />
     </Layout>
   )
 }
