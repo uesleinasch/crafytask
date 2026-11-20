@@ -701,6 +701,11 @@ button.ct-calnum.sm:hover:not(.today) {
   flex-direction: column;
 }
 
+html:has(.ct-shell),
+body:has(.ct-shell) {
+  overflow: hidden;
+}
+
 /* Float Timer - Janela transparente */
 body.float-window,
 body.float-window #root {
@@ -1225,4 +1230,123 @@ button.ct-health:focus-visible {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.ct-term {
+  display: flex;
+  flex-direction: column;
+  background: var(--ct-term-bg);
+  color: var(--ct-term-text);
+}
+
+.ct-term-resize {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 20;
+  width: 100%;
+  height: 6px;
+  margin-top: -3px;
+  cursor: row-resize;
+  transition: background 0.15s;
+}
+
+.ct-term-resize:hover,
+.ct-term-divider:hover {
+  background: var(--ct-term-accent);
+}
+
+.ct-term-bar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  height: 36px;
+  padding: 0 4px 0 8px;
+  border-bottom: 1px solid var(--ct-term-border);
+}
+
+.ct-term-pane-head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 4px 0 8px;
+  font-size: 12px;
+  color: var(--ct-term-meta);
+  border-bottom: 1px solid var(--ct-term-border);
+}
+
+.ct-term-pane-head.focused {
+  color: var(--ct-term-text);
+  border-bottom-color: var(--ct-term-accent);
+}
+
+.ct-term-divider {
+  flex: none;
+  width: 4px;
+  cursor: col-resize;
+  background: var(--ct-term-border);
+  transition: background 0.15s;
+}
+
+.ct-term-list {
+  flex: none;
+  width: 208px;
+  padding: 4px 0;
+  overflow-y: auto;
+  border-left: 1px solid var(--ct-term-border);
+}
+
+.ct-term-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 32px;
+  padding: 0 4px 0 8px;
+  font-size: 12px;
+  color: var(--ct-term-meta);
+  cursor: pointer;
+}
+
+.ct-term-item:hover,
+.ct-term-item.grouped {
+  color: var(--ct-term-text2);
+  background: var(--ct-term-hover);
+}
+
+.ct-term-item.active {
+  color: var(--ct-term-text);
+  background: var(--ct-term-hover);
+}
+
+.ct-term-item-main {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  background: transparent;
+  cursor: pointer;
+}
+
+.ct-term-item .ct-term-item-close {
+  opacity: 0;
+}
+
+.ct-term-item:hover .ct-term-item-close,
+.ct-term-item:focus-within .ct-term-item-close {
+  opacity: 1;
+}
+
+.ct-term-exited {
+  text-decoration: line-through;
+  opacity: 0.6;
 }

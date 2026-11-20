@@ -4,6 +4,7 @@ import {
   CATEGORY_COLORS,
   HORIZON_COLORS,
   STATUS_COLORS,
+  TERMINAL,
   TIME_LEAK_SCALE
 } from './semantic'
 import { PALETTE, seedTokens, type ThemeMode } from './tokens'
@@ -89,5 +90,19 @@ describe.each(MODES)('contraste WCAG no tema %s', (mode) => {
     expect(token.colorPrimary).toBe(c.primary)
     expect(token.colorTextLightSolid).toBe(c.onPrimary)
     expect(Object.values(token)).not.toContain('#1677ff')
+  })
+})
+
+describe('paleta do terminal', () => {
+  it('é escura e o texto, o metadado e as cores ANSI passam AA sobre o fundo', () => {
+    expect(TERMINAL.xterm.background).toBe('#15141D')
+    const { background, black, selectionBackground, cursorAccent, ...colors } = TERMINAL.xterm
+    for (const color of Object.values(colors)) {
+      expect(contrast(color, background)).toBeGreaterThanOrEqual(TEXT_AA)
+    }
+    expect(contrast(TERMINAL.meta, background)).toBeGreaterThanOrEqual(TEXT_AA)
+    expect(contrast(TERMINAL.xterm.foreground, selectionBackground)).toBeGreaterThanOrEqual(TEXT_AA)
+    expect(black).toBeDefined()
+    expect(cursorAccent).toBe(background)
   })
 })

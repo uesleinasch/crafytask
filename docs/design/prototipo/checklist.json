@@ -1333,7 +1333,7 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/theme/semantic.ts",
-        "padroes": ["export const TERMINAL", "#15141D"],
+        "padroes": ["export const TERMINAL", "PALETTE.dark"],
         "flags": "i"
       }
     },

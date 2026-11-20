@@ -8,11 +8,15 @@ export function componentSizeFor(density: Density): 'small' | undefined {
   return density === 'compact' ? 'small' : undefined
 }
 
-export function buildTheme(mode: ThemeMode, density: Density): ThemeConfig {
+export function buildTheme(
+  mode: ThemeMode,
+  density: Density,
+  cssVarKey: string = THEME_CSS_VAR_KEY
+): ThemeConfig {
   const c = PALETTE[mode]
   const compact = density === 'compact'
   return {
-    cssVar: { prefix: 'ant', key: THEME_CSS_VAR_KEY },
+    cssVar: { prefix: 'ant', key: cssVarKey },
     hashed: false,
     algorithm: [
       mode === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm,

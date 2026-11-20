@@ -34,7 +34,7 @@ export function AppShell(): React.JSX.Element {
   }, [drawerMode])
 
   return (
-    <Layout hasSider data-popup-root style={{ height: '100vh' }}>
+    <Layout hasSider data-popup-root className="ct-shell" style={{ height: '100vh' }}>
       {drawerMode ? (
         <Drawer
           placement="left"

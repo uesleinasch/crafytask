@@ -3,34 +3,12 @@ import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import '@xterm/xterm/css/xterm.css'
 import type { TerminalSession } from '@shared/types'
-import { toast } from '@renderer/components/ui/sonner'
+import { App, Button } from 'antd'
+import { TERMINAL } from '@renderer/theme/semantic'
+import { FONT_FAMILY_CODE } from '@renderer/theme/tokens'
 import { readTerminalAutoTimer } from '@renderer/lib/terminalPrefs'
 import { useTimerStore } from '@renderer/stores/timerStore'
 import { SHIFT_ENTER_SEQUENCE, isShiftEnter, terminalShortcut } from './terminalKeys'
-
-const THEME = {
-  background: '#0f172a',
-  foreground: '#e2e8f0',
-  cursor: '#f97316',
-  cursorAccent: '#0f172a',
-  selectionBackground: '#334155',
-  black: '#1e293b',
-  red: '#f87171',
-  green: '#4ade80',
-  yellow: '#facc15',
-  blue: '#60a5fa',
-  magenta: '#c084fc',
-  cyan: '#22d3ee',
-  white: '#e2e8f0',
-  brightBlack: '#64748b',
-  brightRed: '#fca5a5',
-  brightGreen: '#86efac',
-  brightYellow: '#fde047',
-  brightBlue: '#93c5fd',
-  brightMagenta: '#d8b4fe',
-  brightCyan: '#67e8f9',
-  brightWhite: '#f8fafc'
-}
 
 const timerTriggered = new Set<string>()
 
@@ -38,7 +16,9 @@ function exitMessage(exitCode: number): string {
   return `\r\n\x1b[90m[processo encerrado — código ${exitCode}]\x1b[0m\r\n`
 }
 
-function startTimerFromTerminal(session: TerminalSession): void {
+type Notifier = ReturnType<typeof App.useApp>['notification']
+
+function startTimerFromTerminal(session: TerminalSession, notification: Notifier): void {
   if (timerTriggered.has(session.id)) return
   timerTriggered.add(session.id)
   if (!readTerminalAutoTimer() || session.owner.kind !== 'task') return
@@ -46,12 +26,22 @@ function startTimerFromTerminal(session: TerminalSession): void {
   const timers = useTimerStore.getState()
   if (timers.timers[taskId]) return
   void timers.startTimer(taskId).then(() => {
-    toast.success(`Timer iniciado: ${session.ownerName}`, {
+    const key = `terminal-timer-${session.id}`
+    notification.success({
+      key,
+      title: `Timer iniciado: ${session.ownerName}`,
       description: 'O primeiro comando no terminal começou a contar o tempo.',
-      action: {
-        label: 'Parar',
-        onClick: () => void useTimerStore.getState().stopTimer(taskId)
-      }
+      actions: (
+        <Button
+          size="small"
+          onClick={() => {
+            void useTimerStore.getState().stopTimer(taskId)
+            notification.destroy(key)
+          }}
+        >
+          Parar
+        </Button>
+      )
     })
   })
 }
@@ -67,14 +57,17 @@ export function TerminalView({ session, visible, focused }: TerminalViewProps): 
   const terminalRef = useRef<{ terminal: Terminal; refit: () => void } | null>(null)
   const sessionRef = useRef(session)
   sessionRef.current = session
+  const { notification } = App.useApp()
+  const notificationRef = useRef(notification)
+  notificationRef.current = notification
 
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
     const id = session.id
     const terminal = new Terminal({
-      theme: THEME,
-      fontFamily: '"JetBrains Mono", "Fira Code", ui-monospace, Menlo, monospace',
+      theme: TERMINAL.xterm,
+      fontFamily: FONT_FAMILY_CODE,
       fontSize: 13,
       lineHeight: 1.2,
       cursorBlink: true,
@@ -118,7 +111,7 @@ export function TerminalView({ session, visible, focused }: TerminalViewProps): 
 
     const input = terminal.onData((data) => {
       void window.api.terminalWrite(id, data)
-      if (data.includes('\r')) startTimerFromTerminal(sessionRef.current)
+      if (data.includes('\r')) startTimerFromTerminal(sessionRef.current, notificationRef.current)
     })
     const resize = terminal.onResize(({ cols, rows }) => {
       void window.api.terminalResize(id, cols, rows)
