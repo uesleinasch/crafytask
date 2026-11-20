@@ -31,6 +31,14 @@ describe('listIntentFromSearch', () => {
     })
   })
 
+  it('lê a categoria e ignora categoria desconhecida', () => {
+    expect(listIntentFromSearch('?categoria=time_leak')).toEqual({
+      status: 'all',
+      filters: { ...EMPTY_TASK_FILTERS, category: 'time_leak' }
+    })
+    expect(listIntentFromSearch('?categoria=xyz')).toBeNull()
+  })
+
   it('prazo vencido abre em Todas', () => {
     expect(listIntentFromSearch('?prazo=vencido')).toEqual({
       status: 'all',

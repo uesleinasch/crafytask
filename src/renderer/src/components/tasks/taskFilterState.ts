@@ -7,6 +7,8 @@ export type SortMode = 'updated' | 'due_date' | 'status_changed'
 
 export const STALE_DAYS_OPTIONS = [7, 14, 30] as const
 
+const TASK_CATEGORIES: readonly TaskCategory[] = ['urgente', 'prioridade', 'normal', 'time_leak']
+
 export interface TaskFiltersValue {
   category: FilterCategory
   contextId: number | null
@@ -64,13 +66,24 @@ export function listIntentFromSearch(search: string): ListIntent | null {
   const staleParam = idParam(params, 'parada')
   const staleDays = STALE_DAYS_OPTIONS.find((days) => days === staleParam) ?? null
   const sort = SORT_PARAMS[params.get('ordem') ?? '']
-  if (contextId === null && tagId === null && !status && !overdue && staleDays === null && !sort) {
+  const categoryParam = params.get('categoria')
+  const category = TASK_CATEGORIES.find((c) => c === categoryParam)
+  if (
+    contextId === null &&
+    tagId === null &&
+    !status &&
+    !overdue &&
+    staleDays === null &&
+    !sort &&
+    !category
+  ) {
     return null
   }
   return {
     status: status ?? 'all',
     filters: {
       ...EMPTY_TASK_FILTERS,
+      category: category ?? 'all',
       contextId,
       tagId,
       overdue,

@@ -266,17 +266,11 @@ const api = {
   },
 
   // Statistics
-  getWeeklyStats: (): Promise<DailyStats[]> => ipcRenderer.invoke('stats:weekly'),
-  getTaskTimeStats: (): Promise<TaskTimeStats[]> => ipcRenderer.invoke('stats:taskTime'),
-  getStatusStats: (): Promise<StatusStats[]> => ipcRenderer.invoke('stats:status'),
-  getCategoryStats: (): Promise<CategoryStats[]> => ipcRenderer.invoke('stats:category'),
-  getHeatmapData: (): Promise<HeatmapData[]> => ipcRenderer.invoke('stats:heatmap'),
-  getGeneralStats: (): Promise<GeneralStats> => ipcRenderer.invoke('stats:general'),
   // FASE 4.2: Advanced stats
-  getEnergyStats: () => ipcRenderer.invoke('stats:energy'),
   getPeriodStats: (period: StatsPeriod): Promise<PeriodStats> =>
     ipcRenderer.invoke('stats:period', period),
-  generateWeeklyPDF: () => ipcRenderer.invoke('report:weeklyPDF'),
+  generateWeeklyPDF: (range?: { start: string; end: string }): Promise<boolean> =>
+    ipcRenderer.invoke('report:weeklyPDF', range),
 
   // Tags
   createTag: (name: string, color?: string): Promise<Tag> =>
@@ -600,43 +594,6 @@ const api = {
     ipcRenderer.on('terminal:removed', handler)
     return () => ipcRenderer.removeListener('terminal:removed', handler)
   }
-}
-
-// Types for statistics
-interface DailyStats {
-  date: string
-  dayOfWeek: number
-  totalSeconds: number
-}
-
-interface TaskTimeStats {
-  taskId: number
-  taskName: string
-  totalSeconds: number
-}
-
-interface StatusStats {
-  status: string
-  totalSeconds: number
-}
-
-interface CategoryStats {
-  category: string
-  totalSeconds: number
-  taskCount: number
-}
-
-interface HeatmapData {
-  date: string
-  count: number
-}
-
-interface GeneralStats {
-  totalTasks: number
-  completedTasks: number
-  totalTimeSeconds: number
-  totalSessions: number
-  avgSessionSeconds: number
 }
 
 interface NotionConfig {

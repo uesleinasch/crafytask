@@ -34,8 +34,6 @@ import type {
   CreateTimeBlockInput,
   UpdateTimeBlockInput,
   GtdMetrics,
-  EnergyStats,
-  EnergyLevel,
   TaskListFilters,
   UpdateTagInput,
   NotesOwner
@@ -1812,22 +1810,6 @@ export interface TaskTimeStats {
   totalSeconds: number
 }
 
-export interface StatusStats {
-  status: string
-  totalSeconds: number
-}
-
-export interface CategoryStats {
-  category: string
-  totalSeconds: number
-  taskCount: number
-}
-
-export interface HeatmapData {
-  date: string
-  count: number
-}
-
 export function getWeeklyStats(): DailyStats[] {
   const stmt = db.prepare(`
     SELECT
@@ -1855,45 +1837,6 @@ export function getTaskTimeStats(): TaskTimeStats[] {
     LIMIT 10
   `)
   return stmt.all() as TaskTimeStats[]
-}
-
-export function getCategoryStats(): CategoryStats[] {
-  const stmt = db.prepare(`
-    SELECT
-      COALESCE(category, 'normal') as category,
-      SUM(total_seconds) as totalSeconds,
-      COUNT(*) as taskCount
-    FROM tasks
-    WHERE total_seconds > 0
-    GROUP BY category
-  `)
-  return stmt.all() as CategoryStats[]
-}
-
-export function getStatusStats(): StatusStats[] {
-  const stmt = db.prepare(`
-    SELECT
-      status,
-      SUM(total_seconds) as totalSeconds
-    FROM tasks
-    WHERE total_seconds > 0
-    GROUP BY status
-  `)
-  return stmt.all() as StatusStats[]
-}
-
-export function getHeatmapData(): HeatmapData[] {
-  const stmt = db.prepare(`
-    SELECT
-      date(start_time) as date,
-      SUM(COALESCE(duration_seconds, 0)) as count
-    FROM time_entries
-    WHERE start_time >= date('now', '-365 days')
-      AND end_time IS NOT NULL
-    GROUP BY date(start_time)
-    ORDER BY date(start_time)
-  `)
-  return stmt.all() as HeatmapData[]
 }
 
 export interface GeneralStats {
@@ -2031,38 +1974,6 @@ export function getGtdMetrics(): GtdMetrics {
     staleWaitingTasks: staleWaitingRows,
     taskFlowCounts
   }
-}
-
-export function getEnergyStats(): EnergyStats[] {
-  const rows = db
-    .prepare(
-      `
-    SELECT
-      energy_level,
-      SUM(total_seconds) as totalSeconds,
-      COUNT(*) as taskCount,
-      AVG(total_seconds) as avgSeconds
-    FROM tasks
-    WHERE energy_level IS NOT NULL
-    AND is_archived = 0
-    AND total_seconds > 0
-    GROUP BY energy_level
-    ORDER BY totalSeconds DESC
-  `
-    )
-    .all() as Array<{
-    energy_level: EnergyLevel
-    totalSeconds: number
-    taskCount: number
-    avgSeconds: number
-  }>
-
-  return rows.map((r) => ({
-    energy_level: r.energy_level,
-    totalSeconds: r.totalSeconds || 0,
-    taskCount: r.taskCount || 0,
-    avgSeconds: Math.round(r.avgSeconds || 0)
-  }))
 }
 
 // ===================== FASE 2: SUBTAREFAS =====================

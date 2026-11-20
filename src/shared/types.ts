@@ -658,23 +658,10 @@ export interface GtdMetrics {
   taskFlowCounts: Record<string, number>
 }
 
-export interface EnergyStats {
-  energy_level: EnergyLevel
-  totalSeconds: number
-  taskCount: number
-  avgSeconds: number
-}
-
 export const ENERGY_LABELS: Record<EnergyLevel, string> = {
   alto: 'Alta Energia',
   medio: 'Energia Média',
   baixo: 'Baixa Energia'
-}
-
-export const ENERGY_COLORS: Record<EnergyLevel, string> = {
-  alto: '#22c55e',
-  medio: '#f59e0b',
-  baixo: '#94a3b8'
 }
 
 // ===================== LABELS & COLORS =====================

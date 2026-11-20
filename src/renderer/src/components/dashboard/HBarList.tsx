@@ -11,6 +11,7 @@ export interface HBarRow {
   valueText: string
   shareText: string
   ariaValue?: string
+  open?: () => void
   tooltip?: ReactNode
 }
 
@@ -45,8 +46,8 @@ export function HBarList({ rows, onOpen }: HBarListProps): React.JSX.Element {
           <button
             type="button"
             className="ct-hbar"
-            disabled={!onOpen}
-            onClick={onOpen ? () => onOpen(row) : undefined}
+            disabled={!row.open && !onOpen}
+            onClick={row.open ?? (onOpen ? () => onOpen(row) : undefined)}
             aria-label={`${row.label}: ${row.ariaValue ?? row.valueText}, ${row.shareText}`}
           >
             <span className="ct-hbar-name">{row.lead}</span>

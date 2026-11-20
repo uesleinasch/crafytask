@@ -1281,7 +1281,7 @@
       "titulo": "Gráficos do dashboard com paleta dos tokens",
       "check": {
         "tipo": "contem",
-        "arquivos": "src/renderer/src/pages/DashboardPage.tsx",
+        "arquivos": "src/renderer/src/{pages/DashboardPage.tsx,components/dashboard/*.tsx}",
         "padrao": "theme/(semantic|tokens)|chartPalette"
       }
     },
@@ -1291,7 +1291,7 @@
       "titulo": "Dashboard sem pizza nem rosca (barras ordenadas)",
       "check": {
         "tipo": "ausente",
-        "arquivos": "src/renderer/src/pages/DashboardPage.tsx",
+        "arquivos": "src/renderer/src/{pages/DashboardPage.tsx,components/dashboard/*.tsx}",
         "padrao": "PieChart|FunnelChart|<Pie\\b|<Funnel\\b"
       }
     },
@@ -1312,7 +1312,7 @@
       "titulo": "Dashboard com filtro de período e boundary por gráfico",
       "check": {
         "tipo": "contem-todos",
-        "arquivos": "src/renderer/src/pages/DashboardPage.tsx",
+        "arquivos": "src/renderer/src/{pages/DashboardPage.tsx,components/dashboard/*.tsx}",
         "padroes": ["Segmented", "RangePicker", "RegionBoundary"]
       }
     },

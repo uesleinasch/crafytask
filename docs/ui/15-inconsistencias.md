@@ -23,8 +23,8 @@ esmeralda no dashboard.
 ### A2. Exports de cor mortos em `shared/types.ts`
 
 **Resolvida em parte na F0-b:** `STATUS_COLORS` e `CATEGORY_COLORS`, que ninguém importava, saíram;
-as cores de domínio agora moram em `theme/semantic.ts`. `CalendarPage` e `DashboardPage` ainda
-declaram cópias locais até serem migradas. A cópia `CONTEXT_COLORS` saiu com a `LabelsPage` (F6-a).
+as cores de domínio agora moram em `theme/semantic.ts`. `CalendarPage` ainda declara cópias locais
+até ser migrada; o dashboard deixou as dele na F7-b3. A cópia `CONTEXT_COLORS` saiu com a `LabelsPage` (F6-a).
 
 ### A3. Duas gramáticas de badge
 

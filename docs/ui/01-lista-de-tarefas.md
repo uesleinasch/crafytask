@@ -103,7 +103,7 @@ No pé: `Mostrando {tasks.length} de {totalTasks}` e **Limpar filtros** (não me
 busca). A contagem do botão soma os campos acima (`taskFilterState.ts`, testado).
 
 **Pela URL** (`listIntentFromSearch`): `?status=inbox|proximas|…`, `?context=<id>`, `?tag=<id>`,
-`?prazo=vencido`, `?parada=<dias>` e `?ordem=parada|prazo` abrem a lista já recortada e trocam a aba
+`?prazo=vencido`, `?categoria=urgente|prioridade|normal|time_leak`, `?parada=<dias>` e `?ordem=parada|prazo` abrem a lista já recortada e trocam a aba
 salva (sem `status`, vai para Todas). É assim que Contextos, Tags e os indicadores de saúde
 (`HEALTH_TARGETS`) levam à lista.
 

@@ -47,7 +47,6 @@ import type {
   CreateTimeBlockInput,
   UpdateTimeBlockInput,
   UnscheduledTaskFilters,
-  EnergyStats,
   TaskListFilters,
   TaskListItem,
   TagWithUsage,
@@ -78,42 +77,6 @@ interface FloatTimerData {
   taskId: number
   taskName: string
   seconds: number
-}
-
-interface DailyStats {
-  date: string
-  dayOfWeek: number
-  totalSeconds: number
-}
-
-interface TaskTimeStats {
-  taskId: number
-  taskName: string
-  totalSeconds: number
-}
-
-interface StatusStats {
-  status: string
-  totalSeconds: number
-}
-
-interface CategoryStats {
-  category: string
-  totalSeconds: number
-  taskCount: number
-}
-
-interface HeatmapData {
-  date: string
-  count: number
-}
-
-interface GeneralStats {
-  totalTasks: number
-  completedTasks: number
-  totalTimeSeconds: number
-  totalSessions: number
-  avgSessionSeconds: number
 }
 
 interface NotionConfig {
@@ -219,16 +182,9 @@ interface API {
   onTasksRefresh: (callback: () => void) => () => void
 
   // Statistics
-  getWeeklyStats: () => Promise<DailyStats[]>
-  getTaskTimeStats: () => Promise<TaskTimeStats[]>
-  getStatusStats: () => Promise<StatusStats[]>
-  getCategoryStats: () => Promise<CategoryStats[]>
-  getHeatmapData: () => Promise<HeatmapData[]>
-  getGeneralStats: () => Promise<GeneralStats>
   // FASE 4.2: Advanced stats
-  getEnergyStats: () => Promise<EnergyStats[]>
   getPeriodStats: (period: StatsPeriod) => Promise<PeriodStats>
-  generateWeeklyPDF: () => Promise<void>
+  generateWeeklyPDF: (range?: { start: string; end: string }) => Promise<boolean>
 
   // Tags
   createTag: (name: string, color?: string) => Promise<Tag>
