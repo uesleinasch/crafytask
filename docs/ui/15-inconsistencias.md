@@ -274,7 +274,7 @@ mesma proteção.
 
 ### F3. Persistência de preferência com duas convenções de nome
 
-As chaves novas usam `:` (`ticktask:taskListViewMode`); uma ainda usa `.` (`ticktask.notesZenWidth`, dos cadernos). A `ticktask.notesWidth` deixou de ser usada na F3-a.
+As chaves novas usam `:` (`ticktask:taskListViewMode`); as dos cadernos ainda usam `.` (`ticktask.notebooks.*`). A `ticktask.notesWidth` deixou de ser usada na F3-a.
 
 ### F4. Agrupar por contexto duplica tarefas
 

@@ -1,91 +1,50 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { App, Button, Card, Drawer, Empty, Flex, Grid, type MenuProps } from 'antd'
 import {
-  DndContext,
-  PointerSensor,
-  closestCenter,
-  pointerWithin,
-  useSensor,
-  useSensors,
-  type CollisionDetection,
-  type DragEndEvent
-} from '@dnd-kit/core'
-import { arrayMove } from '@dnd-kit/sortable'
-import { Minimize2, NotebookTabs } from 'lucide-react'
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+  BookOpen,
+  Download,
+  ListTree,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Trash2
+} from 'lucide-react'
 import type { Notebook, NotebookPageSummary, NotebookSection } from '@shared/types'
-import {
-  canPlaceUnder,
-  dropPlacement,
-  flattenPageTree,
-  indentPlacement,
-  outdentPlacement,
-  type PagePlacement
-} from '@shared/notebookTree'
-import { toast } from '@renderer/components/ui/sonner'
-import { DeleteConfirmDialog } from '@renderer/components/DeleteConfirmDialog'
-import { NotebookList } from '@renderer/components/notebooks/NotebookList'
+import { flattenPageTree, subtreeIds, type PagePlacement } from '@shared/notebookTree'
+import { RegionBoundary } from '@renderer/components/shell/RegionBoundary'
+import { NotebookList, NotebookSelect } from '@renderer/components/notebooks/NotebookList'
 import { PageSearch } from '@renderer/components/notebooks/PageSearch'
 import { SectionTabs } from '@renderer/components/notebooks/SectionTabs'
-import { PageList } from '@renderer/components/notebooks/PageList'
-import { UNTITLED_PAGE } from '@renderer/components/notebooks/notebookUi'
+import { PageTree } from '@renderer/components/notebooks/PageTree'
 import { PageEditor, type PageEditorHandle } from '@renderer/components/notebooks/PageEditor'
 import {
   NameColorDialog,
   type NameColorValue
 } from '@renderer/components/notebooks/NameColorDialog'
+import {
+  DEFAULT_NOTEBOOK_COLOR,
+  DEFAULT_SECTION_COLOR,
+  UNTITLED_PAGE,
+  moveIdOnto,
+  plural,
+  shiftId
+} from '@renderer/components/notebooks/notebookUi'
 import { errorMessage } from '@renderer/components/settings/settingsStatus'
-import { DEFAULT_ZEN_WIDTH, type NotesViewMode } from '@renderer/components/editor/notesLayout'
 import { useNotebooks } from '@renderer/hooks/useNotebooks'
 import { usePersistedState } from '@renderer/hooks/usePersistedState'
-import { DEFAULT_COLORS } from '@renderer/lib/colors'
 
 type NameDialog =
   | { kind: 'notebook'; target: Notebook | null }
   | { kind: 'section'; target: NotebookSection | null }
 
-type DeleteTarget =
-  | { kind: 'notebook'; item: Notebook }
-  | { kind: 'section'; item: NotebookSection }
-  | { kind: 'page'; item: NotebookPageSummary }
-
-function parseDndId(id: string | number): { kind: string; id: number } {
-  const [kind, raw] = String(id).split(':')
-  return { kind, id: Number(raw) }
-}
-
-function deleteCopy(target: DeleteTarget): { title: string; description: string } {
-  switch (target.kind) {
-    case 'notebook':
-      return {
-        title: `Excluir o caderno "${target.item.name}"?`,
-        description: 'Todas as seções e páginas dele serão apagadas. Não dá para desfazer.'
-      }
-    case 'section':
-      return {
-        title: `Excluir a seção "${target.item.name}"?`,
-        description: 'Todas as páginas da seção serão apagadas. Não dá para desfazer.'
-      }
-    case 'page':
-      return {
-        title: `Excluir "${target.item.title || UNTITLED_PAGE}"?`,
-        description: 'A página e as subpáginas dela serão apagadas. Não dá para desfazer.'
-      }
-  }
-}
-
-const collision: CollisionDetection = (args) => {
-  const draggingSection = String(args.active.id).startsWith('s:')
-  const droppableContainers = draggingSection
-    ? args.droppableContainers.filter((c) => String(c.id).startsWith('s:'))
-    : args.droppableContainers
-  const within = pointerWithin({ ...args, droppableContainers })
-  if (within.length > 0) return within
-  const prefix = draggingSection ? 's:' : 'p:'
-  return closestCenter({
-    ...args,
-    droppableContainers: droppableContainers.filter((c) => String(c.id).startsWith(prefix))
-  })
-}
+const ICON = { size: 16, strokeWidth: 1.75, 'aria-hidden': true } as const
+const KEEP =
+  'As tarefas não mudam; menções @ a essas páginas ficam sem destino. Com o envio automático ao Notion ligado, as páginas vão para o arquivo de lá; desligado, o Notion fica como está. Não dá para desfazer.'
 
 function useFallbackSelection<T extends { id: number }>(
   ready: boolean,
@@ -109,7 +68,29 @@ function useFallbackSelection<T extends { id: number }>(
   }, [ready, items, select])
 }
 
+function EmptyCard({
+  description,
+  action
+}: {
+  description: React.ReactNode
+  action?: React.ReactNode
+}): React.JSX.Element {
+  return (
+    <Card
+      size="small"
+      style={{ height: '100%' }}
+      styles={{ body: { height: '100%', display: 'grid', placeItems: 'center' } }}
+    >
+      <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={description}>
+        {action}
+      </Empty>
+    </Card>
+  )
+}
+
 export function NotebooksPage(): React.JSX.Element {
+  const { message, modal } = App.useApp()
+  const screens = Grid.useBreakpoint()
   const [searchParams, setSearchParams] = useSearchParams()
   const [notebookId, setNotebookId] = usePersistedState<number | null>(
     'ticktask.notebooks.notebook',
@@ -122,15 +103,15 @@ export function NotebooksPage(): React.JSX.Element {
   const [pageId, setPageId] = usePersistedState<number | null>('ticktask.notebooks.page', null)
   const { notebooks, notebooksLoaded, sections, pages } = useNotebooks(notebookId, sectionId)
   const [nameDialog, setNameDialog] = useState<NameDialog | null>(null)
-  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null)
-  const [viewMode, setViewMode] = useState<NotesViewMode>('normal')
   const [syncingNotebookId, setSyncingNotebookId] = useState<number | null>(null)
-  const [zenWidth, setZenWidth] = usePersistedState('ticktask.notesZenWidth', DEFAULT_ZEN_WIDTH)
+  const [treeDrawer, setTreeDrawer] = useState(false)
   const editorRef = useRef<PageEditorHandle>(null)
-  const editorAreaRef = useRef<HTMLDivElement>(null)
+  const draggingPage = useRef<number | null>(null)
 
   const sectionsReady = sections.forId !== null && sections.forId === notebookId
   const pagesReady = pages.forId !== null && pages.forId === sectionId
+  const sectionItems = sectionsReady ? sections.items : []
+  const pageItems = pagesReady ? pages.items : []
 
   useFallbackSelection(notebooksLoaded, notebooks, notebookId, setNotebookId, () =>
     notebooks.length > 0 ? notebooks[0].id : null
@@ -143,15 +124,16 @@ export function NotebooksPage(): React.JSX.Element {
     return flat.length > 0 ? flat[0].page.id : null
   })
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
-
-  const run = useCallback(async (action: () => Promise<unknown>): Promise<void> => {
-    try {
-      await action()
-    } catch (error) {
-      toast.error(errorMessage(error))
-    }
-  }, [])
+  const run = useCallback(
+    async (action: () => Promise<unknown>): Promise<void> => {
+      try {
+        await action()
+      } catch (error) {
+        message.error(errorMessage(error))
+      }
+    },
+    [message]
+  )
 
   const leavePage = useCallback(async (): Promise<void> => {
     try {
@@ -177,6 +159,7 @@ export function NotebooksPage(): React.JSX.Element {
   }
 
   const selectPage = async (id: number): Promise<void> => {
+    setTreeDrawer(false)
     if (id === pageId) return
     await leavePage()
     setPageId(id)
@@ -186,7 +169,7 @@ export function NotebooksPage(): React.JSX.Element {
     async (id: number): Promise<void> => {
       const location = await window.api.locatePage(id)
       if (!location) {
-        toast.error('Essa página não existe mais.')
+        message.error('Essa página não existe mais.')
         return
       }
       await leavePage()
@@ -194,10 +177,9 @@ export function NotebooksPage(): React.JSX.Element {
       setSectionId(location.section_id)
       setPageId(location.page_id)
     },
-    [leavePage, setNotebookId, setSectionId, setPageId]
+    [leavePage, message, setNotebookId, setSectionId, setPageId]
   )
 
-  // Menções @ a uma página chegam como /notebooks?page=<id>.
   const requestedPage = Number(searchParams.get('page'))
   useEffect(() => {
     if (!Number.isInteger(requestedPage) || requestedPage <= 0) return
@@ -207,12 +189,13 @@ export function NotebooksPage(): React.JSX.Element {
 
   const exportNotebook = async (notebook: Notebook): Promise<void> => {
     await leavePage()
-    try {
+    await run(async () => {
       const result = await window.api.exportNotebookLocal(notebook.id)
-      if (result) toast.success(`${result.pages} página(s) exportada(s) em ${result.dir}`)
-    } catch (error) {
-      toast.error(errorMessage(error))
-    }
+      if (result)
+        message.success(
+          `${plural(result.pages, 'página exportada', 'páginas exportadas')} em ${result.dir}`
+        )
+    })
   }
 
   const syncNotebook = async (notebook: Notebook): Promise<void> => {
@@ -233,17 +216,89 @@ export function NotebooksPage(): React.JSX.Element {
       await leavePage()
       const page = await window.api.createPage({ section_id: sectionId, parent_page_id: parentId })
       setPageId(page.id)
+      setTreeDrawer(false)
     })
 
-  const placePage = (id: number, placement: PagePlacement | null): Promise<void> =>
+  const placePage = (id: number, placement: PagePlacement): Promise<void> =>
     run(async () => {
-      if (!placement || sectionId === null) return
-      if (!canPlaceUnder(pages.items, id, placement.parent_page_id)) {
-        toast.error('Subpáginas vão até 2 níveis.')
-        return
-      }
+      if (sectionId === null) return
       await window.api.movePage(id, { section_id: sectionId, ...placement })
     })
+
+  const moveToSection = (id: number, targetId: number): Promise<void> =>
+    run(async () => {
+      const target = sectionItems.find((s) => s.id === targetId)
+      const followsOpen = pageId !== null && subtreeIds(pageItems, id).includes(pageId)
+      if (followsOpen) await leavePage()
+      await window.api.movePage(id, {
+        section_id: targetId,
+        parent_page_id: null,
+        index: Number.MAX_SAFE_INTEGER
+      })
+      if (followsOpen) setSectionId(targetId)
+      message.success(`Página movida para ${target?.name ?? 'outra seção'}.`)
+    })
+
+  const reorderNotebooks = (ids: number[] | null): Promise<void> =>
+    run(async () => {
+      if (ids) await window.api.reorderNotebooks(ids)
+    })
+
+  const reorderSections = (ids: number[] | null): Promise<void> =>
+    run(async () => {
+      if (ids && notebookId !== null) await window.api.reorderSections(notebookId, ids)
+    })
+
+  const confirmDelete = async (
+    kind: 'notebook' | 'section' | 'page',
+    item: Notebook | NotebookSection | NotebookPageSummary
+  ): Promise<void> => {
+    let title: string
+    let content: string
+    try {
+      if (kind === 'notebook') {
+        const notebook = item as Notebook
+        const list = await window.api.listSections(notebook.id)
+        const counts = await Promise.all(list.map((s) => window.api.listPages(s.id)))
+        const total = counts.reduce((sum, p) => sum + p.length, 0)
+        title = `Excluir o caderno "${notebook.name}"?`
+        content = `Apaga ${plural(list.length, 'seção', 'seções')} e ${plural(total, 'página', 'páginas')}, com notas, imagens e desenhos. ${KEEP}`
+      } else if (kind === 'section') {
+        const section = item as NotebookSection
+        const list = await window.api.listPages(section.id)
+        title = `Excluir a seção "${section.name}"?`
+        content = `Apaga ${plural(list.length, 'página', 'páginas')}, com notas, imagens e desenhos. ${KEEP}`
+      } else {
+        const page = item as NotebookPageSummary
+        const sub = subtreeIds(pageItems, page.id).length - 1
+        title = `Excluir "${page.title || UNTITLED_PAGE}"?`
+        content = `${sub > 0 ? `Apaga a página e ${plural(sub, 'subpágina', 'subpáginas')}` : 'Apaga a página'}, com notas, imagens e desenho. ${KEEP}`
+      }
+    } catch (error) {
+      message.error(errorMessage(error))
+      return
+    }
+    modal.confirm({
+      title,
+      content,
+      okText: 'Excluir',
+      okButtonProps: { danger: true },
+      cancelText: 'Cancelar',
+      onOk: () =>
+        run(async () => {
+          if (kind === 'notebook') await window.api.deleteNotebook(item.id)
+          else if (kind === 'section') await window.api.deleteSection(item.id)
+          else await window.api.deletePage(item.id)
+          message.success(
+            kind === 'page'
+              ? 'Página excluída'
+              : kind === 'section'
+                ? 'Seção excluída'
+                : 'Caderno excluído'
+          )
+        })
+    })
+  }
 
   const handleNameSubmit = async (value: NameColorValue): Promise<void> => {
     if (!nameDialog) return
@@ -266,182 +321,232 @@ export function NotebooksPage(): React.JSX.Element {
         setSectionId(section.id)
         setPageId(null)
       }
+      setNameDialog(null)
     })
   }
 
-  const handleDelete = (): Promise<void> =>
-    run(async () => {
-      if (!deleteTarget) return
-      const { kind, item } = deleteTarget
-      if (kind === 'notebook') await window.api.deleteNotebook(item.id)
-      else if (kind === 'section') await window.api.deleteSection(item.id)
-      else await window.api.deletePage(item.id)
-      setDeleteTarget(null)
-    })
+  const notebookIds = notebooks.map((n) => n.id)
+  const sectionIds = sectionItems.map((s) => s.id)
 
-  const handleNotebookReorder = (activeKey: string, overKey: string): Promise<void> =>
-    run(async () => {
-      const ids = notebooks.map((n) => n.id)
-      const from = ids.indexOf(Number(activeKey))
-      const to = ids.indexOf(Number(overKey))
-      if (from < 0 || to < 0) return
-      await window.api.reorderNotebooks(arrayMove(ids, from, to))
-    })
-
-  const handleDragEnd = ({ active, over }: DragEndEvent): void => {
-    if (!over || active.id === over.id) return
-    const dragged = parseDndId(active.id)
-    const target = parseDndId(over.id)
-
-    if (dragged.kind === 's' && target.kind === 's' && notebookId !== null) {
-      const ids = sections.items.map((s) => s.id)
-      const from = ids.indexOf(dragged.id)
-      const to = ids.indexOf(target.id)
-      if (from < 0 || to < 0) return
-      void run(() => window.api.reorderSections(notebookId, arrayMove(ids, from, to)))
-      return
+  const notebookMenu = (notebook: Notebook): MenuProps => ({
+    items: [
+      {
+        key: 'sync',
+        icon: <RefreshCw {...ICON} />,
+        label: 'Sincronizar com o Notion',
+        disabled: syncingNotebookId !== null
+      },
+      { key: 'export', icon: <Download {...ICON} />, label: 'Exportar em Markdown…' },
+      { key: 'edit', icon: <Pencil {...ICON} />, label: 'Editar…' },
+      {
+        key: 'up',
+        icon: <ArrowUp {...ICON} />,
+        label: 'Mover para cima',
+        disabled: !shiftId(notebookIds, notebook.id, -1)
+      },
+      {
+        key: 'down',
+        icon: <ArrowDown {...ICON} />,
+        label: 'Mover para baixo',
+        disabled: !shiftId(notebookIds, notebook.id, 1)
+      },
+      { type: 'divider' },
+      { key: 'delete', icon: <Trash2 {...ICON} />, label: 'Excluir caderno…', danger: true }
+    ],
+    onClick: ({ key, domEvent }) => {
+      domEvent.stopPropagation()
+      if (key === 'sync') void syncNotebook(notebook)
+      else if (key === 'export') void exportNotebook(notebook)
+      else if (key === 'edit') setNameDialog({ kind: 'notebook', target: notebook })
+      else if (key === 'up') void reorderNotebooks(shiftId(notebookIds, notebook.id, -1))
+      else if (key === 'down') void reorderNotebooks(shiftId(notebookIds, notebook.id, 1))
+      else if (key === 'delete') void confirmDelete('notebook', notebook)
     }
+  })
 
-    if (dragged.kind === 'p' && target.kind === 's') {
-      if (target.id === sectionId) return
-      const section = sections.items.find((s) => s.id === target.id)
-      void run(async () => {
-        await window.api.movePage(dragged.id, {
-          section_id: target.id,
-          parent_page_id: null,
-          index: Number.MAX_SAFE_INTEGER
-        })
-        toast.success(`Página movida para ${section?.name ?? 'outra seção'}.`)
-      })
-      return
+  const sectionMenu = (section: NotebookSection): MenuProps => ({
+    items: [
+      { key: 'edit', icon: <Pencil {...ICON} />, label: 'Editar…' },
+      {
+        key: 'left',
+        icon: <ArrowLeft {...ICON} />,
+        label: 'Mover para a esquerda',
+        disabled: !shiftId(sectionIds, section.id, -1)
+      },
+      {
+        key: 'right',
+        icon: <ArrowRight {...ICON} />,
+        label: 'Mover para a direita',
+        disabled: !shiftId(sectionIds, section.id, 1)
+      },
+      { type: 'divider' },
+      { key: 'delete', icon: <Trash2 {...ICON} />, label: 'Excluir seção…', danger: true }
+    ],
+    onClick: ({ key, domEvent }) => {
+      domEvent.stopPropagation()
+      if (key === 'edit') setNameDialog({ kind: 'section', target: section })
+      else if (key === 'left') void reorderSections(shiftId(sectionIds, section.id, -1))
+      else if (key === 'right') void reorderSections(shiftId(sectionIds, section.id, 1))
+      else if (key === 'delete') void confirmDelete('section', section)
     }
+  })
 
-    if (dragged.kind === 'p' && target.kind === 'p') {
-      void placePage(dragged.id, dropPlacement(pages.items, dragged.id, target.id))
-    }
-  }
+  const newNotebook = (): void => setNameDialog({ kind: 'notebook', target: null })
+  const newSection = (): void => setNameDialog({ kind: 'section', target: null })
+  const search = <PageSearch onOpen={(id) => void openPage(id)} />
 
-  const handleZen = useCallback((): void => {
-    const width = editorAreaRef.current?.offsetWidth
-    if (width && width > 320) setZenWidth(Math.min(width, 900))
-    setViewMode('zen')
-  }, [setZenWidth])
+  const tree = (
+    <RegionBoundary region="páginas" resetKeys={[sectionId]}>
+      <PageTree
+        pages={pageItems}
+        sections={sectionItems}
+        sectionId={sectionId}
+        selectedId={pageId}
+        onSelect={(id) => void selectPage(id)}
+        onCreate={(parentId) => void createPage(parentId)}
+        onPlace={(id, placement) => void placePage(id, placement)}
+        onMoveToSection={(id, target) => void moveToSection(id, target)}
+        onDelete={(page) => void confirmDelete('page', page)}
+        onDragChange={(id) => {
+          draggingPage.current = id
+        }}
+      />
+    </RegionBoundary>
+  )
 
-  useEffect(() => {
-    if (viewMode === 'normal') return
-    const onKeyDown = (e: KeyboardEvent): void => {
-      if (e.key !== 'Escape' || e.defaultPrevented) return
-      if (document.querySelector('[data-suggestion-popup]')) return
-      setViewMode('normal')
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [viewMode])
+  const editor =
+    pageId !== null && pagesReady && pageItems.some((p) => p.id === pageId) ? (
+      <RegionBoundary region="página" resetKeys={[pageId]}>
+        <PageEditor key={pageId} ref={editorRef} pageId={pageId} />
+      </RegionBoundary>
+    ) : sectionsReady && sectionItems.length === 0 ? (
+      <EmptyCard
+        description="Crie uma seção para guardar páginas."
+        action={
+          <Button type="primary" icon={<Plus {...ICON} />} onClick={newSection}>
+            Nova seção
+          </Button>
+        }
+      />
+    ) : pagesReady && pageItems.length === 0 ? (
+      <EmptyCard
+        description="Esta seção ainda não tem páginas."
+        action={
+          <Button type="primary" icon={<Plus {...ICON} />} onClick={() => void createPage(null)}>
+            Nova página
+          </Button>
+        }
+      />
+    ) : (
+      <EmptyCard description="Carregando…" />
+    )
 
-  const nameDialogInitial: NameColorValue = nameDialog?.target
-    ? { name: nameDialog.target.name, color: nameDialog.target.color }
-    : { name: '', color: DEFAULT_COLORS[0] }
-
-  const deleteText = deleteTarget ? deleteCopy(deleteTarget) : null
-
-  const focused = viewMode !== 'normal'
+  const body =
+    notebookId === null ? (
+      notebooksLoaded ? (
+        <Card
+          size="small"
+          style={{ flex: 1, height: '100%' }}
+          styles={{ body: { height: '100%', display: 'grid', placeItems: 'center' } }}
+        >
+          <Empty
+            image={<BookOpen size={40} strokeWidth={1.5} aria-hidden />}
+            description="Cadernos guardam anotações livres: caderno, seção e página, com notas e desenho."
+          >
+            <Button type="primary" icon={<Plus {...ICON} />} onClick={newNotebook}>
+              Novo caderno
+            </Button>
+          </Empty>
+        </Card>
+      ) : (
+        <div style={{ flex: 1 }}>
+          <EmptyCard description="Carregando…" />
+        </div>
+      )
+    ) : (
+      <div className="ct-nb-main">
+        <SectionTabs
+          sections={sectionItems}
+          selectedId={sectionId}
+          onSelect={(id) => void selectSection(id)}
+          onCreate={newSection}
+          menuFor={sectionMenu}
+          onReorder={(id, target) => void reorderSections(moveIdOnto(sectionIds, id, target))}
+          draggingPage={() => draggingPage.current !== null}
+          onDropPage={(target) => {
+            const id = draggingPage.current
+            draggingPage.current = null
+            if (id !== null) void moveToSection(id, target)
+          }}
+        />
+        <div className="ct-nb-body">
+          {screens.md && sectionId !== null && (
+            <Card
+              size="small"
+              className="ct-nb-tree"
+              styles={{ body: { padding: 0, height: '100%' } }}
+            >
+              {tree}
+            </Card>
+          )}
+          <div style={{ flex: 1, minWidth: 0, minHeight: 0 }}>{editor}</div>
+        </div>
+      </div>
+    )
 
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-slate-50">
-      {!focused && (
-        <header className="shrink-0 px-6 py-4 bg-white border-b border-slate-200 flex items-center gap-3">
-          <NotebookTabs size={20} className="text-slate-700" />
-          <h1 className="text-lg font-bold text-slate-900">Cadernos</h1>
-          <div className="ml-auto">
-            <PageSearch onOpen={(id) => void openPage(id)} />
-          </div>
-        </header>
-      )}
-
-      <div className="flex flex-1 min-h-0">
-        {!focused && (
-          <NotebookList
+    <div className={screens.md ? 'ct-nb' : 'ct-nb narrow'}>
+      {!screens.lg && (
+        <Flex gap={8} wrap align="center">
+          <NotebookSelect
             notebooks={notebooks}
             selectedId={notebookId}
             onSelect={(id) => void selectNotebook(id)}
-            onCreate={() => setNameDialog({ kind: 'notebook', target: null })}
-            onEdit={(notebook) => setNameDialog({ kind: 'notebook', target: notebook })}
-            onDelete={(notebook) => setDeleteTarget({ kind: 'notebook', item: notebook })}
-            onSync={(notebook) => void syncNotebook(notebook)}
+            onCreate={newNotebook}
+            menuFor={notebookMenu}
+          />
+          <div
+            style={{
+              flex: screens.md ? '0 1 320px' : '1 1 100%',
+              minWidth: 0,
+              order: screens.md ? 0 : 3
+            }}
+          >
+            {search}
+          </div>
+          {!screens.md && sectionId !== null && (
+            <Button icon={<ListTree {...ICON} />} onClick={() => setTreeDrawer(true)}>
+              Páginas
+            </Button>
+          )}
+        </Flex>
+      )}
+      <div className="ct-nb-cols">
+        {screens.lg && (
+          <NotebookList
+            notebooks={notebooks}
+            loaded={notebooksLoaded}
+            selectedId={notebookId}
             syncingId={syncingNotebookId}
-            onExport={(notebook) => void exportNotebook(notebook)}
-            onReorder={(a, b) => void handleNotebookReorder(a, b)}
+            search={search}
+            onSelect={(id) => void selectNotebook(id)}
+            onCreate={newNotebook}
+            menuFor={notebookMenu}
+            onReorder={(id, target) => void reorderNotebooks(moveIdOnto(notebookIds, id, target))}
           />
         )}
-
-        {notebookId === null ? (
-          <div className="flex-1 flex flex-col items-center justify-center gap-3 text-slate-400">
-            <NotebookTabs size={32} />
-            <p className="text-sm">
-              {notebooksLoaded ? 'Crie um caderno para começar.' : 'Carregando...'}
-            </p>
-          </div>
-        ) : (
-          <DndContext sensors={sensors} collisionDetection={collision} onDragEnd={handleDragEnd}>
-            <div className="flex-1 min-w-0 flex flex-col">
-              {!focused && (
-                <SectionTabs
-                  sections={sectionsReady ? sections.items : []}
-                  selectedId={sectionId}
-                  onSelect={(id) => void selectSection(id)}
-                  onCreate={() => setNameDialog({ kind: 'section', target: null })}
-                  onEdit={(section) => setNameDialog({ kind: 'section', target: section })}
-                  onDelete={(section) => setDeleteTarget({ kind: 'section', item: section })}
-                />
-              )}
-              <div className="flex flex-1 min-h-0">
-                {!focused && (
-                  <PageList
-                    pages={pagesReady ? pages.items : []}
-                    selectedId={pageId}
-                    disabled={sectionId === null}
-                    canIndent={(id) => {
-                      const placement = indentPlacement(pages.items, id)
-                      return !!placement && canPlaceUnder(pages.items, id, placement.parent_page_id)
-                    }}
-                    onSelect={(id) => void selectPage(id)}
-                    onCreate={(parentId) => void createPage(parentId)}
-                    onIndent={(id) => void placePage(id, indentPlacement(pages.items, id))}
-                    onOutdent={(id) => void placePage(id, outdentPlacement(pages.items, id))}
-                    onDelete={(page) => setDeleteTarget({ kind: 'page', item: page })}
-                  />
-                )}
-                <div ref={editorAreaRef} className="relative flex-1 min-w-0 flex">
-                  {pageId !== null ? (
-                    <PageEditor
-                      key={pageId}
-                      ref={editorRef}
-                      pageId={pageId}
-                      viewMode={viewMode}
-                      zenWidth={zenWidth}
-                      onMaximize={() => setViewMode('maximized')}
-                      onZen={handleZen}
-                    />
-                  ) : (
-                    <div className="flex-1 flex items-center justify-center text-sm text-slate-400 bg-white">
-                      {sectionId === null ? 'Crie uma seção.' : 'Crie uma página nesta seção.'}
-                    </div>
-                  )}
-                  {focused && (
-                    <button
-                      onClick={() => setViewMode('normal')}
-                      title="Voltar ao normal (Esc)"
-                      className="absolute bottom-8 right-8 z-20 h-11 w-11 rounded-full bg-slate-900 text-white flex items-center justify-center hover:bg-slate-800 transition-colors"
-                    >
-                      <Minimize2 size={18} />
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </DndContext>
-        )}
+        {body}
       </div>
+
+      <Drawer
+        open={treeDrawer && !screens.md}
+        onClose={() => setTreeDrawer(false)}
+        size={300}
+        title={sectionItems.find((s) => s.id === sectionId)?.name ?? 'Páginas'}
+        styles={{ body: { padding: 0 } }}
+      >
+        {tree}
+      </Drawer>
 
       <NameColorDialog
         open={nameDialog !== null}
@@ -455,18 +560,17 @@ export function NotebooksPage(): React.JSX.Element {
               : 'Nova seção'
         }
         placeholder={nameDialog?.kind === 'notebook' ? 'Trabalho' : 'Reuniões'}
-        initial={nameDialogInitial}
-        onOpenChange={(open) => !open && setNameDialog(null)}
+        initial={
+          nameDialog?.target
+            ? { name: nameDialog.target.name, color: nameDialog.target.color }
+            : {
+                name: '',
+                color:
+                  nameDialog?.kind === 'section' ? DEFAULT_SECTION_COLOR : DEFAULT_NOTEBOOK_COLOR
+              }
+        }
+        onCancel={() => setNameDialog(null)}
         onSubmit={handleNameSubmit}
-      />
-
-      <DeleteConfirmDialog
-        open={deleteTarget !== null}
-        onOpenChange={(open) => !open && setDeleteTarget(null)}
-        onConfirm={() => void handleDelete()}
-        title={deleteText?.title}
-        description={deleteText?.description}
-        confirmLabel="Excluir"
       />
     </div>
   )

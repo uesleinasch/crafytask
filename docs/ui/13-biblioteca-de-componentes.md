@@ -118,7 +118,7 @@ um terceiro.
 
 | Arquivo | Papel |
 | --- | --- |
-| `NotesPanel` | casca do painel direito: abas Notas/Desenho, ações, botões zen/maximizar; carrega o Excalidraw com `React.lazy` |
+| `NotesBody` (`NotesPanel.tsx`) | corpo das abas Notas/Desenho, cada editor num `RegionBoundary`; carrega o Excalidraw com `React.lazy`. A casca (abas, ações, Modo foco) é o `TaskWorkspace`, usado pela tarefa e pela página de caderno |
 | `TaskNotesEditor` | monta o Tiptap; auto-save com debounce de 400ms; expõe `flushSave()` via ref |
 | `extensions.ts` | conjunto de extensões: StarterKit, Highlight, TextStyle+FontSize, TaskList/TaskItem aninhável, Placeholder, TableKit redimensionável, SlashCommand, Mention, Image com `assetId`, FileHandler |
 | `BubbleToolbar` | barra flutuante na seleção: negrito, itálico, tachado, código, marca-texto, tamanho da fonte (12–32px), link |

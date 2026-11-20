@@ -1,96 +1,19 @@
-import { SortableContext, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { Button, Dropdown, Tabs, Tooltip, type MenuProps } from 'antd'
+import { Ellipsis, Plus } from 'lucide-react'
 import type { NotebookSection } from '@shared/types'
-import { cn } from '@renderer/lib/utils'
-import { sectionDndId } from './notebookUi'
 
-interface SectionTabProps {
-  section: NotebookSection
-  active: boolean
-  onSelect: () => void
-  onEdit: () => void
-  onDelete: () => void
-}
-
-function SectionTab({
-  section,
-  active,
-  onSelect,
-  onEdit,
-  onDelete
-}: SectionTabProps): React.JSX.Element {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-    isOver,
-    active: dragged
-  } = useSortable({ id: sectionDndId(section.id) })
-  const pageOver = isOver && String(dragged?.id).startsWith('p:')
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={{
-        transform: CSS.Translate.toString(transform),
-        transition,
-        opacity: isDragging ? 0.6 : 1,
-        borderTopColor: section.color
-      }}
-      {...attributes}
-      {...listeners}
-      onClick={onSelect}
-      title={pageOver ? `Mover para ${section.name}` : section.name}
-      className={cn(
-        'group flex items-center gap-1.5 max-w-[220px] px-3 h-9 border-t-[3px] rounded-t-sm text-sm cursor-pointer select-none transition-colors',
-        active
-          ? 'bg-white text-slate-900 font-semibold'
-          : 'bg-slate-100 text-slate-500 hover:text-slate-800',
-        pageOver && 'ring-2 ring-inset ring-slate-400'
-      )}
-    >
-      <span className="truncate">{section.name}</span>
-      {active && (
-        <span className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onEdit()
-            }}
-            onPointerDown={(e) => e.stopPropagation()}
-            title="Renomear seção"
-            className="p-0.5 text-slate-400 hover:text-slate-700"
-          >
-            <Pencil size={12} />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onDelete()
-            }}
-            onPointerDown={(e) => e.stopPropagation()}
-            title="Excluir seção"
-            className="p-0.5 text-slate-400 hover:text-red-600"
-          >
-            <Trash2 size={12} />
-          </button>
-        </span>
-      )}
-    </div>
-  )
-}
+const ICON = { size: 16, strokeWidth: 1.75, 'aria-hidden': true } as const
 
 interface SectionTabsProps {
   sections: NotebookSection[]
   selectedId: number | null
   onSelect: (id: number) => void
   onCreate: () => void
-  onEdit: (section: NotebookSection) => void
-  onDelete: (section: NotebookSection) => void
+  menuFor: (section: NotebookSection) => MenuProps
+  onReorder: (id: number, targetId: number) => void
+  draggingPage: () => boolean
+  onDropPage: (sectionId: number) => void
 }
 
 export function SectionTabs({
@@ -98,33 +21,92 @@ export function SectionTabs({
   selectedId,
   onSelect,
   onCreate,
-  onEdit,
-  onDelete
+  menuFor,
+  onReorder,
+  draggingPage,
+  onDropPage
 }: SectionTabsProps): React.JSX.Element {
+  const dragging = useRef<number | null>(null)
+  const [over, setOver] = useState<number | null>(null)
+  const active = sections.find((s) => s.id === selectedId) ?? null
+
+  const accepts = (section: NotebookSection): boolean =>
+    draggingPage()
+      ? section.id !== selectedId
+      : dragging.current !== null && dragging.current !== section.id
+
   return (
-    <div className="shrink-0 flex items-end gap-1 px-3 pt-2 bg-slate-50 border-b border-slate-200 overflow-x-auto">
-      <SortableContext
-        items={sections.map((s) => sectionDndId(s.id))}
-        strategy={horizontalListSortingStrategy}
-      >
-        {sections.map((section) => (
-          <SectionTab
-            key={section.id}
-            section={section}
-            active={section.id === selectedId}
-            onSelect={() => onSelect(section.id)}
-            onEdit={() => onEdit(section)}
-            onDelete={() => onDelete(section)}
-          />
-        ))}
-      </SortableContext>
-      <button
-        onClick={onCreate}
-        title="Nova seção"
-        className="flex items-center justify-center h-9 w-9 shrink-0 rounded-t-sm text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-      >
-        <Plus size={16} />
-      </button>
-    </div>
+    <Tabs
+      type="editable-card"
+      size="small"
+      activeKey={active ? String(active.id) : undefined}
+      onChange={(key) => onSelect(Number(key))}
+      onEdit={(_, action) => {
+        if (action === 'add') onCreate()
+      }}
+      addIcon={
+        <Tooltip title="Nova seção">
+          <Plus {...ICON} aria-label="Nova seção" />
+        </Tooltip>
+      }
+      tabBarStyle={{ margin: 0 }}
+      tabBarExtraContent={
+        active && (
+          <Dropdown menu={menuFor(active)} trigger={['click']} placement="bottomRight">
+            <Button
+              size="small"
+              type="text"
+              aria-label={`Ações da seção ${active.name}`}
+              icon={<Ellipsis {...ICON} />}
+              style={{ marginLeft: 4 }}
+            />
+          </Dropdown>
+        )
+      }
+      items={sections.map((section) => ({
+        key: String(section.id),
+        closable: false,
+        label: (
+          <Dropdown menu={menuFor(section)} trigger={['contextMenu']}>
+            <span
+              className={over === section.id ? 'ct-nb-tab over' : 'ct-nb-tab'}
+              title={
+                over === section.id && draggingPage() ? `Mover para ${section.name}` : undefined
+              }
+              draggable
+              onDragStart={(event) => {
+                dragging.current = section.id
+                event.dataTransfer.effectAllowed = 'move'
+                event.dataTransfer.setData('text/plain', section.name)
+              }}
+              onDragEnd={() => {
+                dragging.current = null
+                setOver(null)
+              }}
+              onDragOver={(event) => {
+                if (!accepts(section)) return
+                event.preventDefault()
+                setOver(section.id)
+              }}
+              onDragLeave={() => setOver((current) => (current === section.id ? null : current))}
+              onDrop={(event) => {
+                event.preventDefault()
+                setOver(null)
+                const id = dragging.current
+                dragging.current = null
+                if (draggingPage()) {
+                  if (section.id !== selectedId) onDropPage(section.id)
+                } else if (id !== null && id !== section.id) {
+                  onReorder(id, section.id)
+                }
+              }}
+            >
+              <span className="ct-nb-dot" style={{ background: section.color }} aria-hidden />
+              {section.name}
+            </span>
+          </Dropdown>
+        )
+      }))}
+    />
   )
 }

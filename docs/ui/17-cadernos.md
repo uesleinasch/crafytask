@@ -5,67 +5,81 @@ Rota `/notebooks` (`pages/NotebooksPage.tsx`). Anotações livres no molde do On
 **Notas** (Tiptap) e **Desenho** (Excalidraw) do detalhe da tarefa. Decisões de modelo em
 [`docs/adr/0001-cadernos.md`](../adr/0001-cadernos.md).
 
-Entrada: item **Cadernos** (`NotebookTabs`) da sidebar, no grupo Conhecimento. Os timers
-em execução ficam na pílula do header.
+Entrada: item **Cadernos** (`NotebookTabs`) da sidebar, no grupo Conhecimento. Desenho no guia
+(`docs/design/guia-de-design.md` §8 "Cadernos") e no protótipo (rota `#cadernos`).
 
 ## Layout
 
+Altura total (`.ct-nb` em `main.css`): as colunas rolam por dentro, a página não.
+
 ```
-┌ ← Voltar │ ▤ Cadernos ─────────────────────────────────────────────────────┐
-├──────────────┬──────────────────────────────────────────────────────────────┤
-│ CADERNOS     │ [Geral] [Reuniões] [+]                       ← SectionTabs   │
-│ ⠿ ▤ Trabalho │────────────────┬─────────────────────────────────────────────│
-│ ⠿ ▤ Pessoal  │ + Nova página  │ Título da página                            │
-│              │ Página 1       │ criada 10/11/2026 14:02 · editada …         │
-│              │   Subpágina    │ NOTAS  DESENHO                    [◎] [⤢]   │
-│              │     Sub-sub    │                                             │
-│ + Novo cad.  │ Página 2       │ (Tiptap ou Excalidraw)                      │
-└──────────────┴────────────────┴─────────────────────────────────────────────┘
-  NotebookList     PageList        PageEditor
+┌──────────────┬──────────────────────────────────────────────────────────────┐
+│ [Buscar…   ] │ [● Geral] [● Reuniões] [+]                          [⋯]      │ ← SectionTabs
+│ CADERNOS     │ ┌ PÁGINAS  + Nova ┐ ┌ Título da página ──────────────────┐   │
+│ ▤ Trabalho ⋯ │ │ ▾ Página 1      │ │ criada 10/11/2026 14:02 · editada … │   │
+│ ▤ Pessoal    │ │   ├ Subpágina   │ │ Notas  Desenho          ⤓  ⟳  ⤢    │   │
+│              │ │ Página 2        │ │ (Tiptap ou Excalidraw)              │   │
+│ + Novo cad.  │ └─────────────────┘ └─────────────────────────────────────┘   │
+└──────────────┴──────────────────────────────────────────────────────────────┘
+  NotebookList        PageTree               PageEditor (TaskWorkspace)
 ```
 
-| Região             | Componente                   | Comportamento                                                                              |
-| ------------------ | ---------------------------- | ------------------------------------------------------------------------------------------ |
-| Coluna de cadernos | `notebooks/NotebookList.tsx` | Clique abre; alça `⠿` reordena (`SortableGroups`); lápis/lixeira no hover                  |
-| Abas de seção      | `notebooks/SectionTabs.tsx`  | Borda superior na cor da seção; arrastar reordena; lápis/lixeira só na aba ativa; `+` cria |
-| Lista de páginas   | `notebooks/PageList.tsx`     | Árvore achatada com recuo de 16px por nível; ações no hover                                |
-| Editor             | `notebooks/PageEditor.tsx`   | Título (autosave 500 ms), datas, `NotesPanel` com dono `{ kind: 'page' }`                  |
+| Região             | Componente                   | Comportamento                                                                                                                 |
+| ------------------ | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Coluna de cadernos | `notebooks/NotebookList.tsx` | A partir de `lg`. Busca (`PageSearch`), `Menu` dos cadernos, `⋯` no hover e no botão direito, arrastar reordena, Novo caderno |
+| Barra estreita     | `NotebookSelect`             | Abaixo de `lg`: `Select` do caderno (Novo caderno no fim da lista), `⋯` e a busca; abaixo de `md`, botão **Páginas**          |
+| Abas de seção      | `notebooks/SectionTabs.tsx`  | `Tabs` `editable-card`: ponto na cor, `+` cria, `⋯` da aba ativa e botão direito, arrastar reordena, aceita página solta      |
+| Páginas            | `notebooks/PageTree.tsx`     | `Tree` com linhas-guia, subpáginas recolhíveis e arrastar; card de 280px, ou `Drawer` abaixo de `md`                          |
+| Editor             | `notebooks/PageEditor.tsx`   | Título (autosave 500 ms), datas e o `TaskWorkspace` da tarefa (abas, ações, Modo foco) com dono `{ kind: 'page' }`            |
 
-Criar e renomear caderno/seção usa `NameColorDialog` (nome + `ColorPicker`). Caderno novo já vem
-com a seção **Geral**.
+Menu do caderno: Sincronizar com o Notion, Exportar em Markdown, Editar, Mover para cima/baixo,
+Excluir. Menu da seção: Editar, Mover para a esquerda/direita, Excluir. Criar e editar caderno ou
+seção usa `NameColorDialog` (nome e a paleta `USER_COLORS`; uma cor antiga fora dela continua
+oferecida). Caderno novo já vem com a seção **Geral**. Vazios mostram `Empty` com o próximo passo.
 
 ## Páginas e subpáginas
 
-Ações no hover de cada linha:
+Menu da página (`⋯` no hover e botão direito), além do botão **Nova subpágina** no hover:
 
 - **Nova subpágina** (`FilePlus2`) — só até o 2º nível.
 - **Promover** (`IndentDecrease`) — sobe um nível, logo depois do pai.
 - **Tornar subpágina da anterior** (`IndentIncrease`) — vira o último filho da irmã de cima; some
   quando passaria do limite.
+- **Mover para cima / para baixo** — troca de lugar com a irmã vizinha (`shiftPlacement`).
+- **Mover para a seção ▸** — leva a página e a subárvore para o fim da raiz de outra seção.
 - **Excluir** — leva as subpáginas junto.
 
-Arrastar (a partir de 5px de movimento, para o clique continuar selecionando):
+Arrastar (HTML5, do `Tree` do antd):
 
-- Sobre outra **página**: vira irmã dela — antes, se subiu; depois, se desceu. A subárvore vai
-  junto. Soltar dentro da própria subárvore é ignorado; passar do limite mostra um toast.
+- Na fresta entre páginas: vira irmã, antes ou depois (`treeDropPlacement`). Soltar logo abaixo de
+  uma página aberta com filhas a torna a primeira filha.
+- Sobre uma página: vira a última filha dela.
+- O `allowDrop` recusa o que passaria de 2 níveis ou cairia na própria subárvore.
 - Sobre uma **aba de seção**: move a página (e a subárvore) para o fim da raiz daquela seção. A aba
-  ganha um anel enquanto a página está por cima.
+  ganha um contorno tracejado enquanto a página está por cima. Se a página aberta foi junto, a tela
+  segue para a seção nova.
 
 As regras de árvore ficam em `src/shared/notebookTree.ts` (puro e testado), usado pelo renderer e
-pelo main, que revalida tudo em `movePage`.
+pelo main, que revalida tudo em `movePage`. Reordenar cadernos e seções usa `moveIdOnto`/`shiftId`
+(`notebooks/notebookUi.ts`, testado).
 
 ## Edição e troca de página
 
 - Notas e desenho salvam com o mesmo debounce da task (400 ms e 800 ms).
-- Antes de trocar de página, seção ou caderno, e no **Voltar**, a tela chama `flush()` do editor:
-  título, notas e desenho pendentes são gravados antes de desmontar.
+- Antes de trocar de página, seção ou caderno, a tela chama `flush()` do editor: título, notas e
+  desenho pendentes são gravados antes de desmontar.
 - O editor é montado com `key={pageId}`; trocar de página recria Tiptap/Excalidraw.
-- **Maximizar** esconde cabeçalho, cadernos, abas e lista; **Zen** também, e centraliza o texto.
-  Esc ou o botão redondo no canto voltam ao normal. Sem a barra de foco do detalhe da tarefa (não há timer de página).
+- **Modo foco** (o mesmo da tarefa, sem timer): o editor ocupa a janela; Esc ou **Sair** voltam.
+  Substituiu os antigos Maximizar e Zen.
 
-Os editores de notas e de desenho da página ficam cada um num `RegionBoundary`. O `PageEditor`
-guarda o último JSON salvo (`savedNotes`/`savedDrawing`), para que remontar o editor (trocar de aba
-ou "Tentar de novo") não volte ao conteúdo de quando a página abriu.
+A árvore de páginas e o editor ficam cada um num `RegionBoundary` ("páginas", "página"), e dentro
+dele os editores de notas e de desenho têm o seu. O `PageEditor` guarda o último JSON salvo
+(`savedNotes`/`savedDrawing`), para que remontar o editor (trocar de aba ou "Tentar de novo") não
+volte ao conteúdo de quando a página abriu.
+
+Excluir confirma com `modal.confirm` dizendo quantas seções e páginas vão junto (conta pelo IPC na
+hora), que as tarefas não mudam e que no Notion as páginas vão para o arquivo só com o envio
+automático ligado.
 
 ## Preferências persistidas (`localStorage`)
 
@@ -73,7 +87,6 @@ ou "Tentar de novo") não volte ao conteúdo de quando a página abriu.
 | ---------------------------------------------------- | --------------------------------------------------- |
 | `ticktask.notebooks.notebook` / `.section` / `.page` | Última seleção. Se o id sumiu, cai no primeiro item |
 | `ticktask.notebooks.tab`                             | Aba Notas/Desenho                                   |
-| `ticktask.notesZenWidth`                             | Largura do Zen, compartilhada com a task            |
 
 ## Dados
 
@@ -82,7 +95,7 @@ ou "Tentar de novo") não volte ao conteúdo de quando a página abriu.
 - Salvar notas/desenho não emite refresh (a lista não mostra nada que mude com isso).
 - Imagens coladas vão para `note_assets` com `page_id`; o PNG do desenho para
   `userData/drawings/pages/<pageId>.png`.
-- Excluir é definitivo, com `DeleteConfirmDialog`. Apaga os PNGs dos desenhos das páginas atingidas.
+- Excluir é definitivo, com confirmação. Apaga os PNGs dos desenhos das páginas atingidas.
 
 ## Notion
 
@@ -94,8 +107,8 @@ de lá, a raiz é procurada pelo título antes de criar outra.
 - **Automático** (com o auto-sync do Notion ligado): criar, renomear, salvar notas/desenho/título e
   mover agendam o sync do item com 3 s de debounce. Excluir arquiva a página no Notion (arquivar o
   caderno arquiva tudo abaixo).
-- **Manual**: botão **Sincronizar com o Notion** na aba Notas da página, e o ícone `RefreshCw` no
-  hover do caderno, que sobe o caderno inteiro (seções e páginas). Funciona com o auto-sync
+- **Manual**: botão **Salvar e sincronizar com o Notion** na aba Notas da página, e **Sincronizar
+  com o Notion** no menu `⋯` do caderno, que sobe o caderno inteiro (seções e páginas). Funciona com o auto-sync
   desligado, desde que a API key esteja configurada.
 - O corpo da página é reescrito a cada sync (notas + PNG do desenho no fim), preservando os blocos
   de subpágina.
@@ -111,9 +124,10 @@ Limitações:
 
 ## Busca e menções
 
-- **Busca** no cabeçalho (`notebooks/PageSearch.tsx`): procura em todos os cadernos, pelo título e
-  pelo texto das notas, com debounce de 250 ms. Até 30 resultados, título que bate primeiro, com
-  caderno › seção e um trecho. Setas + Enter escolhem; Esc fecha.
+- **Busca** (`notebooks/PageSearch.tsx`, `AutoComplete`): no topo da coluna de cadernos, ou na
+  barra abaixo de `lg`. Procura em todos os cadernos, pelo título e pelo texto das notas, com
+  debounce de 250 ms. Até 30 resultados, título que bate primeiro, com caderno › seção e um
+  trecho. Setas + Enter escolhem; Esc fecha.
 - O texto vem da coluna `notebook_pages.search_text`, derivada do JSON a cada save
   (`notesPlainText.ts`). Páginas criadas antes da coluna são preenchidas na migração.
 - **Menção `@`**: o `@` das notas (de task ou de página) sugere páginas também. Clicar no chip abre
@@ -122,10 +136,10 @@ Limitações:
 
 ## Exportar
 
-- **Página**: botão **Exportar** na aba Notas → diálogo de salvar `.md`. Frontmatter (título,
+- **Página**: botão **Exportar a página em Markdown** (`Download`) na aba Notas → diálogo de salvar `.md`. Frontmatter (título,
   caderno, seção, datas), as notas em Markdown e o desenho no fim; imagens e o `.excalidraw` vão
   para `assets/` ao lado do arquivo.
-- **Caderno**: ícone `Download` no hover → escolher uma pasta. Cria `<caderno>/` com uma pasta por
+- **Caderno**: **Exportar em Markdown** no menu `⋯` do caderno → escolher uma pasta. Cria `<caderno>/` com uma pasta por
   seção, um `.md` por página e as subpáginas numa pasta com o nome da página mãe; imagens de todas
   as páginas num `assets/` comum. Nomes repetidos ganham " (2)". Regras em `notebookExportPlan.ts`.
 

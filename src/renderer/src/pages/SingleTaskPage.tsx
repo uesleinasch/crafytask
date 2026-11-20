@@ -352,7 +352,7 @@ export function SingleTaskPage(): React.JSX.Element {
   const workspace = (
     <TaskWorkspace
       owner={{ kind: 'task', id: task.id }}
-      taskName={task.name}
+      title={task.name}
       fill={!narrow}
       showLabels={!!screens.sm}
       tab={notesTab}
@@ -369,10 +369,12 @@ export function SingleTaskPage(): React.JSX.Element {
           showFile={!!screens.lg}
         />
       }
-      displaySeconds={displaySeconds}
-      isRunning={isRunning}
-      startBlocked={startBlocked}
-      onToggleTimer={() => void (isRunning ? handlePause() : handleStart())}
+      timer={{
+        displaySeconds,
+        isRunning,
+        startBlocked,
+        onToggle: () => void (isRunning ? handlePause() : handleStart())
+      }}
       initialContent={initialNotes}
       editorRef={notesEditorRef}
       onChange={handleNotesChange}

@@ -139,3 +139,32 @@ export function outdentPlacement(pages: PageNode[], id: number): PagePlacement |
     index: siblings.findIndex((p) => p.id === parent.id) + 1
   }
 }
+
+export type TreeDropMode = 'before' | 'after' | 'inside'
+
+export function treeDropPlacement(
+  pages: PageNode[],
+  activeId: number,
+  targetId: number,
+  mode: TreeDropMode
+): PagePlacement | null {
+  if (activeId === targetId || subtreeIds(pages, activeId).includes(targetId)) return null
+  const target = pages.find((p) => p.id === targetId)
+  if (!target) return null
+  if (mode === 'inside') {
+    const children = siblingsOf(pages, targetId).filter((p) => p.id !== activeId)
+    return { parent_page_id: targetId, index: children.length }
+  }
+  const siblings = siblingsOf(pages, target.parent_page_id).filter((p) => p.id !== activeId)
+  const at = siblings.findIndex((p) => p.id === targetId)
+  return { parent_page_id: target.parent_page_id, index: mode === 'before' ? at : at + 1 }
+}
+
+export function shiftPlacement(pages: PageNode[], id: number, delta: -1 | 1): PagePlacement | null {
+  const page = pages.find((p) => p.id === id)
+  if (!page) return null
+  const siblings = siblingsOf(pages, page.parent_page_id)
+  const index = siblings.findIndex((p) => p.id === id) + delta
+  if (index < 0 || index >= siblings.length) return null
+  return { parent_page_id: page.parent_page_id, index }
+}
