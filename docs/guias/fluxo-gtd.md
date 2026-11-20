@@ -25,8 +25,8 @@ parte de algo maior, um **projeto**.
 
 Tire da cabeça tudo o que chamar sua atenção, sem decidir nada ainda.
 
-- **Captura rápida** — `Ctrl + Shift + Space` de qualquer lugar do sistema (ou **Captura rápida**
-  no ícone da bandeja). Digite e tecle `Enter`; `Esc` fecha. A tarefa entra no Inbox só com o nome.
+- **Captura rápida** — `Ctrl + Shift + Space` de qualquer lugar do sistema (troque o atalho em
+  Configurações → Geral), ou **Captura rápida** no ícone da bandeja. Digite e tecle `Enter`; `Esc` fecha. A tarefa entra no Inbox só com o nome.
 - **Nova Tarefa** — botão na barra superior; abre o diálogo completo, para quando você já sabe os
   detalhes.
 - **Assistentes de IA** — com o [servidor MCP](../integracoes/mcp.md) ligado, o Claude Code (ou

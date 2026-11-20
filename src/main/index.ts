@@ -15,7 +15,16 @@ import { copyFileSync } from 'fs'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/512.png?asset'
-import { HIDDEN_FLAG, shouldStartHidden } from './launchArgs'
+import { HIDDEN_FLAG, QUICK_CAPTURE_FLAG, shouldStartHidden, wantsQuickCapture } from './launchArgs'
+import { execFile } from 'child_process'
+import {
+  isGnomeKeybindingCurrent,
+  readGnomeKeybinding,
+  shellQuote,
+  writeGnomeKeybinding,
+  type GnomeKeybinding,
+  type GsettingsRun
+} from './gnomeKeybinding'
 import { createTray, destroyTray } from './tray'
 import { isAutostartEnabled, setAutostartEnabled } from './autostart'
 import { isSafeHttpUrl } from '@shared/externalUrl'
@@ -136,7 +145,9 @@ import {
   filterGcalSyncedIds,
   getNextRecurrenceIds,
   getWorkflowPrefs,
-  setWorkflowPrefs
+  setWorkflowPrefs,
+  getAppPrefs,
+  setAppPrefs
 } from './database'
 import { mergeTimeBlock, timeBlockError } from './calendarQueries'
 import {
@@ -210,10 +221,20 @@ import {
   createBackup,
   getBackupStatus,
   inspectSnapshot,
-  restoreSnapshot
+  isBackupRunning,
+  lockBackups,
+  restoreSnapshot,
+  runAutoBackupIfDue,
+  unlockBackups
 } from './backup'
 import { pickDueNotifications } from './dueNotifications'
 import { localDateString } from '../shared/dueState'
+import {
+  ACCELERATOR_RULE,
+  DEFAULT_CAPTURE_SHORTCUT,
+  isValidAccelerator
+} from '../shared/accelerator'
+import type { AppPrefsStatus } from '../shared/appPrefs'
 import { readMcpConfig, writeMcpConfig } from './mcp/store'
 import { isMcpRunning, startMcpServer, stopMcpServer } from './mcp/transport'
 import { generateToken } from './mcp/config'
@@ -272,7 +293,7 @@ let quickCaptureWindow: BrowserWindow | null = null
 type FloatTimerData = { taskId: number; taskName: string; seconds: number }
 let currentTimers: FloatTimerData[] = []
 let isQuitting = false
-let startHidden = shouldStartHidden(process.argv)
+let startHidden = shouldStartHidden(process.argv) || wantsQuickCapture(process.argv)
 
 // Dimensões da janela flutuante (lista com altura dinâmica)
 const FLOAT_WIDTH = 300
@@ -286,8 +307,7 @@ function floatHeightFor(count: number): number {
   return rows * FLOAT_ROW_HEIGHT + FLOAT_FOOTER_HEIGHT + FLOAT_VPADDING
 }
 
-// Atalho global padrão para captura rápida
-const quickCaptureShortcut = 'CommandOrControl+Shift+Space'
+let captureShortcut = DEFAULT_CAPTURE_SHORTCUT
 
 function normalizeTaskIds(ids: number[]): number[] {
   const unique = new Set<number>()
@@ -588,14 +608,98 @@ function createQuickCaptureWindow(): void {
   })
 }
 
-function registerGlobalShortcut(): void {
+function tryRegisterCapture(accelerator: string): boolean {
   try {
-    globalShortcut.register(quickCaptureShortcut, () => {
+    return globalShortcut.register(accelerator, () => {
       createQuickCaptureWindow()
     })
   } catch (error) {
     console.error('Erro ao registrar atalho global:', error)
+    return false
   }
+}
+
+function usesGnomeKeybinding(): boolean {
+  return (
+    process.platform === 'linux' &&
+    process.env.XDG_SESSION_TYPE === 'wayland' &&
+    /gnome/i.test(process.env.XDG_CURRENT_DESKTOP ?? '')
+  )
+}
+
+const runGsettings: GsettingsRun = (args) =>
+  new Promise((resolve, reject) => {
+    execFile('gsettings', args, { timeout: 5000 }, (error, stdout, stderr) => {
+      if (error) reject(new Error(stderr.trim() || error.message))
+      else resolve(stdout)
+    })
+  })
+
+function quickCaptureCommand(): string {
+  const parts = app.isPackaged
+    ? [shellQuote(process.env.APPIMAGE || process.execPath)]
+    : [
+        'env',
+        'ELECTRON_DISABLE_SANDBOX=1',
+        shellQuote(process.execPath),
+        shellQuote(app.getAppPath())
+      ]
+  return [...parts, QUICK_CAPTURE_FLAG].join(' ')
+}
+
+function registerGlobalShortcut(): void {
+  captureShortcut = getAppPrefs().captureShortcut
+  if (usesGnomeKeybinding()) return
+  if (!tryRegisterCapture(captureShortcut)) {
+    console.error(`Atalho da captura recusado pelo sistema: ${captureShortcut}`)
+  }
+}
+
+async function appPrefsStatus(): Promise<AppPrefsStatus> {
+  const prefs = getAppPrefs()
+  if (!usesGnomeKeybinding()) {
+    return { ...prefs, captureShortcutActive: globalShortcut.isRegistered(captureShortcut) }
+  }
+  let current: GnomeKeybinding | null = null
+  try {
+    current = await readGnomeKeybinding(runGsettings)
+  } catch (error) {
+    console.error('[atalho] não foi possível ler os atalhos do GNOME:', error)
+  }
+  return {
+    ...prefs,
+    captureShortcutActive: isGnomeKeybindingCurrent(
+      current,
+      prefs.captureShortcut,
+      quickCaptureCommand()
+    )
+  }
+}
+
+async function changeCaptureShortcut(accelerator: unknown): Promise<AppPrefsStatus> {
+  if (!isValidAccelerator(accelerator)) {
+    throw new Error(`Atalho inválido. ${ACCELERATOR_RULE}`)
+  }
+  if (usesGnomeKeybinding()) {
+    try {
+      await writeGnomeKeybinding(runGsettings, accelerator, quickCaptureCommand())
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error)
+      throw new Error(`Não foi possível definir o atalho no sistema: ${detail}`)
+    }
+  } else if (accelerator !== captureShortcut) {
+    const previous = captureShortcut
+    if (globalShortcut.isRegistered(previous)) globalShortcut.unregister(previous)
+    if (!tryRegisterCapture(accelerator)) {
+      tryRegisterCapture(previous)
+      throw new Error('O sistema recusou esse atalho. Ele pode estar em uso por outro programa.')
+    }
+  } else if (!globalShortcut.isRegistered(accelerator) && !tryRegisterCapture(accelerator)) {
+    throw new Error('O sistema recusou esse atalho. Ele pode estar em uso por outro programa.')
+  }
+  captureShortcut = accelerator
+  setAppPrefs({ captureShortcut: accelerator })
+  return appPrefsStatus()
 }
 
 // ===================== MAIN WINDOW =====================
@@ -1347,16 +1451,35 @@ function setupIpcHandlers(): void {
     return prefs
   })
 
+  ipcMain.handle('prefs:getApp', () => appPrefsStatus())
+  ipcMain.handle('prefs:setCaptureShortcut', (_, accelerator: unknown) =>
+    changeCaptureShortcut(accelerator)
+  )
+  ipcMain.handle('prefs:setAutoBackup', (_, enabled: unknown) => {
+    if (typeof enabled !== 'boolean') throw new Error('Valor inválido')
+    setAppPrefs({ autoBackup: enabled })
+    if (enabled) void checkAutoBackup()
+    return appPrefsStatus()
+  })
+
   ipcMain.handle('backup:getStatus', () => getBackupStatus())
   ipcMain.handle('backup:chooseFolder', () => chooseBackupFolder(mainWindow))
   ipcMain.handle('backup:create', () => createBackup())
   ipcMain.handle('backup:chooseSnapshot', () => chooseSnapshotFolder(mainWindow))
   ipcMain.handle('backup:inspect', (_, dir: string) => inspectSnapshot(dir))
   ipcMain.handle('backup:restore', async (_, dir: string) => {
-    await inspectSnapshot(dir)
+    if (isBackupRunning()) throw new Error('Um backup está em andamento. Espere terminar.')
+    lockBackups()
+    try {
+      await inspectSnapshot(dir)
+    } catch (error) {
+      unlockBackups()
+      throw error
+    }
     isQuitting = true
     destroyTray()
     if (notificationInterval) clearInterval(notificationInterval)
+    stopAutoBackupScheduler()
     await stopMcpServer()
     closeDatabase()
     try {
@@ -1402,6 +1525,34 @@ function setupIpcHandlers(): void {
 
 const notifiedToday = new Set<string>() // 'taskId-type' keys to avoid spam
 let notificationInterval: NodeJS.Timeout | null = null
+let autoBackupInterval: NodeJS.Timeout | null = null
+let autoBackupFirstCheck: NodeJS.Timeout | null = null
+
+const AUTO_BACKUP_CHECK_MS = 60 * 60 * 1000
+const AUTO_BACKUP_FIRST_CHECK_MS = 2 * 60 * 1000
+
+async function checkAutoBackup(): Promise<void> {
+  try {
+    const snapshot = await runAutoBackupIfDue()
+    if (snapshot && mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('backup:changed')
+    }
+  } catch (error) {
+    console.error('[backup] backup automático falhou:', error)
+  }
+}
+
+function startAutoBackupScheduler(): void {
+  autoBackupFirstCheck = setTimeout(() => void checkAutoBackup(), AUTO_BACKUP_FIRST_CHECK_MS)
+  autoBackupInterval = setInterval(() => void checkAutoBackup(), AUTO_BACKUP_CHECK_MS)
+}
+
+function stopAutoBackupScheduler(): void {
+  if (autoBackupFirstCheck) clearTimeout(autoBackupFirstCheck)
+  if (autoBackupInterval) clearInterval(autoBackupInterval)
+  autoBackupFirstCheck = null
+  autoBackupInterval = null
+}
 
 function checkDueDateNotifications(): void {
   const now = new Date()
@@ -1457,6 +1608,7 @@ app.whenReady().then(() => {
   registerAssetProtocol()
   setupIpcHandlers()
   startNotificationScheduler()
+  startAutoBackupScheduler()
   startJiraScheduler(() => {
     runJiraImport().catch(() => undefined)
   })
@@ -1483,8 +1635,11 @@ app.whenReady().then(() => {
   // Registrar atalho global para captura rápida
   registerGlobalShortcut()
 
-  app.on('second-instance', () => {
-    revealMainWindow()
+  if (wantsQuickCapture(process.argv)) createQuickCaptureWindow()
+
+  app.on('second-instance', (_, argv) => {
+    if (wantsQuickCapture(argv)) createQuickCaptureWindow()
+    else revealMainWindow()
   })
 
   app.on('activate', function () {
@@ -1505,6 +1660,7 @@ app.on('before-quit', () => {
   destroyTray()
   killAllTerminals()
   if (notificationInterval) clearInterval(notificationInterval)
+  stopAutoBackupScheduler()
   void stopMcpServer()
   closeDatabase()
 })

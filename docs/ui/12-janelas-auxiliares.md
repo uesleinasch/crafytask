@@ -93,7 +93,9 @@ sustenta o "mind like water" do GTD.
 
 ## Como abre
 
-- **Atalho global `Ctrl/Cmd + Shift + Space`**, registrado no sistema inteiro;
+- **Atalho global**, `Ctrl/Cmd + Shift + Space` por padrão, trocado em Configurações → Geral
+  (`app_prefs`). Em X11 o app registra no `globalShortcut`; no GNOME com Wayland vira um atalho
+  personalizado do GNOME que roda o app com `--quick-capture`;
 - item **"Captura rápida"** no menu da bandeja.
 
 ## Geometria

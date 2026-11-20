@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildManifest,
+  isAutoBackupDue,
   parseManifestCounts,
   parseSnapshotName,
+  planAutoPrune,
   preRestoreName,
   snapshotName,
   sortSnapshotNames
@@ -80,5 +82,34 @@ describe('manifest', () => {
       'sha256:'
     ].join('\n')
     expect(parseManifestCounts(fromScript)).toEqual({ tasks: 447, projects: 23, timeEntries: 83 })
+  })
+})
+
+describe('backup automático', () => {
+  const now = new Date(2026, 10, 20, 15, 0, 0)
+
+  it('é devido quando não há snapshot de hoje, manual ou automático', () => {
+    expect(isAutoBackupDue([], now)).toBe(true)
+    expect(isAutoBackupDue(['2026-11-19_235900', 'pre-restore-x'], now)).toBe(true)
+    expect(isAutoBackupDue(['2026-11-19_235900', '2026-11-20_080000'], now)).toBe(false)
+  })
+
+  it('poda só os automáticos que ainda existem, do mais antigo, guardando N', () => {
+    const auto = [
+      '2026-11-18_090000',
+      '2026-11-19_090000',
+      '2026-11-20_090000',
+      '2026-11-10_090000'
+    ]
+    const existing = [
+      '2026-11-18_090000',
+      '2026-11-19_090000',
+      '2026-11-20_090000',
+      '2026-11-19_120000'
+    ]
+    expect(planAutoPrune(auto, existing, 2)).toEqual({
+      keep: ['2026-11-20_090000', '2026-11-19_090000'],
+      prune: ['2026-11-18_090000']
+    })
   })
 })

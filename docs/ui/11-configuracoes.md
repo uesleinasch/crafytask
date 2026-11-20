@@ -75,8 +75,23 @@ que sai do CrafyTask e o que continua no serviço.
 - Card **Inicialização**: `Switch` "Iniciar o CrafyTask com o sistema". Se o sistema recusar, aviso
   de erro; senão, aviso de confirmação.
 - Card **Janela e bandeja**: "Fechar a janela não encerra o app" (`Tag` "Comportamento fixo") e
-  "Captura rápida" com o atalho em `KeyCombo` (`Ctrl` ou `⌘` conforme a plataforma), só
-  informativo.
+  **Captura rápida** numa linha só: o atalho atual em `KeyCombo` e o botão **Definir atalho**.
+- **Definir atalho** põe o botão em modo de gravação ("Pressione as teclas…", `aria-pressed`, a
+  descrição da linha vira a instrução); a próxima combinação com dois modificadores (ex.:
+  Ctrl+Shift) ou Super, mais uma letra, número, F1–F12, Espaço ou seta, vira o atalho
+  (`acceleratorFromEvent` em `shared/accelerator.ts`, puro e testado). Um modificador só (Ctrl+C,
+  Alt+F4) e combinações do sistema (Ctrl+Shift+C/V/Z…) são recusados: a descrição fica vermelha com
+  a regra. `Esc`, `Tab` ou sair do botão cancela; o resultado é anunciado numa região `aria-live`.
+  Se o atalho salvo não está valendo, uma `Tag` de aviso "Inativo" pede para definir de novo.
+- Definir faz o necessário sozinho, sem explicar o mecanismo ao usuário. Em X11 o main troca o
+  registro no `globalShortcut` (se o sistema recusar, volta ao anterior e mostra o erro). No GNOME
+  com Wayland o Electron não consegue registrar atalho global, nem pelo portal; aí o main grava um
+  atalho personalizado do GNOME pelo `gsettings` (`gnomeKeybinding.ts`, puro e testado com um
+  `gsettings` falso: caminho próprio `crafytask-capture`, sem mexer nos outros atalhos), cujo
+  comando abre o app com `--quick-capture` (a instância aberta recebe pelo `second-instance`; se o
+  app estiver fechado, ele sobe escondido e abre só a captura). "Ativo" no GNOME quer dizer que a
+  combinação e o comando de lá batem com os de agora. O atalho fica em `app_prefs` (linha `app`,
+  `shared/appPrefs.ts`; IPC `prefs:getApp`/`prefs:setCaptureShortcut`).
 
 ### Aparência
 
@@ -129,6 +144,13 @@ Valores em `localStorage` (`lib/terminalPrefs.ts`).
 
 - Card **Pasta de backup**: a pasta em mono, **Escolher pasta / Trocar** (diálogo do sistema) e
   **Fazer backup agora** (desabilitado sem pasta). A pasta fica em `userData/backup-config.json`.
+- **Backup automático** (`Switch`, desabilitado sem pasta; `autoBackup` em `app_prefs`): o main
+  confere 2 min depois de abrir e depois a cada hora; se não há snapshot de hoje na pasta (manual
+  ou automático), cria um. Os automáticos ficam listados em `backup-config.json`
+  (`autoSnapshots`) e só eles são podados, guardando os 14 mais recentes; backup feito à mão nunca
+  é apagado. Ligar já confere na hora. Dois backups nunca rodam juntos, e restaurar espera o
+  backup em andamento. Quando um automático termina, o main manda `backup:changed` e a lista
+  recarrega. Regras em `backupPlan.ts` (`isAutoBackupDue`, `planAutoPrune`).
 - O backup cria um snapshot `AAAA-MM-DD_HHMMSS/` na pasta: `ticktask.db` copiado com `db.backup()`
   (consistente com o app aberto, já inclui o WAL), `notes-assets/`, `drawings/`,
   `notion-config.json`, `mcp-config.json` e um `MANIFEST.txt` com as contagens e o sha256 de cada
@@ -235,5 +257,4 @@ Card **Versões** (`Descriptions`): CrafyTask (`app:getVersion`), Electron, Chro
 
 ## O que falta
 
-- O atalho global da captura continua fixo (F7-f2).
-- Backup só manual: não há backup automático periódico nem limpeza de snapshots antigos.
+- O backup automático só roda com o app aberto (não há agendamento no sistema).
