@@ -399,7 +399,7 @@ function TerminalPanelBody(): React.JSX.Element | null {
           onClick={() => useTerminalStore.getState().setOpen(false)}
         />
       </div>
-      <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', overflow: 'clip' }}>
         <div ref={panesRef} style={{ flex: 1, minWidth: 0, display: 'flex' }}>
           {sessions.map((session) => {
             const index = activeGroup.indexOf(session.id)
@@ -412,6 +412,7 @@ function TerminalPanelBody(): React.JSX.Element | null {
                 }}
                 style={{
                   minWidth: 0,
+                  overflow: 'clip',
                   display: index === -1 ? 'none' : 'flex',
                   flexDirection: 'column',
                   order: index * 2,

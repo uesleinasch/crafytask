@@ -701,6 +701,11 @@ button.ct-calnum.sm:hover:not(.today) {
   flex-direction: column;
 }
 
+html:has(.ct-shell),
+body:has(.ct-shell) {
+  overflow: hidden;
+}
+
 /* Float Timer - Janela transparente */
 body.float-window,
 body.float-window #root {
