@@ -36,8 +36,9 @@ no app de verdade — testes verdes no jsdom não garantem o comportamento no na
 - Mude só o que a tarefa pede; prefira código simples a esperto.
 - Comentário só para restrição que o código não consegue mostrar (acoplamento com outro arquivo,
   comportamento não óbvio de biblioteca, decisão de segurança).
-- Páginas em `*Page.tsx`, hooks em `useX.ts`, stores em `xStore.ts`. Componentes de interface base
-  em `components/ui/` (shadcn, estilo new-york, ícones lucide).
+- Páginas em `*Page.tsx`, hooks em `useX.ts`, stores em `xStore.ts`. Componentes de interface vêm do
+  Ant Design, com ícones lucide; cores só de token (`src/renderer/src/theme/`), nunca classe de cor do
+  Tailwind nem hex solto.
 - Textos da interface em português.
 - Antes de inventar cor, raio ou espaçamento, consulte os
   [design tokens](../ui/14-design-tokens.md) — eles descrevem o que o código usa de fato.

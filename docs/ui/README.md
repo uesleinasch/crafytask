@@ -34,8 +34,8 @@ qual uma refatoração de interface pode ser desenhada sem perder funcionalidade
 - **Rota** é sempre o caminho do `HashRouter` (`#/task/42`).
 - **Elemento** descreve algo que o usuário vê ou toca; entre parênteses vem o componente React que o
   produz, quando ajuda a localizar.
-- Classes Tailwind aparecem só quando o valor concreto importa para o desenho (largura fixa,
-  quebra de linha, cor semântica). O inventário completo de tokens está em
+- Tokens e componentes do antd aparecem quando o valor concreto importa para o desenho (largura
+  fixa, quebra de linha, cor semântica). Onde cada token mora está em
   [14-design-tokens.md](14-design-tokens.md).
 - Chaves de `localStorage` estão citadas porque definem o que a interface "lembra" entre sessões —
   qualquer redesenho precisa decidir se mantém, migra ou descarta cada uma.

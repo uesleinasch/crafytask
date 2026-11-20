@@ -295,7 +295,7 @@ apenas como leitura agrupada.
 ## ⑥ Carregamento incremental
 
 A consulta traz todas as tarefas do filtro, mas o DOM recebe **60 por vez**. Uma sentinela no fim da
-lista ("Carregando mais N tarefas…" em `text-xs text-slate-400`) é observada por um
+lista ("Carregando mais N tarefas…" em texto secundário de 12px) é observada por um
 `IntersectionObserver` com `rootMargin: 400px`; ao se aproximar, mais 60 entram.
 
 A paginação é **desligada nos modos agrupado e Kanban** — esses renderizam a lista inteira de uma
