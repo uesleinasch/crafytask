@@ -96,6 +96,19 @@ Ao subir a ponte com `ELECTRON_RUN_AS_NODE=1`, essa variável é removida do amb
 | `notify` | Notificação do sistema (`title` até 80, `body` até 300 caracteres), mesmo com o app na bandeja. Com `task_id`, o clique abre a task. No máximo uma a cada 10 s; antes disso devolve `app_state` com `retry_after_seconds`. |
 | `open_in_app` | Mostra e foca a janela principal numa task, projeto ou página (`target` + `id`) ou numa tela (`target=screen` + `screen`, lista fechada: as telas da barra lateral). |
 
+## Prompts
+
+O servidor também publica prompts (`mcp/prompts.ts`). No Claude Code eles viram comandos
+`/mcp__crafytask__<nome>`; aparecem depois de reiniciar a sessão do cliente.
+
+| Comando | Argumento | O que faz |
+| --- | --- | --- |
+| `/mcp__crafytask__retomar` | `task_id` (opcional) | Abre a sessão de trabalho pelo id ou pela pasta atual, lê o último checkpoint e o histórico, resume o que falta e pergunta se segue. |
+| `/mcp__crafytask__planejar-dia` | `date` (opcional, `AAAA-MM-DD`) | Chama `briefing`, propõe a ordem e os blocos do dia e só grava com `plan_day` depois do ok. |
+| `/mcp__crafytask__revisao` | — | Conduz a revisão semanal: abre, mostra os números de cada passo, marca cada um e conclui. |
+| `/mcp__crafytask__capturar` | `texto` | Cria uma task no inbox com o texto, sem perguntas. |
+| `/mcp__crafytask__encerrar` | — | Para cada task em `executando` em que a conversa trabalhou, grava o resumo e pausa ou conclui. |
+
 ## Formato compacto
 
 As listagens de tasks (`search_tasks`, `briefing`, `organize_overview`, `agenda`, `timer` e `work_session` com
