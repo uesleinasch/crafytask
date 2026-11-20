@@ -619,7 +619,8 @@
       "titulo": "Nova tarefa conferida: pílulas, Criar outra e Ctrl+Enter, claro e escuro, 400px",
       "check": {
         "tipo": "manual"
-      }
+      },
+      "validado": "2026-11-20"
     },
     {
       "id": "F3.1",
