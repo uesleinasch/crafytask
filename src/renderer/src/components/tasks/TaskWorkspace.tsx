@@ -1,6 +1,6 @@
-import type { ReactNode, Ref } from 'react'
+import { useState, type ReactNode, type Ref } from 'react'
 import { Button, Flex, Segmented, Space, Tabs, Tooltip, theme } from 'antd'
-import { ArrowLeft, Expand, FileText, Pause, PenTool, Play, Shrink } from 'lucide-react'
+import { ArrowLeft, Expand, FileText, History, Pause, PenTool, Play, Shrink } from 'lucide-react'
 import type { JSONContent } from '@tiptap/core'
 import type { NotesOwner } from '@shared/types'
 import { FocusOverlay } from '@renderer/components/editor/FocusOverlay'
@@ -8,6 +8,7 @@ import { NotesBody, type NotesTab } from '@renderer/components/editor/NotesPanel
 import type { TaskNotesEditorHandle } from '@renderer/components/editor/TaskNotesEditor'
 import type { TaskDrawingEditorHandle } from '@renderer/components/editor/TaskDrawingEditor'
 import { LiveDot } from '@renderer/components/chips/LiveDot'
+import { RegionBoundary } from '@renderer/components/shell/RegionBoundary'
 import { formatTime } from '@renderer/lib/utils'
 
 const ICON = { size: 16, strokeWidth: 1.75, 'aria-hidden': true } as const
@@ -23,6 +24,7 @@ interface TaskWorkspaceProps {
   focus: boolean
   onFocusChange: (focus: boolean) => void
   notesActions: ReactNode
+  history?: ReactNode
   timer?: {
     displaySeconds: number
     isRunning: boolean
@@ -51,6 +53,7 @@ export function TaskWorkspace({
   focus,
   onFocusChange,
   notesActions,
+  history,
   timer,
   initialContent,
   editorRef,
@@ -64,6 +67,8 @@ export function TaskWorkspace({
 }: TaskWorkspaceProps): React.JSX.Element {
   const { token } = theme.useToken()
   const exit = (): void => onFocusChange(false)
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const showingHistory = Boolean(history) && historyOpen && !focus
 
   const header = (
     <Flex
@@ -73,8 +78,11 @@ export function TaskWorkspace({
     >
       <Tabs
         size="small"
-        activeKey={tab}
-        onChange={(key) => onTabChange(key as NotesTab)}
+        activeKey={showingHistory ? 'history' : tab}
+        onChange={(key) => {
+          setHistoryOpen(key === 'history')
+          if (key !== 'history') onTabChange(key as NotesTab)
+        }}
         tabBarStyle={{ margin: 0 }}
         style={{ flex: 1, minWidth: 0, marginBottom: -1 }}
         items={[
@@ -95,19 +103,34 @@ export function TaskWorkspace({
                 Desenho
               </Space>
             )
-          }
+          },
+          ...(history
+            ? [
+                {
+                  key: 'history',
+                  label: (
+                    <Space size={4}>
+                      <History size={14} strokeWidth={1.75} aria-hidden />
+                      Histórico
+                    </Space>
+                  )
+                }
+              ]
+            : [])
         ]}
       />
-      {tab === 'notes' && notesActions}
-      <Tooltip title="Modo foco (Esc sai)">
-        <Button
-          type="text"
-          aria-label="Modo foco"
-          data-focus-opener
-          icon={<Expand {...ICON} />}
-          onClick={() => onFocusChange(true)}
-        />
-      </Tooltip>
+      {!showingHistory && tab === 'notes' && notesActions}
+      {!showingHistory && (
+        <Tooltip title="Modo foco (Esc sai)">
+          <Button
+            type="text"
+            aria-label="Modo foco"
+            data-focus-opener
+            icon={<Expand {...ICON} />}
+            onClick={() => onFocusChange(true)}
+          />
+        </Tooltip>
+      )}
     </Flex>
   )
 
@@ -215,20 +238,39 @@ export function TaskWorkspace({
             : null)
         }}
       >
-        <NotesBody
-          owner={owner}
-          tab={tab}
-          initialContent={initialContent}
-          editorRef={editorRef}
-          onChange={onChange}
-          onSaved={onSaved}
-          initialDrawing={initialDrawing}
-          drawingRef={drawingRef}
-          onDrawingChange={onDrawingChange}
-          onDrawingSaved={onDrawingSaved}
-          notesStyle={notesStyle}
-          readOnly={readOnly}
-        />
+        {showingHistory && (
+          <div
+            className="flex-1 overflow-y-auto"
+            style={{ padding: '20px 24px', scrollbarWidth: 'thin' }}
+          >
+            <RegionBoundary region="histórico da tarefa" resetKeys={[owner.kind, owner.id]}>
+              {history}
+            </RegionBoundary>
+          </div>
+        )}
+        <div
+          style={{
+            display: showingHistory ? 'none' : 'flex',
+            flexDirection: 'column',
+            flex: 1,
+            minHeight: 0
+          }}
+        >
+          <NotesBody
+            owner={owner}
+            tab={tab}
+            initialContent={initialContent}
+            editorRef={editorRef}
+            onChange={onChange}
+            onSaved={onSaved}
+            initialDrawing={initialDrawing}
+            drawingRef={drawingRef}
+            onDrawingChange={onDrawingChange}
+            onDrawingSaved={onDrawingSaved}
+            notesStyle={notesStyle}
+            readOnly={readOnly}
+          />
+        </div>
       </div>
     </FocusOverlay>
   )
