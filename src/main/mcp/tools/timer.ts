@@ -12,6 +12,7 @@ import {
   startTask,
   stopTask
 } from '../../database'
+import { BLOCKED_TASK_MESSAGE } from '../../taskStatusService'
 import { afterTaskWrite } from '../effects'
 import { fail, ok } from '../reply'
 
@@ -44,6 +45,7 @@ export function registerTimerTools(server: McpServer): void {
         if (getActiveTimeEntry(task_id)) {
           return fail('app_state', `A task ${task_id} já tem timer rodando.`)
         }
+        if (getTask(task_id)?.is_blocked) return fail('app_state', BLOCKED_TASK_MESSAGE)
         startTask(task_id)
         afterTaskWrite(task_id)
         return ok({ started: task_id })

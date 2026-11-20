@@ -22,8 +22,7 @@ import {
   listTasks,
   moveTasksToProject,
   unarchiveTask,
-  updateTask,
-  updateTasksStatus
+  updateTask
 } from '../../database'
 import { currentTime, localDateString } from '@shared/dueState'
 import { mergeTaskTimes, taskTimeError } from '@shared/taskTime'
@@ -34,7 +33,8 @@ import {
   afterCalendarChange,
   afterTaskWrite,
   afterTasksDeleted,
-  broadcastRefresh
+  broadcastRefresh,
+  changeTaskStatus
 } from '../effects'
 import { fail, ok } from '../reply'
 import { resolveByName } from '../resolve'
@@ -52,7 +52,7 @@ type Resolution = { ok: true; id: number } | { ok: false; response: ReturnType<t
 
 // Invariante do projeto: só read_notes e o notes_markdown de get_task carregam corpo de nota;
 // todo outro retorno de task precisa passar por aqui.
-function stripNotes(task: Task): Task {
+export function stripNotes(task: Task): Task {
   const clean: Task = { ...task }
   delete clean.notes
   return clean
@@ -311,7 +311,6 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
       const patch: UpdateTaskInput = {}
       if (args.name !== undefined) patch.name = args.name
       if (args.description !== undefined) patch.description = args.description
-      if (args.status !== undefined) patch.status = args.status
       if (args.category !== undefined) patch.category = args.category
       if (args.energy !== undefined) patch.energy_level = args.energy
       if (args.due_date !== undefined) patch.due_date = args.due_date
@@ -342,6 +341,14 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
         patch.tagNames = args.tags
       }
 
+      if (args.status !== undefined && args.status !== current.status) {
+        try {
+          changeTaskStatus(args.id, args.status)
+        } catch (error) {
+          return fail('app_state', error instanceof Error ? error.message : String(error))
+        }
+      }
+
       if (Object.keys(patch).length > 0) updateTask(args.id, patch)
 
       afterTaskWrite(args.id)
@@ -353,7 +360,7 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
     'bulk_update_tasks',
     {
       title: 'Alterar várias tasks',
-      description: `Altera status, projeto ou arquivamento de várias tasks. Acima de ${ctx.bulkThreshold} itens devolve um preview e um confirm_token: mostre o preview ao usuário e só então repita a chamada com o token.`,
+      description: `Altera status, projeto ou arquivamento de várias tasks. A mudança de status segue as mesmas regras de update_task; as tasks recusadas (ex.: bloqueadas) voltam em status_refused. Acima de ${ctx.bulkThreshold} itens devolve um preview e um confirm_token: mostre o preview ao usuário e só então repita a chamada com o token.`,
       inputSchema: {
         ids: z.array(z.number().int().positive()).min(1),
         status: STATUS.optional(),
@@ -414,13 +421,26 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
         if (!consumed.ok) return fail(consumed.code, consumed.message)
       }
 
-      if (args.status !== undefined) updateTasksStatus(ids, args.status)
+      const refused: { id: number; reason: string }[] = []
+      if (args.status !== undefined) {
+        for (const task of found) {
+          if (task!.status === args.status) continue
+          try {
+            changeTaskStatus(task!.id, args.status)
+          } catch (error) {
+            refused.push({
+              id: task!.id,
+              reason: error instanceof Error ? error.message : String(error)
+            })
+          }
+        }
+      }
       if (projectId !== undefined) moveTasksToProject(ids, projectId)
       if (args.archive === true) ids.forEach((id) => archiveTask(id))
       if (args.archive === false) ids.forEach((id) => unarchiveTask(id))
 
       ids.forEach((id) => afterTaskWrite(id))
-      return ok({ updated: ids })
+      return ok(refused.length > 0 ? { updated: ids, status_refused: refused } : { updated: ids })
     }
   )
 

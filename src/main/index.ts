@@ -240,6 +240,10 @@ import { isMcpRunning, startMcpServer, stopMcpServer } from './mcp/transport'
 import { generateToken } from './mcp/config'
 import { registerWriteEffects } from './mcp/effects'
 import {
+  applyStatusChange as applyTaskStatusChange,
+  type StatusChangeDeps
+} from './taskStatusService'
+import {
   disposeTerminalsForProjects,
   disposeTerminalsForTasks,
   killAllTerminals,
@@ -825,44 +829,25 @@ function buildMcpStatus(): McpStatus {
 
 // ===================== IPC HANDLERS =====================
 
+const statusChangeDeps: StatusChangeDeps = {
+  getTask,
+  updateTaskStatus,
+  createNextRecurrence,
+  getNextRecurrenceIds,
+  deleteNextRecurrence,
+  completeSubtasksCheck,
+  getTaskDependents,
+  filterGcalSyncedIds,
+  syncCalendar: (ids) => autoSyncToGoogle(...ids),
+  pushCalendar: (ids) => pushToGoogle(ids),
+  autoSync: (id) => {
+    autoSyncTask(id)
+  },
+  notifyUnblocked: (id, name) => mainWindow?.webContents.send('task:unblocked', id, name)
+}
+
 function applyStatusChange(id: number, status: TaskStatus): void {
-  const task = getTask(id)
-  if (!task) return
-
-  if (status === 'executando' && task.is_blocked) {
-    throw new Error('Tarefa bloqueada por dependências não concluídas')
-  }
-  if (status === 'finalizada' && task.parent_task_id) {
-    const parentTask = getTask(task.parent_task_id)
-    if (parentTask?.is_blocked) {
-      throw new Error('A tarefa pai possui dependências não concluídas')
-    }
-  }
-
-  const previousStatus: string = task.status
-  updateTaskStatus(id, status)
-
-  if (status === 'finalizada') {
-    if (task.recurrence_rule && !task.parent_task_id) {
-      const next = createNextRecurrence(id)
-      if (next) autoSyncToGoogle(next.id)
-    }
-    if (task.parent_task_id && completeSubtasksCheck(task.parent_task_id)) {
-      autoSyncToGoogle(task.parent_task_id)
-    }
-    for (const depTaskId of getTaskDependents(id)) {
-      const depTask = getTask(depTaskId)
-      if (depTask && !depTask.is_blocked) {
-        mainWindow?.webContents.send('task:unblocked', depTaskId, depTask.name)
-      }
-    }
-  } else if (previousStatus === 'finalizada' && task.recurrence_rule && !task.parent_task_id) {
-    const calendarIds = filterGcalSyncedIds(getNextRecurrenceIds(id))
-    deleteNextRecurrence(id)
-    pushToGoogle(calendarIds)
-  }
-
-  autoSyncTask(id)
+  applyTaskStatusChange(statusChangeDeps, id, status)
 }
 
 function setupIpcHandlers(): void {
@@ -1588,6 +1573,7 @@ app.whenReady().then(() => {
   registerWriteEffects({
     getMainWindow: () => mainWindow,
     autoSync: (id) => autoSyncTask(id),
+    changeStatus: (id, status) => applyStatusChange(id, status),
     syncTagChange: (ids) => syncTasksAfterTagChange(ids),
     syncCalendar: (ids) => pushToGoogle(ids),
     disposeTerminals: (ids) => disposeTerminalsForTasks(ids),
