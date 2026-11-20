@@ -98,7 +98,6 @@ primeira vista.
 | Componente | Onde |
 | --- | --- |
 | `RunningTimersPill` | pílula no header do shell (substituiu o `FloatingTimer`); tempo do timer mais recente, contador e popover com todos, link e pausar; `compact` abaixo de `md` (sem contador) |
-| `RunningNowPanel` | painel esmeralda no dashboard; lista os timers com botão de parar individual e "Parar todos" |
 
 Os dois mostram a mesma informação em dois desenhos completamente diferentes, e o `FloatTimerPage` é
 um terceiro.

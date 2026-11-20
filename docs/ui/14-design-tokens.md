@@ -213,7 +213,7 @@ Dez cores rotativas, sem relação com qualquer semântica do app:
 | `animate-spin` | 12 | `Loader2` durante operações |
 | `animate-pulse` | 10 | badge "Executando", pontos de timer ativo, cronômetro em time leak crítico |
 | `animate-in` / `animate-out` | 13 | entrada de diálogos, dropdowns, painel de filtros |
-| `animate-ping` | 2 | halo do ícone no `FloatingTimer` e no `RunningNowPanel` |
+| `animate-ping` | 1 | halo do ícone no `FloatingTimer` |
 | `animate-pulse-slow` | 2 | keyframe customizado no CSS (`opacity 1 → 0.7`, 3s): status "sincronizando" da barra de status e o `Timer` legado |
 | `ct-live` | 1 | `LiveDot` (F0-e): anel que pulsa na cor `success` (`ct-pulse`, 1,8s), parado com `prefers-reduced-motion` |
 

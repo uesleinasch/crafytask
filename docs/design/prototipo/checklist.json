@@ -1451,7 +1451,7 @@
       "titulo": "Dashboard: cartões de saúde levam às listas filtradas",
       "check": {
         "tipo": "contem-todos",
-        "arquivos": "src/renderer/src/pages/DashboardPage.tsx",
+        "arquivos": "src/renderer/src/{pages/DashboardPage.tsx,components/dashboard/*.tsx}",
         "padroes": ["HealthCard", "navigate\\("]
       }
     },
