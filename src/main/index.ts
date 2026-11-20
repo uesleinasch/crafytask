@@ -1640,7 +1640,10 @@ app.whenReady().then(() => {
     syncTagChange: (ids) => syncTasksAfterTagChange(ids),
     syncCalendar: (ids) => pushToGoogle(ids),
     disposeTerminals: (ids) => disposeTerminalsForTasks(ids),
-    disposeProjectTerminals: (ids) => disposeTerminalsForProjects(ids)
+    disposeProjectTerminals: (ids) => disposeTerminalsForProjects(ids),
+    recordHistory: (taskId, summary) => {
+      addTaskHistory({ task_id: taskId, summary, kind: 'operation' }, 'mcp')
+    }
   })
 
   // Nenhuma falha do MCP pode impedir createWindow(): esta promise não tem .catch.

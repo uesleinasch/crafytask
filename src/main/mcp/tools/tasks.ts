@@ -37,8 +37,15 @@ import {
   afterTaskWrite,
   afterTasksDeleted,
   broadcastRefresh,
-  changeTaskStatus
+  changeTaskStatus,
+  recordOperation
 } from '../effects'
+import {
+  dependencySummary,
+  fieldsChangedSummary,
+  subtaskDeletedSummary,
+  subtasksCreatedSummary
+} from '../operationSummary'
 import { fail, ok } from '../reply'
 import { resolveByName } from '../resolve'
 import { MAX_SUBTASKS, planSubtasks, type SubtaskDraft } from '../subtaskPlan'
@@ -338,6 +345,11 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
           updateTask(task.id, { status: args.status })
         }
       } finally {
+        if (task.parent_task_id) {
+          recordOperation(task.parent_task_id, subtasksCreatedSummary([task]))
+          afterTaskWrite(task.parent_task_id)
+        }
+        if (subtasks.length > 0) recordOperation(task.id, subtasksCreatedSummary(subtasks))
         afterTaskWrite(task.id)
       }
 
@@ -473,6 +485,7 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
         })
       }
 
+      recordOperation(args.id, fieldsChangedSummary(args))
       afterTaskWrite(args.id)
       return ok({ updated: args.id, task: viewTask(getTask(args.id)!, args.detail) })
     }
@@ -613,6 +626,11 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
       const removedIds = [...ids, ...ids.flatMap((id) => getChildTaskIds(id))]
       const calendarIds = filterGcalSyncedIds(removedIds)
       afterTasksDeleted(removedIds)
+      for (const task of found) {
+        if (task!.parent_task_id && !ids.includes(task!.parent_task_id)) {
+          recordOperation(task!.parent_task_id, subtaskDeletedSummary(task!))
+        }
+      }
       deleteTasks(ids)
       // deleteTasks também apaga as subtarefas em cascata; a task pai deixou de existir,
       // então sincronizar no Notion não faz sentido — só avisamos a janela para recarregar.
@@ -709,6 +727,7 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
         removeTaskDependency(task_id, depends_on_id)
       }
 
+      recordOperation(task_id, dependencySummary(action, depends_on_id))
       afterTaskWrite(task_id)
       const task = getTask(task_id)!
       return ok({

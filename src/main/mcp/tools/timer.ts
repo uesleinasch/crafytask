@@ -15,7 +15,15 @@ import {
 } from '../../database'
 import { BLOCKED_TASK_MESSAGE } from '../../taskStatusService'
 import type { StatsPeriod } from '@shared/types'
-import { afterTaskWrite, editTimeEntry, removeTimeEntry, resetTaskTime } from '../effects'
+import {
+  afterTaskWrite,
+  broadcastRefresh,
+  editTimeEntry,
+  recordOperation,
+  removeTimeEntry,
+  resetTaskTime
+} from '../effects'
+import { manualTimeSummary, timeEntrySummary } from '../operationSummary'
 import { fail, ok } from '../reply'
 import { compactTask } from '../taskView'
 import type { ToolContext } from '../toolContext'
@@ -71,6 +79,7 @@ export function registerTimerTools(server: McpServer, ctx: ToolContext): void {
         return fail('validation', 'Informe minutes para lançar tempo manual.')
       }
       addManualTimeEntry(task_id, minutes * 60)
+      recordOperation(task_id, manualTimeSummary(minutes))
       afterTaskWrite(task_id)
       return ok({ added_minutes: minutes, task_id })
     }
@@ -143,6 +152,7 @@ export function registerTimerTools(server: McpServer, ctx: ToolContext): void {
         }
         const consumed = ctx.confirmStore.consume(confirm_token, operation)
         if (!consumed.ok) return fail(consumed.code, consumed.message)
+        recordOperation(task_id, timeEntrySummary('reset'))
         resetTaskTime(task_id)
         return ok({ reset: task_id })
       }
@@ -157,6 +167,8 @@ export function registerTimerTools(server: McpServer, ctx: ToolContext): void {
             new Date(start).toISOString(),
             new Date(end).toISOString()
           )
+          recordOperation(taskId, timeEntrySummary('update'))
+          broadcastRefresh()
           return ok({ updated: entry_id, task_id: taskId, entries: getTimeEntries(taskId) })
         }
 
@@ -171,6 +183,8 @@ export function registerTimerTools(server: McpServer, ctx: ToolContext): void {
         const consumed = ctx.confirmStore.consume(confirm_token, operation)
         if (!consumed.ok) return fail(consumed.code, consumed.message)
         const taskId = removeTimeEntry(entry_id)
+        recordOperation(taskId, timeEntrySummary('delete'))
+        broadcastRefresh()
         return ok({ deleted: entry_id, task_id: taskId })
       } catch (error) {
         return fail('validation', error instanceof Error ? error.message : String(error))

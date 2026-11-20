@@ -25,6 +25,7 @@ interface WriteEffectDeps {
   syncCalendar: (taskIds: number[]) => void
   disposeTerminals: (taskIds: number[]) => void
   disposeProjectTerminals: (projectIds: number[]) => void
+  recordHistory: (taskId: number, summary: string) => void
 }
 
 // Injetado no boot em vez de importado direto: as tools de escrita (ainda a criar) vão importar
@@ -63,6 +64,22 @@ export function changeTaskStatus(id: number, status: TaskStatus): void {
   if (!deps) throw new Error('O CrafyTask ainda está iniciando; tente de novo em instantes.')
   deps.changeStatus(id, status)
   broadcastRefresh()
+}
+
+export function recordOperation(taskId: number, summary: string | null): void {
+  if (!summary) return
+  if (!deps) {
+    warnDepsMissing(`o registro no histórico da tarefa ${taskId}`)
+    return
+  }
+  try {
+    deps.recordHistory(taskId, summary)
+  } catch (error) {
+    console.warn(
+      `[mcp] não foi possível registrar a operação no histórico da tarefa ${taskId}:`,
+      error
+    )
+  }
 }
 
 export function renderDrawing(payload: DrawingRenderPayload): Promise<DrawingRenderResult> {

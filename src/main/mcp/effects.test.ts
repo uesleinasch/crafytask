@@ -75,4 +75,23 @@ describe('efeitos de escrita (MCP)', () => {
     afterCalendarChange([3, 5, 3])
     expect(syncCalendar).toHaveBeenCalledWith([3, 5])
   })
+
+  it('recordOperation grava no histórico e engole a falha', async () => {
+    const { registerWriteEffects, recordOperation } = await loadEffects()
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const recordHistory = vi.fn()
+    registerWriteEffects({ recordHistory } as never)
+
+    recordOperation(7, 'Alterado: prazo')
+    recordOperation(7, null)
+    expect(recordHistory).toHaveBeenCalledTimes(1)
+    expect(recordHistory).toHaveBeenCalledWith(7, 'Alterado: prazo')
+
+    recordHistory.mockImplementation(() => {
+      throw new Error('banco fechado')
+    })
+    expect(() => recordOperation(7, 'Notas substituídas')).not.toThrow()
+    expect(warnSpy).toHaveBeenCalledTimes(1)
+    warnSpy.mockRestore()
+  })
 })
