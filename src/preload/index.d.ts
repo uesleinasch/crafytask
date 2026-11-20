@@ -70,6 +70,7 @@ import type {
   PageSearchResult
 } from '../shared/types'
 import type { ThemePreference } from '../shared/themePreference'
+import type { WorkflowPrefs, WorkflowPrefsPatch } from '../shared/workflowPrefs'
 import type { TaskStatusCounts } from '../shared/taskStatusCounts'
 import type { RendererErrorReport } from '../shared/rendererError'
 
@@ -347,6 +348,9 @@ interface API {
   appOpenExternal: (url: string) => Promise<void>
   appSetAutostart: (enabled: boolean) => Promise<boolean>
   appSetThemeSource: (preference: ThemePreference) => Promise<void>
+  getWorkflowPrefs: () => Promise<WorkflowPrefs>
+  setWorkflowPrefs: (patch: WorkflowPrefsPatch) => Promise<WorkflowPrefs>
+  onWorkflowPrefsChanged: (callback: (prefs: WorkflowPrefs) => void) => () => void
   appLogRendererError: (report: RendererErrorReport) => Promise<void>
   onRendererRecovered: (callback: () => void) => () => void
 

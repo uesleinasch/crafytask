@@ -242,7 +242,7 @@ Transições comuns: `transition-colors`, `transition-all duration-200`,
 | Coluna do Kanban | `300px` | lista |
 | Janela flutuante | `300px` × (44 × n + 60) | float |
 | Captura rápida | `400 × 140` | quick capture |
-| Grade do calendário | 48px por hora (40 no compacto); 00:00–24:00 de `calendarPrefs()` | calendário |
+| Grade do calendário | 48px por hora (40 no compacto); faixa das preferências (padrão 00:00–24:00) | calendário |
 | Célula do mês | `min-h-[90px]` | calendário |
 | Larguras máximas de conteúdo | `PageContainer` (1480px) em todas as telas migradas; 780px no conteúdo de Configurações | — |
 

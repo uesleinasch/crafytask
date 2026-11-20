@@ -10,6 +10,7 @@ import { toast } from '@renderer/components/ui/sonner'
 import { useLiveSeconds } from '@renderer/hooks/useLiveSeconds'
 import { CATEGORY_COLORS, timeLeakBackground, timeLeakLevel } from '@renderer/theme/semantic'
 import { useThemeSettings } from '@renderer/theme/themeSettings'
+import { useTimeLeakThresholds } from '@renderer/lib/workflowPrefs'
 import { ContextsCell } from './ContextsCell'
 import { JiraKey } from './JiraKey'
 import { ProjectLabel } from './ProjectLabel'
@@ -43,13 +44,14 @@ export function TaskCard({
 }: TaskCardProps): React.JSX.Element {
   const { token } = theme.useToken()
   const { mode } = useThemeSettings()
+  const leakThresholds = useTimeLeakThresholds()
   const seconds = useLiveSeconds(task)
   const [expanded, setExpanded] = useState(false)
   const [subtasks, setSubtasks] = useState<Task[] | null>(null)
   const done = task.status === 'finalizada'
   const subtaskCount = task.subtask_count ?? 0
   const completed = task.completed_subtask_count ?? 0
-  const leak = timeLeakBackground(mode, timeLeakLevel(task.category, seconds))
+  const leak = timeLeakBackground(mode, timeLeakLevel(task.category, seconds, leakThresholds))
   const mono: React.CSSProperties = {
     fontFamily: token.fontFamilyCode,
     fontVariantNumeric: 'tabular-nums'

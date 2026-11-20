@@ -19,7 +19,7 @@ import {
 } from 'antd'
 import { CheckSquare, Clock } from 'lucide-react'
 import type { Task, TimeBlock } from '@shared/types'
-import { calendarPrefs } from '@shared/calendarPrefs'
+import { useCalendarPrefs } from '@renderer/lib/workflowPrefs'
 import { localDateString } from '@shared/dueState'
 import { formatTimeRange } from '@shared/taskTime'
 import { StatusChip } from '@renderer/components/chips/StatusChip'
@@ -102,8 +102,9 @@ export function TodayPage(): React.JSX.Element {
   const mono = useMono()
   const screens = Grid.useBreakpoint()
   const [today, setToday] = useState(() => localDateString(new Date()))
+  const prefs = useCalendarPrefs()
   const day = useMemo(() => new Date(`${today}T12:00:00`), [today])
-  const week = useMemo(() => weekDays(day), [day])
+  const week = useMemo(() => weekDays(day, prefs.weekStart), [day, prefs.weekStart])
   const [tasks, setTasks] = useState<Task[] | null>(null)
   const [blocks, setBlocks] = useState<TimeBlock[]>([])
 
@@ -132,7 +133,7 @@ export function TodayPage(): React.JSX.Element {
     return () => window.clearInterval(timer)
   }, [])
 
-  const journey = calendarPrefs().journeyMinutes
+  const journey = prefs.journeyMinutes
   const minutesByDate = useMemo(() => plannedMinByDate(blocks), [blocks])
   const plannedMin = minutesByDate.get(today) ?? 0
   const over = plannedMin > journey

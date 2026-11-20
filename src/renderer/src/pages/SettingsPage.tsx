@@ -23,6 +23,7 @@ import {
   Search,
   Settings,
   SquareTerminal,
+  Workflow,
   type LucideIcon
 } from 'lucide-react'
 import type { GcalStatus, JiraStatus, McpStatus } from '@shared/types'
@@ -38,6 +39,7 @@ import { JiraSection } from '@renderer/components/settings/JiraSection'
 import { McpSection } from '@renderer/components/settings/McpSection'
 import { NotionSection } from '@renderer/components/settings/NotionSection'
 import { TerminalSection } from '@renderer/components/settings/TerminalSection'
+import { WorkflowSection } from '@renderer/components/settings/WorkflowSection'
 import { SettingsHeader } from '@renderer/components/settings/SettingsLayout'
 import {
   gcalStatusInfo,
@@ -52,6 +54,7 @@ import {
 type SectionId =
   | 'geral'
   | 'aparencia'
+  | 'fluxo'
   | 'terminal'
   | 'backup'
   | 'notion'
@@ -128,6 +131,13 @@ export function SettingsPage(): React.JSX.Element {
           icon: Palette,
           keywords: 'tema escuro claro sistema densidade compacta confortável',
           description: 'Tema e densidade. Valem para as três janelas.'
+        },
+        {
+          id: 'fluxo',
+          label: 'Fluxo de trabalho',
+          icon: Workflow,
+          keywords: 'jornada time leak calendário notificações avisos prazo semana notas notion',
+          description: 'Jornada, semana, time leak, calendário, avisos de prazo e envio das notas.'
         },
         {
           id: 'terminal',
@@ -273,6 +283,7 @@ export function SettingsPage(): React.JSX.Element {
         <GeneralSection autostart={autostart} onAutostartChange={setAutostart} />
       )}
       {current.id === 'aparencia' && <AppearanceSection />}
+      {current.id === 'fluxo' && <WorkflowSection />}
       {current.id === 'terminal' && <TerminalSection />}
       {current.id === 'backup' && <BackupSection />}
       {current.id === 'notion' && <NotionSection config={notion} onConfigChange={setNotion} />}

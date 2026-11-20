@@ -9,17 +9,6 @@ export interface CalendarPrefs {
   weekStart: WeekStart
 }
 
-export const DEFAULT_CALENDAR_PREFS: CalendarPrefs = {
-  journeyMinutes: 8 * 60,
-  dayStartHour: 0,
-  dayEndHour: 24,
-  weekStart: 'monday'
-}
-
-export function calendarPrefs(): CalendarPrefs {
-  return DEFAULT_CALENDAR_PREFS
-}
-
 function parseLocalDate(date: string): Date {
   const [y, m, d] = date.split('-').map(Number)
   return new Date(y, m - 1, d)

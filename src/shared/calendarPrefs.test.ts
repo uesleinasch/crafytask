@@ -1,16 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { addDays, calendarPrefs, localDaysToIsoRange, weekStartOf } from './calendarPrefs'
+import { addDays, localDaysToIsoRange, weekStartOf } from './calendarPrefs'
 
 describe('calendarPrefs', () => {
-  it('usa os valores fixos até a F7-f', () => {
-    expect(calendarPrefs()).toEqual({
-      journeyMinutes: 480,
-      dayStartHour: 0,
-      dayEndHour: 24,
-      weekStart: 'monday'
-    })
-  })
-
   it('acha o início da semana na segunda ou no domingo', () => {
     const tuesday = new Date(2026, 10, 17, 15)
     const sunday = new Date(2026, 10, 22, 9)

@@ -1,5 +1,7 @@
 import { create } from 'zustand'
 import type { Task, TimeEntry } from '@shared/types'
+import { timeLeakNoticeStep } from '@shared/workflowPrefs'
+import { getWorkflowPrefs } from '@renderer/lib/workflowPrefs'
 import { shouldBootstrapTimerStore } from './timerWindow'
 
 // Controle de notificações Time Leak, por task
@@ -65,25 +67,22 @@ export const useTimerStore = create<TimerState>((set, get) => ({
     }
 
     const next: Record<number, ActiveTimer> = {}
+    const prefs = getWorkflowPrefs()
     for (const key of ids) {
       const id = Number(key)
       const timer = timers[id]
       const seconds = computeSeconds(timer)
       next[id] = { ...timer, displaySeconds: seconds }
 
-      // Time Leak: notificação a cada 5 minutos após 1 hora, por task
-      if (timer.task.category === 'time_leak' && seconds >= 3600) {
-        const currentMinute = Math.floor(seconds / 60)
-        const lastNotifiedMinute = Math.floor((lastTimeLeakNotification[id] ?? 0) / 60)
-        if (currentMinute % 5 === 0 && currentMinute !== lastNotifiedMinute) {
-          lastTimeLeakNotification[id] = seconds
-          const hours = Math.floor(seconds / 3600)
-          const minutes = Math.floor((seconds % 3600) / 60)
-          window.api.showNotification(
-            '⚠️ Time Leak Alert!',
-            `A tarefa "${timer.task.name}" já está em ${hours}h${minutes}min. Considere finalizá-la!`
-          )
-        }
+      const step = timer.task.category === 'time_leak' ? timeLeakNoticeStep(seconds, prefs) : null
+      if (step !== null && lastTimeLeakNotification[id] !== step) {
+        lastTimeLeakNotification[id] = step
+        const hours = Math.floor(seconds / 3600)
+        const minutes = Math.floor((seconds % 3600) / 60)
+        window.api.showNotification(
+          '⚠️ Time Leak Alert!',
+          `A tarefa "${timer.task.name}" já está em ${hours}h${minutes}min. Considere finalizá-la!`
+        )
       }
     }
     set({ timers: next })

@@ -28,7 +28,7 @@ import {
   History
 } from 'lucide-react'
 import type { ReviewHealthIndicators, WeeklyReview } from '@shared/types'
-import { calendarPrefs } from '@shared/calendarPrefs'
+import { useWorkflowPrefs } from '@renderer/lib/workflowPrefs'
 import { CHART_COLORS, STATUS_COLORS } from '@renderer/theme/semantic'
 import { useThemeSettings } from '@renderer/theme/themeSettings'
 import { PALETTE } from '@renderer/theme/tokens'
@@ -129,11 +129,9 @@ export function ReviewEntry({
   const screens = Grid.useBreakpoint()
   const [shown, setShown] = useState<WeeklyReview | null>(null)
 
+  const { weekStart } = useWorkflowPrefs()
   const headline = lastReviewHeadline(health?.daysSinceLastReview ?? null)
-  const weeks = useMemo(
-    () => reviewWeeks(reviews, new Date(), calendarPrefs().weekStart),
-    [reviews]
-  )
+  const weeks = useMemo(() => reviewWeeks(reviews, new Date(), weekStart), [reviews, weekStart])
   const doneWeeks = weeks.filter((week) => week.review).length
   const average = averageMinutes(reviews)
   const scale = CHART_COLORS[mode].sequential

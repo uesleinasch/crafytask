@@ -26,6 +26,7 @@ import { liveSeconds } from '@renderer/lib/liveSeconds'
 import { useTimerStore } from '@renderer/stores/timerStore'
 import { CATEGORY_COLORS, timeLeakBackground, timeLeakLevel } from '@renderer/theme/semantic'
 import { useThemeSettings } from '@renderer/theme/themeSettings'
+import { useTimeLeakThresholds } from '@renderer/lib/workflowPrefs'
 import { ContextsCell } from './ContextsCell'
 import { JiraKey } from './JiraKey'
 import { WaitingForIcon } from './WaitingFor'
@@ -137,6 +138,7 @@ export function TaskTable({
 }: TaskTableProps): React.JSX.Element {
   const { token } = theme.useToken()
   const { mode } = useThemeSettings()
+  const leakThresholds = useTimeLeakThresholds()
   const showStatus = status === 'all'
   const screens = Grid.useBreakpoint()
   const onChanged = useContext(TaskMenuChangedContext)
@@ -490,7 +492,9 @@ export function TaskTable({
   const onRow = (row: TableRow): React.HTMLAttributes<HTMLElement> => {
     if (row.kind === 'group') return {}
     const level =
-      row.kind === 'task' ? timeLeakLevel(row.task.category, liveSeconds(row.task, timers)) : 0
+      row.kind === 'task'
+        ? timeLeakLevel(row.task.category, liveSeconds(row.task, timers), leakThresholds)
+        : 0
     return {
       style: { cursor: 'pointer', background: timeLeakBackground(mode, level) },
       onClick: (event) => {

@@ -129,7 +129,7 @@ header, and the extra height can be scrolled by a programmatic `scrollIntoView` 
 ## Database
 
 - File: `app.getPath('userData')/ticktask.db` (em dev, `ticktask-dev/` — ver **Commands**). Opened with `journal_mode = WAL` and `foreign_keys = ON`. `initDatabase()` runs at startup.
-- 17 tables: `tasks`, `time_entries`, `tags`, `task_tags`, `projects`, `contexts`, `task_contexts`, `weekly_reviews`, `task_dependencies`, `areas`, `goals`, `time_blocks`, `note_assets`, `notebooks`, `notebook_sections`, `notebook_pages`, `task_status_events`.
+- 18 tables: `tasks`, `time_entries`, `tags`, `task_tags`, `projects`, `contexts`, `task_contexts`, `weekly_reviews`, `task_dependencies`, `areas`, `goals`, `time_blocks`, `note_assets`, `notebooks`, `notebook_sections`, `notebook_pages`, `task_status_events`, `app_prefs`.
 - **Migrations are imperative, inline in `initDatabase()`** — `CREATE TABLE IF NOT EXISTS` plus guarded `ALTER TABLE`s. Changing a `CHECK` constraint requires the create-new-table-and-copy dance (see the `tasks_new` rebuild around `src/main/database.ts:375`, used to widen the task `status` CHECK). There is no migration framework — follow the existing pattern.
 - All queries use better-sqlite3 prepared statements; multi-step writes use `db.transaction(...)`.
 - `tasks.status_changed_at` (when the status last changed, used by the health indicators in
@@ -320,7 +320,14 @@ confirmation guard in `confirmGuard.ts` (preview + `confirm_token`, then repeat 
 The float is driven by `mainWindow` events, not by the renderer: `minimize` **and `close`** show it
 **only when a timer is running**, `restore` and `focus` hide it. Its size is derived from the timer
 count (`FLOAT_WIDTH = 300`, 44px per row, max 5 rows) and only re-set when that count changes.
-A due-date notification sweep (`startNotificationScheduler`) runs every minute from the main process; which notices fire (day-of, eve, 15 min before and at `due_time`) is decided by the pure `dueNotifications.ts`.
+A due-date notification sweep (`startNotificationScheduler`) runs every minute from the main process; which notices fire (day-of, eve, 15 min before and at `due_time`) is decided by the pure `dueNotifications.ts`, each one switchable in Settings → Fluxo de trabalho.
+
+Workflow preferences (workday, week start, time-leak levels and repeat, calendar hour range, due
+notices, notes sync interval) are one JSON row in the `app_prefs` table: rules and defaults in
+`src/shared/workflowPrefs.ts` (pure, tested), storage in `src/main/workflowPrefsStore.ts`, IPC
+`prefs:getWorkflow`/`prefs:setWorkflow` plus the `prefs:workflowChanged` event to every window. The
+renderer reads them through `lib/workflowPrefs.ts` (`useWorkflowPrefs`, `useCalendarPrefs`,
+`useTimeLeakThresholds`; `getWorkflowPrefs()` outside React, e.g. the timer store).
 
 Closing the main window **hides** it — the app lives on in a tray icon (`src/main/tray.ts`: Abrir
 CrafyTask / Captura rápida / Sair); only "Sair" actually quits. Autostart is toggled from Settings

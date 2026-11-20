@@ -1,6 +1,7 @@
 import { Empty, Typography, theme } from 'antd'
 import { CAL_BLOCK_COLORS, timeLeakBackground, timeLeakLevel } from '@renderer/theme/semantic'
 import { useThemeSettings } from '@renderer/theme/themeSettings'
+import { useTimeLeakThresholds } from '@renderer/lib/workflowPrefs'
 import type { CalendarRangeData } from '@renderer/hooks/useCalendar'
 import { ProjectLabel } from '@renderer/components/tasks/ProjectLabel'
 import { CalendarChip } from './CalendarChip'
@@ -26,6 +27,7 @@ export function AgendaView({
 }: AgendaViewProps): React.JSX.Element {
   const { token } = theme.useToken()
   const { mode } = useThemeSettings()
+  const leakThresholds = useTimeLeakThresholds()
   const rows = days
     .map((d) => ({ d, all: allDayOf(data.tasks, d, show), timed: timedItemsOfDay(data, d, show) }))
     .filter((r) => r.all.length || r.timed.length)
@@ -64,7 +66,7 @@ export function AgendaView({
               {timed.map((item) => {
                 const category = item.block?.task_category ?? item.task?.category
                 const seconds = item.block?.task_total_seconds ?? item.task?.total_seconds ?? 0
-                const leak = timeLeakLevel(category, seconds)
+                const leak = timeLeakLevel(category, seconds, leakThresholds)
                 const projectName = item.block ? item.block.project_name : item.task?.project_name
                 const projectColor = item.block
                   ? item.block.project_color

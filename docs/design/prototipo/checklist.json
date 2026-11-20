@@ -1435,7 +1435,7 @@
       "titulo": "Preferências de fluxo de trabalho persistidas no main",
       "check": {
         "tipo": "contem-todos",
-        "arquivos": "src/main/**/*.ts",
+        "arquivos": "src/{main,shared}/**/*{pref,Pref}*.ts",
         "padroes": ["workdayHours|jornada", "timeLeak", "calendarStart|calendarRange"]
       }
     },

@@ -26,6 +26,7 @@ import {
 import { TaskTimePanel } from '@renderer/components/tasks/TaskTimePanel'
 import { TaskDetailsPanel } from '@renderer/components/tasks/TaskDetailsPanel'
 import { TaskRelationsPanel } from '@renderer/components/tasks/TaskRelationsPanel'
+import { useWorkflowPrefs } from '@renderer/lib/workflowPrefs'
 
 export function SingleTaskPage(): React.JSX.Element {
   const navigate = useNavigate()
@@ -69,6 +70,7 @@ export function SingleTaskPage(): React.JSX.Element {
   const drawingEditorRef = useRef<TaskDrawingEditorHandle>(null)
   const notesDirtyRef = useRef(false)
   const notesSyncingRef = useRef(false)
+  const { notesSyncInterval } = useWorkflowPrefs()
   const [localExportPath, setLocalExportPath] = useState<string | null>(null)
   const [exportingLocal, setExportingLocal] = useState(false)
   const localExportRef = useRef<string | null>(null)
@@ -282,9 +284,9 @@ export function SingleTaskPage(): React.JSX.Element {
       } finally {
         notesSyncingRef.current = false
       }
-    }, 60_000)
+    }, notesSyncInterval * 1000)
     return () => clearInterval(interval)
-  }, [taskId])
+  }, [taskId, notesSyncInterval])
 
   const showRelations = useCallback((): void => {
     setInspectorTab('relacoes')

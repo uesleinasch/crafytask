@@ -31,7 +31,7 @@ até a hora atual. Colunas de no mínimo 96px (Semana) ou 140px; em tela estreit
 
 - **Cabeçalho do dia:** dia da semana e número (hoje em círculo da cor primária) num botão que abre
   a visão Dia; embaixo, um medidor de 4px das horas em blocos contra a jornada
-  (`calendarPrefs().journeyMinutes`), âmbar quando passa, com tooltip "Xh em blocos de 8h da jornada
+  (`journeyMinutes`), âmbar quando passa, com tooltip "Xh em blocos de 8h da jornada
   · passa da jornada".
 - **Faixa Dia:** agendadas sem horário (chip com o ponto do projeto) e prazos abertos (bandeira,
   borda tracejada; bandeira âmbar no dia, vermelha se venceu; hora do prazo em mono). Até 2 por dia
@@ -144,5 +144,6 @@ sobre os dias da visão (no Mês, as 5 ou 6 semanas inteiras). Os canais antigos
   (ressincroniza o Google) e devolve o bloco **anterior**, e `timeBlock:delete` devolve o bloco
   apagado, para o Desfazer. O erro chega ao renderer com o prefixo do Electron ("Error invoking
   remote method…"), que a tela precisa tirar antes de mostrar.
-- Jornada (8h), faixa de horas (00–24) e início da semana (segunda) vêm de `calendarPrefs()`,
-  fixos até a F7-f.
+- Jornada, faixa de horas e início da semana vêm de `useCalendarPrefs()` (`lib/workflowPrefs.ts`),
+  as preferências de Configurações → Fluxo de trabalho (padrão 8h, 00–24 e segunda). Item fora
+  da faixa é cortado pela grade (`clampToGrid`).

@@ -14,7 +14,8 @@ calendário mensal.
 
 - Tarefas de `schedule:getForDate(hoje)`, com a data local (`localDateString`), não a UTC.
 - Blocos de tempo da semana de `timeBlock:getForWeek(início)`. Jornada e início da semana vêm de
-  `calendarPrefs()` (`src/shared/calendarPrefs.ts`): 8h e segunda, fixos até a F7-f.
+  `useCalendarPrefs()` (`lib/workflowPrefs.ts`), das preferências de Configurações → Fluxo de
+  trabalho (padrão 8h e segunda).
 - A tela relê tudo a cada `tasks:refresh` e `timer:stopped`, e troca de dia sozinha à meia-noite;
   falha de leitura vai para o `RegionBoundary` da rota.
 
@@ -59,4 +60,4 @@ barra, `colorWarningText` no número).
 | Panorama da semana | horas planejadas por dia | grade horária completa | — |
 | Reagendar arrastando | não | sim (só no modo mês) | — |
 | Blocos de tempo | soma por dia | sim | não mostra |
-| Carga do dia | sim (vs. 8h) | não | não |
+| Carga do dia | sim (vs. jornada) | não | não |

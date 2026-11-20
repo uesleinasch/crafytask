@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Dropdown, Grid, Popover, Tooltip, theme } from 'antd'
 import { Calendar, CalendarSync, Check, Copy, FileText, Play, Trash2 } from 'lucide-react'
 import type { Task, TaskCategory, TimeBlock } from '@shared/types'
-import { calendarPrefs } from '@shared/calendarPrefs'
+import { useCalendarPrefs, useTimeLeakThresholds } from '@renderer/lib/workflowPrefs'
 import { CATEGORY_ICONS } from '@renderer/components/chips/categoryMeta'
 import { LiveDot } from '@renderer/components/chips/LiveDot'
 import {
@@ -115,7 +115,8 @@ export function CalendarGrid({
 }: CalendarGridProps): React.JSX.Element {
   const { token } = theme.useToken()
   const { mode, density } = useThemeSettings()
-  const prefs = calendarPrefs()
+  const prefs = useCalendarPrefs()
+  const leakThresholds = useTimeLeakThresholds()
   const { dayStartHour: h0, dayEndHour: h1, journeyMinutes } = prefs
   const hourHeight = density === 'compact' ? 40 : 48
   const pxPerMin = hourHeight / 60
@@ -285,7 +286,7 @@ export function CalendarGrid({
       date === today &&
       toMin(item.start) <= nowMin &&
       toMin(item.end) >= nowMin
-    const leak = timeLeakLevel(category, seconds)
+    const leak = timeLeakLevel(category, seconds, leakThresholds)
     const done = status === 'finalizada'
     const event = item.kind === 'event'
     const top = geometry.top * pxPerMin
