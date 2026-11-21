@@ -2277,7 +2277,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     ] },
     { group: 'Integrações', items: [
       { key: 'notion', label: 'Notion', icon: 'BookOutlined', keywords: 'sincronizar banco api key', state: 'ok', stateText: 'Conectado' },
-      { key: 'google', label: 'Google Calendar', icon: 'CalendarOutlined', keywords: 'agenda oauth client', state: 'off', stateText: 'Não conectado' },
+      { key: 'google', label: 'Google', icon: 'CloudOutlined', keywords: 'agenda calendar drive conta login entrar oauth client', state: 'off', stateText: 'Não conectado' },
       { key: 'jira', label: 'Jira', icon: 'ApiOutlined', keywords: 'boards worklog importar token', state: 'ok', stateText: 'Conectado' },
       { key: 'mcp', label: 'Servidor MCP', icon: 'CloudSyncOutlined', keywords: 'token claude porta', state: 'ok', stateText: 'Rodando' }
     ] },
@@ -2300,6 +2300,10 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const [autoTimer, setAutoTimer] = useState(true);
     const [notionAuto, setNotionAuto] = useState(true);
     const [gcalStep, setGcalStep] = useState(2);
+    const [gAccount, setGAccount] = useState(null);
+    const [gDrive, setGDrive] = useState(false);
+    const [gConnecting, setGConnecting] = useState(false);
+    const connectGoogle = () => { setGConnecting(true); setTimeout(() => { setGConnecting(false); setGAccount('voce@gmail.com'); message.success('Conectado como voce@gmail.com'); }, 900); };
     const [jiraBoards, setJiraBoards] = useState(['CONNECT', 'OPS']);
     const [worklog, setWorklog] = useState(true);
     const [jiraNotion, setJiraNotion] = useState(false);
@@ -2351,7 +2355,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           terminal: 'Shell e comportamento do terminal embutido.',
           backup: 'Cópias do banco, das imagens das notas, dos desenhos e das configurações.',
           notion: 'Envia as tarefas para um banco "GTD APP" no Notion. Só ida: o Notion não altera o app.',
-          google: 'Coloca tarefas marcadas numa agenda "TickTask" criada pelo app no seu Google Calendar.',
+          google: 'Entre com sua conta Google para usar a agenda e o Drive no CrafyTask.',
           jira: 'Importa as issues atribuídas a você e devolve tempo, descrição e status.',
           mcp: 'Deixa assistentes como o Claude Code lerem e alterarem suas tarefas, só nesta máquina.',
           sobre: 'Versões e links do projeto.'
@@ -2502,17 +2506,36 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         ]} />` }]} />
       <//>`,
 
-      google: html`<${SettingsCard} title="Configurar a conexão">
-        <div style=${{ padding: '12px 0' }}>
-          <${Steps} direction="vertical" size="small" current=${gcalStep} items=${[
+      google: html`<${Flex} vertical gap=${16}>
+        <${SettingsCard} title="Conta Google">
+          ${gAccount
+            ? html`<${SettingRow} title=${gAccount} desc="Conectado">
+                <${Popconfirm} title="Desconectar a conta Google?" description="As tarefas já enviadas continuam na agenda TickTask." okText="Desconectar" okButtonProps=${{ danger: true }} cancelText="Cancelar" onConfirm=${() => { setGAccount(null); setGDrive(false); message.success('Conta desconectada'); }}>
+                  <${Button}>Desconectar<//>
+                <//>
+              <//>`
+            : html`<${SettingRow} title="Não conectado" desc="Abre o navegador para você entrar e liberar a agenda.">
+                <${Button} type="primary" icon=${html`<${I.GoogleOutlined} />`} loading=${gConnecting} onClick=${connectGoogle}>Conectar com Google<//>
+              <//>`}
+        <//>
+        ${gAccount ? html`<${SettingsCard} title="Permissões">
+          <${SettingRow} title="Agenda" desc='Tarefas marcadas vão para uma agenda "TickTask" criada pelo app.'>
+            <${Tag} bordered=${false} color="success" icon=${html`<${I.CheckOutlined} />`} style=${{ margin: 0 }}>Permitida<//>
+          <//>
+          <${SettingRow} title="Google Drive" desc="O CrafyTask só vê os arquivos que ele mesmo cria.">
+            ${gDrive
+              ? html`<${Tag} bordered=${false} color="success" icon=${html`<${I.CheckOutlined} />`} style=${{ margin: 0 }}>Permitido<//>`
+              : html`<${Button} onClick=${() => { setGDrive(true); message.success('Google Drive permitido'); }}>Permitir<//>`}
+          <//>
+        <//>` : null}
+        <${Collapse} items=${[{ key: 'proprio', label: 'Avançado: usar um cliente OAuth próprio', children: html`<${Steps} direction="vertical" size="small" current=${gcalStep} items=${[
             { title: 'Criar um projeto no Google Cloud', description: html`<a href="https://console.cloud.google.com/" target="_blank" rel="noopener">console.cloud.google.com</a>` },
             { title: 'Ativar a Google Calendar API' },
             { title: 'Branding', description: html`<${Flex} vertical gap=${6}><span>Nome e e-mail de suporte.</span><${Alert} type="warning" showIcon message="Não envie logo: com logo o Google exige verificação do app." /><${Button} size="small" style=${{ alignSelf: 'start' }} onClick=${() => setGcalStep(3)}>Marcar como feito<//><//>` },
             { title: 'Publicar o app (Audience → Publish app)', description: 'Em Testing, o acesso expira em 7 dias.' },
             { title: 'Criar o client "Desktop app"', description: html`<${Flex} vertical gap=${6} style=${{ maxWidth: 420 }}><${Input} placeholder="Client ID" /><${Input.Password} placeholder="Client Secret" /><${Button} size="small" style=${{ alignSelf: 'start' }}>Salvar credenciais<//><//>` },
-            { title: 'Conectar com o Google', description: html`<${Flex} vertical gap=${6}><span>No aviso do Google: Avançado → Acessar CrafyTask.</span><${Button} type="primary" icon=${html`<${I.CalendarOutlined} />`} style=${{ alignSelf: 'start' }}>Conectar com o Google<//><//>` }
-          ]} />
-        </div>
+            { title: 'Conectar com o Google', description: html`<${Flex} vertical gap=${6}><span>No aviso do Google: Avançado → Acessar CrafyTask.</span><${Button} icon=${html`<${I.GoogleOutlined} />`} style=${{ alignSelf: 'start' }} onClick=${connectGoogle}>Conectar com o cliente próprio<//><//>` }
+          ]} />` }]} />
       <//>`,
 
       jira: html`<${Flex} vertical gap=${16}>
