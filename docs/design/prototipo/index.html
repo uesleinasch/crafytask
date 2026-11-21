@@ -2528,6 +2528,14 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
               : html`<${Button} onClick=${() => { setGDrive(true); message.success('Google Drive permitido'); }}>Permitir<//>`}
           <//>
         <//>` : null}
+        ${gAccount ? html`<${SettingsCard} title="Agenda TickTask">
+          <${SettingRow} title="Sincronizar automaticamente" desc="Atualiza a agenda a cada mudança nas tarefas marcadas.">
+            <${Switch} defaultChecked aria-label="Sincronizar automaticamente" />
+          <//>
+          <${SettingRow} title="Ressincronizar todas" desc="Recalcula os eventos de todas as tarefas marcadas.">
+            <${Button} icon=${html`<${I.SyncOutlined} />`} onClick=${() => message.success('12 tarefas sincronizadas')}>Ressincronizar<//>
+          <//>
+        <//>` : null}
         <${Collapse} items=${[{ key: 'proprio', label: 'Avançado: usar um cliente OAuth próprio', children: html`<${Steps} direction="vertical" size="small" current=${gcalStep} items=${[
             { title: 'Criar um projeto no Google Cloud', description: html`<a href="https://console.cloud.google.com/" target="_blank" rel="noopener">console.cloud.google.com</a>` },
             { title: 'Ativar a Google Calendar API' },

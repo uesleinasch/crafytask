@@ -68,7 +68,7 @@ Para cada tarefa marcada:
 | Tarefa finalizada | o título ganha `✓ ` |
 | Tarefa excluída ou desmarcada | os eventos são apagados |
 
-Em **Configurações → Google**, card **Agenda TickTask**, ficam **Sincronização automática** (atualiza a agenda a
+Em **Configurações → Google**, card **Agenda TickTask**, ficam **Sincronizar automaticamente** (atualiza a agenda a
 cada mudança nas tarefas marcadas) e **Ressincronizar todas**.
 
 ## Limites

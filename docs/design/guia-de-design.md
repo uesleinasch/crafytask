@@ -243,7 +243,7 @@ só porque roda de CDN; os nomes lucide de cada lugar estão nas tabelas acima e
 | Abas do inspetor      | Tempo `Timer` · Detalhes `FileText` · Relações `Network`                                                                                                                                                                                       |
 | `HealthCard`          | em dia `CircleCheck` · Inbox `Inbox` · sem próxima ação `CircleArrowRight` · projetos parados `CirclePause` · aguardando `Hourglass` · próximas paradas `Clock` · prazos vencidos `CalendarX` · revisão `ClipboardCheck` · someday `Lightbulb` |
 | Janelas auxiliares    | Captura `Inbox` · Fechar `X` · Capturado `CircleCheck` · Pausar `Pause` · Abrir CrafyTask `Maximize2` |
-| Configurações         | Geral `Settings` · Aparência `Palette` · Fluxo de trabalho `Workflow` · Terminal `SquareTerminal` · Backup `DatabaseBackup` · Notion `BookOpen` · Google `Cloud` (conectar `LogIn`, permitida `Check`) · Jira `Plug` · Servidor MCP `Cable` · Sobre `Info`               |
+| Configurações         | Geral `Settings` · Aparência `Palette` · Fluxo de trabalho `Workflow` · Terminal `SquareTerminal` · Backup `DatabaseBackup` · Notion `BookOpen` · Google `Cloud` (conectar `LogIn`, permitida `Check`, desconectar `LogOut`, ressincronizar `RefreshCw`, salvar credenciais `Save`) · Jira `Plug` · Servidor MCP `Cable` · Sobre `Info`               |
 | Passos da revisão     | `collect` `Download` · `inbox` `Inbox` · `mind` `Brain` · `next` `CircleArrowRight` · `past` `History` · `upcoming` `CalendarDays` · `waiting` `Hourglass` · `projects` `FolderKanban` · `someday` `Lightbulb` · `creative` `Rocket`           |
 | Menu da tarefa e ações em massa | Abrir `FileText` · timer `Play`/`Pause` · hoje `CalendarDays` · marcar como `CircleCheck` · categoria `Flag` · projeto `Folder` · contextos `MapPin` · copiar `Copy` · Jira `Plug` · abrir no Jira `ExternalLink` · campos do Jira `SlidersHorizontal` · arquivar `Archive` · excluir `Trash2` |
 | Projetos              | abas pelo status (`LayoutGrid` em Todos, `FolderOpen` ativo, `Lightbulb` someday, `CircleCheck` concluído, `Archive` arquivado) · busca `Search` · Cards `LayoutGrid` · Tabela `Table2` · novo `Plus` · mais `Ellipsis` · resultado desejado `Target` · próxima ação `CircleArrowRight` · sem próxima ação `TriangleAlert` · área `TrendingUp` · meta `Trophy` · prazo `CalendarDays` · abrir `FolderOpen` · marcar como `CircleCheck` · excluir `Trash2` · terminal `SquareTerminal` |
@@ -578,12 +578,15 @@ Mesmo esqueleto das outras telas, com navegação própria porque são muitas se
   Linhas relacionadas ficam num `Card` com título ("Inicialização", "Time leak").
 - **Guias de configuração** (Notion, Google) usam `Steps` vertical com o passo atual, campos dentro
   do passo e "Marcar como feito" nos passos manuais. Com a integração conectada, o guia fica num
-  `Collapse` para trocar credenciais.
+  `Collapse` para trocar credenciais. No Google o guia é só do cliente próprio e fica sempre no
+  `Collapse` "Avançado".
 - **Google** é uma ação só: o app traz o próprio cliente OAuth e a seção abre com "Conectar com
   Google" (primário; abre o navegador, entra na conta e libera a agenda). Conectado, o card **Conta
   Google** mostra o e-mail e "Desconectar" (confirma e diz que as tarefas já enviadas ficam na
   agenda), e o card **Permissões** lista Agenda e Google Drive, cada uma com `Tag` "Permitida" ou o
-  botão "Permitir" (pede só aquela permissão). Tirar uma permissão é desconectar. O guia antigo, com
+  botão "Permitir" (pede só aquela permissão). Tirar uma permissão é desconectar. Com a agenda
+  permitida, o card **Agenda TickTask** traz "Sincronizar automaticamente" (`Switch`) e
+  "Ressincronizar". O guia antigo, com
   cliente próprio, fica num `Collapse` "Avançado: usar um cliente OAuth próprio"; a tela não explica
   OAuth nem o aviso do Google fora dele.
 - **Confirmações** destrutivas (restaurar backup, regenerar token, limpar Notion) dizem o que

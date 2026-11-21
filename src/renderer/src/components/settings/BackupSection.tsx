@@ -260,7 +260,7 @@ export function BackupSection(): React.JSX.Element {
         type="info"
         showIcon
         title="O que vai no backup"
-        description="O banco (tarefas, projetos, tempos, notas e desenhos), as imagens das notas e as configurações do Notion e do servidor MCP. A conexão com o Google Calendar não vai junto: depois de restaurar em outro computador, reconecte na seção Google Calendar."
+        description="O banco (tarefas, projetos, tempos, notas e desenhos), as imagens das notas e as configurações do Notion e do servidor MCP. A conexão com o Google não vai junto: depois de restaurar em outro computador, reconecte na seção Google."
       />
       <Alert
         type="warning"

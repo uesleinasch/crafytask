@@ -391,7 +391,7 @@ export function GoogleCalendarSection({
         </SettingsCard>
       )}
       <Collapse
-        defaultActiveKey={status.mode === 'custom' && !status.builtinAvailable ? ['proprio'] : []}
+        defaultActiveKey={!status.builtinAvailable && !status.connected ? ['proprio'] : []}
         items={[
           {
             key: 'proprio',

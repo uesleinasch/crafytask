@@ -200,7 +200,7 @@ O app traz o próprio cliente OAuth, embutido no build da release a partir dos s
   **Ressincronizar**.
 - `Collapse` **Avançado: usar um cliente OAuth próprio** — o `SetupGuide` (`settings.gcal.steps`)
   de antes, com Client ID/Secret no passo 5 e **Conectar com o cliente próprio** no 6. Abre sozinho
-  num build sem cliente embutido quando a conta usa cliente próprio. Trocar de cliente desconecta.
+  num build sem cliente embutido, enquanto não há conta conectada. Trocar de cliente desconecta.
 - O secret nunca volta ao renderer: o campo mostra `•••••••• (salvo)`.
 
 ### Jira
