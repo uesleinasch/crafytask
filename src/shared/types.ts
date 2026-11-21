@@ -94,6 +94,8 @@ export interface Project {
   due_date?: string
   area_id?: number
   area_name?: string
+  goal_id?: number | null
+  goal_name?: string | null
   created_at: string
   updated_at: string
   task_count?: number
@@ -115,6 +117,7 @@ export interface CreateProjectInput {
   color?: string
   due_date?: string
   area_id?: number
+  goal_id?: number
   working_dir?: string | null
 }
 
@@ -126,6 +129,7 @@ export interface UpdateProjectInput {
   color?: string
   due_date?: string | null
   area_id?: number | null
+  goal_id?: number | null
   working_dir?: string | null
   next_task_id?: number | null
 }
@@ -164,6 +168,7 @@ export interface Goal {
   horizon: GoalHorizon
   area_id?: number
   area_name?: string
+  project_count?: number
   created_at: string
   updated_at: string
 }

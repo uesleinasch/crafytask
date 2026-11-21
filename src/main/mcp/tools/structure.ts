@@ -68,6 +68,7 @@ const PROJECT_FIELD_KEYS = [
   'color',
   'due_date',
   'area_id',
+  'goal_id',
   'working_dir'
 ]
 const CONTEXT_FIELD_KEYS = ['icon', 'color']
@@ -149,36 +150,62 @@ function validateGoalFields(fields: Fields): ReturnType<typeof fail> | null {
   )
 }
 
-type AreaIdResolution =
+type RefIdResolution =
   | { ok: true; value: number | undefined }
   | { ok: false; response: ReturnType<typeof fail> }
 
-function resolveAreaId(fields: Fields): AreaIdResolution {
-  const raw = fields?.area_id
+type RefIdOrNullResolution =
+  | { ok: true; value: number | null | undefined }
+  | { ok: false; response: ReturnType<typeof fail> }
+
+interface RefField {
+  key: 'area_id' | 'goal_id'
+  rows: () => EntityRow[]
+  notFound: string
+}
+
+const AREA_REF: RefField = {
+  key: 'area_id',
+  rows: () => listAreas(),
+  notFound: 'Área não encontrada ou ambígua.'
+}
+const GOAL_REF: RefField = {
+  key: 'goal_id',
+  rows: () => listGoals(),
+  notFound: 'Meta não encontrada ou ambígua.'
+}
+
+function resolveRefId(fields: Fields, ref: RefField): RefIdResolution {
+  const raw = fields?.[ref.key]
   if (raw === undefined) return { ok: true, value: undefined }
   if (typeof raw === 'number') return { ok: true, value: raw }
   if (typeof raw === 'string') {
-    const resolved = resolveByName(listAreas(), raw)
+    const resolved = resolveByName(ref.rows(), raw)
     if (!resolved.ok) {
       return {
         ok: false,
-        response: fail(resolved.code, 'Área não encontrada ou ambígua.', {
-          candidates: resolved.candidates
-        })
+        response: fail(resolved.code, ref.notFound, { candidates: resolved.candidates })
       }
     }
     return { ok: true, value: resolved.id }
   }
-  return { ok: false, response: fail('validation', 'fields.area_id deve ser number ou string.') }
+  return {
+    ok: false,
+    response: fail('validation', `fields.${ref.key} deve ser number ou string.`)
+  }
 }
 
-type AreaIdOrNullResolution =
-  | { ok: true; value: number | null | undefined }
-  | { ok: false; response: ReturnType<typeof fail> }
+function resolveRefIdOrNull(fields: Fields, ref: RefField): RefIdOrNullResolution {
+  if (fields?.[ref.key] === null) return { ok: true, value: null }
+  return resolveRefId(fields, ref)
+}
 
-function resolveAreaIdOrNull(fields: Fields): AreaIdOrNullResolution {
-  if (fields?.area_id === null) return { ok: true, value: null }
-  return resolveAreaId(fields)
+function resolveAreaId(fields: Fields): RefIdResolution {
+  return resolveRefId(fields, AREA_REF)
+}
+
+function resolveAreaIdOrNull(fields: Fields): RefIdOrNullResolution {
+  return resolveRefIdOrNull(fields, AREA_REF)
 }
 
 function isUniqueConstraintError(error: unknown): boolean {
@@ -203,7 +230,8 @@ function listEntityRows(entity: Entity): EntityRow[] {
 function buildProjectCreateInput(
   name: string,
   fields: Fields,
-  areaId: number | undefined
+  areaId: number | undefined,
+  goalId: number | undefined
 ): CreateProjectInput {
   return {
     name,
@@ -213,6 +241,7 @@ function buildProjectCreateInput(
     color: strField(fields, 'color'),
     due_date: strField(fields, 'due_date'),
     area_id: areaId,
+    goal_id: goalId,
     working_dir: strField(fields, 'working_dir')
   }
 }
@@ -220,7 +249,8 @@ function buildProjectCreateInput(
 function buildProjectUpdatePatch(
   name: string | undefined,
   fields: Fields,
-  areaId: number | null | undefined
+  areaId: number | null | undefined,
+  goalId: number | null | undefined
 ): UpdateProjectInput {
   const patch: UpdateProjectInput = {}
   if (name !== undefined) patch.name = name
@@ -237,6 +267,7 @@ function buildProjectUpdatePatch(
   const workingDir = strField(fields, 'working_dir')
   if (workingDir !== undefined) patch.working_dir = workingDir
   if (areaId !== undefined) patch.area_id = areaId
+  if (goalId !== undefined) patch.goal_id = goalId
   return patch
 }
 
@@ -310,6 +341,11 @@ function deleteConfirmationMessage(
     const affected = listProjects().find((project) => project.id === targetId)?.task_count ?? 0
     return `Remover o projeto "${label}" é permanente; ${affected} task(s) desse projeto ficam sem projeto (project_id passa a nulo). Confirme com o usuário.`
   }
+  // FK de projects.goal_id é ON DELETE SET NULL: os projetos sobrevivem, sem meta.
+  if (entity === 'goal') {
+    const affected = listGoals().find((goal) => goal.id === targetId)?.project_count ?? 0
+    return `Remover a meta "${label}" é permanente; ${affected} projeto(s) dela ficam sem meta (goal_id passa a nulo). Confirme com o usuário.`
+  }
   return `Remover ${entity} é permanente. Confirme com o usuário.`
 }
 
@@ -337,7 +373,7 @@ export function registerStructureTools(server: McpServer, ctx: ToolContext): voi
     {
       title: 'Gerenciar estrutura',
       description:
-        'Cria, renomeia ou remove projeto, contexto, tag, área ou meta. Remover e mesclar tag exigem confirm_token.',
+        'Cria, renomeia ou remove projeto, contexto, tag, área ou meta. Projeto aceita fields.goal_id (id ou nome da meta a que serve; null remove). Remover e mesclar tag exigem confirm_token.',
       inputSchema: {
         entity: ENTITY,
         action: z.enum(['create', 'update', 'delete', 'merge_tag']),
@@ -359,8 +395,10 @@ export function registerStructureTools(server: McpServer, ctx: ToolContext): voi
             if (fieldsError) return fieldsError
             const areaResolved = resolveAreaId(args.fields)
             if (!areaResolved.ok) return areaResolved.response
+            const goalResolved = resolveRefId(args.fields, GOAL_REF)
+            if (!goalResolved.ok) return goalResolved.response
             const created = createProject(
-              buildProjectCreateInput(name, args.fields, areaResolved.value)
+              buildProjectCreateInput(name, args.fields, areaResolved.value, goalResolved.value)
             )
             broadcastRefresh()
             return ok({ created })
@@ -483,7 +521,14 @@ export function registerStructureTools(server: McpServer, ctx: ToolContext): voi
             if (fieldsError) return fieldsError
             const areaResolved = resolveAreaIdOrNull(args.fields)
             if (!areaResolved.ok) return areaResolved.response
-            const patch = buildProjectUpdatePatch(args.name, args.fields, areaResolved.value)
+            const goalResolved = resolveRefIdOrNull(args.fields, GOAL_REF)
+            if (!goalResolved.ok) return goalResolved.response
+            const patch = buildProjectUpdatePatch(
+              args.name,
+              args.fields,
+              areaResolved.value,
+              goalResolved.value
+            )
             if (Object.keys(patch).length === 0) {
               return fail('validation', 'Informe name ou fields para atualizar.')
             }

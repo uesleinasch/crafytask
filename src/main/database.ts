@@ -375,6 +375,14 @@ export function initDatabase(): void {
 
   try {
     db.exec(
+      'ALTER TABLE projects ADD COLUMN goal_id INTEGER REFERENCES goals(id) ON DELETE SET NULL'
+    )
+  } catch {
+    /* já existe */
+  }
+
+  try {
+    db.exec(
       'ALTER TABLE projects ADD COLUMN next_task_id INTEGER REFERENCES tasks(id) ON DELETE SET NULL'
     )
   } catch {
@@ -822,8 +830,8 @@ export function getTaskContexts(taskId: number): ContextRow[] {
 
 export function createProject(data: CreateProjectInput): Project {
   const stmt = db.prepare(`
-    INSERT INTO projects (name, description, outcome, status, color, due_date, area_id, working_dir)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO projects (name, description, outcome, status, color, due_date, area_id, goal_id, working_dir)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `)
   const result = stmt.run(
     data.name,
@@ -833,6 +841,7 @@ export function createProject(data: CreateProjectInput): Project {
     data.color || '#6366f1',
     data.due_date || null,
     data.area_id || null,
+    data.goal_id || null,
     data.working_dir || null
   )
   return getProject(result.lastInsertRowid as number)!
@@ -877,6 +886,10 @@ export function updateProject(id: number, data: UpdateProjectInput): void {
   if (data.area_id !== undefined) {
     updates.push('area_id = ?')
     values.push(data.area_id)
+  }
+  if (data.goal_id !== undefined) {
+    updates.push('goal_id = ?')
+    values.push(data.goal_id)
   }
   if (data.working_dir !== undefined) {
     updates.push('working_dir = ?')
@@ -2368,6 +2381,10 @@ export function deleteArea(id: number): void {
 
 // ===================== FASE 4: OBJETIVOS (GOALS) =====================
 
+const GOAL_PROJECT_COUNT = `(
+  SELECT COUNT(*) FROM projects p WHERE p.goal_id = g.id AND p.status <> 'archived'
+) as project_count`
+
 export function createGoal(data: CreateGoalInput): Goal {
   const stmt = db.prepare(
     'INSERT INTO goals (name, description, horizon, area_id) VALUES (?, ?, ?, ?)'
@@ -2383,7 +2400,7 @@ export function createGoal(data: CreateGoalInput): Goal {
 
 export function getGoal(id: number): Goal | undefined {
   const stmt = db.prepare(`
-    SELECT g.*, a.name as area_name
+    SELECT g.*, a.name as area_name, ${GOAL_PROJECT_COUNT}
     FROM goals g
     LEFT JOIN areas a ON a.id = g.area_id
     WHERE g.id = ?
@@ -2394,7 +2411,7 @@ export function getGoal(id: number): Goal | undefined {
 export function listGoals(areaId?: number): Goal[] {
   if (areaId !== undefined) {
     const stmt = db.prepare(`
-      SELECT g.*, a.name as area_name
+      SELECT g.*, a.name as area_name, ${GOAL_PROJECT_COUNT}
       FROM goals g
       LEFT JOIN areas a ON a.id = g.area_id
       WHERE g.area_id = ?
@@ -2403,7 +2420,7 @@ export function listGoals(areaId?: number): Goal[] {
     return stmt.all(areaId) as Goal[]
   }
   const stmt = db.prepare(`
-    SELECT g.*, a.name as area_name
+    SELECT g.*, a.name as area_name, ${GOAL_PROJECT_COUNT}
     FROM goals g
     LEFT JOIN areas a ON a.id = g.area_id
     ORDER BY g.horizon ASC, g.name ASC
