@@ -1201,7 +1201,8 @@
       "titulo": "Metas com destino conferidas (Horizontes, lista e detalhe do projeto)",
       "check": {
         "tipo": "manual"
-      }
+      },
+      "validado": "2026-11-21"
     },
     {
       "id": "F5.13",
