@@ -73,6 +73,9 @@ jobs:
         run: npm version "$VERSION" --no-git-tag-version --allow-same-version
 
       - name: Gerar .deb e AppImage
+        env:
+          MAIN_VITE_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          MAIN_VITE_GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
         run: npm run build && npx electron-builder --linux --publish never
 
       - uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
