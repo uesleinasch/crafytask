@@ -875,6 +875,10 @@ const drawingRenderBridge = createDrawingRenderBridge((requestId, payload) => {
 const statusChangeDeps: StatusChangeDeps = {
   getTask,
   updateTaskStatus,
+  stopTimer: (id) => {
+    stopTask(id)
+    mainWindow?.webContents.send('timer:stopped', id)
+  },
   createNextRecurrence,
   getNextRecurrenceIds,
   deleteNextRecurrence,

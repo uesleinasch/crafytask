@@ -5,12 +5,13 @@ export const BLOCKED_PARENT_MESSAGE = 'A tarefa pai possui dependências não co
 
 type StatusTask = Pick<
   Task,
-  'id' | 'name' | 'status' | 'is_blocked' | 'parent_task_id' | 'recurrence_rule'
+  'id' | 'name' | 'status' | 'is_blocked' | 'is_running' | 'parent_task_id' | 'recurrence_rule'
 >
 
 export interface StatusChangeDeps {
   getTask: (id: number) => StatusTask | undefined
   updateTaskStatus: (id: number, status: TaskStatus) => void
+  stopTimer: (id: number) => void
   createNextRecurrence: (id: number) => { id: number } | null
   getNextRecurrenceIds: (id: number) => number[]
   deleteNextRecurrence: (id: number) => void
@@ -35,6 +36,10 @@ export function statusChangeRefusal(
   return null
 }
 
+function stopTimerIfRunning(deps: StatusChangeDeps, task: StatusTask): void {
+  if (task.is_running) deps.stopTimer(task.id)
+}
+
 export function applyStatusChange(deps: StatusChangeDeps, id: number, status: TaskStatus): void {
   const task = deps.getTask(id)
   if (!task) return
@@ -43,6 +48,7 @@ export function applyStatusChange(deps: StatusChangeDeps, id: number, status: Ta
   if (refusal) throw new Error(refusal)
 
   const previousStatus = task.status
+  if (status === 'finalizada') stopTimerIfRunning(deps, task)
   deps.updateTaskStatus(id, status)
 
   const recurs = Boolean(task.recurrence_rule) && !task.parent_task_id
@@ -52,6 +58,8 @@ export function applyStatusChange(deps: StatusChangeDeps, id: number, status: Ta
       if (next) deps.syncCalendar([next.id])
     }
     if (task.parent_task_id && deps.completeSubtasksCheck(task.parent_task_id)) {
+      const parent = deps.getTask(task.parent_task_id)
+      if (parent) stopTimerIfRunning(deps, parent)
       deps.syncCalendar([task.parent_task_id])
     }
     for (const dependentId of deps.getTaskDependents(id)) {

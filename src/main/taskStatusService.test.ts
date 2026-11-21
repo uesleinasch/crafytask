@@ -12,6 +12,7 @@ interface FakeTask {
   name: string
   status: TaskStatus
   is_blocked: boolean
+  is_running: boolean
   parent_task_id: number | null
   recurrence_rule: string | null
 }
@@ -25,6 +26,7 @@ function add(task: Partial<FakeTask> & { id: number }): void {
     name: `task ${task.id}`,
     status: 'proximas',
     is_blocked: false,
+    is_running: false,
     parent_task_id: null,
     recurrence_rule: null,
     ...task
@@ -38,6 +40,10 @@ beforeEach(() => {
     getTask: (id) => tasks.get(id),
     updateTaskStatus: (id, status) => {
       tasks.get(id)!.status = status
+    },
+    stopTimer: (id) => {
+      tasks.get(id)!.is_running = false
+      calls.push(`stop:${id}`)
     },
     createNextRecurrence: vi.fn((id: number) => {
       calls.push(`recurrence:${id}`)
@@ -111,5 +117,33 @@ describe('applyStatusChange', () => {
     deps.getTaskDependents = () => [2, 3, 99]
     applyStatusChange(deps, 1, 'finalizada')
     expect(calls).toEqual(['unblocked:2:livre', 'autoSync:1'])
+  })
+
+  it('para o timer da task ao finalizar', () => {
+    add({ id: 1, status: 'executando', is_running: true })
+    applyStatusChange(deps, 1, 'finalizada')
+    expect(tasks.get(1)!.is_running).toBe(false)
+    expect(calls).toEqual(['stop:1', 'autoSync:1'])
+  })
+
+  it('para o timer de task já finalizada que ficou rodando', () => {
+    add({ id: 1, status: 'finalizada', is_running: true })
+    applyStatusChange(deps, 1, 'finalizada')
+    expect(calls).toEqual(['stop:1', 'autoSync:1'])
+  })
+
+  it('não mexe no timer fora de finalizada', () => {
+    add({ id: 1, status: 'executando', is_running: true })
+    applyStatusChange(deps, 1, 'aguardando')
+    expect(tasks.get(1)!.is_running).toBe(true)
+    expect(calls).toEqual(['autoSync:1'])
+  })
+
+  it('para o timer do pai fechado pela última subtarefa', () => {
+    add({ id: 1, status: 'executando', is_running: true })
+    add({ id: 2, parent_task_id: 1, is_running: true })
+    deps.completeSubtasksCheck = vi.fn(() => true)
+    applyStatusChange(deps, 2, 'finalizada')
+    expect(calls).toEqual(['stop:2', 'stop:1', 'sync:1', 'autoSync:2'])
   })
 })
