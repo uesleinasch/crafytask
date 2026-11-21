@@ -15,7 +15,7 @@ export const PROJECT_ACTIVITY_JULIAN = `MAX(
   )`
 
 const PROJECT_SELECT = `
-  SELECT p.*, a.name AS area_name,
+  SELECT p.*, a.name AS area_name, g.name AS goal_name,
     COALESCE(s.task_count, 0) AS task_count,
     COALESCE(s.completed_task_count, 0) AS completed_task_count,
     COALESCE(s.open_task_count, 0) AS open_task_count,
@@ -25,6 +25,7 @@ const PROJECT_SELECT = `
     datetime(${PROJECT_ACTIVITY_JULIAN}) AS last_activity_at
   FROM projects p
   LEFT JOIN areas a ON a.id = p.area_id
+  LEFT JOIN goals g ON g.id = p.goal_id
   LEFT JOIN (
     SELECT project_id,
       COUNT(*) AS task_count,

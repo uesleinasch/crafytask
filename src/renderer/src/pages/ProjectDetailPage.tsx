@@ -15,7 +15,7 @@ import {
   type RefSelectProps
 } from 'antd'
 import { TriangleAlert } from 'lucide-react'
-import type { Area, Project, Task, UpdateProjectInput } from '@shared/types'
+import type { Area, Goal, Project, Task, UpdateProjectInput } from '@shared/types'
 import { localDateString } from '@shared/dueState'
 import { ProjectHeader } from '@renderer/components/projects/ProjectHeader'
 import {
@@ -31,6 +31,7 @@ import { TaskListView } from '@renderer/components/tasks/TaskListView'
 interface ProjectData {
   project: Project | null
   areas: Area[]
+  goals: Goal[]
   tasks: Task[]
 }
 
@@ -49,9 +50,12 @@ export function ProjectDetailPage(): React.JSX.Element {
     Promise.all([
       window.api.getProject(projectId),
       window.api.listAreas(),
+      window.api.listGoals(),
       window.api.listTasks({ projectId, archived: false, status: 'all' })
     ])
-      .then(([project, areas, tasks]) => setData({ project: project ?? null, areas, tasks }))
+      .then(([project, areas, goals, tasks]) =>
+        setData({ project: project ?? null, areas, goals, tasks })
+      )
       .catch(showBoundary)
   }, [projectId, showBoundary])
 
@@ -80,7 +84,7 @@ export function ProjectDetailPage(): React.JSX.Element {
       </Flex>
     )
   }
-  const { project, areas, tasks } = data
+  const { project, areas, goals, tasks } = data
   if (!project) {
     return (
       <Result status="404" title="Projeto não encontrado" subTitle="Ele pode ter sido excluído." />
@@ -105,6 +109,7 @@ export function ProjectDetailPage(): React.JSX.Element {
         <ProjectHeader
           project={project}
           areas={areas}
+          goals={goals}
           today={today}
           onSave={save}
           onReload={load}

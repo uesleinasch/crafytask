@@ -37,6 +37,14 @@ nenhuma tarefa em Próximas fora do arquivo (`lacksNextAction`).
 `?semProxima=1` abre a aba Ativos com **Mostrar só esses** ligado (indicador "Projetos sem próxima
 ação").
 
+## Projetos de uma meta
+
+`?meta=<id>` (clicar numa meta em Horizontes) abre a aba Todos só com os projetos daquela meta, sob
+um aviso informativo (`Trophy`, "Projetos que servem a "{meta}" · H3", o nível em mono) com **Mostrar
+todos**, que tira o filtro e o parâmetro da URL. Sem nenhum projeto, o vazio diz "Nenhum projeto
+serve a esta meta ainda." e oferece **Criar projeto para esta meta**, que abre o "Novo projeto" já
+com a meta e a área dela. Regras em `projectGoals.ts` (puro, testado).
+
 ## Projetos parados
 
 `project:list` traz `last_activity_at`: a mais recente entre a criação do projeto, a última sessão de
@@ -74,7 +82,8 @@ acima da grade, na Tabela uma linha de grupo.
 ## Menu do projeto
 
 Botão direito no card ou na linha, e o `⋯`: **Abrir** · **Marcar como ▸** (os quatro status, com ✓
-no atual) · **Área de foco ▸** (as áreas e "Sem área") · **Excluir…**, que pede confirmação e avisa
+no atual) · **Área de foco ▸** (as áreas e "Sem área") · **Meta ▸** (as metas agrupadas por H3, H4
+e H5, mais "Sem meta") · **Excluir…**, que pede confirmação e avisa
 que as tarefas não são apagadas: ficam sem projeto (`ON DELETE SET NULL`).
 
 ## Vazio
@@ -85,13 +94,14 @@ filtros." com **Limpar filtros**.
 ## Novo projeto
 
 `Modal` com Nome, Resultado desejado ("Como fica o mundo quando o projeto estiver pronto?"),
-Descrição, Área de foco (`Select`) e Cor (as dez cores de `USER_COLORS`, como rádio). Ao criar, abre
+Descrição, Área de foco (`Select`), Meta (`Select` agrupado por nível, com "A que meta, visão ou
+propósito este projeto serve?") e Cor (as dez cores de `USER_COLORS`, como rádio). Ao criar, abre
 `/project/:id`.
 
 ## Dados
 
 `project:list` usa `listProjectsQuery` (`src/main/projectQueries.ts`, testado): uma consulta com a
-área, `task_count`, `completed_task_count`, `open_task_count` (sem as arquivadas), `total_seconds`
+área, a meta (`goal_id`, `goal_name`; `projects.goal_id` é `ON DELETE SET NULL`), `task_count`, `completed_task_count`, `open_task_count` (sem as arquivadas), `total_seconds`
 (soma do tempo das tarefas) e a próxima ação (`next_action` e `next_action_id`: a escolhida em
 `projects.next_task_id` se ainda estiver aberta, no projeto e fora do arquivo; senão, a tarefa em
 Próximas mais recente fora do arquivo) — no lugar das três consultas por projeto de antes.
@@ -121,6 +131,8 @@ em `components/tasks/TaskListView.tsx`, o mesmo miolo da lista de tarefas. Dados
 ## Pílulas (`PropPill`, as mesmas do detalhe da tarefa)
 
 - **Área de foco** (`TrendingUp`): `Select` com as áreas e "Ver em Horizontes →".
+- **Meta** (`Trophy`): o mesmo `Select` agrupado do "Novo projeto" e "Ver em Horizontes →"; o nome
+  longo corta com reticências.
 - **Prazo** (`CalendarDays`): `DatePicker` e "Remover prazo"; o texto diz "Prazo 12/12 · faltam
   8d" (ou "hoje", "venceu há 3d"), âmbar a 7 dias e vermelho vencido, só em projeto ativo.
 - **Cor:** as dez `USER_COLORS` como rádio. Uma cor antiga fora da paleta continua e aparece como

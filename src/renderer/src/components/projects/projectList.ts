@@ -71,6 +71,7 @@ export interface ProjectFilters {
   search: string
   onlyWithoutNext: boolean
   onlyStalled?: boolean
+  goalId?: number | null
   now?: Date
   sort: ProjectSort
 }
@@ -90,6 +91,7 @@ export function visibleProjects(projects: Project[], filters: ProjectFilters): P
     )
     .filter((p) => !filters.onlyWithoutNext || lacksNextAction(p))
     .filter((p) => !filters.onlyStalled || isStalled(p, filters.now ?? new Date()))
+    .filter((p) => !filters.goalId || p.goal_id === filters.goalId)
     .sort((a, b) => SORTERS[filters.sort](a, b) || a.id - b.id)
 }
 

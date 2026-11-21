@@ -148,7 +148,8 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
 .ct-hzarea { display: flex; align-items: center; gap: 12px; padding: 10px; border: 1px solid var(--ct-border); border-radius: 12px; cursor: pointer; background: var(--ct-surface); min-width: 0; }
 .ct-hzarea:hover { border-color: var(--ct-border-strong); }
 .ct-hzarea.on { border-color: var(--ct-primary); box-shadow: 0 0 0 1px var(--ct-primary); }
-.ct-hzgoal { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--ct-border); }
+.ct-hzgoal { display: flex; align-items: flex-start; gap: 12px; padding: 10px 8px; border-bottom: 1px solid var(--ct-border); cursor: pointer; border-radius: 8px; }
+.ct-hzgoal:hover { background: var(--ct-bg); }
 .ct-hzgoal:last-child { border-bottom: 0; }
 .ct-hzrail { position: sticky; top: 0; display: flex; flex-direction: column; gap: 2px; width: 184px; flex: none; }
 .ct-hzrail button { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border: 0; border-radius: 8px; background: transparent; color: var(--ct-text-2); font: inherit; cursor: pointer; text-align: left; }
@@ -326,13 +327,13 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
   const ENERGY = { alto: { label: 'Alta', bars: 3 }, medio: { label: 'Média', bars: 2 }, baixo: { label: 'Baixa', bars: 1 } };
 
   const PROJECTS = [
-    { id: 13, name: 'CrafyTask', color: '#E5484D', status: 'active', area: 'Produtos pessoais', due: '2026-12-15', updated: '2026-11-17',
+    { id: 13, name: 'CrafyTask', color: '#E5484D', status: 'active', area: 'Produtos pessoais', goal: 1, due: '2026-12-15', updated: '2026-11-17',
       description: 'App desktop de tarefas e tempo no estilo GTD.', outcome: 'App de tarefas sólido, bonito e responsivo, com a nova identidade visual publicada.', workingDir: '~/Code/pessoal/crafytask' },
     { id: 4, name: 'Squad Connect', color: '#2A62D6', status: 'active', area: 'Carreira', due: '2026-12-19', updated: '2026-11-17',
       description: 'Rotinas e entregas do squad.', outcome: 'Squad entregando o roadmap do trimestre sem hora extra.', workingDir: '~/Code/squad' },
-    { id: 7, name: 'Day Zero Playbook', color: '#0B7A50', status: 'active', area: 'Produtos pessoais', due: '2026-11-30', updated: '2026-11-02',
+    { id: 7, name: 'Day Zero Playbook', color: '#0B7A50', status: 'active', area: 'Produtos pessoais', goal: 3, due: '2026-11-30', updated: '2026-11-02',
       description: 'Guia aberto de gestão de projetos.', outcome: 'Versão em inglês publicada no site.', workingDir: null },
-    { id: 9, name: 'Saúde 2026', color: '#A15C00', status: 'active', area: 'Saúde', due: null, updated: '2026-11-15',
+    { id: 9, name: 'Saúde 2026', color: '#A15C00', status: 'active', area: 'Saúde', goal: 2, due: null, updated: '2026-11-15',
       description: '', outcome: 'Treinar 4x por semana e fazer o check-up anual.', workingDir: null },
     { id: 21, name: 'Curso de Rust', color: '#7647B0', status: 'someday', area: 'Aprendizado', due: null, updated: '2026-09-10',
       description: 'Aprender Rust fazendo um CLI pequeno.', outcome: 'Um CLI de backup escrito em Rust.', workingDir: null },
@@ -1788,16 +1789,17 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
   function ProjectsPage({ mode, isMobile, screens, openProject }) {
     const { message, modal } = AntApp.useApp();
     const [projects, setProjects] = useState(PROJECTS);
-    const [status, setStatus] = useState('active');
+    const [intent] = useState(() => takeIntent('projetos'));
+    const [status, setStatus] = useState(intent && intent.goal ? 'all' : 'active');
     const [view, setView] = useState('cards');
     const [q, setQ] = useState('');
-    const [intent] = useState(() => takeIntent('projetos'));
     const [sort, setSort] = useState(intent && intent.stalled ? 'activity' : 'due');
+    const [goalFilter, setGoalFilter] = useState(intent && intent.goal ? intent.goal : null);
     const [groupByArea, setGroupByArea] = useState(false);
     const [onlyNoNext, setOnlyNoNext] = useState(!!(intent && intent.noNext));
     const [onlyStalled, setOnlyStalled] = useState(!!(intent && intent.stalled));
     const [collapsed, setCollapsed] = useState(() => new Set());
-    const NEW_DRAFT = { name: '', outcome: '', description: '', area: undefined, color: '#5B47EB' };
+    const NEW_DRAFT = { name: '', outcome: '', description: '', area: undefined, goal: undefined, color: '#5B47EB' };
     const [draft, setDraft] = useState(null);
     const stats = useMemo(() => Object.fromEntries(projects.map(p => [p.id, projectStats(p, TASKS)])), [projects]);
     const counts = useMemo(() => { const c = { all: projects.length }; projects.forEach(p => { c[p.status] = (c[p.status] || 0) + 1; }); return c; }, [projects]);
@@ -1820,7 +1822,9 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       .filter(p => !needle || [p.name, p.outcome, p.description, p.area].join(' ').toLowerCase().includes(needle))
       .filter(p => !onlyNoNext || noNext(p))
       .filter(p => !onlyStalled || isStalled(p))
+      .filter(p => !goalFilter || p.goal === goalFilter)
       .sort(sorters[sort]);
+    const filteredGoal = goalFilter ? GOALS.find(g => g.id === goalFilter) : null;
     const groups = groupByArea
       ? AREAS.concat(['Sem área']).map(a => ({ key: a, name: a, items: rows.filter(p => (p.area || 'Sem área') === a) })).filter(g => g.items.length)
       : null;
@@ -1831,6 +1835,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         { key: 'open', icon: createElement(I.FolderOpenOutlined), label: 'Abrir' },
         { key: 'status', icon: createElement(I.CheckCircleOutlined), label: 'Marcar como', children: Object.entries(PROJECT_STATUS).map(([k, v]) => ({ key: 'status:' + k, label: (p.status === k ? '✓ ' : '') + v.label })) },
         { key: 'area', icon: createElement(I.RiseOutlined), label: 'Área de foco', children: AREAS.map(a => ({ key: 'area:' + a, label: (p.area === a ? '✓ ' : '') + a })).concat([{ key: 'area:', label: (!p.area ? '✓ ' : '') + 'Sem área' }]) },
+        { key: 'goal', icon: createElement(I.TrophyOutlined), label: 'Meta', children: goalMenuGroups(p.goal, 'goal:').concat([{ key: 'goal:', label: (!p.goal ? '✓ ' : '') + 'Sem meta' }]) },
         { type: 'divider' },
         { key: 'delete', icon: createElement(I.DeleteOutlined), label: 'Excluir…', danger: true }
       ],
@@ -1840,6 +1845,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         if (kind === 'open') openProject(p.id);
         if (kind === 'status') { update(p.id, { status: val }); message.success(p.name + ': ' + PROJECT_STATUS[val].label); }
         if (kind === 'area') { update(p.id, { area: val || null }); message.success(val ? 'Área: ' + val : 'Sem área'); }
+        if (kind === 'goal') { update(p.id, { goal: val ? Number(val) : null }); message.success(val ? 'Meta: ' + goalById(Number(val)).name : 'Sem meta'); }
         if (kind === 'delete') modal.confirm({
           title: 'Excluir o projeto ' + p.name + '?',
           content: stats[p.id].total ? `As ${stats[p.id].total} tarefas dele não são apagadas: ficam sem projeto.` : 'O projeto não tem tarefas.',
@@ -1908,7 +1914,9 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       </span>` }));
 
     const body = rows.length === 0
-      ? html`<${Empty} image=${Empty.PRESENTED_IMAGE_SIMPLE} description=${q || onlyNoNext || onlyStalled ? 'Nenhum projeto com esses filtros.' : 'Nenhum projeto aqui.'}>${q || onlyNoNext || onlyStalled ? html`<${Button} onClick=${() => { setQ(''); setOnlyNoNext(false); setOnlyStalled(false); }}>Limpar filtros<//>` : html`<${Button} type="primary" icon=${html`<${I.PlusOutlined} />`} onClick=${() => setDraft(NEW_DRAFT)}>Criar projeto<//>`}<//>`
+      ? filteredGoal && !q && !onlyNoNext && !onlyStalled
+        ? html`<${Empty} image=${Empty.PRESENTED_IMAGE_SIMPLE} description="Nenhum projeto serve a esta meta ainda."><${Button} type="primary" icon=${html`<${I.PlusOutlined} />`} onClick=${() => setDraft({ ...NEW_DRAFT, goal: goalFilter, area: filteredGoal.area || undefined })}>Criar projeto para esta meta<//><//>`
+        : html`<${Empty} image=${Empty.PRESENTED_IMAGE_SIMPLE} description=${q || onlyNoNext || onlyStalled || goalFilter ? 'Nenhum projeto com esses filtros.' : 'Nenhum projeto aqui.'}>${q || onlyNoNext || onlyStalled || goalFilter ? html`<${Button} onClick=${() => { setQ(''); setOnlyNoNext(false); setOnlyStalled(false); setGoalFilter(null); }}>Limpar filtros<//>` : html`<${Button} type="primary" icon=${html`<${I.PlusOutlined} />`} onClick=${() => setDraft(NEW_DRAFT)}>Criar projeto<//>`}<//>`
       : effectiveView === 'tabela'
         ? html`<${Table} rowKey="id" size=${screens.xxl ? 'middle' : 'small'} columns=${columns} dataSource=${data} pagination=${false} scroll=${{ x: 'max-content' }}
             components=${{ body: { row: MenuRow } }} onRow=${r => r.isGroup ? {} : { record: r, menu: menuFor(r) }}
@@ -1932,17 +1940,21 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       ${activeNoNext.length && (status === 'active' || status === 'all') ? html`<${Alert} showIcon type="warning" style=${{ marginBottom: 12 }}
         message=${html`<span><b>${activeNoNext.length === 1 ? '1 projeto ativo está' : activeNoNext.length + ' projetos ativos estão'} sem próxima ação.</b> Projeto sem próxima ação fica parado: defina o próximo passo concreto.</span>`}
         action=${html`<${Button} size="small" type=${onlyNoNext ? 'primary' : 'default'} onClick=${() => setOnlyNoNext(!onlyNoNext)}>${onlyNoNext ? 'Mostrar todos' : 'Mostrar só esses'}<//>`} />` : null}
+      ${filteredGoal ? html`<${Alert} showIcon type="info" icon=${html`<${I.TrophyOutlined} />`} style=${{ marginBottom: 12 }}
+        message=${html`<span><b>Projetos que servem a “${filteredGoal.name}”</b> · <span className="ct-mono">H${filteredGoal.horizon}</span></span>`}
+        action=${html`<${Button} size="small" onClick=${() => setGoalFilter(null)}>Mostrar todos<//>`} />` : null}
       ${onlyStalled ? html`<${Alert} showIcon type="info" icon=${html`<${I.PauseCircleOutlined} />`} style=${{ marginBottom: 12 }}
         message=${html`<span><b>${stalledCount === 1 ? '1 projeto ativo está parado.' : stalledCount + ' projetos ativos estão parados.'}</b> Sem sessão nem tarefa concluída há mais de 7 dias.</span>`}
         action=${html`<${Button} size="small" onClick=${() => setOnlyStalled(false)}>Mostrar todos<//>`} />` : null}
       ${body}
       <${Modal} open=${!!draft} title="Novo projeto" okText="Criar projeto" cancelText="Cancelar" onCancel=${() => setDraft(null)} okButtonProps=${{ disabled: !draft || !draft.name.trim() }}
-        onOk=${() => { const id = Date.now(); setProjects(ps => ps.concat([{ id, name: draft.name.trim(), outcome: draft.outcome.trim(), description: draft.description.trim(), area: draft.area || null, color: draft.color, status: 'active', due: null, updated: TODAY }])); setDraft(null); message.success('Projeto criado: abre o detalhe'); }}>
+        onOk=${() => { const id = Date.now(); setProjects(ps => ps.concat([{ id, name: draft.name.trim(), outcome: draft.outcome.trim(), description: draft.description.trim(), area: draft.area || null, goal: draft.goal || null, color: draft.color, status: 'active', due: null, updated: TODAY }])); setDraft(null); message.success('Projeto criado: abre o detalhe'); }}>
         ${draft ? html`<${Form} layout="vertical" requiredMark=${false}>
           <${Form.Item} label="Nome" required><${Input} autoFocus value=${draft.name} onChange=${e => setDraft({ ...draft, name: e.target.value })} placeholder="Ex.: Redesenhar o módulo de autenticação" /><//>
           <${Form.Item} label="Resultado desejado" extra="Como fica o mundo quando o projeto estiver pronto?"><${Input.TextArea} autoSize=${{ minRows: 2, maxRows: 4 }} value=${draft.outcome} onChange=${e => setDraft({ ...draft, outcome: e.target.value })} /><//>
           <${Form.Item} label="Descrição"><${Input.TextArea} autoSize=${{ minRows: 2, maxRows: 4 }} value=${draft.description} onChange=${e => setDraft({ ...draft, description: e.target.value })} /><//>
           <${Form.Item} label="Área de foco"><${Select} allowClear placeholder="Sem área" value=${draft.area} onChange=${v => setDraft({ ...draft, area: v })} options=${AREAS.map(a => ({ value: a, label: a }))} /><//>
+          <${Form.Item} label="Meta" extra="A que meta, visão ou propósito este projeto serve?"><${Select} allowClear placeholder="Sem meta" value=${draft.goal} onChange=${v => setDraft({ ...draft, goal: v })} options=${goalSelectOptions()} /><//>
           <${Form.Item} label="Cor" style=${{ marginBottom: 0 }}><${Flex} gap=${8} wrap="wrap" role="radiogroup" aria-label="Cor">${['#E5484D', '#A84803', '#A15C00', '#0B7A50', '#0F6E7A', '#2A62D6', '#5B47EB', '#7647B0', '#B8327A', '#5D6B82'].map(c => html`<button key=${c} type="button" role="radio" aria-checked=${draft.color === c} aria-label=${'Cor ' + c} onClick=${() => setDraft({ ...draft, color: c })}
             style=${{ width: 26, height: 26, borderRadius: '50%', background: c, border: 'none', cursor: 'pointer', boxShadow: draft.color === c ? '0 0 0 2px var(--ct-surface), 0 0 0 4px var(--ct-text)' : 'none' }}></button>`)}<//><//>
         <//>` : null}
@@ -1983,6 +1995,11 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           <${Select} allowClear placeholder="Sem área" value=${p.area} onChange=${v => set({ area: v || null })} options=${AREAS.map(a => ({ value: a, label: a }))} />
           <a onClick=${() => go('horizontes')}>Ver em Horizontes →</a>
         <//>`}>${p.area || 'Área de foco'}<//>
+      <${PropPill} label="Meta" icon="TrophyOutlined" muted=${!p.goal} content=${html`<${Flex} vertical gap=${8}>
+          <${Select} allowClear placeholder="Sem meta" value=${p.goal || undefined} onChange=${v => set({ goal: v || null })} options=${goalSelectOptions()} />
+          <${Text} type="secondary" style=${{ fontSize: 12 }}>A meta, visão ou propósito a que este projeto serve.<//>
+          <a onClick=${() => go('horizontes')}>Ver em Horizontes →</a>
+        <//>`}><span className="ct-ellipsis" style=${{ maxWidth: 220 }}>${p.goal ? goalById(p.goal).name : 'Meta'}</span><//>
       <${PropPill} label="Prazo" icon="FlagOutlined" muted=${!p.due} tone=${daysLeft !== null && daysLeft < 0 ? PALETTE[mode].error : daysLeft !== null && daysLeft <= 7 ? PALETTE[mode].warning : null}
         content=${html`<${Flex} vertical gap=${8}>
           <${DatePicker} format="DD/MM/YYYY" placeholder="Data limite" value=${p.due ? dayjs(p.due) : null} onChange=${d => set({ due: d ? d.format('YYYY-MM-DD') : null })} />
@@ -2588,6 +2605,9 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     { h: 4, label: 'Visão', sub: '3 a 5 anos', icon: 'EyeOutlined', emoji: '🔭' },
     { h: 5, label: 'Propósito', sub: 'Princípios e razão de ser', icon: 'StarOutlined', emoji: '✨' }
   ];
+  const goalById = id => GOALS.find(g => g.id === id) || { name: '—', horizon: 3 };
+  const goalSelectOptions = () => HZ.slice(3).map(lv => ({ label: 'H' + lv.h + ' · ' + lv.label, options: GOALS.filter(g => g.horizon === lv.h).map(g => ({ value: g.id, label: lv.emoji + ' ' + g.name })) })).filter(o => o.options.length);
+  const goalMenuGroups = (current, prefix) => HZ.slice(3).map(lv => ({ type: 'group', key: 'g' + lv.h, label: 'H' + lv.h + ' · ' + lv.label, children: GOALS.filter(g => g.horizon === lv.h).map(g => ({ key: prefix + g.id, label: (current === g.id ? '✓ ' : '') + g.name })) })).filter(o => o.children.length);
   const HZ_RAMP = {
     light: [['#F1EFFF', '#4B3BC9'], ['#E4E0FF', '#4433B8'], ['#D5CFFF', '#3B2BA6'], ['#C3BAFF', '#2E218C'], ['#AFA3FA', '#24196F'], ['#9D8FF5', '#170F4D']],
     dark: [['#1E1B33', '#B9B0FF'], ['#262143', '#C3BBFF'], ['#2F2854', '#CEC7FF'], ['#3A3168', '#D9D3FF'], ['#463B80', '#E6E2FF'], ['#5B4CA8', '#FFFFFF']]
@@ -2695,29 +2715,35 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           </div><//>`; })}</div>`
       : empty('Nenhuma área de foco.', null), () => setAreaModal({ name: '', emoji: '🎯', description: '' }));
 
+    const projectsOfGoal = g => PROJECTS.filter(p => p.goal === g.id && p.status !== 'archived');
+    const openGoalProjects = g => goWith(go, 'projetos', { goal: g.id });
     const goalMenu = g => ({
       items: [
+        { key: 'projects', icon: createElement(I.FolderOutlined), label: 'Ver projetos da meta' },
         { key: 'edit', icon: createElement(I.EditOutlined), label: 'Editar' },
         { key: 'move', icon: createElement(I.SwapOutlined), label: 'Mover para', children: HZ.slice(3).map(lv => ({ key: 'move:' + lv.h, label: (g.horizon === lv.h ? '✓ ' : '') + 'H' + lv.h + ' — ' + lv.label })) },
         { type: 'divider' },
         { key: 'delete', icon: createElement(I.DeleteOutlined), label: 'Excluir…', danger: true }
       ],
-      onClick: ({ key }) => {
+      onClick: ({ key, domEvent }) => {
+        if (domEvent) domEvent.stopPropagation();
         const [k, v] = key.split(':');
+        if (k === 'projects') openGoalProjects(g);
         if (k === 'edit') setGoalModal({ ...g });
         if (k === 'move') { setGoals(gs => gs.map(x => x.id === g.id ? { ...x, horizon: Number(v) } : x)); message.success('Movida para H' + v); }
-        if (k === 'delete') modal.confirm({ title: 'Excluir "' + g.name + '"?', content: 'Só esta meta é apagada; áreas e projetos não mudam.', okText: 'Excluir', okButtonProps: { danger: true }, cancelText: 'Cancelar', onOk: () => { setGoals(gs => gs.filter(x => x.id !== g.id)); message.success('Meta excluída'); } });
+        if (k === 'delete') modal.confirm({ title: 'Excluir "' + g.name + '"?', content: projectsOfGoal(g).length ? projectsOfGoal(g).length + ' projeto(s) ficam sem meta. Nada mais é apagado.' : 'Nenhum projeto serve a esta meta.', okText: 'Excluir', okButtonProps: { danger: true }, cancelText: 'Cancelar', onOk: () => { setGoals(gs => gs.filter(x => x.id !== g.id)); message.success('Meta excluída'); } });
       }
     });
     const goalLevel = lv => { const list = goalsOf(lv.h); return levelCard(lv, list.length, list.length
-      ? html`<${List} size="small" split=${false} dataSource=${list} renderItem=${g => html`<${Dropdown} menu=${goalMenu(g)} trigger=${['contextMenu']}><div className="ct-hzgoal">
+      ? html`<${List} size="small" split=${false} dataSource=${list} renderItem=${g => { const np = projectsOfGoal(g).length; return html`<${Dropdown} menu=${goalMenu(g)} trigger=${['contextMenu']}><div className="ct-hzgoal" role="button" tabIndex=${0} aria-label=${'Ver projetos de ' + g.name} onClick=${() => openGoalProjects(g)} onKeyDown=${e => { if (e.key === 'Enter') openGoalProjects(g); }}>
           <span style=${{ fontSize: 18 }}>${lv.emoji}</span>
           <div style=${{ flex: 1, minWidth: 0 }}>
             <${Flex} align="center" gap=${8} wrap="wrap"><${Text} strong style=${{ fontWeight: 500 }}>${g.name}<//>${areaTag(g.area)}<//>
             ${g.description ? html`<${Text} type="secondary" style=${{ whiteSpace: 'pre-wrap', fontSize: 13, display: 'block', marginTop: 2 }}>${g.description}<//>` : null}
+            <${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12, display: 'block', marginTop: 2 }}>${np ? np + ' projeto' + (np === 1 ? '' : 's') : 'Nenhum projeto'}<//>
           </div>
-          <${Dropdown} menu=${goalMenu(g)} trigger=${['click']}><${Button} size="small" type="text" aria-label="Mais ações" icon=${html`<${I.EllipsisOutlined} />`} /><//>
-        </div><//>`} />`
+          <${Dropdown} menu=${goalMenu(g)} trigger=${['click']}><${Button} size="small" type="text" aria-label="Mais ações" icon=${html`<${I.EllipsisOutlined} />`} onClick=${e => e.stopPropagation()} /><//>
+        </div><//>`; }} />`
       : empty('Nada em ' + lv.label.toLowerCase() + (areaFilter ? ' nesta área.' : '.'), null), () => setGoalModal({ name: '', horizon: lv.h, area: areaFilter, description: '' })); };
 
     const rail = html`<nav className="ct-hzrail" aria-label="Níveis">

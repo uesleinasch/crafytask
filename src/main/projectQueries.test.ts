@@ -9,9 +9,10 @@ beforeEach(() => {
   const raw = new DatabaseSync(':memory:')
   raw.exec(`
     CREATE TABLE areas (id INTEGER PRIMARY KEY, name TEXT);
+    CREATE TABLE goals (id INTEGER PRIMARY KEY, name TEXT);
     CREATE TABLE projects (
       id INTEGER PRIMARY KEY, name TEXT, status TEXT, color TEXT, area_id INTEGER,
-      created_at TEXT, updated_at TEXT, next_task_id INTEGER
+      created_at TEXT, updated_at TEXT, next_task_id INTEGER, goal_id INTEGER
     );
     CREATE TABLE tasks (
       id INTEGER PRIMARY KEY, name TEXT, status TEXT, project_id INTEGER,
@@ -22,10 +23,11 @@ beforeEach(() => {
     INSERT INTO time_entries (task_id, start_time, end_time) VALUES
       (11, '2026-11-06T10:00:00.000Z', '2026-11-06T11:00:00.000Z');
     INSERT INTO areas VALUES (1, 'Carreira');
+    INSERT INTO goals VALUES (7, 'Ser referência');
     INSERT INTO projects VALUES
-      (1, 'Site', 'active', '#2A62D6', 1, '2026-11-01', '2026-11-10', NULL),
-      (2, 'Viagem', 'someday', '#0B7A50', NULL, '2026-11-01', '2026-11-12', NULL),
-      (3, 'Vazio', 'active', '#5D6B82', NULL, '2026-11-01', '2026-11-05', NULL);
+      (1, 'Site', 'active', '#2A62D6', 1, '2026-11-01', '2026-11-10', NULL, 7),
+      (2, 'Viagem', 'someday', '#0B7A50', NULL, '2026-11-01', '2026-11-12', NULL, NULL),
+      (3, 'Vazio', 'active', '#5D6B82', NULL, '2026-11-01', '2026-11-05', NULL, NULL);
     INSERT INTO tasks (id, name, status, project_id, total_seconds, updated_at, is_archived) VALUES
       (10, 'Rascunho', 'finalizada', 1, 3600, '2026-11-02', 0),
       (11, 'Layout', 'proximas', 1, 600, '2026-11-03', 0),
@@ -46,6 +48,8 @@ describe('listProjectsQuery', () => {
     expect(site).toMatchObject({
       name: 'Site',
       area_name: 'Carreira',
+      goal_id: 7,
+      goal_name: 'Ser referência',
       task_count: 4,
       completed_task_count: 1,
       open_task_count: 2,
@@ -56,6 +60,7 @@ describe('listProjectsQuery', () => {
     expect(viagem).toMatchObject({ task_count: 1, open_task_count: 1, total_seconds: 120 })
     expect(viagem.next_action).toBeUndefined()
     expect(vazio).toMatchObject({ task_count: 0, completed_task_count: 0, total_seconds: 0 })
+    expect(vazio.goal_name).toBeNull()
   })
 
   it('última atividade: sessão, tarefa concluída ou criação, o que for mais recente', () => {

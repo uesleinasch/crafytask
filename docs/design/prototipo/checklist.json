@@ -1186,6 +1186,25 @@
       }
     },
     {
+      "id": "F5.23",
+      "fase": "F5",
+      "titulo": "Metas com destino: projeto ligado a meta; a meta abre os projetos dela",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/{pages/HorizonsPage.tsx,pages/ProjectsPage.tsx,components/projects/*.{ts,tsx},components/horizons/*.{ts,tsx}}",
+        "padroes": ["goal_id", "meta=", "Ver projetos da meta", "Criar projeto para esta meta", "Sem meta"]
+      }
+    },
+    {
+      "id": "F5.24",
+      "fase": "F5",
+      "titulo": "Metas com destino conferidas (Horizontes, lista e detalhe do projeto)",
+      "check": {
+        "tipo": "manual"
+      },
+      "validado": "2026-11-21"
+    },
+    {
       "id": "F5.13",
       "fase": "F5",
       "titulo": "Revisão: cada passo resolve ali mesmo, resumo ao fechar e conclusão com pulados conferidos",
