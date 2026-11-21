@@ -12,11 +12,13 @@ import {
   FolderOpen,
   SquareTerminal,
   Trash2,
-  TrendingUp
+  TrendingUp,
+  Trophy
 } from 'lucide-react'
 import {
   PROJECT_STATUS_LABELS,
   type Area,
+  type Goal,
   type Project,
   type ProjectStatus,
   type UpdateProjectInput
@@ -27,6 +29,7 @@ import { TerminalProjectButton } from '@renderer/components/terminal/TerminalPro
 import { PROJECT_STATUS_COLORS } from '@renderer/theme/semantic'
 import { useThemeSettings } from '@renderer/theme/themeSettings'
 import { NO_AREA, daysUntil, deleteWarning, dueTone } from './projectList'
+import { NO_GOAL, goalSelectOptions } from './projectGoals'
 import { inlineEditStyle } from '@renderer/lib/inlineEdit'
 import { ColorSwatches } from '@renderer/components/color/ColorSwatches'
 
@@ -36,6 +39,7 @@ const STATUSES = Object.keys(PROJECT_STATUS_LABELS) as ProjectStatus[]
 interface ProjectHeaderProps {
   project: Project
   areas: Area[]
+  goals: Goal[]
   today: string
   onSave: (patch: UpdateProjectInput, success?: string) => Promise<void>
   onReload: () => void
@@ -50,6 +54,7 @@ function dueLabel(date: string, today: string): string {
 export function ProjectHeader({
   project,
   areas,
+  goals,
   today,
   onSave,
   onReload
@@ -241,6 +246,39 @@ export function ProjectHeader({
           }
         >
           {project.area_name || 'Área de foco'}
+        </PropPill>
+        <PropPill
+          label="Meta"
+          icon={Trophy}
+          muted={!project.goal_id}
+          content={
+            <Flex vertical gap={8}>
+              <Select
+                allowClear
+                placeholder={NO_GOAL}
+                value={project.goal_id ?? undefined}
+                onChange={(goalId?: number) => void onSave({ goal_id: goalId ?? null })}
+                options={goalSelectOptions(goals)}
+                aria-label="Meta"
+              />
+              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                A meta, visão ou propósito a que este projeto serve.
+              </Typography.Text>
+              <Typography.Link
+                href="#/horizons"
+                onClick={(e) => {
+                  e.preventDefault()
+                  void navigate('/horizons')
+                }}
+              >
+                Ver em Horizontes →
+              </Typography.Link>
+            </Flex>
+          }
+        >
+          <span className="ct-ellipsis" style={{ maxWidth: 220 }}>
+            {project.goal_name || 'Meta'}
+          </span>
         </PropPill>
         <PropPill
           label="Prazo"

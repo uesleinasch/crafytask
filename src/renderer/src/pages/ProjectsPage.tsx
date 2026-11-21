@@ -14,10 +14,11 @@ import {
   Tabs,
   Typography
 } from 'antd'
-import { CirclePause, LayoutGrid, Plus, Search, Table2, TriangleAlert } from 'lucide-react'
-import type { Area, Project } from '@shared/types'
+import { CirclePause, LayoutGrid, Plus, Search, Table2, TriangleAlert, Trophy } from 'lucide-react'
+import type { Area, CreateProjectInput, Goal, Project } from '@shared/types'
 import { localDateString } from '@shared/dueState'
 import { HEALTH_LIMITS } from '@shared/healthLimits'
+import { HorizonChip } from '@renderer/components/horizons/HorizonChip'
 import { NewProjectModal } from '@renderer/components/projects/NewProjectModal'
 import { ProjectCard } from '@renderer/components/projects/ProjectCard'
 import { ProjectGroupHeader, ProjectTabLabel } from '@renderer/components/projects/ProjectCells'
@@ -36,6 +37,7 @@ import {
   type ProjectTab,
   type ProjectView
 } from '@renderer/components/projects/projectList'
+import { goalIdFromSearch } from '@renderer/components/projects/projectGoals'
 import { useProjectMenu } from '@renderer/components/projects/useProjectMenu'
 import { PageContainer } from '@renderer/components/shell/PageContainer'
 import { usePersistedState } from '@renderer/hooks/usePersistedState'
@@ -53,8 +55,10 @@ export function ProjectsPage(): React.JSX.Element {
   const narrow = screens.md === false
   const [projects, setProjects] = useState<Project[] | null>(null)
   const [areas, setAreas] = useState<Area[]>([])
-  const [tab, setTab] = useState<ProjectTab>('active')
-  const [params] = useSearchParams()
+  const [goals, setGoals] = useState<Goal[]>([])
+  const [params, setParams] = useSearchParams()
+  const [goalId, setGoalId] = useState(() => goalIdFromSearch(params))
+  const [tab, setTab] = useState<ProjectTab>(() => (goalIdFromSearch(params) ? 'all' : 'active'))
   const [search, setSearch] = useState(() => params.get('q') ?? '')
   const [onlyWithoutNext, setOnlyWithoutNext] = useState(() => params.get('semProxima') === '1')
   const [onlyStalled, setOnlyStalled] = useState(() => params.get('parados') === '1')
@@ -69,9 +73,18 @@ export function ProjectsPage(): React.JSX.Element {
   const sort = sortOverride ?? storedSort
   const [byArea, setByArea] = usePersistedState<boolean>('ticktask:projects-by-area', false)
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set())
-  const [creating, setCreating] = useState(false)
+  const [creating, setCreating] = useState<Pick<CreateProjectInput, 'area_id' | 'goal_id'> | null>(
+    null
+  )
   const today = localDateString(new Date())
   const view: ProjectView = narrow ? 'cards' : storedView === 'cards' ? 'cards' : 'table'
+
+  useEffect(() => {
+    const fromGoal = goalIdFromSearch(params)
+    if (!fromGoal) return
+    setGoalId(fromGoal)
+    setTab('all')
+  }, [params])
 
   useEffect(() => {
     const withoutNextParam = params.get('semProxima') === '1'
@@ -84,10 +97,11 @@ export function ProjectsPage(): React.JSX.Element {
   }, [params])
 
   const load = useCallback(() => {
-    Promise.all([window.api.listProjects(), window.api.listAreas()])
-      .then(([list, areaList]) => {
+    Promise.all([window.api.listProjects(), window.api.listAreas(), window.api.listGoals()])
+      .then(([list, areaList, goalList]) => {
         setProjects(list)
         setAreas(areaList)
+        setGoals(goalList)
       })
       .catch(showBoundary)
   }, [showBoundary])
@@ -97,13 +111,30 @@ export function ProjectsPage(): React.JSX.Element {
     return window.api.onTasksRefresh(load)
   }, [load])
 
-  const menuFor = useProjectMenu(areas, load)
+  const menuFor = useProjectMenu(areas, goals, load)
   const all = useMemo(() => projects ?? [], [projects])
   const counts = useMemo(() => statusCounts(all), [all])
   const withoutNext = all.filter(lacksNextAction).length
   const now = new Date()
   const stalled = all.filter((p) => isStalled(p, now)).length
-  const rows = visibleProjects(all, { tab, search, onlyWithoutNext, onlyStalled, now, sort })
+  const rows = visibleProjects(all, {
+    tab,
+    search,
+    onlyWithoutNext,
+    onlyStalled,
+    goalId,
+    now,
+    sort
+  })
+  const goal = goalId ? goals.find((g) => g.id === goalId) : undefined
+  const clearGoal = (): void => {
+    setGoalId(null)
+    if (params.has('meta')) {
+      const next = new URLSearchParams(params)
+      next.delete('meta')
+      setParams(next, { replace: true })
+    }
+  }
   const groups = byArea ? groupByArea(rows, areas) : null
   const open = (id: number): void => {
     void navigate(`/project/${id}`)
@@ -120,7 +151,8 @@ export function ProjectsPage(): React.JSX.Element {
     key,
     label: <ProjectTabLabel tab={key} label={label} count={counts[key]} />
   }))
-  const filtered = search.trim() !== '' || onlyWithoutNext || onlyStalled
+  const otherFilters = search.trim() !== '' || onlyWithoutNext || onlyStalled
+  const filtered = otherFilters || goalId !== null
 
   const cards = (list: Project[]): React.ReactNode => (
     <div style={CARD_GRID}>
@@ -144,6 +176,22 @@ export function ProjectsPage(): React.JSX.Element {
         <Spin />
       </Flex>
     )
+  } else if (rows.length === 0 && goal && !otherFilters) {
+    body = (
+      <Empty
+        image={Empty.PRESENTED_IMAGE_SIMPLE}
+        description="Nenhum projeto serve a esta meta ainda."
+        style={{ padding: '32px 0' }}
+      >
+        <Button
+          type="primary"
+          icon={<Plus size={14} strokeWidth={1.75} />}
+          onClick={() => setCreating({ goal_id: goal.id, area_id: goal.area_id })}
+        >
+          Criar projeto para esta meta
+        </Button>
+      </Empty>
+    )
   } else if (rows.length === 0) {
     body = (
       <Empty
@@ -157,6 +205,7 @@ export function ProjectsPage(): React.JSX.Element {
               setSearch('')
               setOnlyWithoutNext(false)
               setOnlyStalled(false)
+              clearGoal()
             }}
           >
             Limpar filtros
@@ -165,7 +214,7 @@ export function ProjectsPage(): React.JSX.Element {
           <Button
             type="primary"
             icon={<Plus size={14} strokeWidth={1.75} />}
-            onClick={() => setCreating(true)}
+            onClick={() => setCreating({})}
           >
             Criar projeto
           </Button>
@@ -278,7 +327,7 @@ export function ProjectsPage(): React.JSX.Element {
             type="primary"
             icon={<Plus size={14} strokeWidth={1.75} />}
             aria-label="Novo projeto"
-            onClick={() => setCreating(true)}
+            onClick={() => setCreating({})}
           >
             {screens.sm ? 'Novo projeto' : null}
           </Button>
@@ -306,6 +355,25 @@ export function ProjectsPage(): React.JSX.Element {
             }
           />
         )}
+        {goal && (
+          <Alert
+            showIcon
+            type="info"
+            icon={<Trophy size={16} strokeWidth={1.75} aria-hidden />}
+            style={{ marginBottom: 12 }}
+            title={
+              <Flex align="center" gap={8} wrap>
+                <HorizonChip h={goal.horizon} />
+                <Typography.Text strong>Projetos que servem a “{goal.name}”</Typography.Text>
+              </Flex>
+            }
+            action={
+              <Button size="small" onClick={clearGoal}>
+                Mostrar todos
+              </Button>
+            }
+          />
+        )}
         {onlyStalled && (
           <Alert
             showIcon
@@ -328,11 +396,13 @@ export function ProjectsPage(): React.JSX.Element {
         {body}
       </PageContainer>
       <NewProjectModal
-        open={creating}
+        open={creating !== null}
         areas={areas}
-        onCancel={() => setCreating(false)}
+        goals={goals}
+        initial={creating ?? undefined}
+        onCancel={() => setCreating(null)}
         onCreated={(project) => {
-          setCreating(false)
+          setCreating(null)
           navigate(`/project/${project.id}`)
         }}
       />

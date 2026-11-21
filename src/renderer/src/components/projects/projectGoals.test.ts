@@ -1,0 +1,70 @@
+import { describe, expect, it } from 'vitest'
+import type { Goal } from '@shared/types'
+import {
+  deleteGoalWarning,
+  goalIdFromSearch,
+  goalMenuGroups,
+  goalProjectsSummary,
+  goalSelectOptions
+} from './projectGoals'
+
+const goal = (id: number, horizon: 3 | 4 | 5, name: string, project_count = 0): Goal => ({
+  id,
+  horizon,
+  name,
+  project_count,
+  created_at: '',
+  updated_at: ''
+})
+
+const goals = [
+  goal(1, 3, 'Lançar o 4.0', 2),
+  goal(2, 5, 'Devolver tempo'),
+  goal(3, 3, 'Correr 10 km')
+]
+
+describe('goalSelectOptions', () => {
+  it('agrupa por horizonte e pula nível vazio', () => {
+    expect(goalSelectOptions(goals)).toEqual([
+      {
+        label: 'H3 · Metas',
+        options: [
+          { value: 1, label: '🎯 Lançar o 4.0' },
+          { value: 3, label: '🎯 Correr 10 km' }
+        ]
+      },
+      { label: 'H5 · Propósito', options: [{ value: 2, label: '✨ Devolver tempo' }] }
+    ])
+  })
+})
+
+describe('goalMenuGroups', () => {
+  it('marca a meta atual', () => {
+    const [h3] = goalMenuGroups(goals, 3)
+    expect(h3.children).toEqual([
+      { key: 'goal:1', label: 'Lançar o 4.0' },
+      { key: 'goal:3', label: '✓ Correr 10 km' }
+    ])
+  })
+})
+
+describe('goalIdFromSearch', () => {
+  it('lê ?meta= e recusa valor inválido', () => {
+    expect(goalIdFromSearch(new URLSearchParams('meta=7'))).toBe(7)
+    expect(goalIdFromSearch(new URLSearchParams('meta=abc'))).toBeNull()
+    expect(goalIdFromSearch(new URLSearchParams(''))).toBeNull()
+  })
+})
+
+describe('textos', () => {
+  it('resume e avisa a exclusão', () => {
+    expect(goalProjectsSummary(0)).toBe('Nenhum projeto')
+    expect(goalProjectsSummary(1)).toBe('1 projeto')
+    expect(goalProjectsSummary(3)).toBe('3 projetos')
+    expect(deleteGoalWarning(goals[0])).toBe('2 projetos ficam sem meta. Nada mais é apagado.')
+    expect(deleteGoalWarning(goal(9, 4, 'x', 1))).toBe(
+      '1 projeto fica sem meta. Nada mais é apagado.'
+    )
+    expect(deleteGoalWarning(goals[1])).toBe('Nenhum projeto serve a esta meta.')
+  })
+})

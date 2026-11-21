@@ -1,13 +1,16 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { App, Form, Input, Modal, Select } from 'antd'
-import type { Area, CreateProjectInput, Project } from '@shared/types'
+import type { Area, CreateProjectInput, Goal, Project } from '@shared/types'
 import { errorMessage } from '@renderer/components/settings/settingsStatus'
 import { USER_COLORS } from '@renderer/theme/semantic'
 import { ColorSwatches } from '@renderer/components/color/ColorSwatches'
+import { GOAL_FIELD_HINT, NO_GOAL, goalSelectOptions } from './projectGoals'
 
 interface NewProjectModalProps {
   open: boolean
   areas: Area[]
+  goals: Goal[]
+  initial?: Pick<CreateProjectInput, 'area_id' | 'goal_id'>
   onCancel: () => void
   onCreated: (project: Project) => void
 }
@@ -17,11 +20,18 @@ const EMPTY: CreateProjectInput = { name: '', outcome: '', description: '', colo
 export function NewProjectModal({
   open,
   areas,
+  goals,
+  initial,
   onCancel,
   onCreated
 }: NewProjectModalProps): React.JSX.Element {
   const { message } = App.useApp()
   const [draft, setDraft] = useState<CreateProjectInput>(EMPTY)
+  const initialArea = initial?.area_id
+  const initialGoal = initial?.goal_id
+  useEffect(() => {
+    if (open) setDraft({ ...EMPTY, area_id: initialArea, goal_id: initialGoal })
+  }, [open, initialArea, initialGoal])
   const [saving, setSaving] = useState(false)
   const set = (patch: Partial<CreateProjectInput>): void => setDraft((d) => ({ ...d, ...patch }))
 
@@ -94,6 +104,15 @@ export function NewProjectModal({
             value={draft.area_id}
             onChange={(area_id?: number) => set({ area_id })}
             options={areas.map((a) => ({ value: a.id, label: a.name }))}
+          />
+        </Form.Item>
+        <Form.Item label="Meta" extra={GOAL_FIELD_HINT}>
+          <Select
+            allowClear
+            placeholder={NO_GOAL}
+            value={draft.goal_id}
+            onChange={(goal_id?: number) => set({ goal_id })}
+            options={goalSelectOptions(goals)}
           />
         </Form.Item>
         <Form.Item label="Cor" style={{ marginBottom: 0 }}>

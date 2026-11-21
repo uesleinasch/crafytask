@@ -956,8 +956,14 @@ body.aux-window #root {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  padding: 10px 0;
+  padding: 10px 8px;
   border-bottom: 1px solid var(--ant-color-border-secondary);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.ct-hzgoal:hover {
+  background: var(--ant-color-bg-layout);
 }
 
 .ct-hzgoal:last-child {

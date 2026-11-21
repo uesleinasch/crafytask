@@ -53,6 +53,11 @@ import {
   type HorizonDef
 } from '@renderer/components/horizons/horizonLevels'
 import { NextActionCell, ProjectProgress } from '@renderer/components/projects/ProjectCells'
+import {
+  deleteGoalWarning,
+  goalProjectsPath,
+  goalProjectsSummary
+} from '@renderer/components/projects/projectGoals'
 import { errorMessage } from '@renderer/components/settings/settingsStatus'
 import { PageContainer } from '@renderer/components/shell/PageContainer'
 import { ProjectLabel } from '@renderer/components/tasks/ProjectLabel'
@@ -416,8 +421,13 @@ export function HorizonsPage(): React.JSX.Element {
     () => setAreaEdit(areaDraft())
   )
 
+  const openGoalProjects = (goal: Goal): void => {
+    void navigate(goalProjectsPath(goal.id))
+  }
+
   const goalMenu = (goal: Goal): MenuProps => ({
     items: [
+      { key: 'projects', icon: <Folder {...ICON} />, label: 'Ver projetos da meta' },
       { key: 'edit', icon: <Pencil {...ICON} />, label: 'Editar' },
       {
         key: 'move',
@@ -434,6 +444,7 @@ export function HorizonsPage(): React.JSX.Element {
     onClick: ({ key, domEvent }) => {
       domEvent.stopPropagation()
       const [kind, value] = key.split(':')
+      if (kind === 'projects') openGoalProjects(goal)
       if (kind === 'edit') setGoalEdit(goalDraft(goal))
       if (kind === 'move') {
         const horizon = Number(value) as GoalHorizon
@@ -449,7 +460,7 @@ export function HorizonsPage(): React.JSX.Element {
       if (kind === 'delete') {
         modal.confirm({
           title: `Excluir "${goal.name}"?`,
-          content: 'Só esta meta é apagada; áreas e projetos não mudam.',
+          content: deleteGoalWarning(goal),
           okText: 'Excluir',
           okButtonProps: { danger: true },
           cancelText: 'Cancelar',
@@ -475,7 +486,19 @@ export function HorizonsPage(): React.JSX.Element {
         <div>
           {list.map((goal) => (
             <Dropdown key={goal.id} menu={goalMenu(goal)} trigger={['contextMenu']}>
-              <div className="ct-hzgoal">
+              <div
+                className="ct-hzgoal"
+                role="button"
+                tabIndex={0}
+                aria-label={`Ver projetos de ${goal.name}`}
+                onClick={() => openGoalProjects(goal)}
+                onKeyDown={(e) => {
+                  if (e.target !== e.currentTarget) return
+                  if (e.key !== 'Enter' && e.key !== ' ') return
+                  e.preventDefault()
+                  openGoalProjects(goal)
+                }}
+              >
                 <span style={{ fontSize: 18 }} aria-hidden>
                   {lv.emoji}
                 </span>
@@ -499,6 +522,18 @@ export function HorizonsPage(): React.JSX.Element {
                       {goal.description}
                     </Typography.Text>
                   )}
+                  <Typography.Text
+                    type="secondary"
+                    style={{
+                      fontSize: 12,
+                      display: 'block',
+                      marginTop: 2,
+                      fontFamily: token.fontFamilyCode,
+                      fontVariantNumeric: 'tabular-nums'
+                    }}
+                  >
+                    {goalProjectsSummary(goal.project_count ?? 0)}
+                  </Typography.Text>
                 </div>
                 <Dropdown menu={goalMenu(goal)} trigger={['click']} placement="bottomRight">
                   <Button
@@ -506,6 +541,7 @@ export function HorizonsPage(): React.JSX.Element {
                     type="text"
                     aria-label={`Mais ações de ${goal.name}`}
                     icon={<Ellipsis {...ICON} />}
+                    onClick={(e) => e.stopPropagation()}
                   />
                 </Dropdown>
               </div>
