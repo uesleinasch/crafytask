@@ -256,7 +256,12 @@ Config (API key, target page/database id, auto-sync flag) is persisted to `app.g
 ## Google Calendar sync
 
 Opt-in por task (`tasks.gcal_sync`), só TickTask → Google, numa agenda secundária "TickTask" criada
-pelo app com o escopo `calendar.app.created`. Time blocks viram eventos com hora; `scheduled_date` e
+pelo app com o escopo `calendar.app.created`. A conexão usa o cliente OAuth embutido no build
+(`googleBuiltinClient.ts`, de `MAIN_VITE_GOOGLE_CLIENT_ID`/`_SECRET`: secrets do GitHub no
+`release.yml`, `.env.local` no dev) ou, em "Avançado", um cliente próprio; `googleAccount.ts` (puro)
+decide o cliente e lê os escopos concedidos. As permissões são incrementais (`include_granted_scopes`):
+agenda e Drive (`drive.file`), guardadas em `scopes` no `gcal-config.json`; a agenda só sincroniza
+com o escopo dela concedido. Time blocks viram eventos com hora; `scheduled_date` e
 `due_date` viram eventos de dia inteiro; task finalizada ganha `✓ ` no título.
 
 Não há tabela de vínculo: cada evento tem ID determinístico (`tick{taskId}b{blockId}`,

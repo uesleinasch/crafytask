@@ -8,11 +8,12 @@ import {
   Input,
   Popconfirm,
   Switch,
+  Tag,
   Typography,
   theme
 } from 'antd'
-import { Calendar, LogOut, RefreshCw, Save } from 'lucide-react'
-import type { GcalStatus } from '@shared/types'
+import { Check, LogIn, LogOut, RefreshCw, Save } from 'lucide-react'
+import type { GcalStatus, GoogleClientMode, GooglePermission } from '@shared/types'
 import { SettingRow, SettingsCard } from './SettingsLayout'
 import { GuideField, GuideLink, SetupGuide, type SetupStep } from './SetupGuide'
 import { errorMessage } from './settingsStatus'
@@ -31,7 +32,9 @@ export function GoogleCalendarSection({
   const { message } = App.useApp()
   const [clientId, setClientId] = useState(status.clientId)
   const [clientSecret, setClientSecret] = useState('')
-  const [busy, setBusy] = useState<'save' | 'connect' | 'sync' | 'disconnect' | 'auto' | null>(null)
+  const [busy, setBusy] = useState<
+    'save' | 'connect' | 'custom' | 'drive' | 'sync' | 'disconnect' | 'auto' | null
+  >(null)
   const mono = { fontFamily: token.fontFamilyCode }
 
   const credentialsChanged = clientId.trim() !== status.clientId || clientSecret.trim() !== ''
@@ -59,13 +62,28 @@ export function GoogleCalendarSection({
     }
   }
 
-  async function handleConnect(): Promise<void> {
-    setBusy('connect')
+  async function connect(
+    permission: GooglePermission,
+    mode: GoogleClientMode | undefined,
+    own: 'connect' | 'custom' | 'drive'
+  ): Promise<void> {
+    setBusy(own)
     try {
-      if (credentialsChanged) await saveCredentials()
-      message.info('Conclua a autorização no navegador que acabou de abrir.')
-      onStatusChange(await window.api.gcalConnect())
-      message.success('Google Calendar conectado. A agenda "TickTask" está pronta.')
+      if (mode === 'custom' && credentialsChanged) await saveCredentials()
+      message.info('Conclua no navegador que acabou de abrir.')
+      const next = await window.api.gcalConnect(permission, mode)
+      onStatusChange(next)
+      if (!next.permissions[permission]) {
+        message.warning(
+          permission === 'drive'
+            ? 'O Google Drive não foi permitido. Marque a permissão no Google para usar.'
+            : 'A agenda não foi permitida. Marque a permissão no Google para usar.'
+        )
+      } else if (permission === 'drive') {
+        message.success('Google Drive permitido')
+      } else {
+        message.success(next.email ? `Conectado como ${next.email}` : 'Conta Google conectada')
+      }
     } catch (error) {
       message.error(errorMessage(error))
       onStatusChange(await window.api.gcalGetStatus())
@@ -106,7 +124,7 @@ export function GoogleCalendarSection({
     setBusy('disconnect')
     try {
       onStatusChange(await window.api.gcalDisconnect())
-      message.success('Google Calendar desconectado. A agenda "TickTask" continua no Google.')
+      message.success('Conta desconectada')
     } catch (error) {
       message.error(errorMessage(error))
     } finally {
@@ -136,7 +154,11 @@ export function GoogleCalendarSection({
           <GuideLink href="https://console.cloud.google.com/apis/library/calendar-json.googleapis.com">
             Google Calendar API
           </GuideLink>{' '}
-          com o projeto selecionado no topo e clique em <strong>Ativar</strong>.
+          com o projeto selecionado no topo e clique em <strong>Ativar</strong>. Faça o mesmo com a{' '}
+          <GuideLink href="https://console.cloud.google.com/apis/library/drive.googleapis.com">
+            Google Drive API
+          </GuideLink>{' '}
+          para usar o Drive.
         </span>
       )
     },
@@ -167,7 +189,8 @@ export function GoogleCalendarSection({
           <span>
             Em <GuideLink href="https://console.cloud.google.com/auth/audience">Audience</GuideLink>
             , clique em <strong>Publish app</strong> para o status virar <em>In production</em>. Não
-            envie para verificação.
+            envie para verificação. Se o botão estiver desabilitado, preencha em Branding a página
+            inicial, a política de privacidade e o domínio autorizado.
           </span>
           <Alert
             type="warning"
@@ -229,7 +252,7 @@ export function GoogleCalendarSection({
     {
       id: 'conectar',
       title: 'Conectar com o Google',
-      autoDone: status.connected && !credentialsChanged,
+      autoDone: status.connected && status.mode === 'custom' && !credentialsChanged,
       content: (
         <>
           <span>
@@ -238,89 +261,149 @@ export function GoogleCalendarSection({
             agenda.
           </span>
           <Button
-            type="primary"
-            icon={<Calendar {...ICON} />}
-            loading={busy === 'connect'}
-            disabled={otherBusy('connect') || !canConnect}
-            onClick={handleConnect}
+            icon={<LogIn {...ICON} />}
+            loading={busy === 'custom'}
+            disabled={otherBusy('custom') || !canConnect}
+            onClick={() => void connect('calendar', 'custom', 'custom')}
             style={{ alignSelf: 'start' }}
           >
-            Conectar com o Google
+            Conectar com o cliente próprio
           </Button>
         </>
       )
     }
   ]
 
-  if (!status.connected) {
-    return (
-      <SettingsCard title="Configurar a conexão">
-        <Flex vertical gap={12} style={{ padding: '12px 0' }}>
-          <Typography.Text type="secondary">
-            Siga os passos uma vez; leva uns 10 minutos. Os links abrem o Google Cloud no navegador.
-          </Typography.Text>
-          <SetupGuide storageKey={STEPS_KEY} steps={steps} />
-        </Flex>
-      </SettingsCard>
-    )
-  }
+  const allowed = (label: string): React.ReactNode => (
+    <Tag bordered={false} color="success" icon={<Check {...ICON} />} style={{ margin: 0 }}>
+      {label}
+    </Tag>
+  )
 
   return (
     <Flex vertical gap={16}>
-      <SettingsCard title="Agenda TickTask">
-        <SettingRow
-          title="Sincronizar automaticamente"
-          description="Atualiza a agenda a cada mudança nas tarefas marcadas. Marque “Google Calendar” na seção Agenda de cada tarefa."
-        >
-          <Switch
-            aria-label="Sincronizar automaticamente"
-            checked={status.autoSync}
-            loading={busy === 'auto'}
-            onChange={(checked) => void handleToggleAutoSync(checked)}
-          />
-        </SettingRow>
-        <SettingRow
-          title="Ressincronizar todas"
-          description="Recalcula os eventos de todas as tarefas marcadas."
-        >
-          <Button
-            icon={<RefreshCw {...ICON} />}
-            loading={busy === 'sync'}
-            disabled={otherBusy('sync')}
-            onClick={handleSyncAll}
+      <SettingsCard title="Conta Google">
+        {status.connected ? (
+          <SettingRow
+            title={status.email ?? 'Conta conectada'}
+            description={status.mode === 'custom' ? 'Conectado com cliente próprio' : 'Conectado'}
           >
-            Ressincronizar
-          </Button>
-        </SettingRow>
-        <SettingRow
-          title="Desconectar"
-          description="Para de atualizar a agenda. A agenda “TickTask” e os eventos continuam no Google."
-        >
-          <Popconfirm
-            title="Desconectar o Google Calendar?"
-            description="O CrafyTask esquece o acesso à sua conta e para de atualizar a agenda. A agenda “TickTask”, os eventos e as tarefas continuam como estão; para voltar, conecte de novo."
-            okText="Desconectar"
-            okButtonProps={{ danger: true }}
-            cancelText="Cancelar"
-            onConfirm={handleDisconnect}
+            <Popconfirm
+              title="Desconectar a conta Google?"
+              description="As tarefas já enviadas continuam na agenda TickTask."
+              okText="Desconectar"
+              okButtonProps={{ danger: true }}
+              cancelText="Cancelar"
+              onConfirm={handleDisconnect}
+            >
+              <Button
+                icon={<LogOut {...ICON} />}
+                loading={busy === 'disconnect'}
+                disabled={otherBusy('disconnect')}
+              >
+                Desconectar
+              </Button>
+            </Popconfirm>
+          </SettingRow>
+        ) : (
+          <SettingRow
+            title="Não conectado"
+            description={
+              status.builtinAvailable
+                ? 'Abre o navegador para você entrar e liberar a agenda.'
+                : 'Esta versão não traz o cliente Google embutido. Use um cliente próprio em Avançado.'
+            }
           >
             <Button
-              danger
-              icon={<LogOut {...ICON} />}
-              loading={busy === 'disconnect'}
-              disabled={otherBusy('disconnect')}
+              type="primary"
+              icon={<LogIn {...ICON} />}
+              loading={busy === 'connect'}
+              disabled={otherBusy('connect') || !status.builtinAvailable}
+              onClick={() => void connect('calendar', 'builtin', 'connect')}
             >
-              Desconectar
+              Conectar com Google
             </Button>
-          </Popconfirm>
-        </SettingRow>
+          </SettingRow>
+        )}
       </SettingsCard>
+      {status.connected && (
+        <SettingsCard title="Permissões">
+          <SettingRow
+            title="Agenda"
+            description="Tarefas marcadas vão para uma agenda “TickTask” criada pelo app."
+          >
+            {status.permissions.calendar ? (
+              allowed('Permitida')
+            ) : (
+              <Button
+                loading={busy === 'connect'}
+                disabled={otherBusy('connect')}
+                onClick={() => void connect('calendar', undefined, 'connect')}
+              >
+                Permitir
+              </Button>
+            )}
+          </SettingRow>
+          <SettingRow
+            title="Google Drive"
+            description="O CrafyTask só vê os arquivos que ele mesmo cria."
+          >
+            {status.permissions.drive ? (
+              allowed('Permitido')
+            ) : (
+              <Button
+                loading={busy === 'drive'}
+                disabled={otherBusy('drive')}
+                onClick={() => void connect('drive', undefined, 'drive')}
+              >
+                Permitir
+              </Button>
+            )}
+          </SettingRow>
+        </SettingsCard>
+      )}
+      {status.connected && status.permissions.calendar && (
+        <SettingsCard title="Agenda TickTask">
+          <SettingRow
+            title="Sincronizar automaticamente"
+            description="Atualiza a agenda a cada mudança nas tarefas marcadas. Marque “Google Calendar” na seção Agenda de cada tarefa."
+          >
+            <Switch
+              aria-label="Sincronizar automaticamente"
+              checked={status.autoSync}
+              loading={busy === 'auto'}
+              onChange={(checked) => void handleToggleAutoSync(checked)}
+            />
+          </SettingRow>
+          <SettingRow
+            title="Ressincronizar todas"
+            description="Recalcula os eventos de todas as tarefas marcadas."
+          >
+            <Button
+              icon={<RefreshCw {...ICON} />}
+              loading={busy === 'sync'}
+              disabled={otherBusy('sync')}
+              onClick={handleSyncAll}
+            >
+              Ressincronizar
+            </Button>
+          </SettingRow>
+        </SettingsCard>
+      )}
       <Collapse
+        defaultActiveKey={status.mode === 'custom' && !status.builtinAvailable ? ['proprio'] : []}
         items={[
           {
-            key: 'guia',
-            label: 'Guia de configuração e troca de credenciais',
-            children: <SetupGuide storageKey={STEPS_KEY} steps={steps} />
+            key: 'proprio',
+            label: 'Avançado: usar um cliente OAuth próprio',
+            children: (
+              <Flex vertical gap={12}>
+                <Typography.Text type="secondary">
+                  Para usar um projeto seu no Google Cloud no lugar do cliente do CrafyTask.
+                </Typography.Text>
+                <SetupGuide storageKey={STEPS_KEY} steps={steps} />
+              </Flex>
+            )
           }
         ]}
       />
