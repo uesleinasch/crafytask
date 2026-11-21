@@ -343,7 +343,7 @@ function deleteConfirmationMessage(
   }
   // FK de projects.goal_id é ON DELETE SET NULL: os projetos sobrevivem, sem meta.
   if (entity === 'goal') {
-    const affected = listGoals().find((goal) => goal.id === targetId)?.project_count ?? 0
+    const affected = listProjects().filter((project) => project.goal_id === targetId).length
     return `Remover a meta "${label}" é permanente; ${affected} projeto(s) dela ficam sem meta (goal_id passa a nulo). Confirme com o usuário.`
   }
   return `Remover ${entity} é permanente. Confirme com o usuário.`

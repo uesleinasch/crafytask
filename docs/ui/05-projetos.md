@@ -40,7 +40,7 @@ ação").
 ## Projetos de uma meta
 
 `?meta=<id>` (clicar numa meta em Horizontes) abre a aba Todos só com os projetos daquela meta, sob
-um aviso informativo (`Trophy`, chip do nível e "Projetos que servem a "{meta}"") com **Mostrar
+um aviso informativo (`Trophy`, "Projetos que servem a "{meta}" · H3", o nível em mono) com **Mostrar
 todos**, que tira o filtro e o parâmetro da URL. Sem nenhum projeto, o vazio diz "Nenhum projeto
 serve a esta meta ainda." e oferece **Criar projeto para esta meta**, que abre o "Novo projeto" já
 com a meta e a área dela. Regras em `projectGoals.ts` (puro, testado).

@@ -44,9 +44,9 @@ Cada `Card` mostra o chip, o nome, o contador em mono e o subtítulo; H2 a H5 t�
 - **H3 · Metas** (1 a 2 anos, 🎯), **H4 · Visão** (3 a 5 anos, 🔭), **H5 · Propósito** (princípios,
   ✨): emoji do nível, nome, etiqueta da área ("todas as áreas" sem área; clicar filtra) e
   descrição com as quebras de linha, e "N projetos" (ou "Nenhum projeto", sem contar os
-  arquivados). Clicar na meta abre os projetos dela (`/projects?meta=<id>`). Menu: Ver projetos da
-  meta · Editar · Mover para ▸ (H3/H4/H5, com ✓ no atual) · Excluir…, que diz quantos projetos ficam
-  sem meta. **Adicionar** abre o diálogo já no nível da seção.
+  arquivados). Clicar na linha ou no nome (um botão, para o teclado) abre os projetos dela
+  (`/projects?meta=<id>`). Menu: Ver projetos da meta · Editar · Mover para ▸ (H3/H4/H5, com ✓ no
+  atual) · Excluir…, que diz quantos projetos (arquivados inclusive) ficam sem meta. **Adicionar** abre o diálogo já no nível da seção.
 
 ## Diálogos
 

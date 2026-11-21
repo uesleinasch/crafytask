@@ -966,6 +966,11 @@ body.aux-window #root {
   background: var(--ant-color-bg-layout);
 }
 
+.ct-hzgoal-name {
+  font-weight: 500;
+  text-align: left;
+}
+
 .ct-hzgoal:last-child {
   border-bottom: 0;
 }

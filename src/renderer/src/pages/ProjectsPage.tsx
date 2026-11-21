@@ -12,13 +12,13 @@ import {
   Select,
   Spin,
   Tabs,
-  Typography
+  Typography,
+  theme
 } from 'antd'
 import { CirclePause, LayoutGrid, Plus, Search, Table2, TriangleAlert, Trophy } from 'lucide-react'
 import type { Area, CreateProjectInput, Goal, Project } from '@shared/types'
 import { localDateString } from '@shared/dueState'
 import { HEALTH_LIMITS } from '@shared/healthLimits'
-import { HorizonChip } from '@renderer/components/horizons/HorizonChip'
 import { NewProjectModal } from '@renderer/components/projects/NewProjectModal'
 import { ProjectCard } from '@renderer/components/projects/ProjectCard'
 import { ProjectGroupHeader, ProjectTabLabel } from '@renderer/components/projects/ProjectCells'
@@ -52,6 +52,7 @@ export function ProjectsPage(): React.JSX.Element {
   const navigate = useNavigate()
   const { showBoundary } = useErrorBoundary()
   const screens = Grid.useBreakpoint()
+  const { token } = theme.useToken()
   const narrow = screens.md === false
   const [projects, setProjects] = useState<Project[] | null>(null)
   const [areas, setAreas] = useState<Area[]>([])
@@ -81,9 +82,8 @@ export function ProjectsPage(): React.JSX.Element {
 
   useEffect(() => {
     const fromGoal = goalIdFromSearch(params)
-    if (!fromGoal) return
     setGoalId(fromGoal)
-    setTab('all')
+    if (fromGoal) setTab('all')
   }, [params])
 
   useEffect(() => {
@@ -362,10 +362,10 @@ export function ProjectsPage(): React.JSX.Element {
             icon={<Trophy size={16} strokeWidth={1.75} aria-hidden />}
             style={{ marginBottom: 12 }}
             title={
-              <Flex align="center" gap={8} wrap>
-                <HorizonChip h={goal.horizon} />
-                <Typography.Text strong>Projetos que servem a “{goal.name}”</Typography.Text>
-              </Flex>
+              <span>
+                <Typography.Text strong>Projetos que servem a “{goal.name}”</Typography.Text> ·{' '}
+                <span style={{ fontFamily: token.fontFamilyCode }}>H{goal.horizon}</span>
+              </span>
             }
             action={
               <Button size="small" onClick={clearGoal}>

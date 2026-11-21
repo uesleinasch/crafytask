@@ -1,4 +1,4 @@
-import type { Goal } from '@shared/types'
+import type { Goal, Project } from '@shared/types'
 import { GOAL_HORIZONS } from '@renderer/components/horizons/horizonLevels'
 
 export const NO_GOAL = 'Sem meta'
@@ -53,8 +53,8 @@ export function goalProjectsSummary(count: number): string {
   return `${count} ${count === 1 ? 'projeto' : 'projetos'}`
 }
 
-export function deleteGoalWarning(goal: Goal): string {
-  const count = goal.project_count ?? 0
+export function deleteGoalWarning(goal: Goal, projects: Project[]): string {
+  const count = projects.filter((p) => p.goal_id === goal.id).length
   if (count === 0) return 'Nenhum projeto serve a esta meta.'
   return `${count} ${count === 1 ? 'projeto fica' : 'projetos ficam'} sem meta. Nada mais é apagado.`
 }

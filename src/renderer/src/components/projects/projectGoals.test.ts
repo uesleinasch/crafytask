@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { Goal } from '@shared/types'
+import type { Goal, Project } from '@shared/types'
 import {
   deleteGoalWarning,
   goalIdFromSearch,
@@ -22,6 +22,20 @@ const goals = [
   goal(2, 5, 'Devolver tempo'),
   goal(3, 3, 'Correr 10 km')
 ]
+
+const linked = (
+  id: number,
+  goal_id: number | null,
+  status: Project['status'] = 'active'
+): Project => ({
+  id,
+  name: `P${id}`,
+  status,
+  color: '',
+  goal_id,
+  created_at: '',
+  updated_at: ''
+})
 
 describe('goalSelectOptions', () => {
   it('agrupa por horizonte e pula nível vazio', () => {
@@ -61,10 +75,13 @@ describe('textos', () => {
     expect(goalProjectsSummary(0)).toBe('Nenhum projeto')
     expect(goalProjectsSummary(1)).toBe('1 projeto')
     expect(goalProjectsSummary(3)).toBe('3 projetos')
-    expect(deleteGoalWarning(goals[0])).toBe('2 projetos ficam sem meta. Nada mais é apagado.')
-    expect(deleteGoalWarning(goal(9, 4, 'x', 1))).toBe(
+    const projects = [linked(1, 1), linked(2, 1, 'archived'), linked(3, 3), linked(4, null)]
+    expect(deleteGoalWarning(goals[0], projects)).toBe(
+      '2 projetos ficam sem meta. Nada mais é apagado.'
+    )
+    expect(deleteGoalWarning(goals[2], projects)).toBe(
       '1 projeto fica sem meta. Nada mais é apagado.'
     )
-    expect(deleteGoalWarning(goals[1])).toBe('Nenhum projeto serve a esta meta.')
+    expect(deleteGoalWarning(goals[1], projects)).toBe('Nenhum projeto serve a esta meta.')
   })
 })

@@ -460,7 +460,7 @@ export function HorizonsPage(): React.JSX.Element {
       if (kind === 'delete') {
         modal.confirm({
           title: `Excluir "${goal.name}"?`,
-          content: deleteGoalWarning(goal),
+          content: deleteGoalWarning(goal, data.projects),
           okText: 'Excluir',
           okButtonProps: { danger: true },
           cancelText: 'Cancelar',
@@ -486,27 +486,23 @@ export function HorizonsPage(): React.JSX.Element {
         <div>
           {list.map((goal) => (
             <Dropdown key={goal.id} menu={goalMenu(goal)} trigger={['contextMenu']}>
-              <div
-                className="ct-hzgoal"
-                role="button"
-                tabIndex={0}
-                aria-label={`Ver projetos de ${goal.name}`}
-                onClick={() => openGoalProjects(goal)}
-                onKeyDown={(e) => {
-                  if (e.target !== e.currentTarget) return
-                  if (e.key !== 'Enter' && e.key !== ' ') return
-                  e.preventDefault()
-                  openGoalProjects(goal)
-                }}
-              >
+              <div className="ct-hzgoal" onClick={() => openGoalProjects(goal)}>
                 <span style={{ fontSize: 18 }} aria-hidden>
                   {lv.emoji}
                 </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <Flex align="center" gap={8} wrap>
-                    <Typography.Text strong style={{ fontWeight: 500 }}>
+                    <button
+                      type="button"
+                      className="ct-linkbutton ct-hzgoal-name"
+                      title="Ver projetos da meta"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        openGoalProjects(goal)
+                      }}
+                    >
                       {goal.name}
-                    </Typography.Text>
+                    </button>
                     {areaTag(goal.area_id)}
                   </Flex>
                   {goal.description && (
