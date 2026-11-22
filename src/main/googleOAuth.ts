@@ -1,6 +1,8 @@
 import { createHash, randomBytes } from 'node:crypto'
 
 export const GCAL_SCOPE = 'https://www.googleapis.com/auth/calendar.app.created'
+export const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file'
+export const IDENTITY_SCOPES = ['openid', 'https://www.googleapis.com/auth/userinfo.email']
 
 const AUTH_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth'
 const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token'
@@ -15,7 +17,7 @@ export interface OAuthClient {
 
 export class GoogleAuthRevokedError extends Error {
   constructor() {
-    super('A autorização do Google Calendar expirou ou foi revogada. Reconecte nas Configurações.')
+    super('A autorização do Google expirou ou foi revogada. Reconecte nas Configurações.')
     this.name = 'GoogleAuthRevokedError'
   }
 }
@@ -31,18 +33,22 @@ export function buildAuthUrl(params: {
   redirectUri: string
   codeChallenge: string
   state: string
+  scopes: string[]
+  loginHint?: string
 }): string {
   const query = new URLSearchParams({
     client_id: params.clientId,
     redirect_uri: params.redirectUri,
     response_type: 'code',
-    scope: GCAL_SCOPE,
+    scope: params.scopes.join(' '),
     access_type: 'offline',
     prompt: 'consent',
+    include_granted_scopes: 'true',
     code_challenge: params.codeChallenge,
     code_challenge_method: 'S256',
     state: params.state
   })
+  if (params.loginHint) query.set('login_hint', params.loginHint)
   return `${AUTH_ENDPOINT}?${query}`
 }
 
@@ -50,6 +56,8 @@ interface TokenResponse {
   access_token?: string
   refresh_token?: string
   expires_in?: number
+  scope?: string
+  id_token?: string
   error?: string
   error_description?: string
 }
@@ -73,7 +81,13 @@ export async function exchangeCode(
   fetchFn: FetchFn,
   params: OAuthClient & { code: string; codeVerifier: string; redirectUri: string },
   now: number
-): Promise<{ accessToken: string; refreshToken: string; expiresAt: number }> {
+): Promise<{
+  accessToken: string
+  refreshToken: string
+  expiresAt: number
+  scopes: string[]
+  idToken?: string
+}> {
   const body = await postToken(fetchFn, {
     client_id: params.clientId,
     client_secret: params.clientSecret,
@@ -88,7 +102,9 @@ export async function exchangeCode(
   return {
     accessToken: body.access_token!,
     refreshToken: body.refresh_token,
-    expiresAt: now + (body.expires_in ?? 3600) * 1000
+    expiresAt: now + (body.expires_in ?? 3600) * 1000,
+    scopes: (body.scope ?? '').split(' ').filter(Boolean),
+    idToken: body.id_token
   }
 }
 

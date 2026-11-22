@@ -1,12 +1,13 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { normalizeWaitingFor } from '@shared/waitingFor'
-import type { CreateTaskInput, Task, TaskListFilters, UpdateTaskInput } from '@shared/types'
+import type { CreateTaskInput, TaskListFilters, UpdateTaskInput } from '@shared/types'
 import { z } from 'zod'
 import {
+  addTaskDependency,
   archiveTask,
   countTasks,
   countTimeBlocksForTask,
-  createTask,
+  createTaskWithSubtasks,
   deleteTasks,
   filterGcalSyncedIds,
   getChildTaskIds,
@@ -21,24 +22,37 @@ import {
   listProjects,
   listTasks,
   moveTasksToProject,
+  removeTaskDependency,
+  setTaskGitLink,
+  setTaskWorkspace,
   unarchiveTask,
-  updateTask,
-  updateTasksStatus
+  updateTask
 } from '../../database'
 import { currentTime, localDateString } from '@shared/dueState'
 import { mergeTaskTimes, taskTimeError } from '@shared/taskTime'
 import { isSafeHttpUrl } from '@shared/externalUrl'
-import { prosemirrorToMarkdown } from '../../notesMarkdown'
 import { needsConfirmation } from '../confirmGuard'
 import {
   afterCalendarChange,
   afterTaskWrite,
   afterTasksDeleted,
-  broadcastRefresh
+  broadcastRefresh,
+  changeTaskStatus,
+  recordOperation
 } from '../effects'
+import {
+  dependencySummary,
+  fieldsChangedSummary,
+  subtaskDeletedSummary,
+  subtasksCreatedSummary
+} from '../operationSummary'
 import { fail, ok } from '../reply'
 import { resolveByName } from '../resolve'
+import { GIT_BRANCH } from '../gitLinkSchema'
+import { MAX_SUBTASKS, planSubtasks, type SubtaskDraft } from '../subtaskPlan'
+import { compactTask, fullTask, viewTask, type CompactTask } from '../taskView'
 import type { ToolContext } from '../toolContext'
+import { notesToMarkdown } from './notes'
 
 const STATUS = z.enum(['inbox', 'aguardando', 'proximas', 'executando', 'finalizada', 'someday'])
 const CATEGORY = z.enum(['urgente', 'prioridade', 'normal', 'time_leak'])
@@ -47,16 +61,39 @@ const DATE = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use o formato AAAA-MM-DD.'
 const TIME = z.string().regex(/^\d{2}:\d{2}$/, 'Use o formato HH:MM.')
 const EXTERNAL_URL = z.string().refine(isSafeHttpUrl, 'Use um link http:// ou https://.')
 const WAITING_FOR = z.string().transform(normalizeWaitingFor)
+const DETAIL = z
+  .enum(['compact', 'full'])
+  .describe(
+    'compact (padrão): só os campos com valor. full: a task inteira, sem o corpo das notas.'
+  )
+
+const TIME_LIMIT = z.number().int().positive().describe('Limite de tempo da task, em minutos.')
+const RECURRENCE = z
+  .object({
+    type: z.enum(['daily', 'weekly', 'monthly']),
+    day_of_week: z.number().int().min(0).max(6).optional().describe('weekly: 0 = domingo.'),
+    day_of_month: z.number().int().min(1).max(31).optional().describe('monthly.')
+  })
+  .describe('Repetição: ao finalizar, a próxima ocorrência é criada.')
+const WORKING_DIR = z
+  .string()
+  .refine((value) => value.startsWith('/'), 'Use um caminho absoluto.')
+  .describe('Pasta de trabalho do terminal da task.')
+const START_COMMAND = z.string().describe('Comando que o terminal da task roda ao abrir.')
+const PR_URL = z
+  .string()
+  .refine(isSafeHttpUrl, 'Use um link http:// ou https://.')
+  .describe('Link do pull request da task.')
+
+function recurrenceRule(value: z.infer<typeof RECURRENCE>): string {
+  return JSON.stringify({
+    type: value.type,
+    dayOfWeek: value.day_of_week,
+    dayOfMonth: value.day_of_month
+  })
+}
 
 type Resolution = { ok: true; id: number } | { ok: false; response: ReturnType<typeof fail> }
-
-// Invariante do projeto: só read_notes e o notes_markdown de get_task carregam corpo de nota;
-// todo outro retorno de task precisa passar por aqui.
-function stripNotes(task: Task): Task {
-  const clean: Task = { ...task }
-  delete clean.notes
-  return clean
-}
 
 function resolveProject(input: string | number): Resolution {
   const resolved = resolveByName(listProjects(), input)
@@ -95,7 +132,7 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
     {
       title: 'Buscar tasks',
       description:
-        'Lista tasks com filtros. Não inclui subtarefas nem o corpo das notas. Use get_task para o detalhe completo de uma task.',
+        'Lista tasks com filtros, em formato compacto (detail=full devolve todos os campos). Não inclui subtarefas nem o corpo das notas. Use get_task para o detalhe completo de uma task.',
       inputSchema: {
         status: STATUS.optional(),
         category: CATEGORY.optional(),
@@ -110,7 +147,8 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
         archived: z.boolean().optional(),
         sort: z.enum(['updated', 'due_date']).optional(),
         limit: z.number().int().min(1).max(200).optional(),
-        offset: z.number().int().min(0).optional()
+        offset: z.number().int().min(0).optional(),
+        detail: DETAIL.optional()
       }
     },
     async (args) => {
@@ -152,7 +190,7 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
 
       return ok({
         total: countTasks(filters),
-        tasks: listTasks(filters)
+        tasks: listTasks(filters).map((task) => viewTask(task, args.detail))
       })
     }
   )
@@ -169,12 +207,12 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
       const task = getTask(id)
       if (!task) return fail('not_found', `Task ${id} não existe.`)
 
-      const notesMarkdown = task.notes ? prosemirrorToMarkdown(task.notes) : null
+      const notesMarkdown = task.notes ? notesToMarkdown(task.notes) : null
 
       return ok({
-        task: stripNotes(task),
+        task: fullTask(task),
         notes_markdown: notesMarkdown,
-        subtasks: getSubtasks(id).map(stripNotes),
+        subtasks: getSubtasks(id).map(compactTask),
         depends_on: getTaskDependencies(id),
         blocked_task_ids: getTaskDependents(id),
         time_entries: getTimeEntries(id)
@@ -187,7 +225,7 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
     {
       title: 'Criar task',
       description:
-        'Cria uma task. Projeto e contextos aceitam nome ou id e falham com candidatos se não forem encontrados; tags são criadas se não existirem. Use parent_task_id para criar subtarefa.',
+        'Cria uma task. Projeto e contextos aceitam nome ou id e falham com candidatos se não forem encontrados; tags são criadas se não existirem. Use parent_task_id para criar subtarefa, ou subtasks para criar a task e as subtarefas dela numa chamada só (tudo ou nada).',
       inputSchema: {
         name: z.string().min(1),
         description: z.string().optional(),
@@ -205,15 +243,46 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
           'Fim do agendamento (exige scheduled_time). Sem fim, o Google Calendar usa o limite de tempo da task ou 1h.'
         ),
         parent_task_id: z.number().int().positive().optional(),
+        subtasks: z
+          .array(
+            z.object({
+              name: z.string().min(1),
+              description: z.string().optional(),
+              status: STATUS.optional(),
+              category: CATEGORY.optional(),
+              energy: ENERGY.optional(),
+              due_date: DATE.optional(),
+              project: z.union([z.string(), z.number()]).optional(),
+              tags: z.array(z.string()).optional()
+            })
+          )
+          .max(MAX_SUBTASKS)
+          .optional()
+          .describe(
+            `Subtarefas criadas junto (até ${MAX_SUBTASKS}). Herdam projeto e tags da task quando não informados. Não combina com parent_task_id.`
+          ),
         external_url: EXTERNAL_URL.optional(),
+        time_limit_minutes: TIME_LIMIT.optional(),
+        recurrence: RECURRENCE.optional(),
+        working_dir: WORKING_DIR.optional(),
+        start_command: START_COMMAND.optional(),
+        git_branch: GIT_BRANCH.optional(),
+        pr_url: PR_URL.optional(),
         waiting_for: WAITING_FOR.optional().describe(
           'Quem ou o quê a task aguarda (ex.: "Revisor externo"), até 120 caracteres. Aparece na lista de tarefas.'
-        )
+        ),
+        detail: DETAIL.optional()
       }
     },
     async (args) => {
       if (args.parent_task_id !== undefined && !getTask(args.parent_task_id)) {
         return fail('not_found', `Task pai ${args.parent_task_id} não existe.`)
+      }
+      if (args.parent_task_id !== undefined && args.subtasks?.length) {
+        return fail(
+          'validation',
+          'subtasks não combina com parent_task_id: não existe subtarefa de subtarefa.'
+        )
       }
       const timeError = taskTimeError(args)
       if (timeError) return fail('validation', timeError)
@@ -230,7 +299,9 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
         scheduled_end_time: args.scheduled_end_time,
         parent_task_id: args.parent_task_id,
         external_url: args.external_url,
-        waiting_for: args.waiting_for
+        waiting_for: args.waiting_for,
+        time_limit_seconds: args.time_limit_minutes ? args.time_limit_minutes * 60 : undefined,
+        recurrence_rule: args.recurrence ? recurrenceRule(args.recurrence) : undefined
       }
 
       if (args.project !== undefined) {
@@ -249,19 +320,76 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
         input.tagNames = args.tags
       }
 
-      const task = createTask(input)
+      const drafts: SubtaskDraft[] = []
+      for (const subtask of args.subtasks ?? []) {
+        const draft: SubtaskDraft = {
+          name: subtask.name,
+          description: subtask.description,
+          category: subtask.category,
+          energy: subtask.energy,
+          due_date: subtask.due_date,
+          tags: subtask.tags
+        }
+        if (subtask.project !== undefined) {
+          const project = resolveProject(subtask.project)
+          if (!project.ok) return project.response
+          draft.project_id = project.id
+        }
+        drafts.push(draft)
+      }
+
+      const { parent: task, subtasks } = createTaskWithSubtasks(input, planSubtasks(input, drafts))
 
       // afterTaskWrite precisa rodar mesmo se o backfill de status falhar — a task já foi
       // persistida e não pode ficar sem sync no Notion nem tasks:refresh.
       try {
+        if (args.working_dir !== undefined || args.start_command !== undefined) {
+          setTaskWorkspace(task.id, {
+            working_dir: args.working_dir,
+            start_command: args.start_command
+          })
+        }
+        if (args.git_branch !== undefined || args.pr_url !== undefined) {
+          setTaskGitLink(task.id, { git_branch: args.git_branch, pr_url: args.pr_url })
+        }
         if (args.status !== undefined) {
           updateTask(task.id, { status: args.status })
         }
       } finally {
+        if (task.parent_task_id) {
+          recordOperation(task.parent_task_id, subtasksCreatedSummary([task]))
+          afterTaskWrite(task.parent_task_id)
+        }
+        if (subtasks.length > 0) recordOperation(task.id, subtasksCreatedSummary(subtasks))
         afterTaskWrite(task.id)
       }
 
-      return ok({ created: task.id, task: stripNotes(getTask(task.id)!) })
+      if (subtasks.length === 0) {
+        return ok({ created: task.id, task: viewTask(getTask(task.id)!, args.detail) })
+      }
+
+      const refused: { id: number; reason: string }[] = []
+      subtasks.forEach((subtask, index) => {
+        const status = args.subtasks![index].status
+        if (status !== undefined && status !== subtask.status) {
+          try {
+            changeTaskStatus(subtask.id, status)
+          } catch (error) {
+            refused.push({
+              id: subtask.id,
+              reason: error instanceof Error ? error.message : String(error)
+            })
+          }
+        }
+        afterTaskWrite(subtask.id)
+      })
+
+      return ok({
+        created: task.id,
+        task: viewTask(getTask(task.id)!, args.detail),
+        subtasks: getSubtasks(task.id).map(({ id, name, status }) => ({ id, name, status })),
+        ...(refused.length > 0 && { status_refused: refused })
+      })
     }
   )
 
@@ -299,7 +427,14 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
         waiting_for: z
           .union([WAITING_FOR, z.null()])
           .optional()
-          .describe('Quem ou o quê a task aguarda; null remove.')
+          .describe('Quem ou o quê a task aguarda; null remove.'),
+        time_limit_minutes: TIME_LIMIT.optional(),
+        recurrence: z.union([RECURRENCE, z.null()]).optional().describe('null remove a repetição.'),
+        working_dir: z.union([WORKING_DIR, z.null()]).optional(),
+        start_command: z.union([START_COMMAND, z.null()]).optional(),
+        git_branch: z.union([GIT_BRANCH, z.null()]).optional().describe('null remove.'),
+        pr_url: z.union([PR_URL, z.null()]).optional().describe('null remove.'),
+        detail: DETAIL.optional()
       }
     },
     async (args) => {
@@ -311,7 +446,6 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
       const patch: UpdateTaskInput = {}
       if (args.name !== undefined) patch.name = args.name
       if (args.description !== undefined) patch.description = args.description
-      if (args.status !== undefined) patch.status = args.status
       if (args.category !== undefined) patch.category = args.category
       if (args.energy !== undefined) patch.energy_level = args.energy
       if (args.due_date !== undefined) patch.due_date = args.due_date
@@ -321,6 +455,12 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
       if (args.scheduled_end_time !== undefined) patch.scheduled_end_time = args.scheduled_end_time
       if (args.external_url !== undefined) patch.external_url = args.external_url
       if (args.waiting_for !== undefined) patch.waiting_for = args.waiting_for
+      if (args.time_limit_minutes !== undefined) {
+        patch.time_limit_seconds = args.time_limit_minutes * 60
+      }
+      if (args.recurrence !== undefined) {
+        patch.recurrence_rule = args.recurrence ? recurrenceRule(args.recurrence) : null
+      }
 
       if (args.project !== undefined) {
         if (args.project === null) {
@@ -342,10 +482,29 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
         patch.tagNames = args.tags
       }
 
-      if (Object.keys(patch).length > 0) updateTask(args.id, patch)
+      if (args.status !== undefined && args.status !== current.status) {
+        try {
+          changeTaskStatus(args.id, args.status)
+        } catch (error) {
+          return fail('app_state', error instanceof Error ? error.message : String(error))
+        }
+      }
 
+      if (Object.keys(patch).length > 0) updateTask(args.id, patch)
+      if (args.working_dir !== undefined || args.start_command !== undefined) {
+        setTaskWorkspace(args.id, {
+          working_dir: args.working_dir,
+          start_command: args.start_command
+        })
+      }
+
+      if (args.git_branch !== undefined || args.pr_url !== undefined) {
+        setTaskGitLink(args.id, { git_branch: args.git_branch, pr_url: args.pr_url })
+      }
+
+      recordOperation(args.id, fieldsChangedSummary(args))
       afterTaskWrite(args.id)
-      return ok({ updated: args.id, task: stripNotes(getTask(args.id)!) })
+      return ok({ updated: args.id, task: viewTask(getTask(args.id)!, args.detail) })
     }
   )
 
@@ -353,7 +512,7 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
     'bulk_update_tasks',
     {
       title: 'Alterar várias tasks',
-      description: `Altera status, projeto ou arquivamento de várias tasks. Acima de ${ctx.bulkThreshold} itens devolve um preview e um confirm_token: mostre o preview ao usuário e só então repita a chamada com o token.`,
+      description: `Altera status, projeto ou arquivamento de várias tasks. A mudança de status segue as mesmas regras de update_task; as tasks recusadas (ex.: bloqueadas) voltam em status_refused. Acima de ${ctx.bulkThreshold} itens devolve um preview e um confirm_token: mostre o preview ao usuário e só então repita a chamada com o token.`,
       inputSchema: {
         ids: z.array(z.number().int().positive()).min(1),
         status: STATUS.optional(),
@@ -414,13 +573,26 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
         if (!consumed.ok) return fail(consumed.code, consumed.message)
       }
 
-      if (args.status !== undefined) updateTasksStatus(ids, args.status)
+      const refused: { id: number; reason: string }[] = []
+      if (args.status !== undefined) {
+        for (const task of found) {
+          if (task!.status === args.status) continue
+          try {
+            changeTaskStatus(task!.id, args.status)
+          } catch (error) {
+            refused.push({
+              id: task!.id,
+              reason: error instanceof Error ? error.message : String(error)
+            })
+          }
+        }
+      }
       if (projectId !== undefined) moveTasksToProject(ids, projectId)
       if (args.archive === true) ids.forEach((id) => archiveTask(id))
       if (args.archive === false) ids.forEach((id) => unarchiveTask(id))
 
       ids.forEach((id) => afterTaskWrite(id))
-      return ok({ updated: ids })
+      return ok(refused.length > 0 ? { updated: ids, status_refused: refused } : { updated: ids })
     }
   )
 
@@ -471,6 +643,11 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
       const removedIds = [...ids, ...ids.flatMap((id) => getChildTaskIds(id))]
       const calendarIds = filterGcalSyncedIds(removedIds)
       afterTasksDeleted(removedIds)
+      for (const task of found) {
+        if (task!.parent_task_id && !ids.includes(task!.parent_task_id)) {
+          recordOperation(task!.parent_task_id, subtaskDeletedSummary(task!))
+        }
+      }
       deleteTasks(ids)
       // deleteTasks também apaga as subtarefas em cascata; a task pai deixou de existir,
       // então sincronizar no Notion não faz sentido — só avisamos a janela para recarregar.
@@ -493,8 +670,8 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
     },
     async ({ today, sample_size }) => {
       const limit = sample_size ?? 10
-      const sample = (filters: TaskListFilters): Task[] =>
-        limit === 0 ? [] : listTasks({ ...filters, limit })
+      const sample = (filters: TaskListFilters): CompactTask[] =>
+        limit === 0 ? [] : listTasks({ ...filters, limit }).map(compactTask)
 
       const inboxFilters: TaskListFilters = { status: 'inbox' }
       const withoutProjectFilters: TaskListFilters = { projectId: 'none' }
@@ -523,6 +700,60 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
         },
         blocked: { total: countTasks(blockedFilters), sample: sample(blockedFilters) },
         someday: { total: countTasks(somedayFilters), sample: sample(somedayFilters) }
+      })
+    }
+  )
+
+  server.registerTool(
+    'task_dependencies',
+    {
+      title: 'Dependências entre tasks',
+      description:
+        'action=add faz task_id depender de depends_on_id: a task fica bloqueada (não entra em executando) até a outra ser finalizada. action=remove desfaz. get_task mostra depends_on e blocked_task_ids.',
+      inputSchema: {
+        action: z.enum(['add', 'remove']),
+        task_id: z.number().int().positive(),
+        depends_on_id: z.number().int().positive()
+      }
+    },
+    async ({ action, task_id, depends_on_id }) => {
+      if (task_id === depends_on_id) {
+        return fail('validation', 'Uma task não pode depender dela mesma.')
+      }
+      for (const id of [task_id, depends_on_id]) {
+        if (!getTask(id)) return fail('not_found', `Task ${id} não existe.`)
+      }
+
+      if (action === 'add') {
+        const seen = new Set<number>()
+        const queue = [depends_on_id]
+        while (queue.length > 0) {
+          const id = queue.pop()!
+          if (id === task_id) {
+            return fail(
+              'validation',
+              `A task ${depends_on_id} já depende da ${task_id}; isso criaria um ciclo.`
+            )
+          }
+          if (seen.has(id)) continue
+          seen.add(id)
+          queue.push(...getTaskDependencies(id).map((dependency) => dependency.depends_on_task_id))
+        }
+        addTaskDependency(task_id, depends_on_id)
+      } else {
+        removeTaskDependency(task_id, depends_on_id)
+      }
+
+      recordOperation(task_id, dependencySummary(action, depends_on_id))
+      afterTaskWrite(task_id)
+      const task = getTask(task_id)!
+      return ok({
+        task_id,
+        is_blocked: task.is_blocked,
+        depends_on: getTaskDependencies(task_id).map((dependency) => ({
+          id: dependency.depends_on_task_id,
+          name: dependency.depends_on_task_name
+        }))
       })
     }
   )

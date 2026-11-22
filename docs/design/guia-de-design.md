@@ -243,11 +243,11 @@ só porque roda de CDN; os nomes lucide de cada lugar estão nas tabelas acima e
 | Abas do inspetor      | Tempo `Timer` · Detalhes `FileText` · Relações `Network`                                                                                                                                                                                       |
 | `HealthCard`          | em dia `CircleCheck` · Inbox `Inbox` · sem próxima ação `CircleArrowRight` · projetos parados `CirclePause` · aguardando `Hourglass` · próximas paradas `Clock` · prazos vencidos `CalendarX` · revisão `ClipboardCheck` · someday `Lightbulb` |
 | Janelas auxiliares    | Captura `Inbox` · Fechar `X` · Capturado `CircleCheck` · Pausar `Pause` · Abrir CrafyTask `Maximize2` |
-| Configurações         | Geral `Settings` · Aparência `Palette` · Fluxo de trabalho `Workflow` · Terminal `SquareTerminal` · Backup `DatabaseBackup` · Notion `BookOpen` · Google Calendar `Calendar` · Jira `Plug` · Servidor MCP `Cable` · Sobre `Info`               |
+| Configurações         | Geral `Settings` · Aparência `Palette` · Fluxo de trabalho `Workflow` · Terminal `SquareTerminal` · Backup `DatabaseBackup` · Notion `BookOpen` · Google `Cloud` (conectar `LogIn`, permitida `Check`, desconectar `LogOut`, ressincronizar `RefreshCw`, salvar credenciais `Save`) · Jira `Plug` · Servidor MCP `Cable` · Sobre `Info`               |
 | Passos da revisão     | `collect` `Download` · `inbox` `Inbox` · `mind` `Brain` · `next` `CircleArrowRight` · `past` `History` · `upcoming` `CalendarDays` · `waiting` `Hourglass` · `projects` `FolderKanban` · `someday` `Lightbulb` · `creative` `Rocket`           |
 | Menu da tarefa e ações em massa | Abrir `FileText` · timer `Play`/`Pause` · hoje `CalendarDays` · marcar como `CircleCheck` · categoria `Flag` · projeto `Folder` · contextos `MapPin` · copiar `Copy` · Jira `Plug` · abrir no Jira `ExternalLink` · campos do Jira `SlidersHorizontal` · arquivar `Archive` · excluir `Trash2` |
-| Projetos              | abas pelo status (`LayoutGrid` em Todos, `FolderOpen` ativo, `Lightbulb` someday, `CircleCheck` concluído, `Archive` arquivado) · busca `Search` · Cards `LayoutGrid` · Tabela `Table2` · novo `Plus` · mais `Ellipsis` · resultado desejado `Target` · próxima ação `CircleArrowRight` · sem próxima ação `TriangleAlert` · área `TrendingUp` · prazo `CalendarDays` · abrir `FolderOpen` · marcar como `CircleCheck` · excluir `Trash2` · terminal `SquareTerminal` |
-| Horizontes            | chips `H0`…`H5` (texto, sem ícone) · Adicionar `Plus` · timer `Play`/`Pause` · mais `Ellipsis` · filtrar `Filter` · ver projetos `Folder` · editar `Pencil` · mover `ArrowLeftRight` · excluir `Trash2` |
+| Projetos              | abas pelo status (`LayoutGrid` em Todos, `FolderOpen` ativo, `Lightbulb` someday, `CircleCheck` concluído, `Archive` arquivado) · busca `Search` · Cards `LayoutGrid` · Tabela `Table2` · novo `Plus` · mais `Ellipsis` · resultado desejado `Target` · próxima ação `CircleArrowRight` · sem próxima ação `TriangleAlert` · área `TrendingUp` · meta `Trophy` · prazo `CalendarDays` · abrir `FolderOpen` · marcar como `CircleCheck` · excluir `Trash2` · terminal `SquareTerminal` |
+| Horizontes            | chips `H0`…`H5` (texto, sem ícone) · Adicionar `Plus` · timer `Play`/`Pause` · mais `Ellipsis` · filtrar `Filter` · ver projetos `Folder` · editar `Pencil` · mover `ArrowLeftRight` · excluir `Trash2` · projetos da meta `Folder` |
 | Contextos e tags      | abas `MapPin`/`Tags` · busca `Search` · Cards `LayoutGrid` · Tabela `Table2` · novo `Plus` · mais `Ellipsis` · Ver tarefas `ListTodo` · editar `Pencil` · mesclar `Merge` · excluir `Trash2` |
 | Arquivo               | busca `Search` · abrir `FileText` · desarquivar `ArchiveRestore` · excluir de vez `Trash2` · limpar o arquivo `Eraser` · mais `Ellipsis` · grupo por mês `CalendarDays` · grupo sem projeto `Folder` |
 | Legenda do calendário | urgente `Flame` · prioridade `Flag` · time leak `Clock` · no Google `CalendarSync`                                                                                                                                                             |
@@ -381,6 +381,7 @@ ConfigProvider (tema, cssVar) → App (message, modal, notification) → RegionB
   | Barra de propriedades | Pílulas que abrem um `Popover` de edição: Aguardando (primeira, só com status Aguardando ou com texto salvo: "Aguardando: Revisor externo" na cor de Aguardando, vazia "Aguardando quem?"), Categoria, Projeto (+ "Abrir projeto →"), Contextos, Prazo (data + hora, cor de vencido/hoje), Energia (clicar no ativo limpa). Programado (data + início/fim), Recorrência, Tags e Link externo aparecem quando têm valor; vazias, entram por "+ Propriedade"                                                             |
   | Aviso                 | `Alert` de bloqueio com "Ver dependências", que abre o inspetor em Relações                                                                                                                                                                                                                                                                                          |
   | Área de trabalho      | Abas Notas e Desenho, botão de modo foco e, só na aba Notas, as ações da nota: Salvar em arquivo local (`Save`; depois da primeira exportação o nome do arquivo aparece em mono a partir de `lg` e o tooltip diz que ele é reexportado a cada salvamento) e Salvar e sincronizar com o Notion (`RefreshCw`, gira enquanto sincroniza) |
+  | Histórico (só task)   | Terceira aba da área de trabalho (`History`), sem ações de nota e sem modo foco. No topo, o cartão **Onde parei** (`Flag`): o último checkpoint da task, com resumo, Feito e Falta. Depois os filtros (`Segmented` Tudo · Checkpoints · Movimentações), o `Switch` Subtarefas (só em task com subtarefa) e o botão **Anotar** (`Pencil`), que abre um `Input.TextArea` com Cancelar e Gravar. A lista é um `Timeline` do antd, do mais novo para o mais antigo: movimentação mostra os chips de status de origem e destino com `ArrowRight` (ou "Criada em"), no ponto o ícone do status de destino; checkpoint (`Flag`), operação (`Zap`) e anotação (`MessageSquare`) mostram rótulo, origem (`Bot` Claude ou `User` Você), texto e, no checkpoint, Feito e Falta. Hora e nome da subtarefa em `colorTextSecondary`, hora em Geist Mono. Largura de leitura de 76ch. Em task arquivada o botão Anotar some. Sem nenhuma entrada, `Empty` simples com "Ainda não há histórico"; com filtro sem resultado, "Nada no histórico com este filtro". Página de caderno não tem esta aba. |
   | Inspetor · Tempo      | Barra do limite (`success` → `warning` 80% → `error` 100%), Total e Sessões, lista de sessões (em andamento no topo; encerradas com editar início/fim e excluir), Ajustes de tempo (adicionar, ajustar total, limite, remover limite)                                                                                                                                |
   | Inspetor · Detalhes   | Jira (issue, status com transição, pai, Campos do Jira) · Google Calendar (switch, ressincronizar) · Ambiente (diretório herdado/alterar/voltar a herdar, comando, abrir terminal)                                                                                                                                                                                   |
   | Inspetor · Relações   | Subtarefas (aviso de pai bloqueado, progresso, checkbox + nome que navega, nova inline) · Depende de (verde/laranja, remover, adicionar com busca) · Issues filhas no Jira. A aba mostra cadeado se bloqueada e `feitas/total`                                                                                                                                       |
@@ -480,24 +481,30 @@ giram em torno disso.
 - Projetos parados (ativos, sem sessão nem tarefa concluída há mais de 7 dias): ordenar por "Mais
   parados primeiro" e, vindo do indicador de saúde (`?parados=1`), um aviso informativo com
   "Mostrar todos". `?semProxima=1` abre com "Mostrar só esses" ligado.
+- Projetos de uma meta (`?meta=<id>`, vindo de Horizontes): abre na aba Todos, com um aviso
+  informativo "Projetos que servem a "{meta}"" e "Mostrar todos". Sem nenhum, o vazio oferece "Criar
+  projeto para esta meta" (já com a meta e a área dela).
 - **Card:** cor, nome, menu `⋯`; resultado desejado; progresso `feitas/total`; próxima ação (ou chip
   "Sem próxima ação"); área e prazo. Status só aparece na aba Todos.
 - **Tabela:** Projeto (cor + nome, resultado no tooltip do ícone de alvo) · Status (só em Todos) ·
   Área (`lg+`, some ao agrupar por área) · Próxima ação · Progresso (barra curta na mesma linha) ·
   Prazo (`md+`, âmbar a 7 dias, vermelho vencido) · Tempo (`xl+`) · `⋯`. Uma linha por projeto,
   mesma regra de altura constante da tabela de tarefas.
-- Menu de contexto (botão direito e `⋯`): Abrir · Marcar como ▸ · Área de foco ▸ · Excluir… (avisa
-  que as tarefas ficam sem projeto).
+- Menu de contexto (botão direito e `⋯`): Abrir · Marcar como ▸ · Área de foco ▸ · Meta ▸ (metas
+  agrupadas por H3/H4/H5, mais "Sem meta") · Excluir… (avisa que as tarefas ficam sem projeto).
 - **Novo projeto:** `Modal` com Nome, Resultado desejado (com a pergunta "Como fica o mundo quando o
-  projeto estiver pronto?"), Descrição, Área de foco e Cor (as dez de `USER_COLORS`). Criar abre o
-  detalhe. Já na criação o projeto ganha área, ligando a lista aos Horizontes.
+  projeto estiver pronto?"), Descrição, Área de foco, Meta (`Select` agrupado por H3/H4/H5, com a
+  pergunta "A que meta, visão ou propósito este projeto serve?") e Cor (as dez de `USER_COLORS`).
+  Criar abre o detalhe. Já na criação o projeto ganha área e meta, ligando a lista aos Horizontes.
 
 **Detalhe (`/project/:id`)** usa o mesmo esqueleto do detalhe da task, com as tarefas no lugar das
 notas:
 
 - **Cabeçalho:** voltar para Projetos / área; status do projeto; cor + nome e descrição editáveis;
   terminal (se houver diretório) e `⋯` (copiar nome, arquivar/reativar, excluir).
-- **Pílulas:** Área de foco (editável aqui: resolve E2; link para Horizontes), Prazo (com dias
+- **Pílulas:** Área de foco (editável aqui: resolve E2; link para Horizontes), Meta (`Trophy`; o
+  mesmo `Select` agrupado do "Novo projeto" e link para Horizontes; o nome longo corta com
+  reticências), Prazo (com dias
   restantes e cor, âmbar e vermelho só em projeto ativo), Cor (paleta), Diretório de trabalho (escolher, alterar, remover).
 - **Aviso** "Sem próxima ação definida" com "Definir", quando ativo, com tarefas abertas e sem
   próxima.
@@ -528,10 +535,12 @@ nível para outro.
 - **H0** ações de hoje (abre a task; timer na linha) · **H1** projetos ativos (abre o projeto;
   próxima ação ou "Sem próxima ação"; progresso) · **H2** áreas em cards (emoji, descrição,
   "N projetos · M metas") · **H3–H5** metas, visão e propósito (emoji do nível, área, descrição com
-  quebras de linha).
+  quebras de linha, "N projetos" em mono ou "Nenhum projeto"). Clicar na meta abre os projetos que
+  servem a ela (`/projects?meta=<id>`; resolve E3). A contagem ignora projetos arquivados.
 - **Ações:** "+ Adicionar" de cada nível abre o diálogo **já no nível certo** (hoje sempre H3).
-  Menu `⋯`/botão direito: área (filtrar, ver projetos, editar, excluir), meta (editar, mover para
-  outro nível, excluir). Excluir sempre confirma e diz o que acontece com projetos e metas (E6).
+  Menu `⋯`/botão direito: área (filtrar, ver projetos, editar, excluir), meta (ver projetos da
+  meta, editar, mover para outro nível, excluir). Excluir sempre confirma e diz o que acontece com
+  projetos e metas (E6): ao excluir uma meta, os projetos dela ficam sem meta.
 - Diálogo de meta com `Segmented` H3/H4/H5; de área com grade de emojis.
 
 ### Contextos e tags
@@ -558,7 +567,7 @@ Mesmo esqueleto das outras telas, com navegação própria porque são muitas se
 
 - **Navegação interna** (232px, fixa ao rolar): busca de configuração no topo (filtra por nome e
   palavras-chave, como "tema", "worklog", "porta"); grupos **Aplicativo** (Geral, Aparência, Fluxo de
-  trabalho, Terminal, Backup) e **Integrações** (Notion, Google Calendar, Jira, Servidor MCP), e
+  trabalho, Terminal, Backup) e **Integrações** (Notion, Google, Jira, Servidor MCP), e
   Sobre no fim. Integração mostra um `Badge` de estado (conectado, desligado, erro) com o texto no
   tooltip. A seção aberta fica salva. Abaixo de `md` a navegação vira um `Select` agrupado. O
   conteúdo da seção tem largura máxima de 780px.
@@ -569,7 +578,17 @@ Mesmo esqueleto das outras telas, com navegação própria porque são muitas se
   Linhas relacionadas ficam num `Card` com título ("Inicialização", "Time leak").
 - **Guias de configuração** (Notion, Google) usam `Steps` vertical com o passo atual, campos dentro
   do passo e "Marcar como feito" nos passos manuais. Com a integração conectada, o guia fica num
-  `Collapse` para trocar credenciais.
+  `Collapse` para trocar credenciais. No Google o guia é só do cliente próprio e fica sempre no
+  `Collapse` "Avançado".
+- **Google** é uma ação só: o app traz o próprio cliente OAuth e a seção abre com "Conectar com
+  Google" (primário; abre o navegador, entra na conta e libera a agenda). Conectado, o card **Conta
+  Google** mostra o e-mail e "Desconectar" (confirma e diz que as tarefas já enviadas ficam na
+  agenda), e o card **Permissões** lista Agenda e Google Drive, cada uma com `Tag` "Permitida" ou o
+  botão "Permitir" (pede só aquela permissão). Tirar uma permissão é desconectar. Com a agenda
+  permitida, o card **Agenda TickTask** traz "Sincronizar automaticamente" (`Switch`) e
+  "Ressincronizar". O guia antigo, com
+  cliente próprio, fica num `Collapse` "Avançado: usar um cliente OAuth próprio"; a tela não explica
+  OAuth nem o aviso do Google fora dele.
 - **Confirmações** destrutivas (restaurar backup, regenerar token, limpar Notion) dizem o que
   acontece e o que não acontece.
 - **Seções novas:** **Aparência** (tema Sistema/Claro/Escuro com miniaturas montadas dos tokens, sem

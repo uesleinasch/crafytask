@@ -15,7 +15,7 @@ import {
 import {
   BookOpen,
   Cable,
-  Calendar,
+  Cloud,
   DatabaseBackup,
   Info,
   Palette,
@@ -169,11 +169,10 @@ export function SettingsPage(): React.JSX.Element {
         },
         {
           id: 'google',
-          label: 'Google Calendar',
-          icon: Calendar,
-          keywords: 'agenda oauth client eventos',
-          description:
-            'Coloca tarefas marcadas numa agenda "TickTask" criada pelo app no seu Google Calendar.',
+          label: 'Google',
+          icon: Cloud,
+          keywords: 'agenda calendar drive conta login entrar oauth client eventos',
+          description: 'Entre com sua conta Google para usar a agenda e o Drive no CrafyTask.',
           status: statusOf('google', gcalStatusInfo(gcal))
         },
         {

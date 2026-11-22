@@ -13,6 +13,41 @@ export type TaskCategory = 'urgente' | 'prioridade' | 'normal' | 'time_leak'
 export type ProjectStatus = 'active' | 'someday' | 'done' | 'archived'
 export type EnergyLevel = 'alto' | 'medio' | 'baixo'
 
+// ===================== TASK HISTORY =====================
+
+export type TaskHistoryEntryKind = 'checkpoint' | 'operation' | 'note'
+export type TaskHistoryKind = TaskHistoryEntryKind | 'status'
+export type TaskHistoryOrigin = 'app' | 'mcp'
+
+export interface TaskHistoryItem {
+  id: number
+  task_id: number
+  task_name: string
+  kind: TaskHistoryKind
+  origin: TaskHistoryOrigin | null
+  summary: string | null
+  done: string | null
+  remaining: string | null
+  from_status: TaskStatus | null
+  to_status: TaskStatus | null
+  created_at: string
+  session_id?: string | null
+}
+
+export interface TaskHistoryView {
+  entries: TaskHistoryItem[]
+  lastCheckpoint: TaskHistoryItem | null
+}
+
+export interface AddTaskHistoryInput {
+  task_id: number
+  summary: string
+  kind?: TaskHistoryEntryKind
+  done?: string | null
+  remaining?: string | null
+  session_id?: string | null
+}
+
 // ===================== TAG =====================
 
 export interface Tag {
@@ -59,6 +94,8 @@ export interface Project {
   due_date?: string
   area_id?: number
   area_name?: string
+  goal_id?: number | null
+  goal_name?: string | null
   created_at: string
   updated_at: string
   task_count?: number
@@ -80,6 +117,7 @@ export interface CreateProjectInput {
   color?: string
   due_date?: string
   area_id?: number
+  goal_id?: number
   working_dir?: string | null
 }
 
@@ -91,6 +129,7 @@ export interface UpdateProjectInput {
   color?: string
   due_date?: string | null
   area_id?: number | null
+  goal_id?: number | null
   working_dir?: string | null
   next_task_id?: number | null
 }
@@ -129,6 +168,7 @@ export interface Goal {
   horizon: GoalHorizon
   area_id?: number
   area_name?: string
+  project_count?: number
   created_at: string
   updated_at: string
 }
@@ -219,6 +259,8 @@ export interface Task {
   working_dir?: string | null
   project_working_dir?: string | null
   start_command?: string | null
+  git_branch?: string | null
+  pr_url?: string | null
   jira_key?: string | null
   jira_status?: string | null
   jira_space?: string | null
@@ -295,11 +337,19 @@ export interface UpdateTaskInput {
   waiting_for?: string | null
 }
 
+export type GoogleClientMode = 'builtin' | 'custom'
+export type GooglePermission = 'calendar' | 'drive'
+export type GooglePermissions = Record<GooglePermission, boolean>
+
 export interface GcalStatus {
   clientId: string
   hasClientSecret: boolean
   connected: boolean
   autoSync: boolean
+  mode: GoogleClientMode
+  builtinAvailable: boolean
+  email?: string
+  permissions: GooglePermissions
 }
 
 export interface JiraBoardSummary {

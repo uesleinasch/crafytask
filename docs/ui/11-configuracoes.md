@@ -6,7 +6,7 @@ protótipo (rota `#ajustes`).
 
 ## Função
 
-Preferências do app e as integrações (Notion, Google Calendar, Jira, servidor MCP). Acessível pelo
+Preferências do app e as integrações (Notion, Google, Jira, servidor MCP). Acessível pelo
 item **Configurações** no rodapé da sidebar.
 
 ## Estrutura
@@ -21,7 +21,7 @@ item **Configurações** no rodapé da sidebar.
 │ ▤ Backup               │ │ ...                                     │    │
 │ INTEGRAÇÕES            │ │                                         │    │
 │ 📖 Notion            ● │ │                                         │    │
-│ 📅 Google Calendar   ● │ └─────────────────────────────────────────┘    │
+│ ☁ Google             ● │ └─────────────────────────────────────────┘    │
 │ 🔌 Jira              ● │                                    até 780px  │
 │ ⎓ Servidor MCP       ● │                                                │
 │ ⓘ Sobre                │                                                │
@@ -183,17 +183,24 @@ Valores em `localStorage` (`lib/terminalPrefs.ts`).
   `Collapse` "Guia de configuração e troca da API key" com os mesmos passos.
 - Os antigos blocos azul/âmbar de ajuda no pé da página viraram o passo 3.
 
-### Google Calendar
+### Google
 
-- **Não conectado** → `SetupGuide` (`settings.gcal.steps`) com o guia do Google Cloud embutido:
-  1. Criar projeto · 2. Ativar a Calendar API · 3. Branding (com aviso: **não enviar logo**, exige
-  verificação) · 4. Audience → Publish app (aviso: em Testing o acesso expira em 7 dias) ·
-  5. Client "Desktop app" — os campos **Client ID** e **Client Secret** ficam dentro deste passo,
-  com "Salvar credenciais" quando editados (automático: credenciais salvas) · 6. **Conectar com o
-  Google** (automático: conectado), com a instrução Avançado → Acessar CrafyTask.
-- **Conectado** → card **Agenda TickTask**: `Switch` de auto-sync, **Ressincronizar**,
-  **Desconectar** (com `Popconfirm`: a agenda "TickTask", os eventos e as tarefas continuam) e o
-  `Collapse` "Guia de configuração e troca de credenciais".
+O app traz o próprio cliente OAuth, embutido no build da release a partir dos secrets
+`GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` do GitHub (`MAIN_VITE_GOOGLE_CLIENT_*`; no dev, em
+`.env.local`). Regras puras em `src/main/googleAccount.ts`.
+
+- **Conta Google** — sem conexão: "Não conectado" e **Conectar com Google** (primário, `LogIn`),
+  que pede a identidade e a agenda; desabilitado, com aviso, num build sem cliente embutido.
+  Conectado: o e-mail (do `id_token`), "Conectado" ou "Conectado com cliente próprio" e
+  **Desconectar** (`Popconfirm`: as tarefas já enviadas ficam na agenda).
+- **Permissões** (conectado) — Agenda e Google Drive, cada uma com `Tag` "Permitida/Permitido"
+  (`Check`) ou **Permitir**, que pede só aquele escopo com `include_granted_scopes`. Se a pessoa
+  desmarca a permissão no Google, a tela avisa.
+- **Agenda TickTask** (conectado e com a agenda permitida) — `Switch` de auto-sync e
+  **Ressincronizar**.
+- `Collapse` **Avançado: usar um cliente OAuth próprio** — o `SetupGuide` (`settings.gcal.steps`)
+  de antes, com Client ID/Secret no passo 5 e **Conectar com o cliente próprio** no 6. Abre sozinho
+  num build sem cliente embutido, enquanto não há conta conectada. Trocar de cliente desconecta.
 - O secret nunca volta ao renderer: o campo mostra `•••••••• (salvo)`.
 
 ### Jira

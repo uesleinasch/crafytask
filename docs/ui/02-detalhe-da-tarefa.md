@@ -98,8 +98,25 @@ sistema uma única vez (até zerar o tempo ou trocar de tarefa).
 
 ## Área de trabalho — `TaskWorkspace`
 
-Cartão com as abas **Notas | Desenho**, as ações da nota (só na aba Notas) e o botão **Modo foco**
-(`Expand`, "Modo foco (Esc sai)").
+Cartão com as abas **Notas | Desenho | Histórico**, as ações da nota (só na aba Notas) e o botão
+**Modo foco** (`Expand`, "Modo foco (Esc sai)"; some na aba Histórico).
+
+### Aba Histórico — `TaskHistoryPanel`
+
+Só existe na task (página de caderno não recebe a prop `history`). A aba aberta é estado local do
+`TaskWorkspace`, não entra em `NotesTab` nem na preferência persistida, e os editores continuam
+montados por baixo (`display: none`) para não perder edição em curso.
+
+- **Onde parei** (`Flag`): o último checkpoint da própria task, com resumo, Feito e Falta.
+- **Filtros:** `Segmented` Tudo · Checkpoints · Movimentações; `Switch` Subtarefas (só em task com
+  subtarefa, ligado por padrão) junta o histórico das filhas, com o nome da subtarefa em cada item.
+- **Anotar** (`Pencil`; some em task arquivada): `Input.TextArea` com Cancelar e Gravar; grava uma
+  entrada `note` de origem `app` (`task:addHistory`).
+- **Linha do tempo** (`Timeline`), da mais nova para a mais antiga: movimentação de status (chips de
+  origem e destino, ou "Criada em"), checkpoint, operação e anotação, com a origem (`Bot` Claude,
+  `User` Você). Vem de `task:history` (`listTaskHistory`, até 200 itens) e recarrega no
+  `tasks:refresh`, então o que o MCP grava aparece sozinho. Horas saem de `formatHistoryTime`
+  (`lib/taskHistoryView.ts`), que lê o `created_at` do banco como UTC.
 
 As duas ações (`NotesActions`) são botões `text` com tooltip, também na barra do modo foco:
 
@@ -165,7 +182,7 @@ Cada seção usa `Field` (rótulo de 92px à esquerda, controle à direita).
     por tipo (`Input`, `TextArea`, `InputNumber`, `DatePicker`, `Select` simples, múltiplo, de tags e
     de pessoa com busca e "Atribuir a mim"); cada campo grava ao sair ou escolher; erro do Jira volta
     por `message` e o campo retorna ao valor anterior.
-- **Google Calendar** — só com o Google conectado: `Switch` que grava `gcal_sync` e sincroniza na
+- **Google Calendar** — só com a conta Google conectada e a agenda permitida: `Switch` que grava `gcal_sync` e sincroniza na
   hora (desligar apaga os eventos da task), o texto "Na agenda TickTask" / "Fora do Google
   Calendar" e, ligado, o botão de ressincronizar (`RefreshCw`).
 - **Ambiente** — Diretório: o fim do caminho em mono (`…/pasta/repo`, completo no tooltip), etiqueta

@@ -5,8 +5,8 @@ interface legada, e serviu de insumo para a refatoração visual (fases F0–F9 
 [plano de refatoração](../design/plano-de-refatoracao.md)). Agora cada item diz se foi resolvido e
 em que fase, ou se continua aberto. Nada aqui é bug: nenhum item quebra o app.
 
-Resumo: dos itens de A a E, sobram abertos C1 (sobreposição entre telas, decisão de produto), E3
-(metas sem destino) e E8 (idioma). A seção F reúne restrições que continuam
+Resumo: dos itens de A a E, sobram abertos C1 (sobreposição entre telas, decisão de produto) e E8
+(idioma). A seção F reúne restrições que continuam
 valendo.
 
 ---
@@ -172,11 +172,11 @@ Tarefas.
 **F5-a e F5-e.** A área se escolhe no "Novo projeto", no menu da lista de projetos e na pílula
 Área de foco do detalhe.
 
-### E3. Rótulos não navegam para o que rotulam — em parte
+### E3. Rótulos não navegam para o que rotulam — resolvida
 
-**F6-a e F5-b.** Contexto e tag abrem a lista filtrada (`/?context=<id>`, `/?tag=<id>`); a área
-abre os projetos dela pelo menu (`/projects?q=<área>`). **Aberto:** meta não tem destino, só o
-menu `⋯` de edição.
+**F6-a, F5-b e F5-h.** Contexto e tag abrem a lista filtrada (`/?context=<id>`, `/?tag=<id>`); a
+área abre os projetos dela pelo menu (`/projects?q=<área>`); o projeto aponta para a meta que serve
+(`projects.goal_id`) e clicar na meta abre esses projetos (`/projects?meta=<id>`).
 
 ### E4. O dashboard não leva a lugar nenhum — resolvida
 

@@ -16,6 +16,7 @@ import type { NotesTab } from '@renderer/components/editor/NotesPanel'
 import { parseNotes } from '@renderer/components/editor/notesFormat'
 import { NotesActions } from '@renderer/components/editor/NotesActions'
 import { TaskHeader, type InspectorPlacement } from '@renderer/components/tasks/TaskHeader'
+import { TaskHistoryPanel } from '@renderer/components/tasks/TaskHistoryPanel'
 import { TaskWorkspace } from '@renderer/components/tasks/TaskWorkspace'
 import {
   TaskDetailTabs,
@@ -369,6 +370,13 @@ export function SingleTaskPage(): React.JSX.Element {
           syncingNotes={syncingNotes}
           onSaveAndSync={handleSaveAndSync}
           showFile={!!screens.lg}
+        />
+      }
+      history={
+        <TaskHistoryPanel
+          taskId={task.id}
+          hasSubtasks={(task.subtask_count ?? 0) > 0}
+          readOnly={task.is_archived}
         />
       }
       timer={{

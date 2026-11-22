@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { McpConfig } from './config'
 import type { ConfirmStore } from './confirmGuard'
 import * as mcpServer from './server'
+import { PROMPT_NAMES } from './prompts'
 import { isAuthorized, isMcpRunning, startMcpServer, stopMcpServer } from './transport'
 
 vi.mock('./server', async (importOriginal) => {
@@ -118,6 +119,47 @@ describe('integração HTTP', () => {
     const dataLine = body.split('\n').find((line) => line.startsWith('data: '))
     const payload = JSON.parse((dataLine ?? '').slice('data: '.length))
     expect(payload.result.tools.length).toBeGreaterThan(0)
+  })
+})
+
+describe('prompts', () => {
+  // Porta própria: o fetch guarda a conexão keep-alive do teste anterior, que morre com o servidor.
+  const PORT = 48767
+
+  afterEach(async () => {
+    await stopMcpServer()
+  })
+
+  it('lista os prompts e devolve o texto de um deles', async () => {
+    await startMcpServer(buildConfig(PORT))
+
+    const url = `http://127.0.0.1:${PORT}/mcp`
+    const headers = {
+      'Content-Type': 'application/json',
+      Accept: 'application/json, text/event-stream',
+      Authorization: `Bearer ${TOKEN}`
+    }
+    const call = async (method: string, params: unknown): Promise<{ result: never }> => {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params })
+      })
+      const body = await response.text()
+      const dataLine = body.split('\n').find((line) => line.startsWith('data: '))
+      return JSON.parse((dataLine ?? '').slice('data: '.length))
+    }
+
+    const list = (await call('prompts/list', {})) as { result: { prompts: { name: string }[] } }
+    expect(list.result.prompts.map((prompt) => prompt.name).sort()).toEqual(
+      [...PROMPT_NAMES].sort()
+    )
+
+    const got = (await call('prompts/get', {
+      name: 'retomar',
+      arguments: { task_id: '42' }
+    })) as { result: { messages: { content: { text: string } }[] } }
+    expect(got.result.messages[0].content.text).toContain('task_id=42')
   })
 })
 

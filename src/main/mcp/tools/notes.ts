@@ -1,11 +1,18 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
-import { getTask, updateTaskNotes } from '../../database'
-import { markdownToProsemirror, type PMDoc } from '../../markdownToProsemirror'
+import { getTask, listContexts, listProjects, notebookDb, updateTaskNotes } from '../../database'
+import { getPage } from '../../notebookQueries'
+import {
+  markdownToProsemirror,
+  type MentionEntityType,
+  type PMDoc
+} from '../../markdownToProsemirror'
 import { detectNotesDialect } from '../../notionBlocks'
 import { prosemirrorToMarkdown } from '../../notesMarkdown'
+import { readSection, replaceSection, type SectionHeading } from '../../notesSection'
 import { needsConfirmation } from '../confirmGuard'
-import { afterTaskWrite } from '../effects'
+import { afterTaskWrite, recordOperation } from '../effects'
+import { notesWrittenSummary } from '../operationSummary'
 import { fail, ok } from '../reply'
 import type { ToolContext } from '../toolContext'
 
@@ -40,15 +47,64 @@ export function hasRealContent(parsed: ParsedNotes): boolean {
   }
 }
 
+export const MARKDOWN_SUPPORT =
+  'Entende parágrafo, títulos, listas, checklist (- [ ] / - [x]), tabela, negrito, itálico, riscado (~~x~~), destaque (==x==), sublinhado (<u>x</u>), código, citação, link e menção (@[Nome](task:123), também project:, page: e context:; id que não existe vira texto). Não entende imagem, quebra de linha dentro do parágrafo nem lista aninhada.'
+
+function mentionExists(entityType: MentionEntityType, id: number): boolean {
+  switch (entityType) {
+    case 'task':
+      return Boolean(getTask(id))
+    case 'project':
+      return listProjects().some((project) => project.id === id)
+    case 'page':
+      return Boolean(getPage(notebookDb(), id))
+    case 'context':
+      return listContexts().some((context) => context.id === id)
+  }
+}
+
+export function markdownToNotes(markdown: string): PMDoc {
+  return markdownToProsemirror(markdown, { mentionExists })
+}
+
+export function notesToMarkdown(json: string | null | undefined): string {
+  return prosemirrorToMarkdown(json, undefined, { mentionLinks: true })
+}
+
+export const SECTION_MODE_HELP =
+  'mode=section troca só o conteúdo sob o título informado em heading (até o próximo título de nível igual ou maior), sem confirm_token, e devolve em previous_markdown o que saiu.'
+
+export function nodesToMarkdown(content: PMDoc['content']): string {
+  return notesToMarkdown(JSON.stringify({ type: 'doc', content }))
+}
+
+export function sectionFailure(
+  code: 'not_found' | 'ambiguous',
+  heading: string,
+  headings: SectionHeading[]
+): ReturnType<typeof fail> {
+  return fail(
+    code,
+    code === 'not_found'
+      ? `Título "${heading}" não encontrado.`
+      : `Mais de um título "${heading}": a seção é ambígua.`,
+    { headings }
+  )
+}
+
 export function registerNotesTools(server: McpServer, ctx: ToolContext): void {
   server.registerTool(
     'read_notes',
     {
       title: 'Ler as notas de uma task',
-      description: 'Devolve o corpo das notas de uma task convertido para Markdown.',
-      inputSchema: { task_id: z.number().int().positive() }
+      description:
+        'Devolve o corpo das notas de uma task convertido para Markdown. Menções saem como @[Nome](task:123). Com heading, devolve só aquela seção (o título e o que está sob ele).',
+      inputSchema: {
+        task_id: z.number().int().positive(),
+        heading: z.string().trim().min(1).optional().describe('Texto do título da seção.')
+      }
     },
-    async ({ task_id }) => {
+    async ({ task_id, heading }) => {
       const task = getTask(task_id)
       if (!task) return fail('not_found', `Task ${task_id} não existe.`)
 
@@ -71,7 +127,16 @@ export function registerNotesTools(server: McpServer, ctx: ToolContext): void {
         })
       }
 
-      return ok({ task_id, markdown: prosemirrorToMarkdown(task.notes) })
+      if (heading !== undefined) {
+        const section = readSection(
+          parsed.kind === 'doc' ? parsed.doc : { type: 'doc', content: [] },
+          heading
+        )
+        if (!section.ok) return sectionFailure(section.code, heading, section.headings)
+        return ok({ task_id, heading, markdown: nodesToMarkdown(section.content) })
+      }
+
+      return ok({ task_id, markdown: notesToMarkdown(task.notes) })
     }
   )
 
@@ -79,23 +144,42 @@ export function registerNotesTools(server: McpServer, ctx: ToolContext): void {
     'write_notes',
     {
       title: 'Escrever nas notas de uma task',
-      description:
-        'Grava Markdown nas notas de uma task. Prefira mode=append: a conversão cobre parágrafo, títulos, listas, ênfases, código, citação e link, mas descarta menções @, destaques (highlight) e tabelas do editor; também não reconhece checklist (- [ ]/- [x] vira item de lista com o texto literal "[ ] ..."), texto riscado (~~x~~ fica literal), sublinhado, quebra de linha forçada, nem imagens (![alt](src) vira link quebrado, sem o "!"). mode=replace sobre uma nota não vazia, ou em formato que o servidor não reconhece, apaga esse conteúdo e exige confirm_token.',
+      description: `Grava Markdown nas notas de uma task. ${MARKDOWN_SUPPORT} Prefira mode=append. ${SECTION_MODE_HELP} mode=replace sobre uma nota não vazia, ou em formato que o servidor não reconhece, apaga esse conteúdo e exige confirm_token.`,
       inputSchema: {
         task_id: z.number().int().positive(),
         markdown: z.string().min(1),
-        mode: z.enum(['append', 'replace']).optional(),
+        mode: z.enum(['append', 'replace', 'section']).optional(),
+        heading: z.string().trim().min(1).optional().describe('mode=section: texto do título.'),
         confirm_token: z.string().optional()
       }
     },
-    async ({ task_id, markdown, mode, confirm_token }) => {
+    async ({ task_id, markdown, mode, heading, confirm_token }) => {
       const task = getTask(task_id)
       if (!task) return fail('not_found', `Task ${task_id} não existe.`)
 
       const effectiveMode = mode ?? 'append'
       const parsed = parseNotes(task.notes)
-      const incoming = markdownToProsemirror(markdown)
+      const incoming = markdownToNotes(markdown)
       const hasContent = hasRealContent(parsed)
+
+      if (effectiveMode === 'section') {
+        if (!heading) return fail('validation', 'mode=section exige heading.')
+        if (parsed.kind !== 'doc') {
+          return fail('app_state', 'A nota não tem títulos: use mode=append ou mode=replace.')
+        }
+        const replaced = replaceSection(parsed.doc, heading, incoming.content)
+        if (!replaced.ok) return sectionFailure(replaced.code, heading, replaced.headings)
+        updateTaskNotes(task_id, JSON.stringify(replaced.doc))
+        recordOperation(task_id, notesWrittenSummary('section', incoming.content.length))
+        afterTaskWrite(task_id)
+        return ok({
+          task_id,
+          mode: effectiveMode,
+          heading,
+          blocks: replaced.doc.content.length,
+          previous_markdown: nodesToMarkdown(replaced.previous)
+        })
+      }
       // Sem um doc ProseMirror existente não há como mesclar: append sobre nota legada ou não
       // reconhecida destrói o conteúdo tanto quanto replace, então precisa do mesmo guard.
       const destructive = effectiveMode === 'replace' || parsed.kind !== 'doc'
@@ -112,10 +196,10 @@ export function registerNotesTools(server: McpServer, ctx: ToolContext): void {
                   : ''
             return fail(
               'needs_confirmation',
-              `${legacyNotice}Substituir apaga as notas atuais, incluindo menções, destaques e tabelas que o Markdown não representa. Mostre o conteúdo atual ao usuário antes de confirmar.`,
+              `${legacyNotice}Substituir apaga as notas atuais, incluindo imagens, que o Markdown não representa. Mostre o conteúdo atual ao usuário antes de confirmar.`,
               {
                 confirm_token: ctx.confirmStore.issue(operation),
-                current_markdown: parsed.kind === 'doc' ? prosemirrorToMarkdown(task.notes) : null
+                current_markdown: parsed.kind === 'doc' ? notesToMarkdown(task.notes) : null
               }
             )
           }
@@ -130,6 +214,10 @@ export function registerNotesTools(server: McpServer, ctx: ToolContext): void {
           : incoming
 
       updateTaskNotes(task_id, JSON.stringify(next))
+      recordOperation(
+        task_id,
+        notesWrittenSummary(next === incoming ? 'replace' : 'append', incoming.content.length)
+      )
       afterTaskWrite(task_id)
       return ok({ task_id, mode: effectiveMode, blocks: next.content.length })
     }

@@ -129,7 +129,7 @@ header, and the extra height can be scrolled by a programmatic `scrollIntoView` 
 ## Database
 
 - File: `app.getPath('userData')/ticktask.db` (em dev, `ticktask-dev/` — ver **Commands**). Opened with `journal_mode = WAL` and `foreign_keys = ON`. `initDatabase()` runs at startup.
-- 18 tables: `tasks`, `time_entries`, `tags`, `task_tags`, `projects`, `contexts`, `task_contexts`, `weekly_reviews`, `task_dependencies`, `areas`, `goals`, `time_blocks`, `note_assets`, `notebooks`, `notebook_sections`, `notebook_pages`, `task_status_events`, `app_prefs`.
+- 19 tables: `tasks`, `time_entries`, `tags`, `task_tags`, `projects`, `contexts`, `task_contexts`, `weekly_reviews`, `task_dependencies`, `areas`, `goals`, `time_blocks`, `note_assets`, `notebooks`, `notebook_sections`, `notebook_pages`, `task_status_events`, `task_history`, `app_prefs`.
 - **Migrations are imperative, inline in `initDatabase()`** — `CREATE TABLE IF NOT EXISTS` plus guarded `ALTER TABLE`s. Changing a `CHECK` constraint requires the create-new-table-and-copy dance (see the `tasks_new` rebuild around `src/main/database.ts:375`, used to widen the task `status` CHECK). There is no migration framework — follow the existing pattern.
 - All queries use better-sqlite3 prepared statements; multi-step writes use `db.transaction(...)`.
 - `tasks.status_changed_at` (when the status last changed, used by the health indicators in
@@ -138,6 +138,15 @@ header, and the extra height can be scrolled by a programmatic `scrollIntoView` 
   `task_status_events` (`from_status`, `to_status`, `changed_at`), the history behind the weekly
   Inbox rate; it only starts when the triggers are installed. A `tasks` rebuild drops triggers:
   `ensureStatusChangedAt` runs at the end of `initDatabase()` and recreates all four.
+- `task_history` holds the written entries of a task's history (`checkpoint`, `operation`, `note`;
+  origin `app` or `mcp`), with the task status at that moment. `listTaskHistory`
+  (`taskHistoryQueries.ts`, pure, tested) merges them with `task_status_events`, so status moves are
+  never copied into it. MCP tools that write to a task append an `operation` entry by themselves
+  (`recordOperation` in `mcp/effects.ts`, texts in `mcp/operationSummary.ts`); the table is not
+  pruned. An entry may carry `session_id`, the client session that wrote it; `work_session start`
+  returns the last one (`getLastSession`) so the agent can resume that conversation. The MCP tool
+  `task_history` reads and appends; the task screen shows it in
+  the Histórico tab (`TaskHistoryPanel`, IPC `task:history`/`task:addHistory`).
 - Dashboard period stats (`stats:period`, `StatsPeriod` → `PeriodStats`) come from
   `statsQueries.ts` (pure, tested): sessions clipped to the period and to now, split per local day
   and hour, compared with the previous period of the same length, project filter in SQL.
@@ -152,6 +161,11 @@ header, and the extra height can be scrolled by a programmatic `scrollIntoView` 
   the Notion sync serializes both fields whole.
 - Never enrich rows one by one: `enrichTasks(rows)` resolves tags, contexts, subtask counts and
   `is_blocked` with four aggregate queries per batch.
+- `tasks.notes_text` is the plain text of `notes`, derived in `updateTaskNotes` (the only writer
+  of task notes: IPC, MCP and the Jira import go through it) with `notesPlainText.ts`, same design
+  as `notebook_pages.search_text`. `searchQueries.ts` (pure, tested) owns the column's migration
+  and `searchAll`, the text search over tasks, pages, history and projects behind the MCP tool
+  `search`.
 - Screens that need a slice ask for that slice: `task:listRunning` (timer store),
   `task:listActiveLight` (task pickers), `schedule:getForDate` (today's tasks). Pulling the whole
   list to `Array.filter` it in the renderer is the pattern this replaced.
@@ -180,6 +194,12 @@ na coluna `drawing` de `tasks`; o PNG derivado vai para `userData/drawings/<task
 no mesmo IPC (`drawing:save`) que grava o JSON — MCP, Notion e export local leem esse PNG, então
 as duas escritas não podem divergir. O editor (`components/editor/TaskDrawingEditor.tsx`) é
 carregado com `React.lazy`: o pacote é grande e só a aba de desenho paga por ele.
+
+O MCP também desenha (`write_drawing`): o main não tem como gerar o PNG, então pede à janela
+principal (`drawingRenderBridge.ts`, puro e testado → evento `drawing:renderRequest` →
+`renderer/src/lib/drawingRender.ts`, que usa `convertToExcalidrawElements` e `exportToBlob` →
+`drawing:renderResult`) e só então grava JSON e PNG juntos. O guia que o cliente lê está em
+`mcp/drawingGuide.ts`.
 
 As fontes do Excalidraw são servidas pelo protocolo `ticktask-asset://` (host `excalidraw`), não
 por `file://` — o renderer roda em origem opaca em produção e o Chromium recusa carregar fontes
@@ -215,7 +235,8 @@ Notas e Desenho da task. Decisões em `docs/adr/0001-cadernos.md`; tela em `docs
 
 ## Terminal embutido
 
-Cada task pode ter `working_dir` e `start_command` (colunas locais: não vão ao Notion nem ao Jira); sem
+Cada task pode ter `working_dir` e `start_command` (colunas locais: não vão ao Notion nem ao Jira;
+`git_branch` e `pr_url`, gravadas pelo MCP com `setTaskGitLink`, seguem a mesma regra); sem
 `working_dir`, a task herda `projects.working_dir` (`effectiveWorkingDir` em `shared/workingDir.ts`). O
 painel (`components/terminal/`, montado em `App.tsx`) usa `@xterm/xterm`; o PTY é `node-pty`, só no
 main. `terminalSessions.ts` é puro e testado (sessões, ring buffer de ~200 KB, coalescência de
@@ -235,7 +256,12 @@ Config (API key, target page/database id, auto-sync flag) is persisted to `app.g
 ## Google Calendar sync
 
 Opt-in por task (`tasks.gcal_sync`), só TickTask → Google, numa agenda secundária "TickTask" criada
-pelo app com o escopo `calendar.app.created`. Time blocks viram eventos com hora; `scheduled_date` e
+pelo app com o escopo `calendar.app.created`. A conexão usa o cliente OAuth embutido no build
+(`googleBuiltinClient.ts`, de `MAIN_VITE_GOOGLE_CLIENT_ID`/`_SECRET`: secrets do GitHub no
+`release.yml`, `.env.local` no dev) ou, em "Avançado", um cliente próprio; `googleAccount.ts` (puro)
+decide o cliente e lê os escopos concedidos. As permissões são incrementais (`include_granted_scopes`):
+agenda e Drive (`drive.file`), guardadas em `scopes` no `gcal-config.json`; a agenda só sincroniza
+com o escopo dela concedido. Time blocks viram eventos com hora; `scheduled_date` e
 `due_date` viram eventos de dia inteiro; task finalizada ganha `✓ ` no título.
 
 Não há tabela de vínculo: cada evento tem ID determinístico (`tick{taskId}b{blockId}`,
@@ -316,7 +342,11 @@ Lives in `src/main/mcp/`, embedded in the main process. It speaks MCP over HTTP 
 (`127.0.0.1`), authenticated with a Bearer token, toggled from Settings. Tools are thin adapters
 reusing `database.ts` directly — task-write tools call `afterTaskWrite(id)`, non-task-specific
 writes call `broadcastRefresh()`. Destructive or bulk operations go through the two-phase
-confirmation guard in `confirmGuard.ts` (preview + `confirm_token`, then repeat the call). See
+confirmation guard in `confirmGuard.ts` (preview + `confirm_token`, then repeat the call). Status
+changes never write the column directly: IPC and MCP both go through `applyStatusChange` in
+`taskStatusService.ts` (pure, tested; MCP reaches it via `changeTaskStatus` in `effects.ts`), which
+holds the blocking, recurrence, parent-closing and unblock rules. `mcp/instructions.ts` is the
+text sent to the client on `initialize` with the task movement rules. See
 `docs/mcp-server.md` for the tool list and known limitations.
 
 ## Windows & shortcuts

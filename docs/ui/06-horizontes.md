@@ -43,9 +43,10 @@ Cada `Card` mostra o chip, o nome, o contador em mono e o subtítulo; H2 a H5 t�
   confirma e diz quantos projetos e metas ficam sem área.
 - **H3 · Metas** (1 a 2 anos, 🎯), **H4 · Visão** (3 a 5 anos, 🔭), **H5 · Propósito** (princípios,
   ✨): emoji do nível, nome, etiqueta da área ("todas as áreas" sem área; clicar filtra) e
-  descrição com as quebras de linha. Menu: Editar · Mover para ▸ (H3/H4/H5, com ✓ no atual) ·
-  Excluir… ("Só esta meta é apagada; áreas e projetos não mudam."). **Adicionar** abre o diálogo já
-  no nível da seção.
+  descrição com as quebras de linha, e "N projetos" (ou "Nenhum projeto", sem contar os
+  arquivados). Clicar na linha ou no nome (um botão, para o teclado) abre os projetos dela
+  (`/projects?meta=<id>`). Menu: Ver projetos da meta · Editar · Mover para ▸ (H3/H4/H5, com ✓ no
+  atual) · Excluir…, que diz quantos projetos (arquivados inclusive) ficam sem meta. **Adicionar** abre o diálogo já no nível da seção.
 
 ## Diálogos
 
@@ -57,7 +58,7 @@ Erro ao salvar aparece numa mensagem e o diálogo continua aberto.
 
 ## Dados
 
-`area:list`, `goal:list`, `project:list` (com a próxima ação e as contagens, ver
+`area:list`, `goal:list` (com `project_count`), `project:list` (com a próxima ação e as contagens, ver
 `05-projetos.md`) e `schedule:getForDate` de hoje, numa leitura só dentro do `RegionBoundary` da
 rota; relê em `tasks:refresh` e depois de cada gravação. O recorte por área é de `filterByArea`
 (`horizonLevels.ts`).

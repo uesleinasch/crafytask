@@ -133,6 +133,9 @@ import {
   // FASE 2
   getSubtasks,
   completeSubtasksCheck,
+  addTaskHistory,
+  getTaskHistory,
+  getTaskLastCheckpoint,
   getTaskDependencies,
   getTaskDependents,
   addTaskDependency,
@@ -239,6 +242,14 @@ import { readMcpConfig, writeMcpConfig } from './mcp/store'
 import { isMcpRunning, startMcpServer, stopMcpServer } from './mcp/transport'
 import { generateToken } from './mcp/config'
 import { registerWriteEffects } from './mcp/effects'
+import { createDrawingRenderBridge } from './drawingRenderBridge'
+import { TASK_HISTORY_MAX_LIMIT } from './taskHistoryQueries'
+import type { TaskHistoryView } from '@shared/types'
+import type { DrawingRenderResult } from '@shared/drawingRender'
+import {
+  applyStatusChange as applyTaskStatusChange,
+  type StatusChangeDeps
+} from './taskStatusService'
 import {
   disposeTerminalsForProjects,
   disposeTerminalsForTasks,
@@ -718,6 +729,36 @@ function revealMainWindow(route?: string): void {
   hideFloatWindow()
 }
 
+function navigateMainWindow(route: string): void {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    revealMainWindow(route)
+    return
+  }
+  revealMainWindow()
+  mainWindow.webContents.send('app:navigate', route)
+}
+
+// O Electron não segura a Notification: sem esta referência ela pode ser coletada antes do clique.
+const liveNotifications = new Set<Notification>()
+
+function showNotification(title: string, body: string, taskId?: number): void {
+  if (!Notification.isSupported()) {
+    throw new Error('Este sistema não aceita notificações.')
+  }
+  const notification = new Notification({ title, body })
+  liveNotifications.add(notification)
+  const release = (): void => {
+    liveNotifications.delete(notification)
+  }
+  notification.on('close', release)
+  notification.on('failed', release)
+  notification.on('click', () => {
+    release()
+    if (taskId !== undefined) navigateMainWindow(`/task/${taskId}`)
+  })
+  notification.show()
+}
+
 // Em AppImage o process.execPath aponta para o volume temporário montado, que some quando este
 // processo sai; APPIMAGE guarda o caminho real do arquivo distribuído.
 function relaunchApp(): void {
@@ -825,44 +866,79 @@ function buildMcpStatus(): McpStatus {
 
 // ===================== IPC HANDLERS =====================
 
+const drawingRenderBridge = createDrawingRenderBridge((requestId, payload) => {
+  if (!mainWindow || mainWindow.isDestroyed() || mainWindow.webContents.isLoading()) return false
+  mainWindow.webContents.send('drawing:renderRequest', requestId, payload)
+  return true
+})
+
+const statusChangeDeps: StatusChangeDeps = {
+  getTask,
+  updateTaskStatus,
+  stopTimer: (id) => {
+    stopTask(id)
+    mainWindow?.webContents.send('timer:stopped', id)
+  },
+  createNextRecurrence,
+  getNextRecurrenceIds,
+  deleteNextRecurrence,
+  completeSubtasksCheck,
+  getTaskDependents,
+  filterGcalSyncedIds,
+  syncCalendar: (ids) => autoSyncToGoogle(...ids),
+  pushCalendar: (ids) => pushToGoogle(ids),
+  autoSync: (id) => {
+    autoSyncTask(id)
+  },
+  notifyUnblocked: (id, name) => mainWindow?.webContents.send('task:unblocked', id, name)
+}
+
 function applyStatusChange(id: number, status: TaskStatus): void {
-  const task = getTask(id)
-  if (!task) return
+  applyTaskStatusChange(statusChangeDeps, id, status)
+}
 
-  if (status === 'executando' && task.is_blocked) {
-    throw new Error('Tarefa bloqueada por dependências não concluídas')
-  }
-  if (status === 'finalizada' && task.parent_task_id) {
-    const parentTask = getTask(task.parent_task_id)
-    if (parentTask?.is_blocked) {
-      throw new Error('A tarefa pai possui dependências não concluídas')
-    }
-  }
+async function setGcalSync(taskId: number, enabled: boolean): Promise<void> {
+  updateTask(taskId, { gcal_sync: enabled })
+  await runGoogleSync(taskId)
+}
 
-  const previousStatus: string = task.status
-  updateTaskStatus(id, status)
+async function syncTaskToNotionNow(taskId: number): Promise<unknown> {
+  const task = getTask(taskId)
+  if (!task) throw new Error('Tarefa não encontrada')
+  return syncTaskToNotion(task)
+}
 
-  if (status === 'finalizada') {
-    if (task.recurrence_rule && !task.parent_task_id) {
-      const next = createNextRecurrence(id)
-      if (next) autoSyncToGoogle(next.id)
-    }
-    if (task.parent_task_id && completeSubtasksCheck(task.parent_task_id)) {
-      autoSyncToGoogle(task.parent_task_id)
-    }
-    for (const depTaskId of getTaskDependents(id)) {
-      const depTask = getTask(depTaskId)
-      if (depTask && !depTask.is_blocked) {
-        mainWindow?.webContents.send('task:unblocked', depTaskId, depTask.name)
-      }
-    }
-  } else if (previousStatus === 'finalizada' && task.recurrence_rule && !task.parent_task_id) {
-    const calendarIds = filterGcalSyncedIds(getNextRecurrenceIds(id))
-    deleteNextRecurrence(id)
-    pushToGoogle(calendarIds)
-  }
+async function transitionJira(taskId: number, transitionId: string): Promise<void> {
+  await transitionJiraIssue(taskId, transitionId)
+  await afterJiraIssueChange(taskId)
+}
 
+async function exportTaskLocal(taskId: number): Promise<boolean> {
+  const task = getTask(taskId)
+  if (!task || !task.local_export_path) return false
+  await exportTaskToLocal(task, task.local_export_path)
+  return true
+}
+
+function resetTaskTime(id: number): void {
+  const worklogs = captureJiraWorklogs(id)
+  resetTaskTimer(id)
+  deleteJiraWorklogs(worklogs)
   autoSyncTask(id)
+}
+
+function editTimeEntry(id: number, startIso: string, endIso: string): number {
+  const { taskId, worklogId } = updateTimeEntry(id, startIso, endIso)
+  syncEditedTimeEntry(taskId, id, worklogId)
+  autoSyncTask(taskId)
+  return taskId
+}
+
+function removeTimeEntry(id: number): number {
+  const { taskId, worklogId } = deleteTimeEntry(id)
+  syncDeletedTimeEntry(taskId, worklogId)
+  autoSyncTask(taskId)
+  return taskId
 }
 
 function setupIpcHandlers(): void {
@@ -915,6 +991,9 @@ function setupIpcHandlers(): void {
       updateTaskDrawing(taskId, drawing)
     }
   )
+  ipcMain.handle('drawing:renderResult', (_, requestId: string, result: DrawingRenderResult) =>
+    drawingRenderBridge.resolve(requestId, result)
+  )
   ipcMain.handle('notes:searchMentions', (_, query: string) => searchMentions(query))
   ipcMain.handle(
     'notes:saveImage',
@@ -937,12 +1016,7 @@ function setupIpcHandlers(): void {
     return result.filePath
   })
   // Reexporta silenciosamente se a task já tem um caminho local configurado.
-  ipcMain.handle('notes:exportLocal', async (_, taskId: number) => {
-    const task = getTask(taskId)
-    if (!task || !task.local_export_path) return false
-    await exportTaskToLocal(task, task.local_export_path)
-    return true
-  })
+  ipcMain.handle('notes:exportLocal', (_, taskId: number) => exportTaskLocal(taskId))
   ipcMain.handle('task:delete', (_, id: number) => {
     const calendarIds = filterGcalSyncedIds([id, ...getChildTaskIds(id)])
     const config = getNotionConfig()
@@ -1045,12 +1119,7 @@ function setupIpcHandlers(): void {
     return result
   })
   ipcMain.handle('task:updateTimer', (_, id: number, seconds: number) => updateTimer(id, seconds))
-  ipcMain.handle('task:reset', (_, id: number) => {
-    const worklogs = captureJiraWorklogs(id)
-    resetTaskTimer(id)
-    deleteJiraWorklogs(worklogs)
-    autoSyncTask(id)
-  })
+  ipcMain.handle('task:reset', (_, id: number) => resetTaskTime(id))
   ipcMain.handle('task:addManualTime', (_, id: number, seconds: number) => {
     addManualTimeEntry(id, seconds)
     autoSyncTask(id)
@@ -1067,24 +1136,30 @@ function setupIpcHandlers(): void {
 
   // Time Entries
   ipcMain.handle('task:getTimeEntries', (_, taskId: number) => getTimeEntries(taskId))
+  ipcMain.handle(
+    'task:history',
+    (_, taskId: number, includeSubtasks: boolean): TaskHistoryView => ({
+      entries: getTaskHistory({ taskId, includeSubtasks, limit: TASK_HISTORY_MAX_LIMIT }),
+      lastCheckpoint: getTaskLastCheckpoint(taskId)
+    })
+  )
+  ipcMain.handle('task:addHistory', (_, taskId: number, summary: string) =>
+    addTaskHistory({ task_id: taskId, kind: 'note', summary: String(summary ?? '') }, 'app')
+  )
   ipcMain.handle('timeEntry:update', (_, id: number, startIso: string, endIso: string) => {
-    const { taskId, worklogId } = updateTimeEntry(id, startIso, endIso)
-    syncEditedTimeEntry(taskId, id, worklogId)
-    autoSyncTask(taskId)
+    editTimeEntry(id, startIso, endIso)
   })
   ipcMain.handle('timeEntry:listRange', (_, fromIso: string, toIso: string) =>
     listTimeEntriesRange(fromIso, toIso)
   )
   ipcMain.handle('timeEntry:delete', (_, id: number) => {
-    const { taskId, worklogId } = deleteTimeEntry(id)
-    syncDeletedTimeEntry(taskId, worklogId)
-    autoSyncTask(taskId)
+    removeTimeEntry(id)
   })
   ipcMain.handle('task:getActiveTimeEntry', (_, taskId: number) => getActiveTimeEntry(taskId))
 
   // Notifications
   ipcMain.handle('notification:show', (_, title: string, body: string) => {
-    new Notification({ title, body }).show()
+    if (Notification.isSupported()) showNotification(title, body)
   })
 
   // Float window controls
@@ -1104,13 +1179,7 @@ function setupIpcHandlers(): void {
   })
   ipcMain.handle('float:openTask', (_, taskId: number) => {
     if (!Number.isInteger(taskId) || taskId <= 0) return
-    const path = `/task/${taskId}`
-    if (!mainWindow || mainWindow.isDestroyed()) {
-      revealMainWindow(path)
-      return
-    }
-    revealMainWindow()
-    mainWindow.webContents.send('app:navigate', path)
+    navigateMainWindow(`/task/${taskId}`)
   })
   ipcMain.handle('float:stopAll', async () => {
     const ids = currentTimers.map((t) => t.taskId)
@@ -1265,11 +1334,7 @@ function setupIpcHandlers(): void {
   ipcMain.handle('notion:saveConfig', (_, config: NotionConfig) => saveNotionConfig(config))
   ipcMain.handle('notion:clearConfig', () => clearNotionConfig())
   ipcMain.handle('notion:testConnection', () => testNotionConnection())
-  ipcMain.handle('notion:syncTask', async (_, taskId: number) => {
-    const task = getTask(taskId)
-    if (!task) throw new Error('Tarefa não encontrada')
-    return syncTaskToNotion(task)
-  })
+  ipcMain.handle('notion:syncTask', (_, taskId: number) => syncTaskToNotionNow(taskId))
   ipcMain.handle('notion:syncTaskNotes', async (_, taskId: number) => {
     const task = getTask(taskId)
     if (!task) throw new Error('Tarefa não encontrada')
@@ -1364,10 +1429,9 @@ function setupIpcHandlers(): void {
   ipcMain.handle('jira:saveOptions', (_, input: JiraOptionsInput) => saveJiraOptions(input))
   ipcMain.handle('jira:disconnect', () => disconnectJira())
   ipcMain.handle('jira:listTransitions', (_, taskId: number) => listJiraTransitions(taskId))
-  ipcMain.handle('jira:transition', async (_, taskId: number, transitionId: string) => {
-    await transitionJiraIssue(taskId, transitionId)
-    await afterJiraIssueChange(taskId)
-  })
+  ipcMain.handle('jira:transition', (_, taskId: number, transitionId: string) =>
+    transitionJira(taskId, transitionId)
+  )
   ipcMain.handle('jira:getFields', (_, taskId: number) => getJiraIssueFields(taskId))
   ipcMain.handle('jira:getChildren', (_, taskId: number) => getJiraChildren(taskId))
   ipcMain.handle(
@@ -1387,13 +1451,17 @@ function setupIpcHandlers(): void {
   ipcMain.handle('gcal:saveCredentials', (_, clientId: string, clientSecret: string) =>
     saveGcalCredentials(clientId, clientSecret)
   )
-  ipcMain.handle('gcal:connect', () => connectGcal())
+  ipcMain.handle('gcal:connect', (_, permission?: unknown, mode?: unknown) =>
+    connectGcal(
+      permission === 'drive' ? 'drive' : 'calendar',
+      mode === 'builtin' || mode === 'custom' ? mode : undefined
+    )
+  )
   ipcMain.handle('gcal:disconnect', () => disconnectGcal())
   ipcMain.handle('gcal:setAutoSync', (_, enabled: boolean) => setGcalAutoSync(enabled))
-  ipcMain.handle('gcal:setTaskSync', async (_, taskId: number, enabled: boolean) => {
-    updateTask(taskId, { gcal_sync: enabled })
-    await runGoogleSync(taskId)
-  })
+  ipcMain.handle('gcal:setTaskSync', (_, taskId: number, enabled: boolean) =>
+    setGcalSync(taskId, enabled)
+  )
   ipcMain.handle('gcal:syncTask', (_, taskId: number) => runGoogleSync(taskId))
   ipcMain.handle('gcal:syncAll', async () => {
     mainWindow?.webContents.send('gcal:syncStart')
@@ -1588,10 +1656,29 @@ app.whenReady().then(() => {
   registerWriteEffects({
     getMainWindow: () => mainWindow,
     autoSync: (id) => autoSyncTask(id),
+    changeStatus: (id, status) => applyStatusChange(id, status),
+    renderDrawing: (payload) => drawingRenderBridge.request(payload),
+    resetTaskTime,
+    editTimeEntry,
+    removeTimeEntry,
+    integrations: {
+      setGcalSync,
+      syncNotion: syncTaskToNotionNow,
+      jiraImport: () => runJiraImport(),
+      jiraTransitions: (taskId) => listJiraTransitions(taskId),
+      jiraTransition: transitionJira,
+      createBackup: () => createBackup(),
+      exportTask: exportTaskLocal
+    },
     syncTagChange: (ids) => syncTasksAfterTagChange(ids),
     syncCalendar: (ids) => pushToGoogle(ids),
     disposeTerminals: (ids) => disposeTerminalsForTasks(ids),
-    disposeProjectTerminals: (ids) => disposeTerminalsForProjects(ids)
+    disposeProjectTerminals: (ids) => disposeTerminalsForProjects(ids),
+    showNotification,
+    navigate: navigateMainWindow,
+    recordHistory: (taskId, summary) => {
+      addTaskHistory({ task_id: taskId, summary, kind: 'operation' }, 'mcp')
+    }
   })
 
   // Nenhuma falha do MCP pode impedir createWindow(): esta promise não tem .catch.

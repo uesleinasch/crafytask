@@ -305,7 +305,7 @@ passos da revisão e cartões do dashboard.
 Destrutiva sempre confirma, citando o que será afetado. Exclusões e operações que mexem em muitos
 itens usam `modal.confirm` de `App.useApp()` (tarefa, projeto, área, meta, contexto, tag, caderno,
 arquivadas, restauração de backup, token do MCP, revisão). Ações curtas presas a um botão usam
-`Popconfirm` ("Excluir esta sessão?", limpar o Notion, desconectar Google Calendar e Jira).
+`Popconfirm` ("Excluir esta sessão?", limpar o Notion, desconectar a conta Google e o Jira).
 
 ### 8. Feedback de ação
 

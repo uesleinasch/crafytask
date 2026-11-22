@@ -3,8 +3,12 @@ import { z } from 'zod'
 import { UNTITLED_PAGE, flattenPageTree } from '@shared/notebookTree'
 import { notebookDb } from '../../database'
 import {
+  createNotebook,
   createPage,
+  createSection,
+  deleteNotebook,
   deletePage,
+  deleteSection,
   getNotebook,
   getPage,
   getSection,
@@ -12,21 +16,36 @@ import {
   listPageSubtree,
   listPages,
   listSections,
+  listNotebookPageIds,
+  movePage,
   searchPages,
-  updatePageNotes
+  updateNotebook,
+  updatePageNotes,
+  updatePageTitle,
+  updateSection
 } from '../../notebookQueries'
 import {
   afterNotebookStructureChange,
+  afterPageMoved,
   autoSyncNotebook,
   removeNotebookNode
 } from '../../notebookService'
 import { readDrawingPreview } from '../../drawingAssets'
-import { markdownToProsemirror, type PMDoc } from '../../markdownToProsemirror'
-import { prosemirrorToMarkdown } from '../../notesMarkdown'
+import type { PMDoc } from '../../markdownToProsemirror'
+import { readSection, replaceSection } from '../../notesSection'
 import { needsConfirmation } from '../confirmGuard'
 import { fail, ok, okImage } from '../reply'
 import type { ToolContext } from '../toolContext'
-import { hasRealContent, parseNotes } from './notes'
+import {
+  MARKDOWN_SUPPORT,
+  SECTION_MODE_HELP,
+  nodesToMarkdown,
+  sectionFailure,
+  hasRealContent,
+  markdownToNotes,
+  notesToMarkdown,
+  parseNotes
+} from './notes'
 import { describeElements } from './drawing'
 
 function pageTree(sectionId: number): { id: number; title: string; depth: number }[] {
@@ -84,10 +103,13 @@ export function registerNotebookTools(server: McpServer, ctx: ToolContext): void
     {
       title: 'Ler uma página de caderno',
       description:
-        'Devolve a página em Markdown, com caderno, seção e subpáginas. Se a página tem desenho, a imagem PNG vem junto.',
-      inputSchema: { page_id: z.number().int().positive() }
+        'Devolve a página em Markdown, com caderno, seção e subpáginas. Se a página tem desenho, a imagem PNG vem junto. Com heading, o Markdown traz só aquela seção das notas (o título e o que está sob ele).',
+      inputSchema: {
+        page_id: z.number().int().positive(),
+        heading: z.string().trim().min(1).optional().describe('Texto do título da seção.')
+      }
     },
-    async ({ page_id }) => {
+    async ({ page_id, heading }) => {
       const db = notebookDb()
       const page = getPage(db, page_id)
       if (!page) return fail('not_found', `Página ${page_id} não existe.`)
@@ -95,6 +117,15 @@ export function registerNotebookTools(server: McpServer, ctx: ToolContext): void
       const notebook = section ? getNotebook(db, section.notebook_id) : undefined
       const parsed = parseNotes(page.notes)
       const drawing = describeElements(page.drawing)
+      let sectionMarkdown: string | undefined
+      if (heading !== undefined) {
+        const found = readSection(
+          parsed.kind === 'doc' ? parsed.doc : { type: 'doc', content: [] },
+          heading
+        )
+        if (!found.ok) return sectionFailure(found.code, heading, found.headings)
+        sectionMarkdown = nodesToMarkdown(found.content)
+      }
       const data = {
         page_id,
         title: page.title || UNTITLED_PAGE,
@@ -103,10 +134,10 @@ export function registerNotebookTools(server: McpServer, ctx: ToolContext): void
         parent_page_id: page.parent_page_id,
         subpage_ids: listPageSubtree(db, page_id).slice(1),
         updated_at: page.updated_at,
+        ...(heading !== undefined && { heading }),
         markdown:
-          parsed.kind === 'doc' || parsed.kind === 'empty'
-            ? prosemirrorToMarkdown(page.notes)
-            : null,
+          sectionMarkdown ??
+          (parsed.kind === 'doc' || parsed.kind === 'empty' ? notesToMarkdown(page.notes) : null),
         drawing: { elements: drawing.count, kinds: drawing.kinds, texts: drawing.texts }
       }
       if (drawing.count === 0) return ok(data)
@@ -136,7 +167,7 @@ export function registerNotebookTools(server: McpServer, ctx: ToolContext): void
       } catch (error) {
         return fail('validation', error instanceof Error ? error.message : String(error))
       }
-      if (markdown) updatePageNotes(db, page.id, JSON.stringify(markdownToProsemirror(markdown)))
+      if (markdown) updatePageNotes(db, page.id, JSON.stringify(markdownToNotes(markdown)))
       afterNotebookStructureChange({ kind: 'page', id: page.id })
       return ok({ page_id: page.id, section_id, parent_page_id: page.parent_page_id })
     }
@@ -146,23 +177,42 @@ export function registerNotebookTools(server: McpServer, ctx: ToolContext): void
     'write_page',
     {
       title: 'Escrever numa página de caderno',
-      description:
-        'Grava Markdown nas notas de uma página. Mesma conversão e mesmas perdas de write_notes (menções, destaques, tabelas, checklist e imagens não sobrevivem). Prefira mode=append; mode=replace sobre página com conteúdo exige confirm_token.',
+      description: `Grava Markdown nas notas de uma página. ${MARKDOWN_SUPPORT} Prefira mode=append. ${SECTION_MODE_HELP} mode=replace sobre página com conteúdo exige confirm_token.`,
       inputSchema: {
         page_id: z.number().int().positive(),
         markdown: z.string().min(1),
-        mode: z.enum(['append', 'replace']).optional(),
+        mode: z.enum(['append', 'replace', 'section']).optional(),
+        heading: z.string().trim().min(1).optional().describe('mode=section: texto do título.'),
         confirm_token: z.string().optional()
       }
     },
-    async ({ page_id, markdown, mode, confirm_token }) => {
+    async ({ page_id, markdown, mode, heading, confirm_token }) => {
       const db = notebookDb()
       const page = getPage(db, page_id)
       if (!page) return fail('not_found', `Página ${page_id} não existe.`)
 
       const effectiveMode = mode ?? 'append'
       const parsed = parseNotes(page.notes)
-      const incoming = markdownToProsemirror(markdown)
+      const incoming = markdownToNotes(markdown)
+
+      if (effectiveMode === 'section') {
+        if (!heading) return fail('validation', 'mode=section exige heading.')
+        if (parsed.kind !== 'doc') {
+          return fail('app_state', 'A página não tem títulos: use mode=append ou mode=replace.')
+        }
+        const replaced = replaceSection(parsed.doc, heading, incoming.content)
+        if (!replaced.ok) return sectionFailure(replaced.code, heading, replaced.headings)
+        updatePageNotes(db, page_id, JSON.stringify(replaced.doc))
+        autoSyncNotebook({ kind: 'page', id: page_id })
+        return ok({
+          page_id,
+          mode: effectiveMode,
+          heading,
+          blocks: replaced.doc.content.length,
+          previous_markdown: nodesToMarkdown(replaced.previous)
+        })
+      }
+
       const destructive = effectiveMode === 'replace' || parsed.kind !== 'doc'
 
       if (
@@ -177,7 +227,7 @@ export function registerNotebookTools(server: McpServer, ctx: ToolContext): void
             'Substituir apaga as notas atuais da página, incluindo o que o Markdown não representa. Mostre o conteúdo atual ao usuário antes de confirmar.',
             {
               confirm_token: ctx.confirmStore.issue(operation),
-              current_markdown: parsed.kind === 'doc' ? prosemirrorToMarkdown(page.notes) : null
+              current_markdown: parsed.kind === 'doc' ? notesToMarkdown(page.notes) : null
             }
           )
         }
@@ -226,6 +276,114 @@ export function registerNotebookTools(server: McpServer, ctx: ToolContext): void
 
       const deleted = await removeNotebookNode('page', page_id, (id) => deletePage(db, id))
       return ok({ deleted })
+    }
+  )
+
+  server.registerTool(
+    'manage_notebooks',
+    {
+      title: 'Organizar cadernos',
+      description:
+        'Estrutura dos cadernos (ids em list_notebooks). entity=notebook ou section: action=create (name; a seção exige notebook_id), update (id, name) e delete (id; apaga tudo que está dentro e sempre exige confirm_token). entity=page: action=update renomeia (id, name) e action=move leva a página para outra seção ou página pai (id, section_id, parent_page_id opcional, index opcional). Para criar e apagar página use create_page e delete_page.',
+      inputSchema: {
+        entity: z.enum(['notebook', 'section', 'page']),
+        action: z.enum(['create', 'update', 'delete', 'move']),
+        id: z.number().int().positive().optional(),
+        name: z.string().min(1).max(200).optional(),
+        notebook_id: z.number().int().positive().optional(),
+        section_id: z.number().int().positive().optional(),
+        parent_page_id: z.union([z.number().int().positive(), z.null()]).optional(),
+        index: z.number().int().min(0).optional(),
+        confirm_token: z.string().optional()
+      }
+    },
+    async ({
+      entity,
+      action,
+      id,
+      name,
+      notebook_id,
+      section_id,
+      parent_page_id,
+      index,
+      confirm_token
+    }) => {
+      const db = notebookDb()
+      const exists = (kind: typeof entity, nodeId: number): boolean =>
+        kind === 'notebook'
+          ? Boolean(getNotebook(db, nodeId))
+          : kind === 'section'
+            ? Boolean(getSection(db, nodeId))
+            : Boolean(getPage(db, nodeId))
+
+      try {
+        if (action === 'create') {
+          if (entity === 'page') return fail('validation', 'Para criar página use create_page.')
+          if (!name) return fail('validation', 'action=create exige name.')
+          if (entity === 'notebook') {
+            const notebook = createNotebook(db, { name })
+            afterNotebookStructureChange({ kind: 'notebook', id: notebook.id })
+            return ok({ created: notebook.id, entity, name: notebook.name })
+          }
+          if (notebook_id === undefined) return fail('validation', 'Seção nova exige notebook_id.')
+          if (!getNotebook(db, notebook_id)) {
+            return fail('not_found', `Caderno ${notebook_id} não existe.`)
+          }
+          const section = createSection(db, { notebook_id, name })
+          afterNotebookStructureChange({ kind: 'section', id: section.id })
+          return ok({ created: section.id, entity, name: section.name })
+        }
+
+        if (id === undefined) return fail('validation', `action=${action} exige id.`)
+        if (!exists(entity, id)) return fail('not_found', `${entity} ${id} não existe.`)
+
+        if (action === 'update') {
+          if (!name) return fail('validation', 'action=update exige name.')
+          if (entity === 'notebook') updateNotebook(db, id, { name })
+          else if (entity === 'section') updateSection(db, id, { name })
+          else updatePageTitle(db, id, name)
+          afterNotebookStructureChange({ kind: entity, id })
+          return ok({ updated: id, entity, name })
+        }
+
+        if (action === 'move') {
+          if (entity !== 'page') return fail('validation', 'Só página pode ser movida.')
+          if (section_id === undefined) return fail('validation', 'action=move exige section_id.')
+          if (!getSection(db, section_id))
+            return fail('not_found', `Seção ${section_id} não existe.`)
+          const parent = parent_page_id ?? null
+          const siblings = listPages(db, section_id).filter(
+            (page) => (page.parent_page_id ?? null) === parent && page.id !== id
+          )
+          movePage(db, id, {
+            section_id,
+            parent_page_id: parent,
+            index: Math.min(index ?? siblings.length, siblings.length)
+          })
+          afterPageMoved(id)
+          return ok({ moved: id, section_id, parent_page_id: parent })
+        }
+
+        if (entity === 'page') return fail('validation', 'Para apagar página use delete_page.')
+        const pages =
+          entity === 'notebook' ? listNotebookPageIds(db, id).length : listPages(db, id).length
+        const operation = { kind: `delete_${entity}`, payload: { id } }
+        if (!confirm_token) {
+          return fail(
+            'needs_confirmation',
+            `Apagar ${entity === 'notebook' ? 'o caderno' : 'a seção'} apaga ${pages} página(s) junto, para sempre. Confirme com o usuário.`,
+            { confirm_token: ctx.confirmStore.issue(operation), pages }
+          )
+        }
+        const consumed = ctx.confirmStore.consume(confirm_token, operation)
+        if (!consumed.ok) return fail(consumed.code, consumed.message)
+        await removeNotebookNode(entity, id, (nodeId) =>
+          entity === 'notebook' ? deleteNotebook(db, nodeId) : deleteSection(db, nodeId)
+        )
+        return ok({ deleted: id, entity, pages })
+      } catch (error) {
+        return fail('validation', error instanceof Error ? error.message : String(error))
+      }
     }
   )
 }

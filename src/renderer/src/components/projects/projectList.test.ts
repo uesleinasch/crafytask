@@ -33,6 +33,7 @@ const projects = [
     name: 'Site',
     area_id: 1,
     area_name: 'Carreira',
+    goal_id: 7,
     due_date: '2026-12-01',
     task_count: 4,
     completed_task_count: 1,
@@ -51,6 +52,7 @@ const projects = [
     id: 3,
     name: 'Livro',
     status: 'someday',
+    goal_id: 7,
     due_date: '2026-11-20',
     task_count: 2,
     completed_task_count: 2,
@@ -79,6 +81,8 @@ describe('lista de projetos', () => {
     expect(names({ search: 'casa NOVA' })).toEqual(['Mudança'])
     expect(names({ search: 'carreira' })).toEqual(['Site'])
     expect(names({ onlyWithoutNext: true })).toEqual(['Mudança'])
+    expect(names({ goalId: 7 })).toEqual(['Livro', 'Site'])
+    expect(names({ goalId: null })).toHaveLength(4)
   })
 
   it('ordena por prazo (sem prazo no fim), progresso, recentes e nome', () => {

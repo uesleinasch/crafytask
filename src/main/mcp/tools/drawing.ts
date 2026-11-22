@@ -1,8 +1,21 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
-import { getTask } from '../../database'
-import { readDrawingPreview } from '../../drawingAssets'
+import { DRAWING_SKELETON_LIMIT, DRAWING_SKELETON_TYPES } from '@shared/drawingRender'
+import type { NotesOwner } from '@shared/types'
+import { getTask, notebookDb, updateTaskDrawing } from '../../database'
+import { deleteDrawingPreview, readDrawingPreview, saveDrawingPreview } from '../../drawingAssets'
+import { getPage, updatePageDrawing } from '../../notebookQueries'
+import { autoSyncNotebook } from '../../notebookService'
+import { DRAWING_GUIDE } from '../drawingGuide'
+import { afterTaskWrite, recordOperation, renderDrawing } from '../effects'
+import { drawingWrittenSummary } from '../operationSummary'
 import { fail, ok, okImage } from '../reply'
+import type { ToolContext } from '../toolContext'
+
+const SKELETON = z
+  .object({ type: z.enum(DRAWING_SKELETON_TYPES) })
+  .passthrough()
+  .describe('Elemento simplificado do Excalidraw; formato em drawing_guide.')
 
 interface DrawingElement {
   type?: string
@@ -33,7 +46,7 @@ export function describeElements(raw: string | null | undefined): {
   }
 }
 
-export function registerDrawingTools(server: McpServer): void {
+export function registerDrawingTools(server: McpServer, ctx: ToolContext): void {
   server.registerTool(
     'read_drawing',
     {
@@ -70,6 +83,86 @@ export function registerDrawingTools(server: McpServer): void {
         kinds: summary.kinds,
         texts: summary.texts
       })
+    }
+  )
+
+  server.registerTool(
+    'drawing_guide',
+    {
+      title: 'Guia de desenho',
+      description:
+        'Devolve o guia de como montar os elementos de write_drawing (formas, texto, setas, cores, exemplo). Leia antes do primeiro desenho da sessão.'
+    },
+    async () => ok({ guide: DRAWING_GUIDE })
+  )
+
+  server.registerTool(
+    'write_drawing',
+    {
+      title: 'Desenhar numa task ou página',
+      description:
+        'Cria ou altera o desenho (Excalidraw) de uma task (task_id) ou de uma página de caderno (page_id) a partir de elementos simplificados; o formato está em drawing_guide. mode=append (padrão) acrescenta ao desenho atual; mode=replace troca tudo e, sobre um desenho existente, exige confirm_token. A imagem é gerada pela janela do app, que precisa estar aberta (pode estar minimizada ou na bandeja). Confira o resultado com read_drawing ou read_page.',
+      inputSchema: {
+        task_id: z.number().int().positive().optional(),
+        page_id: z.number().int().positive().optional(),
+        elements: z.array(SKELETON).min(1).max(DRAWING_SKELETON_LIMIT),
+        mode: z.enum(['append', 'replace']).optional(),
+        confirm_token: z.string().optional()
+      }
+    },
+    async ({ task_id, page_id, elements, mode, confirm_token }) => {
+      if ((task_id === undefined) === (page_id === undefined)) {
+        return fail('validation', 'Informe task_id ou page_id, só um dos dois.')
+      }
+
+      let owner: NotesOwner
+      let current: string | null
+      if (task_id !== undefined) {
+        const task = getTask(task_id)
+        if (!task) return fail('not_found', `Task ${task_id} não existe.`)
+        owner = { kind: 'task', id: task_id }
+        current = task.drawing ?? null
+      } else {
+        const page = getPage(notebookDb(), page_id!)
+        if (!page) return fail('not_found', `Página ${page_id} não existe.`)
+        owner = { kind: 'page', id: page_id! }
+        current = page.drawing ?? null
+      }
+
+      const effectiveMode = mode ?? 'append'
+      const existing = describeElements(current)
+      if (effectiveMode === 'replace' && existing.count > 0) {
+        const operation = { kind: 'replace_drawing', payload: { owner, elements } }
+        if (!confirm_token) {
+          return fail(
+            'needs_confirmation',
+            `Substituir apaga o desenho atual (${existing.count} elementos). Mostre ao usuário o que será perdido antes de confirmar.`,
+            { confirm_token: ctx.confirmStore.issue(operation), current: existing }
+          )
+        }
+        const consumed = ctx.confirmStore.consume(confirm_token, operation)
+        if (!consumed.ok) return fail(consumed.code, consumed.message)
+      }
+
+      const rendered = await renderDrawing({
+        skeleton: elements,
+        base: effectiveMode === 'append' ? current : null
+      })
+      if (!rendered.ok)
+        return fail('app_state', `Não foi possível gerar o desenho: ${rendered.error}`)
+
+      if (rendered.preview) await saveDrawingPreview(owner, rendered.preview)
+      else await deleteDrawingPreview(owner)
+      if (owner.kind === 'task') {
+        updateTaskDrawing(owner.id, rendered.drawing)
+        recordOperation(owner.id, drawingWrittenSummary(effectiveMode, elements.length))
+        afterTaskWrite(owner.id)
+      } else {
+        updatePageDrawing(notebookDb(), owner.id, rendered.drawing)
+        autoSyncNotebook({ kind: 'page', id: owner.id })
+      }
+
+      return ok({ ...owner, mode: effectiveMode, elements: rendered.elements })
     }
   )
 }
