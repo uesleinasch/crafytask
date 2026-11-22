@@ -21,7 +21,7 @@ qual uma refatoração de interface pode ser desenhada sem perder funcionalidade
 | [08-dashboard.md](08-dashboard.md) | Rota `/dashboard` — métricas, gráficos e heatmap |
 | [09-contextos-e-tags.md](09-contextos-e-tags.md) | Rotas `/contexts` e `/tags` — as duas telas de taxonomia |
 | [10-arquivadas.md](10-arquivadas.md) | Rota `/archived` — o arquivo morto |
-| [11-configuracoes.md](11-configuracoes.md) | Rota `/settings` — barra lateral com Geral, Sobre, Notion, Google Calendar e servidor MCP |
+| [11-configuracoes.md](11-configuracoes.md) | Rota `/settings` — barra lateral com Geral, Sobre, Notion, Google e servidor MCP |
 | [12-janelas-auxiliares.md](12-janelas-auxiliares.md) | Timer flutuante, captura rápida e ícone de bandeja |
 | [13-biblioteca-de-componentes.md](13-biblioteca-de-componentes.md) | Base antd e componentes próprios por pasta: para que serve e onde é usado |
 | [14-design-tokens.md](14-design-tokens.md) | Onde cada token mora em `theme/` (paleta, cores semânticas, tema, densidade, fontes) |

@@ -98,7 +98,7 @@ o antd está no guia de design, §10.
 | `horizons/HorizonChip`, `AreaModal`, `GoalModal` | nível H0–H5 com `HORIZON_COLORS`; criar e editar área e meta | Horizontes |
 | `notebooks/NameColorDialog` | nome e cor de caderno ou seção | Cadernos |
 | `settings/SettingsLayout` (`SettingsCard`, `SettingRow`, `SettingsHeader`) | molde de toda seção de Configurações | Configurações |
-| `settings/SetupGuide` (`GuideLink`, `GuideField`) | guia de conexão em `Steps` | Notion, Google Calendar |
+| `settings/SetupGuide` (`GuideLink`, `GuideField`) | guia de conexão em `Steps` | Notion, Google (Avançado: cliente próprio) |
 | `jira/JiraStatusSelect`, `JiraFieldsSheet`, `JiraFieldEditor` | transição de status e campos do Jira | inspetor da tarefa |
 | `terminal/TerminalTaskButton`, `TerminalProjectButton` | abre o terminal no diretório da tarefa ou do projeto | cabeçalho da tarefa e do projeto |
 

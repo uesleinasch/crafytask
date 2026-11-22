@@ -1540,6 +1540,25 @@
       }
     },
     {
+      "id": "F7.22",
+      "fase": "F7",
+      "titulo": "Google numa ação: conectar com cliente embutido, conta, permissões e cliente próprio em Avançado",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/{renderer/src/components/settings/Google*.tsx,main/googleOAuth.ts,main/googleCalendar.ts}",
+        "padroes": ["Conectar com Google", "Permissões", "drive.file", "Avançado: usar um cliente OAuth próprio", "include_granted_scopes"]
+      }
+    },
+    {
+      "id": "F7.23",
+      "fase": "F7",
+      "titulo": "Login com Google conferido (conectar, permitir Drive, desconectar, cliente próprio)",
+      "check": {
+        "tipo": "manual"
+      },
+      "validado": "2026-11-21"
+    },
+    {
       "id": "F7.3",
       "fase": "F7",
       "titulo": "Cadernos, dashboard, terminal e configurações conferidos",

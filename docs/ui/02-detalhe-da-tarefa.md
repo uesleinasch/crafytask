@@ -182,7 +182,7 @@ Cada seção usa `Field` (rótulo de 92px à esquerda, controle à direita).
     por tipo (`Input`, `TextArea`, `InputNumber`, `DatePicker`, `Select` simples, múltiplo, de tags e
     de pessoa com busca e "Atribuir a mim"); cada campo grava ao sair ou escolher; erro do Jira volta
     por `message` e o campo retorna ao valor anterior.
-- **Google Calendar** — só com o Google conectado: `Switch` que grava `gcal_sync` e sincroniza na
+- **Google Calendar** — só com a conta Google conectada e a agenda permitida: `Switch` que grava `gcal_sync` e sincroniza na
   hora (desligar apaga os eventos da task), o texto "Na agenda TickTask" / "Fora do Google
   Calendar" e, ligado, o botão de ressincronizar (`RefreshCw`).
 - **Ambiente** — Diretório: o fim do caminho em mono (`…/pasta/repo`, completo no tooltip), etiqueta

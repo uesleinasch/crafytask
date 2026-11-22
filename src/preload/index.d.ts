@@ -2,6 +2,8 @@ import { ElectronAPI } from '@electron-toolkit/preload'
 import type { DrawingRenderPayload, DrawingRenderResult } from '@shared/drawingRender'
 import type {
   GcalStatus,
+  GoogleClientMode,
+  GooglePermission,
   TerminalBuffer,
   TerminalCreateResult,
   TerminalOwner,
@@ -297,7 +299,7 @@ interface API {
   ) => () => void
   gcalGetStatus: () => Promise<GcalStatus>
   gcalSaveCredentials: (clientId: string, clientSecret: string) => Promise<GcalStatus>
-  gcalConnect: () => Promise<GcalStatus>
+  gcalConnect: (permission?: GooglePermission, mode?: GoogleClientMode) => Promise<GcalStatus>
   gcalDisconnect: () => Promise<GcalStatus>
   gcalSetAutoSync: (enabled: boolean) => Promise<GcalStatus>
   gcalSetTaskSync: (taskId: number, enabled: boolean) => Promise<void>

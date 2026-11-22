@@ -27,13 +27,14 @@ describe('createPkcePair', () => {
 })
 
 describe('buildAuthUrl', () => {
-  it('pede acesso offline com consentimento, PKCE e o escopo mínimo', () => {
+  it('pede acesso offline com consentimento, PKCE, os escopos e os já concedidos', () => {
     const url = new URL(
       buildAuthUrl({
         clientId: client.clientId,
         redirectUri: 'http://127.0.0.1:5123',
         codeChallenge: 'abc',
-        state: 'xyz'
+        state: 'xyz',
+        scopes: ['openid', GCAL_SCOPE]
       })
     )
     expect(url.origin + url.pathname).toBe('https://accounts.google.com/o/oauth2/v2/auth')
@@ -41,27 +42,54 @@ describe('buildAuthUrl', () => {
       client_id: client.clientId,
       redirect_uri: 'http://127.0.0.1:5123',
       response_type: 'code',
-      scope: GCAL_SCOPE,
+      scope: `openid ${GCAL_SCOPE}`,
       access_type: 'offline',
       prompt: 'consent',
+      include_granted_scopes: 'true',
       code_challenge: 'abc',
       code_challenge_method: 'S256',
       state: 'xyz'
     })
+  })
+
+  it('sugere a conta já conectada', () => {
+    const url = new URL(
+      buildAuthUrl({
+        clientId: client.clientId,
+        redirectUri: 'http://127.0.0.1:5123',
+        codeChallenge: 'abc',
+        state: 'xyz',
+        scopes: [GCAL_SCOPE],
+        loginHint: 'voce@gmail.com'
+      })
+    )
+    expect(url.searchParams.get('login_hint')).toBe('voce@gmail.com')
   })
 })
 
 describe('exchangeCode', () => {
   it('troca o código por tokens e calcula a expiração', async () => {
     const fetchFn = vi.fn(async () =>
-      jsonResponse(200, { access_token: 'at', refresh_token: 'rt', expires_in: 3600 })
+      jsonResponse(200, {
+        access_token: 'at',
+        refresh_token: 'rt',
+        expires_in: 3600,
+        scope: `openid ${GCAL_SCOPE}`,
+        id_token: 'h.p.s'
+      })
     )
     const tokens = await exchangeCode(
       fetchFn,
       { ...client, code: 'c', codeVerifier: 'v', redirectUri: 'http://127.0.0.1:5123' },
       1_000
     )
-    expect(tokens).toEqual({ accessToken: 'at', refreshToken: 'rt', expiresAt: 1_000 + 3_600_000 })
+    expect(tokens).toEqual({
+      accessToken: 'at',
+      refreshToken: 'rt',
+      expiresAt: 1_000 + 3_600_000,
+      scopes: ['openid', GCAL_SCOPE],
+      idToken: 'h.p.s'
+    })
 
     const [url, init] = fetchFn.mock.calls[0] as unknown as [string, RequestInit]
     expect(url).toBe('https://oauth2.googleapis.com/token')

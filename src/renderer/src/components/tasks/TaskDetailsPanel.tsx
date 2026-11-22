@@ -109,7 +109,7 @@ function GoogleSection({ task, refreshTask }: TaskDetailsPanelProps): React.JSX.
   useEffect(() => {
     window.api
       .gcalGetStatus()
-      .then((status) => setConnected(status.connected))
+      .then((status) => setConnected(status.connected && status.permissions.calendar))
       .catch(console.error)
   }, [])
 

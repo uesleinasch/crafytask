@@ -32,3 +32,5 @@ graphify-out/*
 site/
 
 graphify-out/
+
+.env*.local

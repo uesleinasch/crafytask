@@ -4,11 +4,21 @@ import http from 'node:http'
 import path from 'node:path'
 import { randomBytes } from 'node:crypto'
 import type { AddressInfo } from 'node:net'
-import type { GcalStatus, Task } from '@shared/types'
+import type { GcalStatus, GoogleClientMode, GooglePermission, Task } from '@shared/types'
 import { getTask, getTimeBlocksForTask, listGcalSyncedTaskIds } from './database'
 import { buildDesiredEvents, type GcalTaskInput } from './gcalPlan'
 import { createKeyedQueue } from './gcalSyncQueue'
 import { createCalendarApi, reconcileTaskEvents } from './googleCalendarApi'
+import {
+  NO_BUILTIN_CLIENT_MESSAGE,
+  NO_CUSTOM_CLIENT_MESSAGE,
+  authScopes,
+  clientMode,
+  emailFromIdToken,
+  grantedPermissions,
+  resolveClient
+} from './googleAccount'
+import { BUILTIN_GOOGLE_CLIENT } from './googleBuiltinClient'
 import {
   GoogleAuthRevokedError,
   buildAuthUrl,
@@ -22,6 +32,9 @@ const CALENDAR_NAME = 'TickTask'
 const LOGIN_TIMEOUT_MS = 5 * 60 * 1000
 
 interface StoredConfig {
+  mode?: GoogleClientMode
+  scopes?: string[]
+  email?: string
   clientId?: string
   clientSecret?: string
   refreshToken?: string
@@ -78,39 +91,60 @@ function systemTimeZone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone
 }
 
+const SIGNED_OUT: Partial<StoredConfig> = {
+  refreshToken: undefined,
+  tokenEncrypted: undefined,
+  scopes: undefined,
+  email: undefined
+}
+
+function client(config: StoredConfig): ReturnType<typeof resolveClient> {
+  return resolveClient(config, BUILTIN_GOOGLE_CLIENT)
+}
+
 function isConnected(config: StoredConfig): boolean {
-  return Boolean(config.clientId && config.clientSecret && openToken(config))
+  return Boolean(client(config) && openToken(config))
+}
+
+function isCalendarReady(config: StoredConfig): boolean {
+  return isConnected(config) && grantedPermissions(config.scopes).calendar
 }
 
 export function isGcalConnected(): boolean {
-  return isConnected(readConfig())
+  return isCalendarReady(readConfig())
 }
 
 export function getGcalStatus(): GcalStatus {
   const config = readConfig()
+  const connected = isConnected(config)
   return {
     clientId: config.clientId ?? '',
     hasClientSecret: Boolean(config.clientSecret),
-    connected: isConnected(config),
-    autoSync: config.autoSync ?? true
+    connected,
+    autoSync: config.autoSync ?? true,
+    mode: clientMode(config),
+    builtinAvailable: Boolean(BUILTIN_GOOGLE_CLIENT.clientId && BUILTIN_GOOGLE_CLIENT.clientSecret),
+    email: connected ? config.email : undefined,
+    permissions: connected ? grantedPermissions(config.scopes) : { calendar: false, drive: false }
   }
 }
 
 export function isGcalAutoSyncOn(): boolean {
   const config = readConfig()
-  return isConnected(config) && (config.autoSync ?? true)
+  return isCalendarReady(config) && (config.autoSync ?? true)
 }
 
 export function saveGcalCredentials(clientId: string, clientSecret: string): GcalStatus {
   const config = readConfig()
   const trimmedId = clientId.trim()
   const clientChanged = trimmedId !== config.clientId
+  const signOut = clientChanged && clientMode(config) === 'custom'
   updateConfig({
     clientId: trimmedId,
     clientSecret: clientSecret.trim() || config.clientSecret,
-    ...(clientChanged ? { refreshToken: undefined, tokenEncrypted: undefined } : {})
+    ...(signOut ? { ...SIGNED_OUT, calendarId: undefined } : {})
   })
-  if (clientChanged) accessToken = null
+  if (signOut) accessToken = null
   return getGcalStatus()
 }
 
@@ -125,21 +159,18 @@ async function getAccessToken(forceRefresh: boolean): Promise<string> {
   }
   const config = readConfig()
   const refreshToken = openToken(config)
-  if (!config.clientId || !config.clientSecret || !refreshToken) {
-    throw new Error('Google Calendar não está conectado.')
+  const oauth = client(config)
+  if (!oauth || !refreshToken) {
+    throw new Error('O Google não está conectado.')
   }
   try {
-    const refreshed = await refreshAccessToken(
-      fetch,
-      { clientId: config.clientId, clientSecret: config.clientSecret, refreshToken },
-      Date.now()
-    )
+    const refreshed = await refreshAccessToken(fetch, { ...oauth, refreshToken }, Date.now())
     accessToken = { token: refreshed.accessToken, expiresAt: refreshed.expiresAt }
     return refreshed.accessToken
   } catch (error) {
     if (error instanceof GoogleAuthRevokedError) {
       accessToken = null
-      updateConfig({ refreshToken: undefined, tokenEncrypted: undefined })
+      updateConfig(SIGNED_OUT)
     }
     throw error
   }
@@ -206,10 +237,23 @@ function waitForAuthCode(
   })
 }
 
-export async function connectGcal(): Promise<GcalStatus> {
+function switchClientMode(mode: GoogleClientMode | undefined): StoredConfig {
   const config = readConfig()
-  if (!config.clientId || !config.clientSecret) {
-    throw new Error('Informe o Client ID e o Client Secret antes de conectar.')
+  if (!mode || mode === clientMode(config)) return config
+  accessToken = null
+  return updateConfig({ ...SIGNED_OUT, calendarId: undefined, mode })
+}
+
+export async function connectGcal(
+  permission: GooglePermission = 'calendar',
+  mode?: GoogleClientMode
+): Promise<GcalStatus> {
+  const config = switchClientMode(mode)
+  const oauth = client(config)
+  if (!oauth) {
+    throw new Error(
+      clientMode(config) === 'builtin' ? NO_BUILTIN_CLIENT_MESSAGE : NO_CUSTOM_CLIENT_MESSAGE
+    )
   }
 
   const state = randomBytes(16).toString('hex')
@@ -218,18 +262,19 @@ export async function connectGcal(): Promise<GcalStatus> {
   try {
     await shell.openExternal(
       buildAuthUrl({
-        clientId: config.clientId,
+        clientId: oauth.clientId,
         redirectUri: listener.redirectUri,
         codeChallenge: pkce.challenge,
-        state
+        state,
+        scopes: authScopes(permission),
+        loginHint: isConnected(config) ? config.email : undefined
       })
     )
     const code = await listener.code
     const tokens = await exchangeCode(
       fetch,
       {
-        clientId: config.clientId,
-        clientSecret: config.clientSecret,
+        ...oauth,
         code,
         codeVerifier: pkce.verifier,
         redirectUri: listener.redirectUri
@@ -237,12 +282,21 @@ export async function connectGcal(): Promise<GcalStatus> {
       Date.now()
     )
     accessToken = { token: tokens.accessToken, expiresAt: tokens.expiresAt }
-    updateConfig({ ...sealToken(tokens.refreshToken), autoSync: config.autoSync ?? true })
+    updateConfig({
+      ...sealToken(tokens.refreshToken),
+      mode: clientMode(config),
+      scopes: tokens.scopes,
+      email: emailFromIdToken(tokens.idToken) ?? config.email,
+      autoSync: config.autoSync ?? true
+    })
   } finally {
     listener.close()
   }
 
-  if (!readConfig().calendarId) await recreateCalendar(undefined)
+  const after = readConfig()
+  if (grantedPermissions(after.scopes).calendar && !after.calendarId) {
+    await recreateCalendar(undefined)
+  }
   return getGcalStatus()
 }
 
@@ -251,7 +305,7 @@ export async function disconnectGcal(): Promise<GcalStatus> {
   const token = openToken(config)
   if (token) await revokeToken(fetch, token).catch(() => undefined)
   accessToken = null
-  updateConfig({ refreshToken: undefined, tokenEncrypted: undefined })
+  updateConfig(SIGNED_OUT)
   return getGcalStatus()
 }
 
@@ -274,7 +328,7 @@ function toPlanInput(task: Task): GcalTaskInput {
 
 async function runTaskSync(taskId: number): Promise<void> {
   const config = readConfig()
-  if (!isConnected(config)) return
+  if (!isCalendarReady(config)) return
   const calendarId = config.calendarId ?? (await recreateCalendar(undefined))
 
   const task = getTask(taskId)

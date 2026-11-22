@@ -1451,7 +1451,12 @@ function setupIpcHandlers(): void {
   ipcMain.handle('gcal:saveCredentials', (_, clientId: string, clientSecret: string) =>
     saveGcalCredentials(clientId, clientSecret)
   )
-  ipcMain.handle('gcal:connect', () => connectGcal())
+  ipcMain.handle('gcal:connect', (_, permission?: unknown, mode?: unknown) =>
+    connectGcal(
+      permission === 'drive' ? 'drive' : 'calendar',
+      mode === 'builtin' || mode === 'custom' ? mode : undefined
+    )
+  )
   ipcMain.handle('gcal:disconnect', () => disconnectGcal())
   ipcMain.handle('gcal:setAutoSync', (_, enabled: boolean) => setGcalAutoSync(enabled))
   ipcMain.handle('gcal:setTaskSync', (_, taskId: number, enabled: boolean) =>

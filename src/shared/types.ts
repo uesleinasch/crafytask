@@ -337,11 +337,19 @@ export interface UpdateTaskInput {
   waiting_for?: string | null
 }
 
+export type GoogleClientMode = 'builtin' | 'custom'
+export type GooglePermission = 'calendar' | 'drive'
+export type GooglePermissions = Record<GooglePermission, boolean>
+
 export interface GcalStatus {
   clientId: string
   hasClientSecret: boolean
   connected: boolean
   autoSync: boolean
+  mode: GoogleClientMode
+  builtinAvailable: boolean
+  email?: string
+  permissions: GooglePermissions
 }
 
 export interface JiraBoardSummary {

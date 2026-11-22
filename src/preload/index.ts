@@ -3,6 +3,8 @@ import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import type {
   GcalStatus,
+  GoogleClientMode,
+  GooglePermission,
   TerminalBuffer,
   TerminalCreateResult,
   TerminalOwner,
@@ -445,7 +447,8 @@ const api = {
   gcalGetStatus: (): Promise<GcalStatus> => ipcRenderer.invoke('gcal:getStatus'),
   gcalSaveCredentials: (clientId: string, clientSecret: string): Promise<GcalStatus> =>
     ipcRenderer.invoke('gcal:saveCredentials', clientId, clientSecret),
-  gcalConnect: (): Promise<GcalStatus> => ipcRenderer.invoke('gcal:connect'),
+  gcalConnect: (permission?: GooglePermission, mode?: GoogleClientMode): Promise<GcalStatus> =>
+    ipcRenderer.invoke('gcal:connect', permission, mode),
   gcalDisconnect: (): Promise<GcalStatus> => ipcRenderer.invoke('gcal:disconnect'),
   gcalSetAutoSync: (enabled: boolean): Promise<GcalStatus> =>
     ipcRenderer.invoke('gcal:setAutoSync', enabled),
