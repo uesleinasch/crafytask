@@ -155,8 +155,7 @@ import {
   createProjectMilestone,
   updateProjectMilestone,
   setProjectMilestoneDone,
-  deleteProjectMilestone,
-  assignTaskMilestone
+  deleteProjectMilestone
 } from './database'
 import { mergeTimeBlock, timeBlockError } from './calendarQueries'
 import {
@@ -1293,9 +1292,6 @@ function setupIpcHandlers(): void {
   )
   ipcMain.handle('milestone:delete', (_, id: number) => {
     afterMilestoneChange(deleteProjectMilestone(id))
-  })
-  ipcMain.handle('task:setMilestone', (_, taskId: number, milestoneId: number | null) => {
-    afterMilestoneChange(assignTaskMilestone(taskId, milestoneId))
   })
 
   // ===================== CONTEXTS =====================

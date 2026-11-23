@@ -23,6 +23,7 @@ import {
   Folder,
   Link,
   MapPin,
+  Milestone,
   Plus,
   Repeat,
   Tags,
@@ -33,6 +34,7 @@ import {
   type Context,
   type EnergyLevel,
   type Project,
+  type ProjectMilestone,
   type TaskCategory
 } from '@shared/types'
 import { isSafeHttpUrl } from '@shared/externalUrl'
@@ -43,6 +45,8 @@ import {
 } from '@shared/recurrenceOptions'
 import { CategoryChip } from '@renderer/components/chips/CategoryChip'
 import { EnergyMeter } from '@renderer/components/chips/EnergyMeter'
+import { MILESTONE_KIND_ICON } from '@renderer/components/projects/milestoneIcons'
+import { MILESTONE_KIND_LABEL } from '@renderer/components/projects/milestoneView'
 import { ProjectLabel } from './ProjectLabel'
 import { dueTone, formatDueShort } from './taskTableFormat'
 
@@ -642,5 +646,76 @@ export function AddPropertyButton<K extends string>({
         Propriedade
       </button>
     </Dropdown>
+  )
+}
+
+export function MilestonePill({
+  value,
+  milestones,
+  onChange
+}: {
+  value: number | null
+  milestones: ProjectMilestone[]
+  onChange: Change<number | null>
+}): React.JSX.Element {
+  const { token } = theme.useToken()
+  const selected = milestones.find((milestone) => milestone.id === value) ?? null
+  return (
+    <PropPill
+      label="Marco"
+      icon={selected ? MILESTONE_KIND_ICON[selected.kind] : Milestone}
+      muted={!selected}
+      content={
+        <Flex vertical gap={8}>
+          <Select
+            autoFocus
+            allowClear
+            placeholder="Sem marco"
+            aria-label="Marco"
+            value={selected?.id}
+            onChange={(next: number | undefined) => void onChange(next ?? null)}
+            options={milestones.map((milestone) => {
+              const KindIcon = MILESTONE_KIND_ICON[milestone.kind]
+              return {
+                value: milestone.id,
+                title: milestone.name,
+                label: (
+                  <Flex gap={6} align="center">
+                    <KindIcon {...ICON} color={token.colorTextTertiary} />
+                    <span className="truncate">{milestone.name}</span>
+                    {milestone.due_date && (
+                      <span
+                        style={{
+                          fontFamily: token.fontFamilyCode,
+                          fontSize: 12,
+                          color: token.colorTextSecondary
+                        }}
+                      >
+                        {milestone.due_date.slice(8, 10)}/{milestone.due_date.slice(5, 7)}
+                      </span>
+                    )}
+                  </Flex>
+                )
+              }
+            })}
+          />
+          <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+            Os marcos são do projeto. Crie e conclua no detalhe do projeto.
+          </Typography.Text>
+        </Flex>
+      }
+    >
+      {selected ? (
+        <span>
+          {selected.name}
+          <span style={{ color: token.colorTextTertiary }}>
+            {' · '}
+            {MILESTONE_KIND_LABEL[selected.kind]}
+          </span>
+        </span>
+      ) : (
+        'Marco'
+      )}
+    </PropPill>
   )
 }

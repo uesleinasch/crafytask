@@ -370,6 +370,7 @@ export interface UpdateTaskInput {
   due_time?: string | null
   external_url?: string | null
   waiting_for?: string | null
+  milestone_id?: number | null
 }
 
 export type GoogleClientMode = 'builtin' | 'custom'

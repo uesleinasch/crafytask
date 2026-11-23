@@ -315,8 +315,6 @@ const api = {
   setMilestoneDone: (id: number, done: boolean): Promise<ProjectMilestone> =>
     ipcRenderer.invoke('milestone:setDone', id, done),
   deleteMilestone: (id: number): Promise<void> => ipcRenderer.invoke('milestone:delete', id),
-  setTaskMilestone: (taskId: number, milestoneId: number | null): Promise<void> =>
-    ipcRenderer.invoke('task:setMilestone', taskId, milestoneId),
   getProjectTasks: (projectId: number): Promise<Task[]> =>
     ipcRenderer.invoke('project:getTasks', projectId),
 

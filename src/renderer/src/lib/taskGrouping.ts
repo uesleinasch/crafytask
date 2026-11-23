@@ -1,4 +1,4 @@
-import type { Task } from '@shared/types'
+import type { ProjectMilestone, Task } from '@shared/types'
 
 export interface TaskGroup {
   key: string
@@ -8,7 +8,7 @@ export interface TaskGroup {
   tasks: Task[]
 }
 
-export type GroupBy = 'project' | 'context' | 'jira_space' | 'jira_parent'
+export type GroupBy = 'project' | 'context' | 'milestone' | 'jira_space' | 'jira_parent'
 
 export const JIRA_GROUP_MODES: GroupBy[] = ['jira_space', 'jira_parent']
 
@@ -41,7 +41,28 @@ function collect(
   return groups
 }
 
-export function buildTaskGroups(tasks: Task[], groupBy: GroupBy): TaskGroup[] {
+function milestoneGroups(tasks: Task[], milestones: ProjectMilestone[]): TaskGroup[] {
+  const groups: TaskGroup[] = milestones.map((milestone) => ({
+    key: `m:${milestone.id}`,
+    label: milestone.name,
+    tasks: tasks.filter((task) => task.milestone_id === milestone.id)
+  }))
+  const known = new Set(milestones.map((milestone) => milestone.id))
+  groups.push({
+    key: 'm:none',
+    label: 'Sem marco',
+    tasks: tasks.filter((task) => !task.milestone_id || !known.has(task.milestone_id))
+  })
+  return groups.filter((group) => group.tasks.length > 0)
+}
+
+export function buildTaskGroups(
+  tasks: Task[],
+  groupBy: GroupBy,
+  milestones: ProjectMilestone[] = []
+): TaskGroup[] {
+  if (groupBy === 'milestone') return milestoneGroups(tasks, milestones)
+
   if (groupBy === 'project') {
     return collect(
       tasks,

@@ -691,10 +691,6 @@ export function deleteProjectMilestone(id: number): number[] {
   return taskIds
 }
 
-export function assignTaskMilestone(taskId: number, milestoneId: number | null): void {
-  setTaskMilestone(tagDb(), taskId, milestoneId)
-}
-
 export function addTaskHistory(input: AddTaskHistoryInput, origin: TaskHistoryOrigin): number {
   return addTaskHistoryEntry(tagDb(), input, origin)
 }
@@ -1345,6 +1341,8 @@ export function updateTask(id: number, data: UpdateTaskInput): void {
       const stmt = db.prepare(`UPDATE tasks SET ${updates.join(', ')} WHERE id = ?`)
       stmt.run(...values)
     }
+
+    if (data.milestone_id !== undefined) setTaskMilestone(tagDb(), id, data.milestone_id)
 
     // Processar tags
     if (data.tagIds !== undefined || data.tagNames !== undefined) {

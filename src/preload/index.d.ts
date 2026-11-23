@@ -215,7 +215,6 @@ interface API {
   updateMilestone: (id: number, patch: UpdateMilestoneInput) => Promise<ProjectMilestone>
   setMilestoneDone: (id: number, done: boolean) => Promise<ProjectMilestone>
   deleteMilestone: (id: number) => Promise<void>
-  setTaskMilestone: (taskId: number, milestoneId: number | null) => Promise<void>
   getProjectTasks: (projectId: number) => Promise<Task[]>
 
   // Contexts
