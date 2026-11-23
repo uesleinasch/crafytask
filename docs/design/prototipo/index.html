@@ -1270,7 +1270,9 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const [secs, setSecs] = useState(t.secs);
     const [category, setCategory] = useState(t.category);
     const [status, setStatus] = useState(t.status);
-    const [project, setProject] = useState(t.project);
+    const [project, setProjectRaw] = useState(t.project);
+    const [milestone, setMilestone] = useState(t.milestone || null);
+    const setProject = v => { setProjectRaw(v); if (v !== project) setMilestone(null); };
     const [ctxs, setCtxs] = useState(t.contexts);
     const [tags, setTags] = useState(t.tags);
     const [energy, setEnergy] = useState(t.energy);
@@ -1389,6 +1391,17 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         <//>`}>
         ${project ? html`<${ProjectLabel} id=${project} />` : html`<span><${I.FolderOutlined} /> Sem projeto</span>`}
       <//>
+      ${project && (MILESTONES[project] || []).length ? (() => {
+        const ms = sortMilestones(MILESTONES[project]);
+        const cur = ms.find(m => m.id === milestone);
+        return html`<${PropPill} label="Marco" icon="NodeIndexOutlined" muted=${!cur} content=${html`<${Flex} vertical gap=${8}>
+            <${Select} allowClear placeholder="Sem marco" value=${cur ? cur.id : null} onChange=${v => setMilestone(v || null)} style=${{ width: '100%' }}
+              options=${ms.map(m => ({ value: m.id, label: html`<${Space} size=${6}>${createElement(I[MILESTONE_KIND[m.kind].icon], { style: { color: 'var(--ct-text-3)' } })}${m.name}<${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12 }}>${m.due ? fmtDate(m.due) : ''}<//><//>` }))} />
+            <${Text} type="secondary" style=${{ fontSize: 12 }}>Os marcos são do projeto. Crie e conclua no detalhe do projeto.<//>
+          <//>`}>
+          ${cur ? html`<span>${cur.name}<span style=${{ color: 'var(--ct-text-3)' }}> · ${MILESTONE_KIND[cur.kind].label}</span></span>` : 'Marco'}
+        <//>`;
+      })() : null}
       <${PropPill} label="Contextos" icon=${ctxs.length ? null : 'EnvironmentOutlined'} muted=${!ctxs.length} content=${html`<${Flex} gap=${4} wrap="wrap">${CONTEXTS.map(c => html`<${Tag.CheckableTag} key=${c.name} checked=${ctxs.includes(c.name)} onChange=${on => setCtxs(on ? ctxs.concat(c.name) : ctxs.filter(x => x !== c.name))}>${c.emoji} ${c.name}<//>`)}<//>`}>
         ${ctxs.length ? ctxs.slice(0, 2).map(n => { const c = CONTEXTS.find(x => x.name === n); return html`<span key=${n}>${c ? c.emoji + ' ' : ''}${n}</span>`; }) : 'Contexto'}${ctxs.length > 2 ? html`<span style=${{ color: 'var(--ct-text-3)' }}>+${ctxs.length - 2}</span>` : null}
       <//>
