@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Button, Flex, Input, Popover, Select, Tooltip, Typography, theme } from 'antd'
+import { App, Button, Flex, Input, Popover, Select, Tooltip, Typography, theme } from 'antd'
 import { Extension } from '@tiptap/core'
 import { EditorContent, useEditor, useEditorState, type Editor } from '@tiptap/react'
 import {
@@ -16,7 +16,11 @@ import {
   type LucideIcon
 } from 'lucide-react'
 import { buildExtensions } from '@renderer/components/editor/extensions'
-import { pickImageFile, uploadAndInsert } from '@renderer/components/editor/imageUpload'
+import {
+  MAX_IMAGE_BYTES,
+  pickImageFile,
+  uploadAndInsert
+} from '@renderer/components/editor/imageUpload'
 
 const { Text } = Typography
 
@@ -168,6 +172,7 @@ export function HistoryComposer({
   onSave
 }: HistoryComposerProps): React.JSX.Element {
   const { token } = theme.useToken()
+  const { message } = App.useApp()
   const owner = { kind: 'task', id: taskId } as const
 
   const submitRef = useRef<() => void>(() => {})
@@ -233,7 +238,16 @@ export function HistoryComposer({
 
   const insertImage = async (): Promise<void> => {
     const file = await pickImageFile()
-    if (file) await uploadAndInsert(editor, owner, file)
+    if (!file) return
+    if (file.size > MAX_IMAGE_BYTES) {
+      message.error('Imagem maior que 5 MB não é suportada.')
+      return
+    }
+    try {
+      await uploadAndInsert(editor, owner, file)
+    } catch {
+      message.error('Não foi possível anexar a imagem')
+    }
   }
 
   return (
@@ -247,7 +261,7 @@ export function HistoryComposer({
             value={state.block}
             options={BLOCK_OPTIONS}
             onChange={(style) => applyBlock(editor, style)}
-            style={{ width: 140 }}
+            style={{ width: 136 }}
           />
           {SEPARATOR}
           <ToolButton
@@ -295,12 +309,12 @@ export function HistoryComposer({
           />
           {SEPARATOR}
           <LinkButton editor={editor} active={state.link} />
-          <ToolButton title="Mencionar tarefa ou página (@)" icon={AtSign} onClick={startMention} />
           <ToolButton
             title="Imagem (ou cole e arraste no texto)"
             icon={ImageIcon}
             onClick={() => void insertImage()}
           />
+          <ToolButton title="Mencionar tarefa ou página (@)" icon={AtSign} onClick={startMention} />
         </div>
         <div className="ct-history-composer-body">
           <EditorContent editor={editor} />

@@ -1760,6 +1760,29 @@ button.ct-health:focus-visible {
 .ct-history-note > :first-child {
   margin-top: 0;
 }
+.ct-history-note > :last-child {
+  margin-bottom: 0;
+}
+.notes-editor-content.ct-history-note :is(p, ul, ol, blockquote, pre) {
+  margin: 0 0 6px;
+}
+.notes-editor-content.ct-history-note :is(h1, h2, h3) {
+  margin: 4px 0 6px;
+  font-weight: 600;
+}
+.notes-editor-content.ct-history-note h1 {
+  font-size: 17px;
+}
+.notes-editor-content.ct-history-note h2 {
+  font-size: 16px;
+}
+.notes-editor-content.ct-history-note h3 {
+  font-size: 15px;
+}
+.notes-editor-content.ct-history-note :is(code, pre) {
+  font-family: var(--ant-font-family-code);
+  font-size: 12.5px;
+}
 .ct-history-note img {
   display: block;
   max-width: 100%;

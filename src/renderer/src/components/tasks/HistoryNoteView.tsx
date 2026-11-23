@@ -2,7 +2,7 @@ import { useMemo, useRef } from 'react'
 import { EditorContent, useEditor } from '@tiptap/react'
 import { useNavigate } from 'react-router-dom'
 import type { JSONContent } from '@tiptap/core'
-import { buildExtensions } from '@renderer/components/editor/extensions'
+import { buildViewExtensions } from '@renderer/components/editor/extensions'
 import { mentionRoute } from '@renderer/components/editor/mention/mentionRoute'
 
 function parseDoc(body: string): JSONContent | null {
@@ -15,16 +15,11 @@ function parseDoc(body: string): JSONContent | null {
 }
 
 interface HistoryNoteViewProps {
-  taskId: number
   body: string
   fallback: string | null
 }
 
-export function HistoryNoteView({
-  taskId,
-  body,
-  fallback
-}: HistoryNoteViewProps): React.JSX.Element {
+export function HistoryNoteView({ body, fallback }: HistoryNoteViewProps): React.JSX.Element {
   const navigate = useNavigate()
   const navigateRef = useRef(navigate)
   navigateRef.current = navigate
@@ -32,7 +27,7 @@ export function HistoryNoteView({
 
   const editor = useEditor(
     {
-      extensions: buildExtensions({ kind: 'task', id: taskId }, ''),
+      extensions: buildViewExtensions(),
       content: doc ?? undefined,
       editable: false,
       editorProps: {
@@ -46,7 +41,7 @@ export function HistoryNoteView({
         }
       }
     },
-    [taskId, doc]
+    [doc]
   )
 
   if (!doc) return <span style={{ whiteSpace: 'pre-wrap' }}>{fallback}</span>

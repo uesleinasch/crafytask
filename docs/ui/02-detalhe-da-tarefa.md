@@ -113,7 +113,7 @@ montados por baixo (`display: none`) para não perder edição em curso.
 - **Anotar** (`Pencil`; some em task arquivada): abre `HistoryComposer`, um Tiptap com as extensões
   das notas (`buildExtensions` com a task como dono, então `/`, `@` e imagem colada ou arrastada
   funcionam igual) e uma barra fixa no topo: estilo do bloco (`Select`), negrito, itálico, tachado,
-  código, listas, lista de tarefas, link (`Popover` com o endereço), menção e imagem. `Ctrl+Enter`
+  código, listas, lista de tarefas, link (`Popover` com o endereço), imagem e menção. Os ícones e a ordem seguem o protótipo. `Ctrl+Enter`
   grava e `Esc` cancela (atalhos com prioridade baixa, para o `Esc` do menu `@`/`/` fechar o menu
   primeiro). Grava uma entrada `note` de origem `app` (`task:addHistory`, que recebe o JSON do
   documento): o main guarda o JSON em `task_history.body` e o Markdown dele em `summary`

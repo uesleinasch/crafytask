@@ -1768,7 +1768,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           ${tool('Lista numerada', html`<${I.OrderedListOutlined} />`, () => run('insertOrderedList'))}
           ${tool('Lista de tarefas', html`<${I.CheckSquareOutlined} />`, () => run('insertHTML', '<ul><li>☐ </li></ul>'))}
           <span className="ct-composer-sep" />
-          ${tool('Link (Ctrl+K)', html`<${I.LinkOutlined} />`, () => run('createLink', 'https://exemplo.com'))}
+          ${tool('Link', html`<${I.LinkOutlined} />`, () => run('createLink', 'https://exemplo.com'))}
           ${tool('Imagem (ou cole/arraste no texto)', html`<${I.PictureOutlined} />`, () => run('insertHTML', '<p><img alt="Imagem colada" src="' + COMPOSER_IMAGE + '" /></p>'))}
           ${tool('Mencionar tarefa ou página (@)', html`<span style=${{ fontWeight: 600 }}>@</span>`, () => run('insertHTML', '<span class="ct-mention">@Release v3.20</span>&nbsp;'))}
         </div>

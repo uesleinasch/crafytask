@@ -21,6 +21,20 @@ const ImageWithAsset = Image.extend({
   }
 })
 
+export function buildViewExtensions(): Extensions {
+  return [
+    StarterKit,
+    Highlight,
+    TextStyle,
+    FontSize,
+    TaskList,
+    TaskItem.configure({ nested: true }),
+    TableKit,
+    MentionExtension,
+    ImageWithAsset
+  ]
+}
+
 const NOTES_PLACEHOLDER = 'Escreva suas anotações... (digite / para comandos)'
 
 export function buildExtensions(owner: NotesOwner, placeholder = NOTES_PLACEHOLDER): Extensions {

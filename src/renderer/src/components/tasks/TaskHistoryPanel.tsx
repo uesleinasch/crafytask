@@ -179,7 +179,7 @@ export function TaskHistoryPanel({
           </Flex>
           {item.body ? (
             <RegionBoundary region="anotação do histórico" resetKeys={[item.id]}>
-              <HistoryNoteView taskId={item.task_id} body={item.body} fallback={item.summary} />
+              <HistoryNoteView body={item.body} fallback={item.summary} />
             </RegionBoundary>
           ) : (
             <Text style={{ whiteSpace: 'pre-wrap' }}>{item.summary}</Text>
