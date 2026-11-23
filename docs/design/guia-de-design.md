@@ -246,7 +246,7 @@ só porque roda de CDN; os nomes lucide de cada lugar estão nas tabelas acima e
 | Configurações         | Geral `Settings` · Aparência `Palette` · Fluxo de trabalho `Workflow` · Terminal `SquareTerminal` · Backup `DatabaseBackup` · Notion `BookOpen` · Google `Cloud` (conectar `LogIn`, permitida `Check`, desconectar `LogOut`, ressincronizar `RefreshCw`, salvar credenciais `Save`) · Jira `Plug` · Servidor MCP `Cable` · Sobre `Info`               |
 | Passos da revisão     | `collect` `Download` · `inbox` `Inbox` · `mind` `Brain` · `next` `CircleArrowRight` · `past` `History` · `upcoming` `CalendarDays` · `waiting` `Hourglass` · `projects` `FolderKanban` · `someday` `Lightbulb` · `creative` `Rocket`           |
 | Menu da tarefa e ações em massa | Abrir `FileText` · timer `Play`/`Pause` · hoje `CalendarDays` · marcar como `CircleCheck` · categoria `Flag` · projeto `Folder` · contextos `MapPin` · copiar `Copy` · Jira `Plug` · abrir no Jira `ExternalLink` · campos do Jira `SlidersHorizontal` · arquivar `Archive` · excluir `Trash2` |
-| Projetos              | abas pelo status (`LayoutGrid` em Todos, `FolderOpen` ativo, `Lightbulb` someday, `CircleCheck` concluído, `Archive` arquivado) · busca `Search` · Cards `LayoutGrid` · Tabela `Table2` · novo `Plus` · mais `Ellipsis` · resultado desejado `Target` · próxima ação `CircleArrowRight` · sem próxima ação `TriangleAlert` · área `TrendingUp` · meta `Trophy` · prazo `CalendarDays` · abrir `FolderOpen` · marcar como `CircleCheck` · excluir `Trash2` · terminal `SquareTerminal` |
+| Projetos              | abas pelo status (`LayoutGrid` em Todos, `FolderOpen` ativo, `Lightbulb` someday, `CircleCheck` concluído, `Archive` arquivado) · busca `Search` · Cards `LayoutGrid` · Tabela `Table2` · novo `Plus` · mais `Ellipsis` · resultado desejado `Target` · próxima ação `CircleArrowRight` · sem próxima ação `TriangleAlert` · área `TrendingUp` · meta `Trophy` · prazo `CalendarDays` · marcos `Milestone` (Início `Rocket`, Desenvolvimento `Milestone`, Fim `FlagTriangleRight`, concluir `Check`, concluído `CircleCheck`, reabrir `Undo2`) · abrir `FolderOpen` · marcar como `CircleCheck` · excluir `Trash2` · terminal `SquareTerminal` |
 | Horizontes            | chips `H0`…`H5` (texto, sem ícone) · Adicionar `Plus` · timer `Play`/`Pause` · mais `Ellipsis` · filtrar `Filter` · ver projetos `Folder` · editar `Pencil` · mover `ArrowLeftRight` · excluir `Trash2` · projetos da meta `Folder` |
 | Contextos e tags      | abas `MapPin`/`Tags` · busca `Search` · Cards `LayoutGrid` · Tabela `Table2` · novo `Plus` · mais `Ellipsis` · Ver tarefas `ListTodo` · editar `Pencil` · mesclar `Merge` · excluir `Trash2` |
 | Arquivo               | busca `Search` · abrir `FileText` · desarquivar `ArchiveRestore` · excluir de vez `Trash2` · limpar o arquivo `Eraser` · mais `Ellipsis` · grupo por mês `CalendarDays` · grupo sem projeto `Folder` |
@@ -513,8 +513,23 @@ notas:
   "Adicionar tarefa a {projeto}…" no topo (cria em Próximas; resolve E1) e Kanban por status.
 - **Coluna lateral (`xl+`):** Próxima ação (nome, status, contextos, Iniciar, trocar por outra
   tarefa), Resultado desejado (editável) e Progresso (barra, abertas, bloqueadas, tempo total,
-  prazo). Entre `md` e `lg` os três cards ficam em linha acima das tarefas; abaixo de `md`, abas
-  Tarefas e Resumo.
+  prazo). Entre `md` e `lg` os três cards ficam em linha acima das tarefas, e Marcos numa linha
+  inteira abaixo deles; abaixo de `md`, abas Tarefas e Resumo.
+- **Marcos** (`Milestone`; card logo abaixo da Próxima ação, com "feitos/total" em mono no título e
+  **Novo marco** `Plus`): dão início, meio e fim ao projeto. Cada marco tem nome, tipo (Início
+  `Rocket`, Desenvolvimento `Milestone`, Fim `FlagTriangleRight`; no máximo um Início e um Fim por
+  projeto), data opcional e "o que fica pronto". A lista é um `Timeline` ordenado por tipo e data:
+  nome (abre o `Modal` de edição), `Tag` do tipo com ícone, data em mono com "faltam Nd" (âmbar a 7
+  dias, vermelho vencido, como o prazo), "· próximo" no primeiro marco aberto (ponto na cor
+  primária), barra "feitas/total" das tarefas do marco e o botão **Concluir marco** (`Check`;
+  concluído vira `CircleCheck` no tom de Finalizada, nome riscado e **Reabrir** `Undo2`). Concluir é
+  manual; com todas as tarefas feitas aparece "Todas as tarefas feitas. Concluir marco". Sem marco:
+  texto "Divida o projeto em entregas…" e **Novo marco**. O `Modal` tem Nome, Tipo (`Segmented`;
+  Início/Fim tomados ficam desabilitados com tooltip), Data e "O que fica pronto neste marco";
+  editar mostra **Excluir** (`Popconfirm`: as tarefas ficam no projeto, sem marco).
+- A tarefa entra num marco pela pílula **Marco** (`Milestone`, só em tarefa de projeto com marcos) e
+  pelo menu de contexto (Marco ▸). A tabela do projeto ganha **Agrupar por marco** (ordem dos
+  marcos, "Sem marco" por último). Tirar a tarefa do projeto tira do marco.
 - Próxima ação passa a ser **escolhida** (hoje é derivada da tarefa `proximas` mais recente). Isso
   pede uma coluna `projects.next_task_id`, com a regra atual como padrão quando estiver vazia.
 
