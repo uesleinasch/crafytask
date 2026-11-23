@@ -510,7 +510,14 @@ notas:
   próxima.
 - **Área principal:** a mesma tabela de tarefas (abas de status, busca, filtros, agrupamento, menu
   de contexto, ações em massa), filtrada pelo projeto, sem a coluna Projeto, com um campo
-  "Adicionar tarefa a {projeto}…" no topo (cria em Próximas; resolve E1) e Kanban por status.
+  "Adicionar tarefa a {projeto}…" no topo (cria em Próximas; resolve E1) e Kanban por status. No
+  Kanban do projeto o card **arrasta** para outra coluna e muda o status (as regras de sempre:
+  tarefa bloqueada não vai para Executando, finalizar fecha o timer), com a dica "Arraste um card
+  para outra coluna para mudar o status." acima; a coluna sob o card ganha borda e fundo primários
+  e, vazia, diz "Solte aqui". Teclado: espaço pega o card, setas trocam de coluna, espaço solta.
+- **Coluna do Kanban** (todo Kanban): a lista de cards rola dentro da coluna, com altura máxima de
+  `max(320px, 100vh − 320px)`, e o cabeçalho fica fixo; assim a barra de rolagem horizontal fica à
+  vista sem rolar a página até o fim.
 - **Coluna lateral (`xl+`):** Próxima ação (nome, status, contextos, Iniciar, trocar por outra
   tarefa), Resultado desejado (editável) e Progresso (barra, abertas, bloqueadas, tempo total,
   prazo). Entre `md` e `lg` os três cards ficam em linha acima das tarefas, e Marcos numa linha
