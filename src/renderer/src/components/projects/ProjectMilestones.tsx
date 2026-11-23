@@ -4,6 +4,7 @@ import {
   Button,
   Card,
   DatePicker,
+  Dropdown,
   Flex,
   Form,
   Input,
@@ -15,10 +16,11 @@ import {
   Timeline,
   Tooltip,
   Typography,
-  theme
+  theme,
+  type MenuProps
 } from 'antd'
 import dayjs, { type Dayjs } from 'dayjs'
-import { Check, CircleCheck, Milestone, Plus, Trash2, Undo2 } from 'lucide-react'
+import { Check, CircleCheck, Ellipsis, Milestone, Pencil, Plus, Trash2, Undo2 } from 'lucide-react'
 import type { MilestoneKind, ProjectMilestone } from '@shared/types'
 import { errorMessage } from '@renderer/components/settings/settingsStatus'
 import { STATUS_COLORS } from '@renderer/theme/semantic'
@@ -42,6 +44,13 @@ interface MilestoneFormValues {
   kind: MilestoneKind
   due: Dayjs | null
   description: string
+}
+
+function deleteWarning(milestone: ProjectMilestone): string {
+  if (!milestone.task_count) return 'Nenhuma tarefa neste marco.'
+  return milestone.task_count === 1
+    ? 'A tarefa dele continua no projeto, sem marco.'
+    : `As ${milestone.task_count} tarefas dele continuam no projeto, sem marco.`
 }
 
 interface MilestoneModalProps {
@@ -121,7 +130,7 @@ function MilestoneModal({
           {editing && (
             <Popconfirm
               title="Excluir este marco?"
-              description="As tarefas dele continuam no projeto, sem marco."
+              description={deleteWarning(editing)}
               okText="Excluir"
               okButtonProps={{ danger: true }}
               cancelText="Cancelar"
@@ -213,7 +222,7 @@ export function ProjectMilestones({
 }: ProjectMilestonesProps): React.JSX.Element {
   const { token } = theme.useToken()
   const { mode } = useThemeSettings()
-  const { message } = App.useApp()
+  const { message, modal: confirmModal } = App.useApp()
   const [modal, setModal] = useState<{ editing: ProjectMilestone | null } | null>(null)
   const next = nextOpenMilestone(milestones)
   const doneCount = milestones.filter((milestone) => milestone.done_at).length
@@ -233,6 +242,38 @@ export function ProjectMilestones({
       message.error(errorMessage(error))
     }
   }
+
+  const confirmDelete = (milestone: ProjectMilestone): void => {
+    confirmModal.confirm({
+      title: `Excluir o marco ${milestone.name}?`,
+      content: deleteWarning(milestone),
+      okText: 'Excluir',
+      okButtonProps: { danger: true },
+      cancelText: 'Cancelar',
+      onOk: () =>
+        window.api
+          .deleteMilestone(milestone.id)
+          .then(() => {
+            message.success('Marco excluído')
+            onChanged()
+          })
+          .catch((error: unknown) => {
+            message.error(errorMessage(error))
+          })
+    })
+  }
+
+  const actionsMenu = (milestone: ProjectMilestone): MenuProps => ({
+    items: [
+      { key: 'edit', label: 'Editar marco', icon: <Pencil {...ICON} /> },
+      { type: 'divider' },
+      { key: 'delete', label: 'Excluir marco', danger: true, icon: <Trash2 {...ICON} /> }
+    ],
+    onClick: ({ key }) => {
+      if (key === 'edit') setModal({ editing: milestone })
+      else if (key === 'delete') confirmDelete(milestone)
+    }
+  })
 
   const item = (
     milestone: ProjectMilestone
@@ -258,7 +299,7 @@ export function ProjectMilestones({
         <KindIcon {...ICON} color={isNext ? token.colorPrimary : toneColor} />
       ),
       content: (
-        <Flex vertical gap={4}>
+        <Flex vertical gap={4} style={{ minWidth: 0 }}>
           <Flex gap={6} align="center">
             <Button
               type="link"
@@ -286,6 +327,14 @@ export function ProjectMilestones({
                 onClick={() => void toggleDone(milestone)}
               />
             </Tooltip>
+            <Dropdown menu={actionsMenu(milestone)} trigger={['click']} placement="bottomRight">
+              <Button
+                type="text"
+                size="small"
+                aria-label={`Mais ações do marco ${milestone.name}`}
+                icon={<Ellipsis {...ICON} />}
+              />
+            </Dropdown>
           </Flex>
           <Flex gap={8} align="center" wrap>
             <Tag bordered={false} style={{ margin: 0 }} icon={<KindIcon {...ICON} />}>
@@ -371,7 +420,7 @@ export function ProjectMilestones({
       }
     >
       {milestones.length ? (
-        <Timeline style={{ marginTop: 8, marginBottom: -24 }} items={milestones.map(item)} />
+        <Timeline style={{ marginTop: 8 }} items={milestones.map(item)} />
       ) : (
         <Flex vertical gap={8} align="flex-start">
           <Text type="secondary">

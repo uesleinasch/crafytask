@@ -175,7 +175,8 @@ do projeto têm chaves próprias em `localStorage` (`ticktask:projectTaskView`,
   inteira abaixo dos três cards): `Timeline` dos marcos (`milestone:list`, ordem início →
   desenvolvimento por data → fim) com nome (abre o `Modal`), `Tag` do tipo, data com "faltam Nd"
   (tom de `milestoneView.ts` em `colorWarning`/`colorError`, como o prazo), "· próximo" no primeiro aberto, barra das
-  tarefas do marco e Concluir/Reabrir (`milestone:setDone`, manual). Com todas as tarefas feitas
+  tarefas do marco, Concluir/Reabrir (`milestone:setDone`, manual) e o botão `⋯` (`Dropdown`) com
+  **Editar marco** (abre o `Modal`) e **Excluir marco** (`modal.confirm`). Com todas as tarefas feitas
   aparece "Todas as tarefas feitas. Concluir marco". **Novo marco** abre o `Modal` (Nome, Tipo em
   `Segmented` com Início/Fim tomados desabilitados, Data, "O que fica pronto"); editar mostra
   **Excluir** com `Popconfirm` (as tarefas ficam sem marco). Dados em `project_milestones`
