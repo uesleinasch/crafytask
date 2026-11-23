@@ -39,7 +39,10 @@ import type {
   GtdMetrics,
   TaskListFilters,
   UpdateTagInput,
-  NotesOwner
+  NotesOwner,
+  ProjectMilestone,
+  CreateMilestoneInput,
+  UpdateMilestoneInput
 } from '@shared/types'
 import { DEFAULT_CONTEXTS } from '@shared/types'
 import { toStatusCounts, type TaskStatusCounts } from '@shared/taskStatusCounts'
@@ -97,6 +100,17 @@ import {
   type TaskHistoryQuery
 } from './taskHistoryQueries'
 import { periodStatsQuery } from './statsQueries'
+import {
+  createMilestone,
+  deleteMilestone,
+  ensureMilestoneSchema,
+  getMilestone,
+  listMilestones,
+  milestoneTaskIds,
+  setMilestoneDone,
+  setTaskMilestone,
+  updateMilestone
+} from './milestoneQueries'
 import {
   bumpReviewCounter,
   completeReview,
@@ -496,6 +510,7 @@ export function initDatabase(): void {
   ensureTaskNotesText(tagDb())
   ensureReviewSchema(tagDb())
   ensurePrefsSchema(tagDb())
+  ensureMilestoneSchema(tagDb())
 }
 
 // ===================== MIGRAÇÃO: someday status =====================
@@ -648,6 +663,36 @@ export function setAppPrefs(patch: Partial<AppPrefs>): AppPrefs {
 
 export function notebookDb(): SqliteLike {
   return tagDb()
+}
+
+export function listProjectMilestones(projectId: number): ProjectMilestone[] {
+  return listMilestones(tagDb(), projectId)
+}
+
+export function getProjectMilestone(id: number): ProjectMilestone | null {
+  return getMilestone(tagDb(), id)
+}
+
+export function createProjectMilestone(input: CreateMilestoneInput): ProjectMilestone {
+  return createMilestone(tagDb(), input)
+}
+
+export function updateProjectMilestone(id: number, patch: UpdateMilestoneInput): ProjectMilestone {
+  return updateMilestone(tagDb(), id, patch)
+}
+
+export function setProjectMilestoneDone(id: number, done: boolean): ProjectMilestone {
+  return setMilestoneDone(tagDb(), id, done)
+}
+
+export function deleteProjectMilestone(id: number): number[] {
+  const taskIds = milestoneTaskIds(tagDb(), id)
+  deleteMilestone(tagDb(), id)
+  return taskIds
+}
+
+export function assignTaskMilestone(taskId: number, milestoneId: number | null): void {
+  setTaskMilestone(tagDb(), taskId, milestoneId)
 }
 
 export function addTaskHistory(input: AddTaskHistoryInput, origin: TaskHistoryOrigin): number {
@@ -1008,7 +1053,7 @@ const TASK_LIST_COLUMNS = `
   t.energy_level, t.scheduled_time, t.scheduled_end_time, t.due_time,
   t.external_url, t.jira_key, t.jira_status, t.jira_space, t.jira_issue_type, t.jira_issue_kind,
   t.jira_parent_key, t.jira_parent_summary, t.waiting_for, t.archived_at, t.status_changed_at,
-  t.git_branch, t.pr_url,
+  t.git_branch, t.pr_url, t.milestone_id,
   p.name as project_name, p.color as project_color
 `
 
@@ -1207,7 +1252,8 @@ export function listActiveTasksLight(): Pick<
 export function getTask(id: number): Task | undefined {
   const stmt = db.prepare(`
     SELECT t.*, p.name as project_name, p.color as project_color,
-      p.working_dir as project_working_dir
+      p.working_dir as project_working_dir,
+      (SELECT m.name FROM project_milestones m WHERE m.id = t.milestone_id) as milestone_name
     FROM tasks t
     LEFT JOIN projects p ON t.project_id = p.id
     WHERE t.id = ?
