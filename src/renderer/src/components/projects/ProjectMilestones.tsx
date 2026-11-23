@@ -244,7 +244,7 @@ export function ProjectMilestones({
         ? token.colorError
         : due?.tone === 'soon'
           ? token.colorWarning
-          : token.colorTextSecondary
+          : token.colorTextTertiary
     const isNext = milestone.id === next?.id
     const pct = milestone.task_count
       ? Math.round((milestone.done_task_count / milestone.task_count) * 100)
@@ -373,9 +373,18 @@ export function ProjectMilestones({
       {milestones.length ? (
         <Timeline style={{ marginTop: 8, marginBottom: -24 }} items={milestones.map(item)} />
       ) : (
-        <Text type="secondary">
-          Divida o projeto em entregas: um marco de início, os de desenvolvimento e o de fim.
-        </Text>
+        <Flex vertical gap={8} align="flex-start">
+          <Text type="secondary">
+            Divida o projeto em entregas: um marco de início, os de desenvolvimento e o de fim.
+          </Text>
+          <Button
+            size="small"
+            icon={<Plus {...ICON} />}
+            onClick={() => setModal({ editing: null })}
+          >
+            Novo marco
+          </Button>
+        </Flex>
       )}
       <MilestoneModal
         open={modal !== null}

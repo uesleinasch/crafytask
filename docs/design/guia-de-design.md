@@ -245,7 +245,7 @@ só porque roda de CDN; os nomes lucide de cada lugar estão nas tabelas acima e
 | Janelas auxiliares    | Captura `Inbox` · Fechar `X` · Capturado `CircleCheck` · Pausar `Pause` · Abrir CrafyTask `Maximize2` |
 | Configurações         | Geral `Settings` · Aparência `Palette` · Fluxo de trabalho `Workflow` · Terminal `SquareTerminal` · Backup `DatabaseBackup` · Notion `BookOpen` · Google `Cloud` (conectar `LogIn`, permitida `Check`, desconectar `LogOut`, ressincronizar `RefreshCw`, salvar credenciais `Save`) · Jira `Plug` · Servidor MCP `Cable` · Sobre `Info`               |
 | Passos da revisão     | `collect` `Download` · `inbox` `Inbox` · `mind` `Brain` · `next` `CircleArrowRight` · `past` `History` · `upcoming` `CalendarDays` · `waiting` `Hourglass` · `projects` `FolderKanban` · `someday` `Lightbulb` · `creative` `Rocket`           |
-| Menu da tarefa e ações em massa | Abrir `FileText` · timer `Play`/`Pause` · hoje `CalendarDays` · marcar como `CircleCheck` · categoria `Flag` · projeto `Folder` · contextos `MapPin` · copiar `Copy` · Jira `Plug` · abrir no Jira `ExternalLink` · campos do Jira `SlidersHorizontal` · arquivar `Archive` · excluir `Trash2` |
+| Menu da tarefa e ações em massa | Abrir `FileText` · timer `Play`/`Pause` · hoje `CalendarDays` · marcar como `CircleCheck` · categoria `Flag` · projeto `Folder` · marco `Milestone` (só na lista do projeto) · contextos `MapPin` · copiar `Copy` · Jira `Plug` · abrir no Jira `ExternalLink` · campos do Jira `SlidersHorizontal` · arquivar `Archive` · excluir `Trash2` |
 | Projetos              | abas pelo status (`LayoutGrid` em Todos, `FolderOpen` ativo, `Lightbulb` someday, `CircleCheck` concluído, `Archive` arquivado) · busca `Search` · Cards `LayoutGrid` · Tabela `Table2` · novo `Plus` · mais `Ellipsis` · resultado desejado `Target` · próxima ação `CircleArrowRight` · sem próxima ação `TriangleAlert` · área `TrendingUp` · meta `Trophy` · prazo `CalendarDays` · marcos `Milestone` (Início `Rocket`, Desenvolvimento `Milestone`, Fim `FlagTriangleRight`, concluir `Check`, concluído `CircleCheck`, reabrir `Undo2`) · abrir `FolderOpen` · marcar como `CircleCheck` · excluir `Trash2` · terminal `SquareTerminal` |
 | Horizontes            | chips `H0`…`H5` (texto, sem ícone) · Adicionar `Plus` · timer `Play`/`Pause` · mais `Ellipsis` · filtrar `Filter` · ver projetos `Folder` · editar `Pencil` · mover `ArrowLeftRight` · excluir `Trash2` · projetos da meta `Folder` |
 | Contextos e tags      | abas `MapPin`/`Tags` · busca `Search` · Cards `LayoutGrid` · Tabela `Table2` · novo `Plus` · mais `Ellipsis` · Ver tarefas `ListTodo` · editar `Pencil` · mesclar `Merge` · excluir `Trash2` |
@@ -527,9 +527,9 @@ notas:
   texto "Divida o projeto em entregas…" e **Novo marco**. O `Modal` tem Nome, Tipo (`Segmented`;
   Início/Fim tomados ficam desabilitados com tooltip), Data e "O que fica pronto neste marco";
   editar mostra **Excluir** (`Popconfirm`: as tarefas ficam no projeto, sem marco).
-- A tarefa entra num marco pela pílula **Marco** (`Milestone`, só em tarefa de projeto com marcos) e
-  pelo menu de contexto (Marco ▸). A tabela do projeto ganha **Agrupar por marco** (ordem dos
-  marcos, "Sem marco" por último). Tirar a tarefa do projeto tira do marco.
+- A tarefa entra num marco pela pílula **Marco** (`Milestone`, só em tarefa de projeto com marcos) e,
+  na lista do projeto, pelo menu de contexto (Marco ▸). A tabela do projeto ganha **Agrupar por
+  marco** (ordem dos marcos, rótulo "nome · Tipo · dd/mm", "Sem marco" por último). Tirar a tarefa do projeto tira do marco.
 - Próxima ação passa a ser **escolhida** (hoje é derivada da tarefa `proximas` mais recente). Isso
   pede uma coluna `projects.next_task_id`, com a regra atual como padrão quando estiver vazia.
 

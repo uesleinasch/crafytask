@@ -33,15 +33,15 @@ describe('buildTaskGroups', () => {
 
   it('agrupa por marco na ordem dos marcos, com "Sem marco" por último', () => {
     const milestone = (id: number, name: string): ProjectMilestone =>
-      ({ id, name, kind: 'desenvolvimento', project_id: 1 }) as ProjectMilestone
+      ({ id, name, kind: 'desenvolvimento', project_id: 1, due_date: null }) as ProjectMilestone
     const a = task({ id: 1, milestone_id: 20 })
     const b = task({ id: 2, milestone_id: 10 })
     const c = task({ id: 3 })
     const d = task({ id: 4, milestone_id: 99 })
     const milestones = [milestone(20, 'Zeta'), milestone(10, 'Alfa'), milestone(30, 'Vazio')]
     expect(summary(buildTaskGroups([a, b, c, d], 'milestone', milestones))).toEqual([
-      ['m:20', 'Zeta', [1]],
-      ['m:10', 'Alfa', [2]],
+      ['m:20', 'Zeta · Desenvolvimento', [1]],
+      ['m:10', 'Alfa · Desenvolvimento', [2]],
       ['m:none', 'Sem marco', [3, 4]]
     ])
   })

@@ -27,6 +27,7 @@ import { ProjectMilestones } from '@renderer/components/projects/ProjectMileston
 import { lacksNextAction, openTasks } from '@renderer/components/projects/projectList'
 import { errorMessage } from '@renderer/components/settings/settingsStatus'
 import { PageContainer } from '@renderer/components/shell/PageContainer'
+import { RegionBoundary } from '@renderer/components/shell/RegionBoundary'
 import { TaskListView } from '@renderer/components/tasks/TaskListView'
 
 interface ProjectData {
@@ -54,7 +55,10 @@ export function ProjectDetailPage(): React.JSX.Element {
       window.api.listAreas(),
       window.api.listGoals(),
       window.api.listTasks({ projectId, archived: false, status: 'all' }),
-      window.api.listMilestones(projectId)
+      window.api.listMilestones(projectId).catch((error: unknown) => {
+        console.error('Falha ao carregar os marcos:', error)
+        return [] as ProjectMilestone[]
+      })
     ])
       .then(([project, areas, goals, tasks, milestones]) =>
         setData({ project: project ?? null, areas, goals, tasks, milestones })
@@ -99,12 +103,14 @@ export function ProjectDetailPage(): React.JSX.Element {
   const outcomeCard = <OutcomeCard project={project} onSave={save} />
   const progressCard = <ProgressCard project={project} tasks={tasks} today={today} />
   const milestonesCard = (
-    <ProjectMilestones
-      projectId={project.id}
-      milestones={milestones}
-      today={today}
-      onChanged={load}
-    />
+    <RegionBoundary region="marcos do projeto" resetKeys={[project.id]}>
+      <ProjectMilestones
+        projectId={project.id}
+        milestones={milestones}
+        today={today}
+        onChanged={load}
+      />
+    </RegionBoundary>
   )
   const taskArea = (
     <TaskListView

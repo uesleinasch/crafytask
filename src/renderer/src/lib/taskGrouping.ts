@@ -1,4 +1,5 @@
 import type { ProjectMilestone, Task } from '@shared/types'
+import { milestoneOptionLabel } from '@renderer/components/projects/milestoneView'
 
 export interface TaskGroup {
   key: string
@@ -44,7 +45,7 @@ function collect(
 function milestoneGroups(tasks: Task[], milestones: ProjectMilestone[]): TaskGroup[] {
   const groups: TaskGroup[] = milestones.map((milestone) => ({
     key: `m:${milestone.id}`,
-    label: milestone.name,
+    label: milestoneOptionLabel(milestone),
     tasks: tasks.filter((task) => task.milestone_id === milestone.id)
   }))
   const known = new Set(milestones.map((milestone) => milestone.id))

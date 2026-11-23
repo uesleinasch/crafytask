@@ -663,7 +663,7 @@ export function MilestonePill({
   return (
     <PropPill
       label="Marco"
-      icon={selected ? MILESTONE_KIND_ICON[selected.kind] : Milestone}
+      icon={Milestone}
       muted={!selected}
       content={
         <Flex vertical gap={8}>
@@ -687,6 +687,7 @@ export function MilestonePill({
                       <span
                         style={{
                           fontFamily: token.fontFamilyCode,
+                          fontVariantNumeric: 'tabular-nums',
                           fontSize: 12,
                           color: token.colorTextSecondary
                         }}
