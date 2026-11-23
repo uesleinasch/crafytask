@@ -73,6 +73,7 @@ na pílula). Cada mudança grava na hora; campos de texto gravam ao sair ou com 
 | Aguardando (`Hourglass`) | primeira, com status Aguardando ou texto salvo | campo de até 120 caracteres; grava `waiting_for` ao sair ou com Enter (vazio limpa). Com texto: "Aguardando: Revisor externo" na cor de Aguardando; vazia: "Aguardando quem?" |
 | Categoria | sempre | os quatro `CategoryChip` (Urgente, Prioridade, Normal, Time leak); Normal aparece como texto |
 | Projeto | sempre | `Select` com busca (ativos, someday e o atual, mesmo concluído ou arquivado, para não perder o vínculo) + "Abrir projeto →" |
+| Marco | tarefa de projeto com marcos | `Select` com os marcos do projeto (ícone do tipo e data) e a dica "Os marcos são do projeto…"; grava `milestone_id` por `task:update` (`updateTask` valida que o marco é do projeto). Trocar de projeto tira do marco (trigger `tasks_milestone_follows_project`). |
 | Contextos (`MapPin` quando vazia) | sempre | `CheckableTag` por contexto; a pílula mostra dois e "+N"; sem contextos, `Empty` com o link "Criar em Contextos e tags" |
 | Prazo (`Flag`) | sempre | data + hora (`DatePicker`/`TimePicker`), "Remover prazo"; vermelha se vencido, âmbar se hoje |
 | Energia | sempre | três botões com `EnergyMeter`; clicar no ativo limpa |

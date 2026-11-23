@@ -72,7 +72,10 @@ import type {
   PageLocation,
   PageSearchResult,
   FloatTimerData,
-  TaskHistoryView
+  TaskHistoryView,
+  ProjectMilestone,
+  CreateMilestoneInput,
+  UpdateMilestoneInput
 } from '../shared/types'
 import type { ThemePreference } from '../shared/themePreference'
 import type { WorkflowPrefs, WorkflowPrefsPatch } from '../shared/workflowPrefs'
@@ -207,6 +210,11 @@ interface API {
   listProjects: (status?: ProjectStatus) => Promise<Project[]>
   updateProject: (id: number, data: UpdateProjectInput) => Promise<void>
   deleteProject: (id: number) => Promise<void>
+  listMilestones: (projectId: number) => Promise<ProjectMilestone[]>
+  createMilestone: (input: CreateMilestoneInput) => Promise<ProjectMilestone>
+  updateMilestone: (id: number, patch: UpdateMilestoneInput) => Promise<ProjectMilestone>
+  setMilestoneDone: (id: number, done: boolean) => Promise<ProjectMilestone>
+  deleteMilestone: (id: number) => Promise<void>
   getProjectTasks: (projectId: number) => Promise<Task[]>
 
   // Contexts

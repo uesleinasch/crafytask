@@ -150,7 +150,12 @@ import {
   getWorkflowPrefs,
   setWorkflowPrefs,
   getAppPrefs,
-  setAppPrefs
+  setAppPrefs,
+  listProjectMilestones,
+  createProjectMilestone,
+  updateProjectMilestone,
+  setProjectMilestoneDone,
+  deleteProjectMilestone
 } from './database'
 import { mergeTimeBlock, timeBlockError } from './calendarQueries'
 import {
@@ -266,6 +271,8 @@ import type {
   TaskListFilters,
   UpdateTagInput,
   CreateProjectInput,
+  CreateMilestoneInput,
+  UpdateMilestoneInput,
   UpdateProjectInput,
   ProjectStatus,
   McpStatus,
@@ -1268,6 +1275,24 @@ function setupIpcHandlers(): void {
     disposeTerminalsForProjects([id])
   })
   ipcMain.handle('project:getTasks', (_, projectId: number) => getProjectTasks(projectId))
+
+  const afterMilestoneChange = <T>(result: T): T => {
+    mainWindow?.webContents.send('tasks:refresh')
+    return result
+  }
+  ipcMain.handle('milestone:list', (_, projectId: number) => listProjectMilestones(projectId))
+  ipcMain.handle('milestone:create', (_, input: CreateMilestoneInput) =>
+    afterMilestoneChange(createProjectMilestone(input))
+  )
+  ipcMain.handle('milestone:update', (_, id: number, patch: UpdateMilestoneInput) =>
+    afterMilestoneChange(updateProjectMilestone(id, patch))
+  )
+  ipcMain.handle('milestone:setDone', (_, id: number, done: boolean) =>
+    afterMilestoneChange(setProjectMilestoneDone(id, done))
+  )
+  ipcMain.handle('milestone:delete', (_, id: number) => {
+    afterMilestoneChange(deleteProjectMilestone(id))
+  })
 
   // ===================== CONTEXTS =====================
   ipcMain.handle('context:create', (_, name: string, icon?: string, color?: string) =>

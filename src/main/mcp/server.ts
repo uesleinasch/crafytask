@@ -8,6 +8,7 @@ import { registerBriefingTools } from './tools/briefing'
 import { registerDrawingTools } from './tools/drawing'
 import { registerHistoryTools } from './tools/history'
 import { registerIntegrationTools } from './tools/integrations'
+import { registerMilestoneTools } from './tools/milestones'
 import { registerNotebookTools } from './tools/notebooks'
 import { registerNotesTools } from './tools/notes'
 import { registerPlanningTools } from './tools/planning'
@@ -35,6 +36,7 @@ export function createMcpServer(bulkThreshold: number, confirmStore: ConfirmStor
 
   registerTaskTools(server, ctx)
   registerStructureTools(server, ctx)
+  registerMilestoneTools(server, ctx)
   registerTimerTools(server, ctx)
   registerNotesTools(server, ctx)
   registerHistoryTools(server)

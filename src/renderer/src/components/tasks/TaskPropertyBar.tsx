@@ -2,7 +2,14 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { App, Flex, Input, Typography } from 'antd'
 import { CalendarClock, Hourglass, Link, Repeat, Tags } from 'lucide-react'
-import type { Context, Project, Tag as TaskTag, Task, UpdateTaskInput } from '@shared/types'
+import type {
+  Context,
+  Project,
+  ProjectMilestone,
+  Tag as TaskTag,
+  Task,
+  UpdateTaskInput
+} from '@shared/types'
 import { WAITING_FOR_MAX, normalizeWaitingFor } from '@shared/waitingFor'
 import { STATUS_COLORS } from '@renderer/theme/semantic'
 import { useThemeSettings } from '@renderer/theme/themeSettings'
@@ -13,6 +20,7 @@ import {
   DuePill,
   EnergyPill,
   LinkPill,
+  MilestonePill,
   PropPill,
   PropertyReadOnly,
   ProjectPill,
@@ -92,6 +100,8 @@ function PropertyBar({ task, update }: TaskPropertyBarProps): React.JSX.Element 
   const [contexts, setContexts] = useState<Context[]>([])
   const [allTags, setAllTags] = useState<TaskTag[]>([])
   const [shown, setShown] = useState<OptionalKey[]>([])
+  const [milestones, setMilestones] = useState<ProjectMilestone[]>([])
+  const projectId = task.project_id ?? null
 
   useEffect(() => {
     window.api.listProjects().then(setProjects).catch(console.error)
@@ -100,6 +110,26 @@ function PropertyBar({ task, update }: TaskPropertyBarProps): React.JSX.Element 
   }, [])
 
   useEffect(() => setShown([]), [task.id])
+
+  useEffect(() => {
+    if (!projectId) {
+      setMilestones([])
+      return
+    }
+    const load = (): void => {
+      window.api.listMilestones(projectId).then(setMilestones).catch(console.error)
+    }
+    load()
+    return window.api.onTasksRefresh(load)
+  }, [projectId])
+
+  const saveMilestone = async (milestone_id: number | null): Promise<void> => {
+    try {
+      await update({ milestone_id })
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Não foi possível trocar o marco')
+    }
+  }
 
   const tags = task.tags ?? []
   const dueDate = task.due_date ? task.due_date.split('T')[0] : null
@@ -156,6 +186,13 @@ function PropertyBar({ task, update }: TaskPropertyBarProps): React.JSX.Element 
         onChange={(project_id) => update({ project_id })}
         onOpen={(id) => navigate(`/project/${id}`)}
       />
+      {projectId && milestones.length > 0 && (
+        <MilestonePill
+          value={task.milestone_id ?? null}
+          milestones={milestones}
+          onChange={saveMilestone}
+        />
+      )}
       <ContextsPill
         selected={task.contexts ?? []}
         contexts={contexts}

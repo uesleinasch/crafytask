@@ -19,6 +19,7 @@ import {
   getTaskDependents,
   getTimeEntries,
   listContexts,
+  listProjectMilestones,
   listProjects,
   listTasks,
   moveTasksToProject,
@@ -105,6 +106,30 @@ function resolveProject(input: string | number): Resolution {
     })
   }
 }
+
+function resolveMilestone(
+  projectId: number | null | undefined,
+  input: string | number
+): Resolution {
+  if (!projectId) {
+    return {
+      ok: false,
+      response: fail('validation', 'A task precisa estar num projeto para ter marco.')
+    }
+  }
+  const resolved = resolveByName(listProjectMilestones(projectId), input)
+  if (resolved.ok) return { ok: true, id: resolved.id }
+  return {
+    ok: false,
+    response: fail(resolved.code, 'Marco não encontrado ou ambíguo neste projeto.', {
+      candidates: resolved.candidates
+    })
+  }
+}
+
+const MILESTONE_ARG = z
+  .union([z.string(), z.number()])
+  .describe('Marco do projeto da task (nome ou id). Veja os marcos com project_milestones.')
 
 function resolveContextIds(
   inputs: Array<string | number>
@@ -233,6 +258,7 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
         category: CATEGORY.optional(),
         energy: ENERGY.optional(),
         project: z.union([z.string(), z.number()]).optional(),
+        milestone: MILESTONE_ARG.optional(),
         contexts: z.array(z.union([z.string(), z.number()])).optional(),
         tags: z.array(z.string()).optional(),
         due_date: DATE.optional(),
@@ -310,6 +336,13 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
         input.project_id = project.id
       }
 
+      let milestoneId: number | undefined
+      if (args.milestone !== undefined) {
+        const milestone = resolveMilestone(input.project_id, args.milestone)
+        if (!milestone.ok) return milestone.response
+        milestoneId = milestone.id
+      }
+
       if (args.contexts?.length) {
         const contexts = resolveContextIds(args.contexts)
         if (!contexts.ok) return contexts.response
@@ -352,6 +385,7 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
         if (args.git_branch !== undefined || args.pr_url !== undefined) {
           setTaskGitLink(task.id, { git_branch: args.git_branch, pr_url: args.pr_url })
         }
+        if (milestoneId !== undefined) updateTask(task.id, { milestone_id: milestoneId })
         if (args.status !== undefined) {
           updateTask(task.id, { status: args.status })
         }
@@ -407,6 +441,12 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
         category: CATEGORY.optional(),
         energy: ENERGY.optional(),
         project: z.union([z.string(), z.number(), z.null()]).optional(),
+        milestone: z
+          .union([z.string(), z.number(), z.null()])
+          .optional()
+          .describe(
+            'Marco do projeto da task (nome ou id); null tira do marco. Trocar de projeto tira do marco antigo.'
+          ),
         contexts: z.array(z.union([z.string(), z.number()])).optional(),
         tags: z.array(z.string()).optional(),
         due_date: z.union([DATE, z.null()]).optional(),
@@ -469,6 +509,17 @@ export function registerTaskTools(server: McpServer, ctx: ToolContext): void {
           const project = resolveProject(args.project)
           if (!project.ok) return project.response
           patch.project_id = project.id
+        }
+      }
+
+      if (args.milestone !== undefined) {
+        if (args.milestone === null) {
+          patch.milestone_id = null
+        } else {
+          const projectId = patch.project_id !== undefined ? patch.project_id : current.project_id
+          const milestone = resolveMilestone(projectId, args.milestone)
+          if (!milestone.ok) return milestone.response
+          patch.milestone_id = milestone.id
         }
       }
 

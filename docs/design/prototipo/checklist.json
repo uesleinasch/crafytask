@@ -1206,6 +1206,16 @@
       }
     },
     {
+      "id": "F5.25",
+      "fase": "F5",
+      "titulo": "Marcos do projeto: card no detalhe, modal com tipo início/desenvolvimento/fim, pílula Marco e agrupar por marco",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/components/projects/ProjectMilestones.tsx",
+        "padroes": ["<Timeline", "Novo marco", "Concluir marco", "<Segmented"]
+      }
+    },
+    {
       "id": "F5.24",
       "fase": "F5",
       "titulo": "Metas com destino conferidas (Horizontes, lista e detalhe do projeto)",

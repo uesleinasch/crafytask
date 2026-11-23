@@ -369,6 +369,21 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     archived: { label: 'Arquivado', icon: 'ContainerOutlined', light: STATUS.inbox.light, dark: STATUS.inbox.dark }
   };
   const P = Object.fromEntries(PROJECTS.map(p => [p.id, p]));
+  const MILESTONE_KIND = {
+    inicio: { label: 'Início', icon: 'RocketOutlined', order: 0 },
+    desenvolvimento: { label: 'Desenvolvimento', icon: 'NodeIndexOutlined', order: 1 },
+    fim: { label: 'Fim', icon: 'FlagOutlined', order: 2 }
+  };
+  const MILESTONES = {
+    13: [
+      { id: 1, name: 'Kickoff da refatoração', kind: 'inicio', due: '2026-11-10', doneAt: '2026-11-10', description: 'Pesquisa e guia aprovados.' },
+      { id: 2, name: 'Lista e detalhe em Ant Design', kind: 'desenvolvimento', due: '2026-11-20', doneAt: null, description: '' },
+      { id: 3, name: 'Todas as telas migradas', kind: 'desenvolvimento', due: '2026-12-05', doneAt: null, description: '' },
+      { id: 4, name: 'Release v4 publicada', kind: 'fim', due: '2026-12-15', doneAt: null, description: 'Todos os entregáveis completos.' }
+    ]
+  };
+  const TASK_MILESTONE = { 711: 2, 731: 2, 698: 3, 707: 3, 699: 1 };
+  const sortMilestones = ms => ms.slice().sort((a, b) => MILESTONE_KIND[a.kind].order - MILESTONE_KIND[b.kind].order || String(a.due || '9999').localeCompare(String(b.due || '9999')));
   const CONTEXTS = [
     { name: '@dev', emoji: '💻' }, { name: '@reunião', emoji: '👥' }, { name: '@telefone', emoji: '📞' },
     { name: '@escrita', emoji: '✍️' }, { name: '@leitura', emoji: '📖' }, { name: '@github', emoji: '🔀' }
@@ -379,7 +394,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       id: 711, name: 'Criação de projeto para refatoração visual', description: 'Pesquisa, guia de design e protótipo da nova interface.',
       status: 'executando', category: 'normal', project: 13, contexts: ['@dev'], tags: ['refactor'], energy: 'alto', recurrence: 'none',
       scheduled: '2026-11-17', start: '09:00', end: '12:00', due: '2026-11-21', dueTime: null, url: '', gcal: true,
-      workingDir: '~/Code/pessoal/crafytask', dirInherited: true, startCommand: 'npm run dev', running: true, blocked: false, secs: 9130,
+      workingDir: '~/Code/pessoal/crafytask', dirInherited: true, startCommand: 'npm run dev', running: true, blocked: false, secs: 9130, milestone: 2,
       subtasks: [{ id: 801, name: 'Pesquisa de UI/UX', done: true }, { id: 802, name: 'Guia de design', done: true }, { id: 803, name: 'Protótipo navegável', done: false }],
       deps: [{ id: 699, name: 'Publicar release v3.16.0', done: true }],
       sessions: [
@@ -809,6 +824,14 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           options=${PROJECTS.filter(p => p.status === 'active' || p.status === 'someday').map(p => ({ value: p.id, title: p.name, label: html`<${ProjectLabel} id=${p.id} />` }))} />`}>
         ${d.project ? html`<${ProjectLabel} id=${d.project} />` : html`<span><${I.FolderOutlined} /> Sem projeto</span>`}
       <//>
+      ${d.project && (MILESTONES[d.project] || []).length ? (() => {
+        const ms = sortMilestones(MILESTONES[d.project]);
+        const cur = ms.find(m => m.id === d.milestone);
+        return html`<${PropPill} label="Marco" icon="NodeIndexOutlined" muted=${!cur} content=${html`<${Select} allowClear placeholder="Sem marco" value=${cur ? cur.id : null} onChange=${v => set({ milestone: v || null })} style=${{ width: '100%' }}
+            options=${ms.map(m => ({ value: m.id, label: m.name + ' · ' + MILESTONE_KIND[m.kind].label + (m.due ? ' · ' + fmtDate(m.due) : '') }))} />`}>
+          ${cur ? cur.name : 'Marco'}
+        <//>`;
+      })() : null}
       <${PropPill} label="Contextos" icon=${d.ctxs.length ? null : 'EnvironmentOutlined'} muted=${!d.ctxs.length} content=${html`<${Flex} gap=${4} wrap="wrap">${CONTEXTS.map(c => html`<${Tag.CheckableTag} key=${c.name} checked=${d.ctxs.includes(c.name)} onChange=${on => set({ ctxs: on ? d.ctxs.concat(c.name) : d.ctxs.filter(x => x !== c.name) })}>${c.emoji} ${c.name}<//>`)}<//>`}>
         ${d.ctxs.length ? d.ctxs.slice(0, 2).map(n => { const c = CONTEXTS.find(x => x.name === n); return html`<span key=${n}>${c ? c.emoji + ' ' : ''}${n}</span>`; }) : 'Contexto'}${d.ctxs.length > 2 ? html`<span style=${{ color: 'var(--ct-text-3)' }}>+${d.ctxs.length - 2}</span>` : null}
       <//>
@@ -1056,6 +1079,12 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         list.forEach(t => { const k = t.project || 0; if (!m.has(k)) m.set(k, []); m.get(k).push(t); });
         return [...m.entries()].map(([k, ts]) => ({ key: 'p' + k, name: k ? P[k].name : 'Sem projeto', color: k ? P[k].color : 'var(--ct-border-strong)', tasks: ts }));
       }
+      if (groupBy === 'milestone' && projectId) {
+        const ms = sortMilestones(MILESTONES[projectId] || []);
+        const groups = ms.map(m => ({ key: 'm' + m.id, name: m.name + ' · ' + MILESTONE_KIND[m.kind].label + (m.due ? ' · ' + fmtDate(m.due) : ''), tasks: list.filter(t => TASK_MILESTONE[t.id] === m.id) }));
+        groups.push({ key: 'm0', name: 'Sem marco', tasks: list.filter(t => !ms.some(m => m.id === TASK_MILESTONE[t.id])) });
+        return groups.filter(g => g.tasks.length);
+      }
       if (groupBy === 'context') {
         const m = new Map();
         list.forEach(t => (t.contexts.length ? t.contexts : ['—']).forEach(c => { if (!m.has(c)) m.set(c, []); m.get(c).push({ ...t, groupCtx: c }); }));
@@ -1181,7 +1210,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           { value: 'cards', icon: html`<${I.AppstoreOutlined} />`, label: screens.lg ? 'Cards' : null, title: 'Cards' },
           ...(status === 'executando' || projectId ? [{ value: 'kanban', icon: html`<${I.ProjectOutlined} />`, label: screens.lg ? 'Kanban' : null, title: 'Kanban' }] : [])
         ]} />
-        ${effectiveView !== 'kanban' ? html`<${Select} value=${groupBy} onChange=${setGroupBy} style=${{ width: 180 }} aria-label="Agrupar" options=${[{ value: 'none', label: 'Sem agrupamento' }].concat(projectId ? [] : [{ value: 'project', label: 'Agrupar por projeto' }], [{ value: 'context', label: 'Agrupar por contexto' }])} />` : null}
+        ${effectiveView !== 'kanban' ? html`<${Select} value=${groupBy} onChange=${setGroupBy} style=${{ width: 180 }} aria-label="Agrupar" options=${[{ value: 'none', label: 'Sem agrupamento' }].concat(projectId ? [{ value: 'milestone', label: 'Agrupar por marco' }] : [{ value: 'project', label: 'Agrupar por projeto' }], [{ value: 'context', label: 'Agrupar por contexto' }])} />` : null}
       <//>
       ${projectId ? html`<${Input} value=${newName} onChange=${e => setNewName(e.target.value)} onPressEnter=${addToProject} placeholder=${'Adicionar tarefa a ' + P[projectId].name + '…'} aria-label="Adicionar tarefa ao projeto" className="ct-project-add"
           prefix=${html`<${I.PlusOutlined} style=${{ color: 'var(--ct-text-3)' }} />`} suffix=${html`<${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12 }}>Enter<//>`} style=${{ marginBottom: 12 }} />` : null}
@@ -1241,7 +1270,9 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const [secs, setSecs] = useState(t.secs);
     const [category, setCategory] = useState(t.category);
     const [status, setStatus] = useState(t.status);
-    const [project, setProject] = useState(t.project);
+    const [project, setProjectRaw] = useState(t.project);
+    const [milestone, setMilestone] = useState(t.milestone || null);
+    const setProject = v => { setProjectRaw(v); if (v !== project) setMilestone(null); };
     const [ctxs, setCtxs] = useState(t.contexts);
     const [tags, setTags] = useState(t.tags);
     const [energy, setEnergy] = useState(t.energy);
@@ -1360,6 +1391,17 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         <//>`}>
         ${project ? html`<${ProjectLabel} id=${project} />` : html`<span><${I.FolderOutlined} /> Sem projeto</span>`}
       <//>
+      ${project && (MILESTONES[project] || []).length ? (() => {
+        const ms = sortMilestones(MILESTONES[project]);
+        const cur = ms.find(m => m.id === milestone);
+        return html`<${PropPill} label="Marco" icon="NodeIndexOutlined" muted=${!cur} content=${html`<${Flex} vertical gap=${8}>
+            <${Select} allowClear placeholder="Sem marco" value=${cur ? cur.id : null} onChange=${v => setMilestone(v || null)} style=${{ width: '100%' }}
+              options=${ms.map(m => ({ value: m.id, label: html`<${Space} size=${6}>${createElement(I[MILESTONE_KIND[m.kind].icon], { style: { color: 'var(--ct-text-3)' } })}${m.name}<${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12 }}>${m.due ? fmtDate(m.due) : ''}<//><//>` }))} />
+            <${Text} type="secondary" style=${{ fontSize: 12 }}>Os marcos são do projeto. Crie e conclua no detalhe do projeto.<//>
+          <//>`}>
+          ${cur ? html`<span>${cur.name}<span style=${{ color: 'var(--ct-text-3)' }}> · ${MILESTONE_KIND[cur.kind].label}</span></span>` : 'Marco'}
+        <//>`;
+      })() : null}
       <${PropPill} label="Contextos" icon=${ctxs.length ? null : 'EnvironmentOutlined'} muted=${!ctxs.length} content=${html`<${Flex} gap=${4} wrap="wrap">${CONTEXTS.map(c => html`<${Tag.CheckableTag} key=${c.name} checked=${ctxs.includes(c.name)} onChange=${on => setCtxs(on ? ctxs.concat(c.name) : ctxs.filter(x => x !== c.name))}>${c.emoji} ${c.name}<//>`)}<//>`}>
         ${ctxs.length ? ctxs.slice(0, 2).map(n => { const c = CONTEXTS.find(x => x.name === n); return html`<span key=${n}>${c ? c.emoji + ' ' : ''}${n}</span>`; }) : 'Contexto'}${ctxs.length > 2 ? html`<span style=${{ color: 'var(--ct-text-3)' }}>+${ctxs.length - 2}</span>` : null}
       <//>
@@ -2043,6 +2085,106 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     </div>`;
   }
 
+  function MilestoneModal({ open, initial, taken, onCancel, onSave, onDelete }) {
+    const [form] = Form.useForm();
+    useEffect(() => {
+      if (open) form.setFieldsValue({ name: initial ? initial.name : '', kind: initial ? initial.kind : 'desenvolvimento', due: initial && initial.due ? dayjs(initial.due) : null, description: initial ? initial.description : '' });
+    }, [open, initial]);
+    const kindOption = k => ({
+      value: k,
+      disabled: taken.includes(k) && !(initial && initial.kind === k),
+      label: html`<${Tooltip} title=${taken.includes(k) && !(initial && initial.kind === k) ? 'O projeto já tem um marco de ' + MILESTONE_KIND[k].label.toLowerCase() : null}><${Space} size=${4}>${createElement(I[MILESTONE_KIND[k].icon])}${MILESTONE_KIND[k].label}<//><//>`
+    });
+    return html`<${Modal} open=${open} title=${initial ? 'Editar marco' : 'Novo marco'} onCancel=${onCancel} destroyOnClose
+      footer=${html`<${Flex} gap=${8} align="center">
+        ${initial ? html`<${Popconfirm} title="Excluir este marco?" description="As tarefas dele continuam no projeto, sem marco." okText="Excluir" okButtonProps=${{ danger: true }} cancelText="Cancelar" onConfirm=${() => onDelete(initial)}>
+          <${Button} danger type="text" icon=${html`<${I.DeleteOutlined} />`}>Excluir<//>
+        <//>` : null}
+        <div style=${{ flex: 1 }}></div>
+        <${Button} onClick=${onCancel}>Cancelar<//>
+        <${Button} type="primary" onClick=${() => form.validateFields().then(v => onSave({ ...initial, name: v.name.trim(), kind: v.kind, due: v.due ? v.due.format('YYYY-MM-DD') : null, description: v.description || '' }))}>${initial ? 'Salvar' : 'Criar marco'}<//>
+      <//>`}>
+      <${Form} form=${form} layout="vertical" requiredMark=${false} style=${{ marginTop: 12 }}>
+        <${Form.Item} name="name" label="Nome" rules=${[{ required: true, whitespace: true, message: 'Dê um nome ao marco' }]}>
+          <${Input} autoFocus placeholder="Ex.: Entregas do dia 10" maxLength=${120} />
+        <//>
+        <${Form.Item} name="kind" label="Tipo" extra="Início abre o projeto, Fim fecha: no máximo um de cada. Desenvolvimento marca as entregas do meio.">
+          <${Segmented} block options=${['inicio', 'desenvolvimento', 'fim'].map(kindOption)} />
+        <//>
+        <${Form.Item} name="due" label="Data">
+          <${DatePicker} format="DD/MM/YYYY" style=${{ width: '100%' }} placeholder="Sem data" />
+        <//>
+        <${Form.Item} name="description" label="O que fica pronto neste marco" style=${{ marginBottom: 0 }}>
+          <${Input.TextArea} autoSize=${{ minRows: 2, maxRows: 5 }} placeholder="Entregáveis, critério de pronto…" />
+        <//>
+      <//>
+    <//>`;
+  }
+
+  function MilestonesCard({ mode, projectId, tasks }) {
+    const { message } = AntApp.useApp();
+    const [list, setList] = useState(() => MILESTONES[projectId] || []);
+    const [editing, setEditing] = useState(null);
+    const ms = sortMilestones(list);
+    const taken = list.map(m => m.kind).filter(k => k !== 'desenvolvimento');
+    const c = PALETTE[mode];
+    const nextOpen = ms.find(m => !m.doneAt);
+    const save = m => {
+      if (m.id) setList(list.map(x => x.id === m.id ? m : x));
+      else setList(list.concat({ ...m, id: Date.now(), doneAt: null }));
+      setEditing(null);
+      message.success(m.id ? 'Marco salvo' : 'Marco criado');
+    };
+    const toggleDone = m => {
+      setList(list.map(x => x.id === m.id ? { ...x, doneAt: x.doneAt ? null : TODAY } : x));
+      message.success(m.doneAt ? 'Marco reaberto' : 'Marco concluído');
+    };
+    const row = m => {
+      const ts = tasks.filter(t => TASK_MILESTONE[t.id] === m.id);
+      const done = ts.filter(t => t.status === 'finalizada').length;
+      const left = m.due ? daysBetween(TODAY, m.due) : null;
+      const late = !m.doneAt && left !== null && left < 0;
+      const soon = !m.doneAt && left !== null && left >= 0 && left <= 7;
+      const kind = MILESTONE_KIND[m.kind];
+      const tone = m.doneAt ? STATUS.finalizada[mode][0] : late ? c.error : soon ? c.warning : c.text3;
+      const allDone = !m.doneAt && ts.length > 0 && done === ts.length;
+      return {
+        key: m.id,
+        dot: m.doneAt ? html`<${I.CheckCircleFilled} style=${{ color: tone, fontSize: 14 }} />` : createElement(I[kind.icon], { style: { color: m === nextOpen ? c.primary : tone, fontSize: 14 } }),
+        children: html`<${Flex} vertical gap=${4}>
+          <${Flex} gap=${6} align="center" wrap>
+            <button type="button" className="ct-aux-name" style=${{ flex: '1 1 auto', fontWeight: 500, textDecoration: m.doneAt ? 'line-through' : 'none', color: m.doneAt ? 'var(--ct-text-3)' : undefined }} onClick=${() => setEditing(m)}>${m.name}</button>
+            <${Tooltip} title=${m.doneAt ? 'Reabrir marco' : 'Concluir marco'}>
+              <${Button} type="text" size="small" aria-label=${m.doneAt ? 'Reabrir marco' : 'Concluir marco'} icon=${m.doneAt ? html`<${I.UndoOutlined} />` : html`<${I.CheckOutlined} />`} onClick=${() => toggleDone(m)} />
+            <//>
+          <//>
+          <${Flex} gap=${8} align="center" wrap>
+            <${Tag} bordered=${false} style=${{ margin: 0 }} icon=${createElement(I[kind.icon])}>${kind.label}<//>
+            ${m.due ? html`<${Text} className="ct-mono" style=${{ fontSize: 12, color: tone }}>${fmtDate(m.due)}${m.doneAt ? '' : left < 0 ? ' · venceu há ' + -left + 'd' : left === 0 ? ' · hoje' : ' · faltam ' + left + 'd'}<//>` : html`<${Text} type="secondary" style=${{ fontSize: 12 }}>Sem data<//>`}
+            ${m === nextOpen ? html`<${Text} type="secondary" style=${{ fontSize: 12 }}>· próximo<//>` : null}
+          <//>
+          ${ts.length ? html`<${Flex} gap=${8} align="center">
+            <${Progress} percent=${Math.round(done / ts.length * 100)} showInfo=${false} size="small" style=${{ flex: 1, margin: 0 }} strokeColor=${m.doneAt ? STATUS.finalizada[mode][0] : undefined} />
+            <${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12 }}>${done}/${ts.length}<//>
+          <//>` : html`<${Text} type="secondary" style=${{ fontSize: 12 }}>Nenhuma tarefa neste marco<//>`}
+          ${allDone ? html`<${Flex} gap=${6} align="center"><${Text} type="secondary" style=${{ fontSize: 12 }}>Todas as tarefas feitas.<//><${Button} size="small" type="link" style=${{ padding: 0 }} onClick=${() => toggleDone(m)}>Concluir marco<//><//>` : null}
+        <//>`
+      };
+    };
+    return html`<${Card} size="small" title=${html`<${Space} size=${6}><${I.NodeIndexOutlined} />Marcos<${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12 }}>${ms.filter(m => m.doneAt).length}/${ms.length}<//><//>`}
+      extra=${html`<${Button} type="text" size="small" icon=${html`<${I.PlusOutlined} />`} onClick=${() => setEditing('new')}>Novo marco<//>`}>
+      ${ms.length
+        ? html`<${Timeline} style=${{ marginTop: 8, marginBottom: -24 }} items=${ms.map(row)} />`
+        : html`<${Flex} vertical gap=${8} align="flex-start">
+            <${Text} type="secondary">Divida o projeto em entregas: um marco de início, os de desenvolvimento e o de fim.<//>
+            <${Button} size="small" icon=${html`<${I.PlusOutlined} />`} onClick=${() => setEditing('new')}>Novo marco<//>
+          <//>`}
+      <${MilestoneModal} open=${editing !== null} initial=${editing === 'new' ? null : editing} taken=${taken}
+        onCancel=${() => setEditing(null)} onSave=${save}
+        onDelete=${m => { setList(list.filter(x => x.id !== m.id)); setEditing(null); message.success('Marco excluído'); }} />
+    <//>`;
+  }
+
   function ProjectDetailPage({ mode, go, isMobile, screens, projectId, openTerminal }) {
     const base = P[projectId] || PROJECTS[0];
     const { message, modal } = AntApp.useApp();
@@ -2131,6 +2273,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         action=${html`<${Button} size="small" onClick=${() => { setNarrowTab('resumo'); try { document.querySelector('.ct-next-select input') && document.querySelector('.ct-next-select input').focus(); } catch (e) {} }}>Definir<//>`} />` : null}
     </div>`;
 
+    const milestonesCard = html`<${MilestonesCard} key=${'ms' + p.id} mode=${mode} projectId=${p.id} tasks=${st.tasks} />`;
     const outcomeCard = html`<${Card} size="small" title=${html`<${Space} size=${6}><${I.AimOutlined} />Resultado desejado<//>`}>
       <${Input.TextArea} variant="borderless" autoSize=${{ minRows: 2, maxRows: 8 }} defaultValue=${p.outcome} placeholder="Como vai ser quando este projeto estiver pronto?" aria-label="Resultado desejado" className="ct-inline-edit" style=${{ fontSize: 15 }} />
     <//>`;
@@ -2170,7 +2313,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     if (isMobile) return html`<div className="ct-page-narrow">${head}
       <${Tabs} activeKey=${narrowTab} onChange=${setNarrowTab} items=${[
         { key: 'tarefas', label: 'Tarefas ' + st.open, children: tasksArea },
-        { key: 'resumo', label: 'Resumo', children: html`<${Flex} vertical gap=${12}>${nextCard}${outcomeCard}${progressCard}<//>` }
+        { key: 'resumo', label: 'Resumo', children: html`<${Flex} vertical gap=${12}>${nextCard}${milestonesCard}${outcomeCard}${progressCard}<//>` }
       ]} />
     </div>`;
 
@@ -2178,10 +2321,11 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       ${screens.xl
         ? html`<${Row} gutter=${16} wrap=${false} style=${{ marginTop: 16 }}>
             <${Col} flex="1 1 0" style=${{ minWidth: 0 }}>${tasksArea}<//>
-            <${Col} flex=${screens.xxl ? '0 0 400px' : '0 0 340px'}><${Flex} vertical gap=${12}>${nextCard}${outcomeCard}${progressCard}<//><//>
+            <${Col} flex=${screens.xxl ? '0 0 400px' : '0 0 340px'}><${Flex} vertical gap=${12}>${nextCard}${milestonesCard}${outcomeCard}${progressCard}<//><//>
           <//>`
         : html`<${Row} gutter=${[12, 12]} style=${{ margin: '16px 0' }}>
               <${Col} xs=${24} md=${8}>${nextCard}<//><${Col} xs=${24} md=${8}>${outcomeCard}<//><${Col} xs=${24} md=${8}>${progressCard}<//>
+              <${Col} xs=${24}>${milestonesCard}<//>
             <//>
             ${tasksArea}`}
     </div>`;

@@ -73,7 +73,10 @@ import type {
   PageLocation,
   PageSearchResult,
   FloatTimerData,
-  TaskHistoryView
+  TaskHistoryView,
+  ProjectMilestone,
+  CreateMilestoneInput,
+  UpdateMilestoneInput
 } from '../shared/types'
 import type { ThemePreference } from '../shared/themePreference'
 import type { WorkflowPrefs, WorkflowPrefsPatch } from '../shared/workflowPrefs'
@@ -303,6 +306,15 @@ const api = {
   updateProject: (id: number, data: UpdateProjectInput): Promise<void> =>
     ipcRenderer.invoke('project:update', id, data),
   deleteProject: (id: number): Promise<void> => ipcRenderer.invoke('project:delete', id),
+  listMilestones: (projectId: number): Promise<ProjectMilestone[]> =>
+    ipcRenderer.invoke('milestone:list', projectId),
+  createMilestone: (input: CreateMilestoneInput): Promise<ProjectMilestone> =>
+    ipcRenderer.invoke('milestone:create', input),
+  updateMilestone: (id: number, patch: UpdateMilestoneInput): Promise<ProjectMilestone> =>
+    ipcRenderer.invoke('milestone:update', id, patch),
+  setMilestoneDone: (id: number, done: boolean): Promise<ProjectMilestone> =>
+    ipcRenderer.invoke('milestone:setDone', id, done),
+  deleteMilestone: (id: number): Promise<void> => ipcRenderer.invoke('milestone:delete', id),
   getProjectTasks: (projectId: number): Promise<Task[]> =>
     ipcRenderer.invoke('project:getTasks', projectId),
 
