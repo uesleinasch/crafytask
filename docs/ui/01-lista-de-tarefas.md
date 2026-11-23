@@ -70,6 +70,10 @@ Uma linha abaixo das abas (`Flex` com quebra):
 - **Filtros** — botão com `ListFilter` e o número de filtros ativos; abre o painel ③.
 - **Visão** — `Segmented` Tabela | Cards | Kanban (rótulos a partir de `lg`). Kanban só aparece na
   aba Executando; em outra aba a visão Kanban guardada vale como Tabela.
+- **Quadro Kanban** (`TaskKanban`, também no projeto): cada coluna tem cabeçalho fixo e a lista de
+  cards rola dentro dela (altura máxima `max(320px, 100vh − 320px)`). O quadro anda para o lado
+  com `Shift` + rolagem e arrastando o fundo fora dos cards (`useBoardPan`, regra em
+  `lib/boardPan.ts`), e com as setas quando está em foco.
 - **Agrupar** — `Select` com Sem agrupamento, Projeto, Contexto, Espaço Jira e Pai Jira (os dois do
   Jira só com task do Jira na lista). No Kanban, o mesmo `Select` escolhe as colunas e não tem "Sem
   agrupamento" (cai em Projeto). O agrupamento é puro, em `lib/taskGrouping.ts` (testado):

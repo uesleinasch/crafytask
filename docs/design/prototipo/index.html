@@ -72,6 +72,16 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
 .ct-grid-auto { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 16px; }
 .ct-kanban { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(260px, 1fr); gap: 12px; overflow-x: auto; padding-bottom: 8px; }
 .ct-col { background: var(--ct-bg); border: 1px solid var(--ct-border); border-radius: 12px; padding: 10px; min-width: 0; }
+.ct-kanban-board { align-items: start; }
+.ct-kanban-board .ct-col { display: flex; flex-direction: column; min-height: 0; transition: border-color .12s, background-color .12s; }
+.ct-col-list { display: flex; flex-direction: column; gap: 8px; max-height: max(320px, calc(100vh - 320px)); overflow-y: auto; scrollbar-width: thin; margin-inline: -4px; padding-inline: 4px; }
+.ct-col.over { border-color: var(--ct-primary); background: var(--ct-primary-soft); }
+.ct-drag { cursor: grab; }
+.ct-kanban-board { cursor: grab; }
+.ct-kanban-board .ct-col-list > * { cursor: auto; }
+.ct-kanban-board .ct-col-list > .ct-drag { cursor: grab; }
+.ct-kanban-board.panning { cursor: grabbing; user-select: none; }
+.ct-drag.dragging { opacity: .4; }
 .ct-leak-1 { background: var(--ct-leak-1) !important; }
 .ct-leak-2 { background: var(--ct-leak-2) !important; }
 .ct-leak-3 { background: var(--ct-leak-3) !important; }
@@ -453,6 +463,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     { id: 709, name: 'Ler "Shape Up" de novo', status: 'someday', category: 'normal', project: null, contexts: ['@leitura'], due: null, secs: 0, energy: 'medio' },
     { id: 710, name: 'Marcar check-up anual', status: 'inbox', category: 'prioridade', project: 9, contexts: ['@telefone'], due: '2026-11-28', secs: 0, energy: 'baixo' },
     { id: 699, name: 'Publicar release v3.16.0', status: 'finalizada', category: 'normal', project: 13, contexts: ['@dev'], due: '2026-11-14', secs: 2700, energy: 'medio' },
+    ...['Tema escuro nos gráficos', 'Paleta de comandos', 'Barra de status', 'Captura rápida em antd', 'Timer flutuante', 'Tokens de densidade', 'Tabela de tarefas', 'Menu de contexto', 'Filtros salvos'].map((name, i) => ({ id: 680 + i, name, status: 'finalizada', category: 'normal', project: 13, contexts: ['@dev'], due: null, secs: 1800 + i * 300, energy: 'medio' })),
     { id: 712, name: 'Organizar 1:1 com o time de dados', status: 'aguardando', category: 'normal', project: 4, contexts: ['@reunião'], due: '2026-11-20', secs: 0, energy: 'medio', waiting: 'Agenda do gestor' },
     { id: 713, name: 'Treino de força — semana 46', status: 'proximas', category: 'normal', project: 9, contexts: ['@academia'], due: '2026-11-19', secs: 0, energy: 'alto', today: true },
     { id: 714, name: 'Rever limiar de time leak nas configurações', status: 'someday', category: 'normal', project: 13, contexts: ['@dev'], due: null, secs: 0, energy: 'baixo' }
@@ -943,10 +954,32 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const [expanded, setExpanded] = useState([]);
     const [collapsed, setCollapsed] = useState(() => new Set());
     const [today, setToday] = useState(() => new Set(TASKS.filter(t => t.today).map(t => t.id)));
+    const [dragId, setDragId] = useState(null);
+    const boardRef = useCallback(el => {
+      if (!el || el.dataset.pan) return;
+      el.dataset.pan = '1';
+      el.addEventListener('wheel', ev => {
+        if (!ev.shiftKey || el.scrollWidth <= el.clientWidth) return;
+        ev.preventDefault();
+        el.scrollLeft += ev.deltaY || ev.deltaX;
+      }, { passive: false });
+      let start = null;
+      el.addEventListener('pointerdown', ev => {
+        if (ev.button !== 0 || ev.target.closest('.ct-col-list > *, button, a, input')) return;
+        start = { x: ev.clientX, left: el.scrollLeft };
+        el.setPointerCapture(ev.pointerId);
+        el.classList.add('panning');
+      });
+      el.addEventListener('pointermove', ev => { if (start) el.scrollLeft = start.left - (ev.clientX - start.x); });
+      const end = () => { start = null; el.classList.remove('panning'); };
+      el.addEventListener('pointerup', end);
+      el.addEventListener('pointercancel', end);
+    }, []);
+    const [dragOver, setDragOver] = useState(null);
     const counts = useMemo(() => { const c = { all: tasks.length }; tasks.forEach(t => { c[t.status] = (c[t.status] || 0) + 1; }); return c; }, [tasks]);
     const rows = tasks.filter(t => (status === 'all' || t.status === status) && t.name.toLowerCase().includes(q.toLowerCase()) && (!fOverdue || (t.due && t.due < TODAY && t.status !== 'finalizada')));
     const effectiveView = isMobile && view === 'tabela' ? 'cards' : view;
-    useEffect(() => { setSel([]); if (status !== 'executando' && view === 'kanban') setView('tabela'); }, [status]);
+    useEffect(() => { setSel([]); if (!projectId && status !== 'executando' && view === 'kanban') setView('tabela'); }, [status]);
     useEffect(() => { setSel([]); setCollapsed(new Set()); }, [groupBy]);
 
     const idOf = key => Number(String(key).split(':')[1].split('@')[0]);
@@ -1167,13 +1200,22 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       ? html`<${Empty} image=${Empty.PRESENTED_IMAGE_SIMPLE} description=${status === 'inbox' ? 'Inbox zerado. Tudo processado.' : 'Nenhuma tarefa aqui.'} />`
       : effectiveView === 'kanban'
         ? projectId
-          ? html`<div className="ct-kanban">${Object.entries(STATUS).map(([k, v]) => { const items = rows.filter(t => t.status === k); return html`<div key=${k} className="ct-col">
-              <${Flex} align="center" gap=${8} style=${{ marginBottom: 8 }}>${createElement(I[v.icon], { style: { color: v[mode][0] } })}<${Text} strong>${v.label}<//><${Text} type="secondary" className="ct-mono">${items.length}<//><//>
-              <${Flex} vertical gap=${8}>${items.map(card)}${items.length ? null : html`<${Text} type="secondary" style=${{ fontSize: 12 }}>Nada aqui<//>`}<//>
+          ? html`<${Text} type="secondary" style=${{ display: 'block', fontSize: 12, marginBottom: 8 }}>Arraste um card para outra coluna para mudar o status. Para ver as outras colunas: <span className="ct-kbd">Shift</span> + rolagem ou arraste o fundo do quadro.<//>
+            <div ref=${boardRef} className="ct-kanban ct-kanban-board" tabIndex=${0} aria-label="Quadro Kanban">${Object.entries(STATUS).map(([k, v]) => { const items = rows.filter(t => t.status === k); return html`<div key=${k} className=${'ct-col' + (dragOver === k ? ' over' : '')}
+              onDragOver=${ev => { if (dragId === null) return; ev.preventDefault(); if (dragOver !== k) setDragOver(k); }}
+              onDragLeave=${ev => { if (!ev.currentTarget.contains(ev.relatedTarget)) setDragOver(null); }}
+              onDrop=${ev => { ev.preventDefault(); const t = findTask(dragId); setDragOver(null); setDragId(null);
+                if (!t || t.status === k) return;
+                if (k === 'executando' && t.blocked) { message.error('Tarefa bloqueada: conclua as dependências antes.'); return; }
+                updateTasks([t.id], { status: k }); message.success('Movida para ' + v.label); }}>
+              <${Flex} align="center" gap=${8} style=${{ marginBottom: 8, flex: 'none' }}>${createElement(I[v.icon], { style: { color: v[mode][0] } })}<${Text} strong>${v.label}<//><${Text} type="secondary" className="ct-mono">${items.length}<//><//>
+              <div className="ct-col-list">${items.map(t => html`<div key=${t.id} draggable="true" className=${'ct-drag' + (dragId === t.id ? ' dragging' : '')} aria-roledescription="card arrastável"
+                onDragStart=${ev => { ev.dataTransfer.effectAllowed = 'move'; setDragId(t.id); }} onDragEnd=${() => { setDragId(null); setDragOver(null); }}>${card(t)}</div>`)}
+                ${items.length ? null : html`<${Text} type="secondary" style=${{ fontSize: 12 }}>${dragId !== null ? 'Solte aqui' : 'Nada aqui'}<//>`}</div>
             </div>`; })}</div>`
-          : html`<div className="ct-kanban">${PROJECTS.filter(p => p.status === 'active').map(p => { const items = rows.filter(t => t.project === p.id); return html`<div key=${p.id} className="ct-col">
+          : html`<div ref=${boardRef} className="ct-kanban ct-kanban-board" tabIndex=${0} aria-label="Quadro Kanban">${PROJECTS.filter(p => p.status === 'active').map(p => { const items = rows.filter(t => t.project === p.id); return html`<div key=${p.id} className="ct-col">
             <${Flex} align="center" gap=${8} style=${{ marginBottom: 8 }}><span className="ct-dot" style=${{ background: p.color }}></span><${Text} strong>${p.name}<//><${Text} type="secondary" className="ct-mono">${items.length}<//><//>
-            <${Flex} vertical gap=${8}>${items.map(card)}${items.length ? null : html`<${Text} type="secondary" style=${{ fontSize: 12 }}>Nada executando<//>`}<//>
+            <div className="ct-col-list">${items.map(card)}${items.length ? null : html`<${Text} type="secondary" style=${{ fontSize: 12 }}>Nada executando<//>`}</div>
           </div>`; })}</div>`
         : effectiveView === 'cards'
           ? (groups

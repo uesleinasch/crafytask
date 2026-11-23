@@ -15,6 +15,7 @@ import {
 } from 'antd'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { TaskTable } from '@renderer/components/tasks/TaskTable'
+import { Kbd } from '@renderer/components/shell/Kbd'
 import { STATUS_ICONS } from '@renderer/components/chips/statusMeta'
 import { errorMessage } from '@renderer/components/settings/settingsStatus'
 import { STATUS_COLORS } from '@renderer/theme/semantic'
@@ -365,6 +366,22 @@ export function TaskListView({
     [refreshTasks, tasks, message]
   )
 
+  const handleMoveTask = useCallback(
+    async (taskId: number, status: string): Promise<void> => {
+      const next = status as TaskStatus
+      try {
+        await window.api.updateStatus(taskId, next)
+        message.success(`Movida para ${STATUS_LABELS[next]}`)
+      } catch (err) {
+        message.error(errorMessage(err))
+      } finally {
+        await refreshTasks()
+        onChanged?.()
+      }
+    },
+    [refreshTasks, message, onChanged]
+  )
+
   const addToProject = async (): Promise<void> => {
     const name = newName.trim()
     if (!project || !name) return
@@ -618,6 +635,15 @@ export function TaskListView({
               </Empty>
             ) : kanbanActive ? (
               <RegionBoundary region="kanban de tarefas">
+                {inProject && (
+                  <Typography.Text
+                    type="secondary"
+                    style={{ display: 'block', fontSize: 12, marginBottom: 8 }}
+                  >
+                    Arraste um card para outra coluna para mudar o status. Para ver as outras
+                    colunas: <Kbd>Shift</Kbd> + rolagem ou arraste o fundo do quadro.
+                  </Typography.Text>
+                )}
                 <TaskKanban
                   columns={inProject ? defaultTaskGroups : taskGroups}
                   groupBy={inProject ? 'project' : activeGroupBy}
@@ -635,6 +661,9 @@ export function TaskListView({
                   showStatus={statusFilter === 'all'}
                   contexts={availableContexts}
                   onReorderColumns={inProject ? undefined : handleReorderGroups}
+                  onMoveTask={
+                    inProject ? (id, status) => void handleMoveTask(id, status) : undefined
+                  }
                 />
               </RegionBoundary>
             ) : groupingEnabled && viewMode === 'cards' ? (

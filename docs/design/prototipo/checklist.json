@@ -1216,6 +1216,20 @@
       }
     },
     {
+      "id": "F5.26",
+      "fase": "F5",
+      "titulo": "Kanban: coluna com rolagem própria e, no projeto, card arrastável entre colunas muda o status",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": [
+          "src/renderer/src/components/tasks/TaskCardViews.tsx",
+          "src/renderer/src/hooks/useBoardPan.ts",
+          "src/renderer/src/lib/boardPan.ts"
+        ],
+        "padroes": ["useDroppable", "useDraggable", "Solte aqui", "overflowY: 'auto'", "shiftKey", "setPointerCapture"]
+      }
+    },
+    {
       "id": "F5.24",
       "fase": "F5",
       "titulo": "Metas com destino conferidas (Horizontes, lista e detalhe do projeto)",
