@@ -955,7 +955,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const counts = useMemo(() => { const c = { all: tasks.length }; tasks.forEach(t => { c[t.status] = (c[t.status] || 0) + 1; }); return c; }, [tasks]);
     const rows = tasks.filter(t => (status === 'all' || t.status === status) && t.name.toLowerCase().includes(q.toLowerCase()) && (!fOverdue || (t.due && t.due < TODAY && t.status !== 'finalizada')));
     const effectiveView = isMobile && view === 'tabela' ? 'cards' : view;
-    useEffect(() => { setSel([]); if (status !== 'executando' && view === 'kanban') setView('tabela'); }, [status]);
+    useEffect(() => { setSel([]); if (!projectId && status !== 'executando' && view === 'kanban') setView('tabela'); }, [status]);
     useEffect(() => { setSel([]); setCollapsed(new Set()); }, [groupBy]);
 
     const idOf = key => Number(String(key).split(':')[1].split('@')[0]);
