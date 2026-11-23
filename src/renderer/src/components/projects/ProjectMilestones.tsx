@@ -46,6 +46,13 @@ interface MilestoneFormValues {
   description: string
 }
 
+function deleteWarning(milestone: ProjectMilestone): string {
+  if (!milestone.task_count) return 'Nenhuma tarefa neste marco.'
+  return milestone.task_count === 1
+    ? 'A tarefa dele continua no projeto, sem marco.'
+    : `As ${milestone.task_count} tarefas dele continuam no projeto, sem marco.`
+}
+
 interface MilestoneModalProps {
   open: boolean
   projectId: number
@@ -123,7 +130,7 @@ function MilestoneModal({
           {editing && (
             <Popconfirm
               title="Excluir este marco?"
-              description="As tarefas dele continuam no projeto, sem marco."
+              description={deleteWarning(editing)}
               okText="Excluir"
               okButtonProps={{ danger: true }}
               cancelText="Cancelar"
@@ -239,7 +246,7 @@ export function ProjectMilestones({
   const confirmDelete = (milestone: ProjectMilestone): void => {
     confirmModal.confirm({
       title: `Excluir o marco ${milestone.name}?`,
-      content: 'As tarefas dele continuam no projeto, sem marco.',
+      content: deleteWarning(milestone),
       okText: 'Excluir',
       okButtonProps: { danger: true },
       cancelText: 'Cancelar',

@@ -531,7 +531,9 @@ notas:
   nome (abre o `Modal` de edição), `Tag` do tipo com ícone, data em mono com "faltam Nd" (âmbar a 7
   dias, vermelho vencido, como o prazo), "· próximo" no primeiro marco aberto (ponto na cor
   primária), barra "feitas/total" das tarefas do marco e o botão **Concluir marco** (`Check`;
-  concluído vira `CircleCheck` no tom de Finalizada, nome riscado e **Reabrir** `Undo2`). Concluir é
+  concluído vira `CircleCheck` no tom de Finalizada, nome riscado e **Reabrir** `Undo2`), seguido do
+  botão `⋯` (`Ellipsis`) com **Editar marco** (`Pencil`) e **Excluir marco** (`Trash2`,
+  `modal.confirm` com quantas tarefas ficam no projeto, sem marco). Concluir é
   manual; com todas as tarefas feitas aparece "Todas as tarefas feitas. Concluir marco". Sem marco:
   texto "Divida o projeto em entregas…" e **Novo marco**. O `Modal` tem Nome, Tipo (`Segmented`;
   Início/Fim tomados ficam desabilitados com tooltip), Data e "O que fica pronto neste marco";
