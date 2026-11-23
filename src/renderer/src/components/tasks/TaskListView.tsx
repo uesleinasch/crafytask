@@ -373,7 +373,7 @@ export function TaskListView({
         await window.api.updateStatus(taskId, next)
         message.success(`Movida para ${STATUS_LABELS[next]}`)
       } catch (err) {
-        message.error(err instanceof Error ? err.message : 'Não foi possível mover a tarefa')
+        message.error(errorMessage(err))
       } finally {
         await refreshTasks()
         onChanged?.()

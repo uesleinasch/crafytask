@@ -144,7 +144,16 @@ const BOARD_GRID: React.CSSProperties = {
 
 const collisionDetection: CollisionDetection = (args) => {
   const hits = pointerWithin(args)
-  return hits.length > 0 ? hits : rectIntersection(args)
+  if (hits.length > 0) return hits
+  const pointer = args.pointerCoordinates
+  if (pointer) {
+    const column = args.droppableContainers.find((container) => {
+      const rect = args.droppableRects.get(container.id)
+      return rect && pointer.x >= rect.left && pointer.x <= rect.right
+    })
+    if (column) return [{ id: column.id }]
+  }
+  return rectIntersection(args)
 }
 
 const columnCoordinates: KeyboardCoordinateGetter = (event, { context, currentCoordinates }) => {
@@ -155,7 +164,7 @@ const columnCoordinates: KeyboardCoordinateGetter = (event, { context, currentCo
   event.preventDefault()
   const center = collisionRect.left + collisionRect.width / 2
   const forward = event.code === 'ArrowRight'
-  let target: { left: number; width: number } | null = null
+  let target: { left: number; top: number; width: number } | null = null
   for (const rect of droppableRects.values()) {
     const rectCenter = rect.left + rect.width / 2
     const ahead = forward ? rectCenter > center + 1 : rectCenter < center - 1
@@ -165,7 +174,7 @@ const columnCoordinates: KeyboardCoordinateGetter = (event, { context, currentCo
   if (!target) return currentCoordinates
   return {
     x: target.left + target.width / 2 - collisionRect.width / 2,
-    y: currentCoordinates.y
+    y: Math.min(currentCoordinates.y, target.top + 8)
   }
 }
 
@@ -174,13 +183,15 @@ function dndAccessibility(
 ): React.ComponentProps<typeof DndContext>['accessibility'] {
   const label = (id: string | number | undefined): string =>
     columns.find((col) => col.key === String(id))?.label ?? String(id)
+  const taskName = (id: string | number): string =>
+    columns.flatMap((col) => col.tasks).find((task) => task.id === Number(id))?.name ?? 'Card'
   return {
     screenReaderInstructions: {
       draggable:
         'Para mover o card, aperte espaço ou Enter. Use as setas para trocar de coluna e aperte espaço ou Enter de novo para soltar, ou Esc para cancelar.'
     },
     announcements: {
-      onDragStart: () => 'Card pego.',
+      onDragStart: ({ active }) => `${taskName(active.id)} pego.`,
       onDragOver: ({ over }) => (over ? `Sobre a coluna ${label(over.id)}.` : 'Fora das colunas.'),
       onDragEnd: ({ over }) =>
         over ? `Card solto na coluna ${label(over.id)}.` : 'Card solto fora das colunas.',
@@ -343,7 +354,7 @@ function DraggableCard({
 }): React.JSX.Element {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, isDragging } = useDraggable({
     id: taskId,
-    attributes: { roleDescription: 'card arrastável' }
+    attributes: { role: 'group', roleDescription: 'card arrastável' }
   })
   return (
     <div
@@ -410,7 +421,7 @@ function DraggableBoard(
           </DroppableColumn>
         ))}
       </div>
-      <DragOverlay>
+      <DragOverlay dropAnimation={null}>
         {active ? (
           <div
             style={{
@@ -434,6 +445,7 @@ export function TaskKanban(props: TaskKanbanProps): React.JSX.Element {
     <div
       ref={ref}
       tabIndex={0}
+      role="region"
       aria-label="Quadro Kanban"
       style={{
         overflowX: 'auto',
