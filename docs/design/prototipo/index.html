@@ -98,6 +98,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
 .ct-rich code { font-family: var(--ct-mono); font-size: 12.5px; background: var(--ct-primary-soft); padding: 1px 5px; border-radius: 4px; }
 .ct-rich pre { font-family: var(--ct-mono); font-size: 12.5px; background: var(--ct-bg); border: 1px solid var(--ct-border); padding: 8px 10px; border-radius: 6px; white-space: pre-wrap; }
 .ct-rich a { color: var(--ct-primary); }
+.ct-rich img { display: block; max-width: 100%; max-height: 320px; border-radius: 6px; border: 1px solid var(--ct-border); }
 .ct-rich .ct-mention { color: var(--ct-primary); background: var(--ct-primary-soft); padding: 0 4px; border-radius: 4px; }
 .ct-bulkbar { position: sticky; bottom: 12px; z-index: 5; margin-top: 12px; }
 .ct-bulkbar-inner { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 12px; background: var(--ct-elevated); border: 1px solid var(--ct-border-strong); box-shadow: var(--ct-shadow-float); }
@@ -1732,6 +1733,10 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     { value: 'pre', label: 'Bloco de código' }
   ];
 
+  const COMPOSER_IMAGE = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+    "<svg xmlns='http://www.w3.org/2000/svg' width='240' height='120'><rect width='240' height='120' rx='8' fill='#D9D5F7'/>" +
+    "<text x='120' y='66' font-family='sans-serif' font-size='14' text-anchor='middle' fill='#4A3FB0'>imagem colada</text></svg>");
+
   function HistoryComposer({ onCancel, onSave }) {
     const ref = React.useRef(null);
     const [block, setBlock] = useState('p');
@@ -1764,6 +1769,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           ${tool('Lista de tarefas', html`<${I.CheckSquareOutlined} />`, () => run('insertHTML', '<ul><li>☐ </li></ul>'))}
           <span className="ct-composer-sep" />
           ${tool('Link (Ctrl+K)', html`<${I.LinkOutlined} />`, () => run('createLink', 'https://exemplo.com'))}
+          ${tool('Imagem (ou cole/arraste no texto)', html`<${I.PictureOutlined} />`, () => run('insertHTML', '<p><img alt="Imagem colada" src="' + COMPOSER_IMAGE + '" /></p>'))}
           ${tool('Mencionar tarefa ou página (@)', html`<span style=${{ fontWeight: 600 }}>@</span>`, () => run('insertHTML', '<span class="ct-mention">@Release v3.20</span>&nbsp;'))}
         </div>
         <div ref=${ref} className="ct-composer-body ct-rich" contentEditable suppressContentEditableWarning
@@ -1776,7 +1782,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           }} />
       </div>
       <${Flex} gap=${8} align="center" wrap>
-        <${Text} type="secondary" style=${{ fontSize: 12 }}><span className="ct-mono">Ctrl+Enter</span> grava · <span className="ct-mono">/</span> blocos · <span className="ct-mono">@</span> menciona<//>
+        <${Text} type="secondary" style=${{ fontSize: 12 }}><span className="ct-mono">Ctrl+Enter</span> grava · <span className="ct-mono">/</span> blocos · <span className="ct-mono">@</span> menciona · cole imagens<//>
         <div style=${{ flex: 1 }}></div>
         <${Button} size="small" onClick=${onCancel}>Cancelar<//>
         <${Button} size="small" type="primary" disabled=${empty} onClick=${save}>Gravar<//>
