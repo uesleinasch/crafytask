@@ -85,3 +85,24 @@ describe('textos', () => {
     expect(deleteGoalWarning(goals[1], projects)).toBe('Nenhum projeto serve a esta meta.')
   })
 })
+
+describe('metas concluídas nos seletores', () => {
+  const withDone = [
+    ...goals,
+    { ...goal(4, 3, 'Playbook em inglês'), done_at: '2026-10-30 10:00:00' }
+  ]
+
+  it('somem dos seletores, menos a que o projeto já tem', () => {
+    const names = (groups: ReturnType<typeof goalSelectOptions>): string[] =>
+      groups.flatMap((g) => g.options.map((o) => o.label))
+    expect(names(goalSelectOptions(withDone))).not.toContain('🎯 Playbook em inglês')
+    expect(names(goalSelectOptions(withDone, 4))).toContain('🎯 Playbook em inglês (concluída)')
+  })
+
+  it('no menu, a atual aparece marcada e com o aviso', () => {
+    const labels = (current: number | null): string[] =>
+      goalMenuGroups(withDone, current).flatMap((g) => g.children.map((c) => c.label))
+    expect(labels(null)).not.toContain('Playbook em inglês')
+    expect(labels(4)).toContain('✓ Playbook em inglês (concluída)')
+  })
+})

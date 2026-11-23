@@ -1235,8 +1235,11 @@
       "titulo": "Horizontes: concluir e reabrir meta, seção Mostrar concluídas e seletores sem meta concluída",
       "check": {
         "tipo": "contem-todos",
-        "arquivos": "src/renderer/src/pages/HorizonsPage.tsx",
-        "padroes": ["Marcar como concluída", "Mostrar concluídas", "Reabrir"]
+        "arquivos": [
+          "src/renderer/src/pages/HorizonsPage.tsx",
+          "src/renderer/src/components/horizons/horizonLevels.ts"
+        ],
+        "padroes": ["Marcar como concluída", "Mostrar concluídas", "Reabrir", "goalDoneDate"]
       }
     },
     {

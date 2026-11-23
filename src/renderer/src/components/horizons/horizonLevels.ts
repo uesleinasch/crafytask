@@ -40,15 +40,19 @@ export interface HorizonView {
   projects: Project[]
   areas: Area[]
   goals: Record<GoalHorizon, Goal[]>
+  doneGoals: Record<GoalHorizon, Goal[]>
 }
 
 export function filterByArea(data: HorizonData, areaId: number | null): HorizonView {
   const active = data.projects.filter((p) => p.status === 'active')
   const areaOf = new Map(data.projects.map((p) => [p.id, p.area_id ?? null]))
   const inArea = (id: number | null | undefined): boolean => areaId === null || id === areaId
-  const goals = (h: GoalHorizon): Goal[] =>
+  const goals = (h: GoalHorizon, done: boolean): Goal[] =>
     data.goals.filter(
-      (g) => g.horizon === h && (areaId === null || !g.area_id || g.area_id === areaId)
+      (g) =>
+        g.horizon === h &&
+        !!g.done_at === done &&
+        (areaId === null || !g.area_id || g.area_id === areaId)
     )
   return {
     today: data.today.filter(
@@ -56,7 +60,8 @@ export function filterByArea(data: HorizonData, areaId: number | null): HorizonV
     ),
     projects: active.filter((p) => inArea(p.area_id)),
     areas: data.areas.filter((a) => inArea(a.id)),
-    goals: { 3: goals(3), 4: goals(4), 5: goals(5) }
+    goals: { 3: goals(3, false), 4: goals(4, false), 5: goals(5, false) },
+    doneGoals: { 3: goals(3, true), 4: goals(4, true), 5: goals(5, true) }
   }
 }
 
@@ -67,7 +72,7 @@ export function areaCounts(
 ): { projects: number; goals: number } {
   return {
     projects: projects.filter((p) => p.status === 'active' && p.area_id === area.id).length,
-    goals: goals.filter((g) => g.area_id === area.id).length
+    goals: goals.filter((g) => g.area_id === area.id && !g.done_at).length
   }
 }
 
@@ -88,4 +93,18 @@ export function deleteAreaWarning(area: Area, projects: Project[], goals: Goal[]
 
 export function emptyLevelText(label: string, filtered: boolean): string {
   return `Nada em ${label.toLowerCase()}${filtered ? ' nesta área.' : '.'}`
+}
+
+export function doneGoalsToggle(open: boolean, count: number): string {
+  return `${open ? 'Ocultar concluídas' : 'Mostrar concluídas'} (${count})`
+}
+
+export function goalDoneDate(doneAt: string): string {
+  return `Concluída em ${doneAt.slice(8, 10)}/${doneAt.slice(5, 7)}/${doneAt.slice(0, 4)}`
+}
+
+export function finishGoalWarning(goal: Goal, projects: Project[]): string | null {
+  const active = projects.filter((p) => p.goal_id === goal.id && p.status === 'active').length
+  if (!active) return null
+  return `${active === 1 ? '1 projeto ativo ainda serve' : `${active} projetos ativos ainda servem`} a esta meta. Eles continuam ligados a ela; reveja se ainda fazem sentido.`
 }

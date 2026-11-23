@@ -9,12 +9,22 @@ export interface GoalOptionGroup {
   options: { value: number; label: string }[]
 }
 
-export function goalSelectOptions(goals: Goal[]): GoalOptionGroup[] {
+const DONE_SUFFIX = ' (concluída)'
+
+function selectable(goal: Goal, currentId: number | null | undefined): boolean {
+  return !goal.done_at || goal.id === currentId
+}
+
+function goalName(goal: Goal): string {
+  return goal.done_at ? `${goal.name}${DONE_SUFFIX}` : goal.name
+}
+
+export function goalSelectOptions(goals: Goal[], currentId?: number | null): GoalOptionGroup[] {
   return GOAL_HORIZONS.map((lv) => ({
     label: `H${lv.h} · ${lv.label}`,
     options: goals
-      .filter((g) => g.horizon === lv.h)
-      .map((g) => ({ value: g.id, label: `${lv.emoji} ${g.name}` }))
+      .filter((g) => g.horizon === lv.h && selectable(g, currentId))
+      .map((g) => ({ value: g.id, label: `${lv.emoji} ${goalName(g)}` }))
   })).filter((group) => group.options.length > 0)
 }
 
@@ -34,8 +44,11 @@ export function goalMenuGroups(
     key: `goal-h${lv.h}`,
     label: `H${lv.h} · ${lv.label}`,
     children: goals
-      .filter((g) => g.horizon === lv.h)
-      .map((g) => ({ key: `goal:${g.id}`, label: currentId === g.id ? `✓ ${g.name}` : g.name }))
+      .filter((g) => g.horizon === lv.h && selectable(g, currentId))
+      .map((g) => ({
+        key: `goal:${g.id}`,
+        label: currentId === g.id ? `✓ ${goalName(g)}` : goalName(g)
+      }))
   })).filter((group) => group.children.length > 0)
 }
 

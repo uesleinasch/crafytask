@@ -74,7 +74,7 @@ const PROJECT_FIELD_KEYS = [
 const CONTEXT_FIELD_KEYS = ['icon', 'color']
 const TAG_FIELD_KEYS = ['color']
 const AREA_FIELD_KEYS = ['description', 'icon']
-const GOAL_FIELD_KEYS = ['description', 'horizon', 'area_id']
+const GOAL_FIELD_KEYS = ['description', 'horizon', 'area_id', 'done']
 const PROJECT_STATUSES: ProjectStatus[] = ['active', 'someday', 'done', 'archived']
 
 function unknownFieldsError(fields: Fields, allowed: string[]): ReturnType<typeof fail> | null {
@@ -146,7 +146,10 @@ function validateGoalFields(fields: Fields): ReturnType<typeof fail> | null {
   return (
     unknownFieldsError(fields, GOAL_FIELD_KEYS) ??
     stringFieldTypeError(fields, 'description') ??
-    goalHorizonError(fields)
+    goalHorizonError(fields) ??
+    (fields?.done !== undefined && typeof fields.done !== 'boolean'
+      ? fail('validation', 'fields.done deve ser true (concluir) ou false (reabrir).')
+      : null)
   )
 }
 
@@ -301,6 +304,7 @@ function buildGoalUpdatePatch(
   const horizon = numField(fields, 'horizon')
   if (horizon !== undefined) patch.horizon = horizon as GoalHorizon
   if (areaId !== undefined) patch.area_id = areaId
+  if (typeof fields?.done === 'boolean') patch.done = fields.done
   return patch
 }
 
@@ -373,7 +377,7 @@ export function registerStructureTools(server: McpServer, ctx: ToolContext): voi
     {
       title: 'Gerenciar estrutura',
       description:
-        'Cria, renomeia ou remove projeto, contexto, tag, área ou meta. Projeto aceita fields.goal_id (id ou nome da meta a que serve; null remove). Remover e mesclar tag exigem confirm_token.',
+        'Cria, renomeia ou remove projeto, contexto, tag, área ou meta. Projeto aceita fields.goal_id (id ou nome da meta a que serve; null remove). Meta aceita fields.done no update: true conclui (grava done_at), false reabre; list_structure mostra done_at. Remover e mesclar tag exigem confirm_token.',
       inputSchema: {
         entity: ENTITY,
         action: z.enum(['create', 'update', 'delete', 'merge_tag']),

@@ -132,7 +132,8 @@ em `components/tasks/TaskListView.tsx`, o mesmo miolo da lista de tarefas. Dados
 
 - **Área de foco** (`TrendingUp`): `Select` com as áreas e "Ver em Horizontes →".
 - **Meta** (`Trophy`): o mesmo `Select` agrupado do "Novo projeto" e "Ver em Horizontes →"; o nome
-  longo corta com reticências.
+  longo corta com reticências. Meta concluída não aparece nos seletores (`goalSelectOptions`,
+  `goalMenuGroups`), salvo a do próprio projeto, marcada "(concluída)".
 - **Prazo** (`CalendarDays`): `DatePicker` e "Remover prazo"; o texto diz "Prazo 12/12 · faltam
   8d" (ou "hoje", "venceu há 3d"), âmbar a 7 dias e vermelho vencido, só em projeto ativo.
 - **Cor:** as dez `USER_COLORS` como rádio. Uma cor antiga fora da paleta continua e aparece como
