@@ -37,6 +37,9 @@ export function ensureTaskHistorySchema(db: SqliteLike): void {
   if (!columns.some((column) => column.name === 'session_id')) {
     db.prepare('ALTER TABLE task_history ADD COLUMN session_id TEXT').run()
   }
+  if (!columns.some((column) => column.name === 'body')) {
+    db.prepare('ALTER TABLE task_history ADD COLUMN body TEXT').run()
+  }
 }
 
 function clean(value: string | null | undefined): string | null {
@@ -54,8 +57,8 @@ export function addTaskHistoryEntry(
   const result = db
     .prepare(
       `INSERT INTO task_history
-         (task_id, kind, origin, summary, done, remaining, session_id, task_status)
-       SELECT id, ?, ?, ?, ?, ?, ?, status FROM tasks WHERE id = ?`
+         (task_id, kind, origin, summary, done, remaining, session_id, body, task_status)
+       SELECT id, ?, ?, ?, ?, ?, ?, ?, status FROM tasks WHERE id = ?`
     )
     .run(
       input.kind ?? 'checkpoint',
@@ -64,6 +67,7 @@ export function addTaskHistoryEntry(
       clean(input.done),
       clean(input.remaining),
       clean(input.session_id),
+      input.body ?? null,
       input.task_id
     ) as { changes: number | bigint; lastInsertRowid: number | bigint }
   if (Number(result.changes) === 0) throw new Error(`Task ${input.task_id} não existe.`)
@@ -75,6 +79,7 @@ export interface TaskHistoryQuery {
   includeSubtasks?: boolean
   limit?: number
   before?: string
+  withBody?: boolean
 }
 
 const SCOPE_SELF = 't.id = ?'
@@ -93,21 +98,23 @@ export function listTaskHistory(db: SqliteLike, query: TaskHistoryQuery): TaskHi
   const params: SqliteParam[] = [...scopeParams, ...scopeParams]
   if (query.before) params.push(query.before)
   params.push(limit)
+  const bodyColumn = query.withBody ? ', body' : ''
 
   return db
     .prepare(
       `SELECT id, task_id, task_name, kind, origin, summary, done, remaining,
-              from_status, to_status, created_at, session_id
+              from_status, to_status, created_at, session_id${bodyColumn}
        FROM (
          SELECT h.id AS id, h.task_id AS task_id, t.name AS task_name, h.kind AS kind,
                 h.origin AS origin, h.summary AS summary, h.done AS done,
                 h.remaining AS remaining, NULL AS from_status, h.task_status AS to_status,
-                h.created_at AS created_at, 1 AS source_order, h.session_id AS session_id
+                h.created_at AS created_at, 1 AS source_order, h.session_id AS session_id,
+                h.body AS body
          FROM task_history h JOIN tasks t ON t.id = h.task_id
          WHERE ${scope}
          UNION ALL
          SELECT e.id, e.task_id, t.name, 'status', NULL, NULL, NULL, NULL,
-                e.from_status, e.to_status, e.changed_at, 0, NULL
+                e.from_status, e.to_status, e.changed_at, 0, NULL, NULL
          FROM task_status_events e JOIN tasks t ON t.id = e.task_id
          WHERE ${scope}
        )

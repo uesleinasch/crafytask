@@ -789,7 +789,7 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/components/tasks/HistoryComposer.tsx",
-        "padroes": ["role=\"toolbar\"", "Texto normal", "Lista numerada", "Ctrl+Enter"]
+        "padroes": ["role=\"toolbar\"", "Texto normal", "Lista numerada", "Ctrl\\+Enter"]
       }
     },
     {

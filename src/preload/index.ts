@@ -213,8 +213,8 @@ const api = {
     ipcRenderer.invoke('task:getTimeEntries', taskId),
   getTaskHistory: (taskId: number, includeSubtasks: boolean): Promise<TaskHistoryView> =>
     ipcRenderer.invoke('task:history', taskId, includeSubtasks),
-  addTaskHistory: (taskId: number, summary: string): Promise<number> =>
-    ipcRenderer.invoke('task:addHistory', taskId, summary),
+  addTaskHistory: (taskId: number, doc: string): Promise<number> =>
+    ipcRenderer.invoke('task:addHistory', taskId, doc),
   updateTimeEntry: (id: number, startIso: string, endIso: string): Promise<void> =>
     ipcRenderer.invoke('timeEntry:update', id, startIso, endIso),
   deleteTimeEntry: (id: number): Promise<void> => ipcRenderer.invoke('timeEntry:delete', id),

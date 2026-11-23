@@ -6,7 +6,7 @@ const EMPTY: TaskHistoryView = { entries: [], lastCheckpoint: null }
 
 interface UseTaskHistoryReturn extends TaskHistoryView {
   loading: boolean
-  addNote: (summary: string) => Promise<void>
+  addNote: (doc: string) => Promise<void>
 }
 
 export function useTaskHistory(taskId: number, includeSubtasks: boolean): UseTaskHistoryReturn {
@@ -30,8 +30,8 @@ export function useTaskHistory(taskId: number, includeSubtasks: boolean): UseTas
   }, [load])
 
   const addNote = useCallback(
-    async (summary: string) => {
-      await window.api.addTaskHistory(taskId, summary)
+    async (doc: string) => {
+      await window.api.addTaskHistory(taskId, doc)
       await load()
     },
     [taskId, load]

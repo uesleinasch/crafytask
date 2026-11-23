@@ -32,6 +32,7 @@ export interface TaskHistoryItem {
   to_status: TaskStatus | null
   created_at: string
   session_id?: string | null
+  body?: string | null
 }
 
 export interface TaskHistoryView {
@@ -46,6 +47,7 @@ export interface AddTaskHistoryInput {
   done?: string | null
   remaining?: string | null
   session_id?: string | null
+  body?: string | null
 }
 
 // ===================== TAG =====================

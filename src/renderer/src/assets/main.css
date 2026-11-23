@@ -1730,3 +1730,40 @@ button.ct-health:focus-visible {
   font-size: 12px;
   word-break: break-all;
 }
+
+.ct-history-composer {
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: var(--ant-border-radius);
+  background: var(--ant-color-bg-container);
+  overflow: hidden;
+}
+.ct-history-composer:focus-within {
+  border-color: var(--ant-color-primary);
+}
+.ct-history-composer-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+  background: var(--ant-color-bg-layout);
+}
+.ct-history-composer-body {
+  max-height: 320px;
+  overflow-y: auto;
+}
+.ct-history-note {
+  font-size: var(--ant-font-size);
+  line-height: 1.6;
+}
+.ct-history-note > :first-child {
+  margin-top: 0;
+}
+.ct-history-note img {
+  display: block;
+  max-width: 100%;
+  max-height: 320px;
+  border-radius: var(--ant-border-radius-sm);
+  border: 1px solid var(--ant-color-border-secondary);
+}

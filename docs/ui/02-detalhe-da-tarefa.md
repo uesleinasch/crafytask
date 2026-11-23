@@ -110,8 +110,16 @@ montados por baixo (`display: none`) para não perder edição em curso.
 - **Onde parei** (`Flag`): o último checkpoint da própria task, com resumo, Feito e Falta.
 - **Filtros:** `Segmented` Tudo · Checkpoints · Movimentações; `Switch` Subtarefas (só em task com
   subtarefa, ligado por padrão) junta o histórico das filhas, com o nome da subtarefa em cada item.
-- **Anotar** (`Pencil`; some em task arquivada): `Input.TextArea` com Cancelar e Gravar; grava uma
-  entrada `note` de origem `app` (`task:addHistory`).
+- **Anotar** (`Pencil`; some em task arquivada): abre `HistoryComposer`, um Tiptap com as extensões
+  das notas (`buildExtensions` com a task como dono, então `/`, `@` e imagem colada ou arrastada
+  funcionam igual) e uma barra fixa no topo: estilo do bloco (`Select`), negrito, itálico, tachado,
+  código, listas, lista de tarefas, link (`Popover` com o endereço), menção e imagem. `Ctrl+Enter`
+  grava e `Esc` cancela (atalhos com prioridade baixa, para o `Esc` do menu `@`/`/` fechar o menu
+  primeiro). Grava uma entrada `note` de origem `app` (`task:addHistory`, que recebe o JSON do
+  documento): o main guarda o JSON em `task_history.body` e o Markdown dele em `summary`
+  (`historyNote.ts`), que é o que o MCP e a busca leem.
+- **Anotação formatada:** entrada com `body` aparece num Tiptap só leitura (`HistoryNoteView`, menção
+  clicável); as demais (MCP, anotações antigas) seguem como texto simples.
 - **Linha do tempo** (`Timeline`), da mais nova para a mais antiga: movimentação de status (chips de
   origem e destino, ou "Criada em"), checkpoint, operação e anotação, com a origem (`Bot` Claude,
   `User` Você). Vem de `task:history` (`listTaskHistory`, até 200 itens) e recarrega no

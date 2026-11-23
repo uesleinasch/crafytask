@@ -116,6 +116,19 @@ describe('listTaskHistory', () => {
     expect(items[2].origin).toBeNull()
   })
 
+  it('só devolve o corpo formatado quando pedido', () => {
+    addTaskHistoryEntry(
+      db,
+      { task_id: 1, kind: 'note', summary: '**nota**', body: '{"type":"doc"}' },
+      'app'
+    )
+    const [plain] = listTaskHistory(db, { taskId: 1 })
+    expect(plain).not.toHaveProperty('body')
+    const items = listTaskHistory(db, { taskId: 1, withBody: true })
+    expect(items[0]).toMatchObject({ summary: '**nota**', body: '{"type":"doc"}' })
+    expect(items.find((item) => item.kind === 'status')?.body).toBeNull()
+  })
+
   it('só traz subtarefas quando pedido', () => {
     stamp(addTaskHistoryEntry(db, { task_id: 2, summary: 'parte A' }, 'mcp'), '2026-11-20 11:00:00')
     stamp(addTaskHistoryEntry(db, { task_id: 3, summary: 'alheia' }, 'mcp'), '2026-11-20 11:00:00')
