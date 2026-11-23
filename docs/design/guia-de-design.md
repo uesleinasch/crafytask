@@ -517,7 +517,9 @@ notas:
   e, vazia, diz "Solte aqui". Teclado: espaço pega o card, setas trocam de coluna, espaço solta.
 - **Coluna do Kanban** (todo Kanban): a lista de cards rola dentro da coluna, com altura máxima de
   `max(320px, 100vh − 320px)`, e o cabeçalho fica fixo; assim a barra de rolagem horizontal fica à
-  vista sem rolar a página até o fim.
+  vista sem rolar a página até o fim. O quadro também anda para o lado com `Shift` + rolagem e
+  arrastando o fundo (fora dos cards; cursor de mão), e com as setas quando está em foco — em
+  tela pequena ninguém depende da barra lá embaixo. A dica do projeto cita os dois atalhos.
 - **Coluna lateral (`xl+`):** Próxima ação (nome, status, contextos, Iniciar, trocar por outra
   tarefa), Resultado desejado (editável) e Progresso (barra, abertas, bloqueadas, tempo total,
   prazo). Entre `md` e `lg` os três cards ficam em linha acima das tarefas, e Marcos numa linha

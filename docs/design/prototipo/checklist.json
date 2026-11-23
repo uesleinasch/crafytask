@@ -1222,7 +1222,7 @@
       "check": {
         "tipo": "contem-todos",
         "arquivos": "src/renderer/src/components/tasks/TaskCardViews.tsx",
-        "padroes": ["useDroppable", "useDraggable", "Solte aqui", "overflowY: 'auto'"]
+        "padroes": ["useDroppable", "useDraggable", "Solte aqui", "overflowY: 'auto'", "shiftKey", "setPointerCapture"]
       }
     },
     {
