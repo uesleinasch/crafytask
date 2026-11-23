@@ -81,6 +81,24 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
 .ct-note { font-size: 15px; line-height: 1.65; max-width: 68ch; }
 .ct-note h3 { font-size: 17px; margin: 0 0 8px; }
 .ct-note code { font-family: var(--ct-mono); font-size: 13px; background: var(--ct-primary-soft); padding: 1px 5px; border-radius: 4px; }
+.ct-composer { border: 1px solid var(--ct-border); border-radius: 8px; background: var(--ct-surface); overflow: hidden; }
+.ct-composer:focus-within { border-color: var(--ct-primary); }
+.ct-composer-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; padding: 4px 6px; border-bottom: 1px solid var(--ct-border); background: var(--ct-bg); }
+.ct-composer-sep { width: 1px; height: 18px; margin: 0 4px; background: var(--ct-border); }
+.ct-composer-body { min-height: 96px; max-height: 320px; overflow: auto; padding: 10px 12px; outline: none; }
+.ct-composer-body:empty::before { content: attr(data-placeholder); color: var(--ct-text-3); pointer-events: none; }
+.ct-rich { font-size: 14px; line-height: 1.6; }
+.ct-rich > :first-child { margin-top: 0; }
+.ct-rich > :last-child { margin-bottom: 0; }
+.ct-rich p, .ct-rich ul, .ct-rich ol, .ct-rich blockquote, .ct-rich pre { margin: 0 0 6px; }
+.ct-rich h1, .ct-rich h2, .ct-rich h3 { margin: 4px 0 6px; font-size: 15px; font-weight: 600; }
+.ct-rich h1 { font-size: 17px; } .ct-rich h2 { font-size: 16px; }
+.ct-rich ul, .ct-rich ol { padding-inline-start: 22px; }
+.ct-rich blockquote { padding-inline-start: 10px; border-inline-start: 3px solid var(--ct-border); color: var(--ct-text-2); }
+.ct-rich code { font-family: var(--ct-mono); font-size: 12.5px; background: var(--ct-primary-soft); padding: 1px 5px; border-radius: 4px; }
+.ct-rich pre { font-family: var(--ct-mono); font-size: 12.5px; background: var(--ct-bg); border: 1px solid var(--ct-border); padding: 8px 10px; border-radius: 6px; white-space: pre-wrap; }
+.ct-rich a { color: var(--ct-primary); }
+.ct-rich .ct-mention { color: var(--ct-primary); background: var(--ct-primary-soft); padding: 0 4px; border-radius: 4px; }
 .ct-bulkbar { position: sticky; bottom: 12px; z-index: 5; margin-top: 12px; }
 .ct-bulkbar-inner { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 12px; background: var(--ct-elevated); border: 1px solid var(--ct-border-strong); box-shadow: var(--ct-shadow-float); }
 :focus-visible { outline: 2px solid var(--ct-primary); outline-offset: 2px; }
@@ -1695,7 +1713,8 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       remaining: 'Aba Histórico no detalhe da task e o aviso ao encerrar a sessão.' },
     { id: 8, kind: 'operation', origin: 'mcp', at: 'hoje 18:40', status: 'executando', task: 'MCP-1: histórico da task', summary: 'PR #117 aprovado nos checks e levado para production.' },
     { id: 7, kind: 'status', at: 'hoje 18:40', from: 'executando', to: 'finalizada', task: 'MCP-1: histórico da task' },
-    { id: 6, kind: 'note', origin: 'app', at: 'hoje 18:20', status: 'executando', task: null, summary: 'Lembrar: a release só sai quando o épico inteiro fechar.' },
+    { id: 6, kind: 'note', origin: 'app', at: 'hoje 18:20', status: 'executando', task: null,
+      html: '<p>Lembrar: a release <b>só sai quando o épico inteiro fechar</b>.</p><ul><li>Conferir <code>docs/releases</code></li><li>Avisar no <span class="ct-mention">@Release v3.20</span></li></ul><blockquote>Combinado na revisão de sexta.</blockquote>' },
     { id: 5, kind: 'checkpoint', origin: 'mcp', at: 'hoje 18:12', status: 'executando', task: null,
       summary: 'Épico dividido em 8 subtarefas; começando pela memória da task.',
       done: 'Mapa do que o MCP cobre e do que falta.', remaining: 'Todas as subtarefas.' },
@@ -1704,12 +1723,72 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     { id: 2, kind: 'status', at: 'hoje 11:25', from: null, to: 'inbox', task: null }
   ];
 
+  const COMPOSER_BLOCKS = [
+    { value: 'p', label: 'Texto normal' },
+    { value: 'h1', label: 'Título 1' },
+    { value: 'h2', label: 'Título 2' },
+    { value: 'h3', label: 'Título 3' },
+    { value: 'blockquote', label: 'Citação' },
+    { value: 'pre', label: 'Bloco de código' }
+  ];
+
+  function HistoryComposer({ onCancel, onSave }) {
+    const ref = React.useRef(null);
+    const [block, setBlock] = useState('p');
+    const [empty, setEmpty] = useState(true);
+    useEffect(() => { ref.current && ref.current.focus(); }, []);
+    const run = (cmd, value) => { ref.current.focus(); document.execCommand(cmd, false, value); setEmpty(!ref.current.textContent.trim()); };
+    const keep = (ev) => ev.preventDefault();
+    const tool = (title, icon, onClick) => html`<${Tooltip} title=${title}>
+      <${Button} type="text" size="small" aria-label=${title} icon=${icon} onMouseDown=${keep} onClick=${onClick} />
+    <//>`;
+    const inlineCode = () => {
+      const sel = window.getSelection();
+      const text = sel && sel.toString();
+      run('insertHTML', '<code>' + (text || 'código') + '</code>&nbsp;');
+    };
+    const save = () => { if (!empty) onSave(ref.current.innerHTML); };
+    return html`<${Flex} vertical gap=${8}>
+      <div className="ct-composer">
+        <div className="ct-composer-bar" role="toolbar" aria-label="Formatação">
+          <${Select} size="small" variant="borderless" value=${block} style=${{ width: 136 }} options=${COMPOSER_BLOCKS}
+            onChange=${(v) => { setBlock(v); run('formatBlock', v); }} />
+          <span className="ct-composer-sep" />
+          ${tool('Negrito (Ctrl+B)', html`<${I.BoldOutlined} />`, () => run('bold'))}
+          ${tool('Itálico (Ctrl+I)', html`<${I.ItalicOutlined} />`, () => run('italic'))}
+          ${tool('Tachado', html`<${I.StrikethroughOutlined} />`, () => run('strikeThrough'))}
+          ${tool('Código', html`<${I.CodeOutlined} />`, inlineCode)}
+          <span className="ct-composer-sep" />
+          ${tool('Lista', html`<${I.UnorderedListOutlined} />`, () => run('insertUnorderedList'))}
+          ${tool('Lista numerada', html`<${I.OrderedListOutlined} />`, () => run('insertOrderedList'))}
+          ${tool('Lista de tarefas', html`<${I.CheckSquareOutlined} />`, () => run('insertHTML', '<ul><li>☐ </li></ul>'))}
+          <span className="ct-composer-sep" />
+          ${tool('Link (Ctrl+K)', html`<${I.LinkOutlined} />`, () => run('createLink', 'https://exemplo.com'))}
+          ${tool('Mencionar tarefa ou página (@)', html`<span style=${{ fontWeight: 600 }}>@</span>`, () => run('insertHTML', '<span class="ct-mention">@Release v3.20</span>&nbsp;'))}
+        </div>
+        <div ref=${ref} className="ct-composer-body ct-rich" contentEditable suppressContentEditableWarning
+          aria-label="Anotação" aria-multiline="true" role="textbox"
+          data-placeholder="O que vale lembrar ao retomar esta tarefa?"
+          onInput=${() => setEmpty(!ref.current.textContent.trim())}
+          onKeyDown=${(ev) => {
+            if (ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)) { ev.preventDefault(); save(); }
+            if (ev.key === 'Escape') onCancel();
+          }} />
+      </div>
+      <${Flex} gap=${8} align="center" wrap>
+        <${Text} type="secondary" style=${{ fontSize: 12 }}><span className="ct-mono">Ctrl+Enter</span> grava · <span className="ct-mono">/</span> blocos · <span className="ct-mono">@</span> menciona<//>
+        <div style=${{ flex: 1 }}></div>
+        <${Button} size="small" onClick=${onCancel}>Cancelar<//>
+        <${Button} size="small" type="primary" disabled=${empty} onClick=${save}>Gravar<//>
+      <//>
+    <//>`;
+  }
+
   function TaskHistory({ mode, hasSubtasks }) {
     const { message } = AntApp.useApp();
     const [filter, setFilter] = useState('tudo');
     const [withSubs, setWithSubs] = useState(true);
     const [writing, setWriting] = useState(false);
-    const [draft, setDraft] = useState('');
     const [extra, setExtra] = useState([]);
     const all = [...extra, ...HISTORY_MOCK];
     const last = all.find(e => e.kind === 'checkpoint' && !e.task);
@@ -1746,17 +1825,16 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         dot: html`<${Icon} style=${{ color: 'var(--ct-text-2)', fontSize: 14 }} />`,
         children: html`<${Flex} vertical gap=${4}>
           <${Flex} gap=${6} align="center" wrap><${Text} strong>${kind.label}<//>${origin(e)}<//>
-          <${Text}>${e.summary}<//>
+          ${e.html ? html`<div className="ct-rich" dangerouslySetInnerHTML=${{ __html: e.html }} />` : html`<${Text}>${e.summary}<//>`}
           ${e.done ? html`<${Text} type="secondary"><b>Feito:</b> ${e.done}<//>` : null}
           ${e.remaining ? html`<${Text} type="secondary"><b>Falta:</b> ${e.remaining}<//>` : null}
           ${meta(e)}
         <//>`
       };
     };
-    const save = () => {
-      if (!draft.trim()) return;
-      setExtra([{ id: Date.now(), kind: 'note', origin: 'app', at: 'agora', status: 'executando', task: null, summary: draft.trim() }, ...extra]);
-      setDraft(''); setWriting(false); message.success('Anotação gravada no histórico');
+    const save = (noteHtml) => {
+      setExtra([{ id: Date.now(), kind: 'note', origin: 'app', at: 'agora', status: 'executando', task: null, html: noteHtml }, ...extra]);
+      setWriting(false); message.success('Anotação gravada no histórico');
     };
     return html`<${Flex} vertical gap=${16} style=${{ maxWidth: '76ch' }}>
       ${last ? html`<${Card} size="small" title=${html`<${Space} size=${6}><${I.FlagOutlined} />Onde parei<//>`} extra=${html`<${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12 }}>${last.at}<//>`}>
@@ -1772,10 +1850,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         <div style=${{ flex: 1 }}></div>
         <${Button} size="small" icon=${html`<${I.EditOutlined} />`} onClick=${() => setWriting(!writing)}>Anotar<//>
       <//>
-      ${writing ? html`<${Flex} vertical gap=${8}>
-        <${Input.TextArea} autoFocus autoSize=${{ minRows: 2, maxRows: 6 }} value=${draft} onChange=${ev => setDraft(ev.target.value)} placeholder="O que vale lembrar ao retomar esta tarefa?" />
-        <${Flex} gap=${8} justify="flex-end"><${Button} size="small" onClick=${() => { setWriting(false); setDraft(''); }}>Cancelar<//><${Button} size="small" type="primary" disabled=${!draft.trim()} onClick=${save}>Gravar<//><//>
-      <//>` : null}
+      ${writing ? html`<${HistoryComposer} onCancel=${() => setWriting(false)} onSave=${save} />` : null}
       ${shown.length === 0
         ? html`<${Empty} image=${Empty.PRESENTED_IMAGE_SIMPLE} description="Nada no histórico com este filtro" />`
         : html`<${Timeline} items=${shown.map(item)} />`}
