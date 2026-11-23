@@ -152,7 +152,12 @@ com `TriangleAlert`), quando o projeto está ativo, tem tarefa aberta e nenhuma 
 projeto), Tabela/Cards/Kanban, agrupar (sem "por projeto"), menu de contexto e ações em massa, só
 com as tarefas do projeto e sem a coluna/rótulo de projeto. No topo, o campo **"Adicionar tarefa a
 {projeto}…"** (Enter cria a tarefa já em Próximas). O **Kanban** aqui vale em qualquer aba e tem
-uma coluna por status, vazias inclusive ("Nada aqui"), sem reordenar colunas. Com marcos, o
+uma coluna por status, vazias inclusive ("Nada aqui"), sem reordenar colunas. O card **arrasta**
+para outra coluna (`@dnd-kit`, `DraggableBoard` em `TaskCardViews.tsx`; mouse a partir de 6px, para
+o clique continuar abrindo a tarefa, e teclado: espaço pega, setas pulam de coluna, espaço solta) e
+o status muda por `task:updateStatus`, com as regras de sempre (bloqueada não entra em Executando:
+o erro aparece e o card volta). A coluna sob o card ganha borda e fundo primários e, vazia, diz
+"Solte aqui". A dica acima do quadro cita o arrastar e os atalhos de rolagem. Com marcos, o
 agrupamento ganha **Agrupar por marco** (ordem dos marcos, "Sem marco" por último) e o menu de
 contexto, **Marco ▸**. Visão e agrupamento
 do projeto têm chaves próprias em `localStorage` (`ticktask:projectTaskView`,
