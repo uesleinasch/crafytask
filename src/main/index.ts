@@ -244,6 +244,7 @@ import { generateToken } from './mcp/config'
 import { registerWriteEffects } from './mcp/effects'
 import { createDrawingRenderBridge } from './drawingRenderBridge'
 import { TASK_HISTORY_MAX_LIMIT } from './taskHistoryQueries'
+import { historyNoteFromDoc } from './historyNote'
 import type { TaskHistoryView } from '@shared/types'
 import type { DrawingRenderResult } from '@shared/drawingRender'
 import {
@@ -1139,12 +1140,20 @@ function setupIpcHandlers(): void {
   ipcMain.handle(
     'task:history',
     (_, taskId: number, includeSubtasks: boolean): TaskHistoryView => ({
-      entries: getTaskHistory({ taskId, includeSubtasks, limit: TASK_HISTORY_MAX_LIMIT }),
+      entries: getTaskHistory({
+        taskId,
+        includeSubtasks,
+        limit: TASK_HISTORY_MAX_LIMIT,
+        withBody: true
+      }),
       lastCheckpoint: getTaskLastCheckpoint(taskId)
     })
   )
-  ipcMain.handle('task:addHistory', (_, taskId: number, summary: string) =>
-    addTaskHistory({ task_id: taskId, kind: 'note', summary: String(summary ?? '') }, 'app')
+  ipcMain.handle('task:addHistory', (_, taskId: number, doc: string) =>
+    addTaskHistory(
+      { task_id: taskId, kind: 'note', ...historyNoteFromDoc(String(doc ?? '')) },
+      'app'
+    )
   )
   ipcMain.handle('timeEntry:update', (_, id: number, startIso: string, endIso: string) => {
     editTimeEntry(id, startIso, endIso)

@@ -21,7 +21,23 @@ const ImageWithAsset = Image.extend({
   }
 })
 
-export function buildExtensions(owner: NotesOwner): Extensions {
+export function buildViewExtensions(): Extensions {
+  return [
+    StarterKit,
+    Highlight,
+    TextStyle,
+    FontSize,
+    TaskList,
+    TaskItem.configure({ nested: true }),
+    TableKit,
+    MentionExtension,
+    ImageWithAsset
+  ]
+}
+
+const NOTES_PLACEHOLDER = 'Escreva suas anotações... (digite / para comandos)'
+
+export function buildExtensions(owner: NotesOwner, placeholder = NOTES_PLACEHOLDER): Extensions {
   return [
     // StarterKit v3: paragraph, heading, listas, blockquote, codeBlock, hr,
     // bold, italic, strike, code, link, underline, histórico (undo/redo).
@@ -32,7 +48,7 @@ export function buildExtensions(owner: NotesOwner): Extensions {
     FontSize,
     TaskList,
     TaskItem.configure({ nested: true }),
-    Placeholder.configure({ placeholder: 'Escreva suas anotações... (digite / para comandos)' }),
+    Placeholder.configure({ placeholder }),
     TableKit.configure({ table: { resizable: true } }),
     SlashCommand.configure({ owner }),
     MentionExtension,

@@ -164,7 +164,7 @@ interface API {
   updateStatus: (id: number, status: TaskStatus) => Promise<void>
   getTimeEntries: (taskId: number) => Promise<TimeEntry[]>
   getTaskHistory: (taskId: number, includeSubtasks: boolean) => Promise<TaskHistoryView>
-  addTaskHistory: (taskId: number, summary: string) => Promise<number>
+  addTaskHistory: (taskId: number, doc: string) => Promise<number>
   updateTimeEntry: (id: number, startIso: string, endIso: string) => Promise<void>
   deleteTimeEntry: (id: number) => Promise<void>
   listTimeEntriesRange: (fromIso: string, toIso: string) => Promise<TimeEntrySpan[]>
