@@ -2119,7 +2119,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           <${Form.Item} label="Resultado desejado" extra="Como fica o mundo quando o projeto estiver pronto?"><${Input.TextArea} autoSize=${{ minRows: 2, maxRows: 4 }} value=${draft.outcome} onChange=${e => setDraft({ ...draft, outcome: e.target.value })} /><//>
           <${Form.Item} label="Descrição"><${Input.TextArea} autoSize=${{ minRows: 2, maxRows: 4 }} value=${draft.description} onChange=${e => setDraft({ ...draft, description: e.target.value })} /><//>
           <${Form.Item} label="Área de foco"><${Select} allowClear placeholder="Sem área" value=${draft.area} onChange=${v => setDraft({ ...draft, area: v })} options=${AREAS.map(a => ({ value: a, label: a }))} /><//>
-          <${Form.Item} label="Meta" extra="A que meta, visão ou propósito este projeto serve?"><${Select} allowClear placeholder="Sem meta" value=${draft.goal} onChange=${v => setDraft({ ...draft, goal: v })} options=${goalSelectOptions()} /><//>
+          <${Form.Item} label="Meta" extra="A que meta, visão ou propósito este projeto serve?"><${Select} allowClear placeholder="Sem meta" value=${draft.goal} onChange=${v => setDraft({ ...draft, goal: v })} options=${goalSelectOptions(draft.goal)} /><//>
           <${Form.Item} label="Cor" style=${{ marginBottom: 0 }}><${Flex} gap=${8} wrap="wrap" role="radiogroup" aria-label="Cor">${['#E5484D', '#A84803', '#A15C00', '#0B7A50', '#0F6E7A', '#2A62D6', '#5B47EB', '#7647B0', '#B8327A', '#5D6B82'].map(c => html`<button key=${c} type="button" role="radio" aria-checked=${draft.color === c} aria-label=${'Cor ' + c} onClick=${() => setDraft({ ...draft, color: c })}
             style=${{ width: 26, height: 26, borderRadius: '50%', background: c, border: 'none', cursor: 'pointer', boxShadow: draft.color === c ? '0 0 0 2px var(--ct-surface), 0 0 0 4px var(--ct-text)' : 'none' }}></button>`)}<//><//>
         <//>` : null}
@@ -2261,7 +2261,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           <a onClick=${() => go('horizontes')}>Ver em Horizontes →</a>
         <//>`}>${p.area || 'Área de foco'}<//>
       <${PropPill} label="Meta" icon="TrophyOutlined" muted=${!p.goal} content=${html`<${Flex} vertical gap=${8}>
-          <${Select} allowClear placeholder="Sem meta" value=${p.goal || undefined} onChange=${v => set({ goal: v || null })} options=${goalSelectOptions()} />
+          <${Select} allowClear placeholder="Sem meta" value=${p.goal || undefined} onChange=${v => set({ goal: v || null })} options=${goalSelectOptions(p.goal)} />
           <${Text} type="secondary" style=${{ fontSize: 12 }}>A meta, visão ou propósito a que este projeto serve.<//>
           <a onClick=${() => go('horizontes')}>Ver em Horizontes →</a>
         <//>`}><span className="ct-ellipsis" style=${{ maxWidth: 220 }}>${p.goal ? goalById(p.goal).name : 'Meta'}</span><//>
@@ -2905,7 +2905,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     { h: 5, label: 'Propósito', sub: 'Princípios e razão de ser', icon: 'StarOutlined', emoji: '✨' }
   ];
   const goalById = id => GOALS.find(g => g.id === id) || { name: '—', horizon: 3 };
-  const goalSelectOptions = () => HZ.slice(3).map(lv => ({ label: 'H' + lv.h + ' · ' + lv.label, options: GOALS.filter(g => g.horizon === lv.h).map(g => ({ value: g.id, label: lv.emoji + ' ' + g.name })) })).filter(o => o.options.length);
+  const goalSelectOptions = current => HZ.slice(3).map(lv => ({ label: 'H' + lv.h + ' · ' + lv.label, options: GOALS.filter(g => g.horizon === lv.h && (!g.doneAt || g.id === current)).map(g => ({ value: g.id, label: lv.emoji + ' ' + g.name + (g.doneAt ? ' (concluída)' : '') })) })).filter(o => o.options.length);
   const goalMenuGroups = (current, prefix) => HZ.slice(3).map(lv => ({ type: 'group', key: 'g' + lv.h, label: 'H' + lv.h + ' · ' + lv.label, children: GOALS.filter(g => g.horizon === lv.h && (!g.doneAt || g.id === current)).map(g => ({ key: prefix + g.id, label: (current === g.id ? '✓ ' : '') + g.name + (g.doneAt ? ' (concluída)' : '') })) })).filter(o => o.children.length);
   const HZ_RAMP = {
     light: [['#F1EFFF', '#4B3BC9'], ['#E4E0FF', '#4433B8'], ['#D5CFFF', '#3B2BA6'], ['#C3BAFF', '#2E218C'], ['#AFA3FA', '#24196F'], ['#9D8FF5', '#170F4D']],

@@ -34,6 +34,8 @@ import {
 import type { Area, Goal, GoalHorizon } from '@shared/types'
 import { localDateString } from '@shared/dueState'
 import { LiveDot } from '@renderer/components/chips/LiveDot'
+import { chipStyle } from '@renderer/components/chips/chipStyle'
+import { STATUS_ICONS } from '@renderer/components/chips/statusMeta'
 import { AreaModal } from '@renderer/components/horizons/AreaModal'
 import { GoalModal } from '@renderer/components/horizons/GoalModal'
 import { HorizonChip } from '@renderer/components/horizons/HorizonChip'
@@ -439,7 +441,9 @@ export function HorizonsPage(): React.JSX.Element {
     window.api
       .updateGoal(goal.id, { done })
       .then(() => {
-        message.success(done ? 'Meta concluída. Ela fica em "Concluídas".' : 'Meta reaberta')
+        message.success(
+          done ? 'Meta concluída. Ela sai da lista e fica em "Concluídas".' : 'Meta reaberta'
+        )
         load()
       })
       .catch((error) => message.error(errorMessage(error)))
@@ -522,6 +526,7 @@ export function HorizonsPage(): React.JSX.Element {
   })
 
   const doneColors = STATUS_COLORS.finalizada[mode]
+  const DoneIcon = STATUS_ICONS.finalizada
 
   const goalRow = (lv: HorizonDef, goal: Goal): React.ReactNode => {
     const done = !!goal.done_at
@@ -548,20 +553,17 @@ export function HorizonsPage(): React.JSX.Element {
               </button>
               {areaTag(goal.area_id)}
               {goal.done_at && (
-                <Tag
-                  bordered={false}
-                  icon={<CircleCheck {...ICON} />}
-                  style={{
-                    margin: 0,
-                    color: doneColors.fg,
-                    background: doneColors.bg,
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 4
-                  }}
+                <span
+                  style={chipStyle(
+                    doneColors.fg,
+                    doneColors.bg,
+                    'transparent',
+                    token.borderRadiusSM
+                  )}
                 >
+                  <DoneIcon size={13} strokeWidth={2} aria-hidden />
                   {goalDoneDate(goal.done_at)}
-                </Tag>
+                </span>
               )}
             </Flex>
             {goal.description && !done && (
@@ -594,7 +596,7 @@ export function HorizonsPage(): React.JSX.Element {
             <Button
               size="small"
               type="text"
-              aria-label={`${toggleLabel}: ${goal.name}`}
+              aria-label={`${done ? 'Reabrir' : 'Concluir'} ${goal.name}`}
               icon={done ? <Undo2 {...ICON} /> : <Check {...ICON} />}
               onClick={(e) => {
                 e.stopPropagation()
@@ -640,8 +642,11 @@ export function HorizonsPage(): React.JSX.Element {
               aria-expanded={open}
               onClick={() => setShowDone({ ...showDone, [lv.h]: !open })}
             >
-              <span style={{ fontVariantNumeric: 'tabular-nums' }}>
-                {doneGoalsToggle(open, doneList.length)}
+              {doneGoalsToggle(open)}{' '}
+              <span
+                style={{ fontFamily: token.fontFamilyCode, fontVariantNumeric: 'tabular-nums' }}
+              >
+                ({doneList.length})
               </span>
             </Button>
             {open && <div>{doneList.map((goal) => goalRow(lv, goal))}</div>}

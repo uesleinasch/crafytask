@@ -85,9 +85,12 @@ describe('metas concluídas', () => {
   })
 
   it('textos do botão, da data e do aviso ao concluir', () => {
-    expect(doneGoalsToggle(false, 2)).toBe('Mostrar concluídas (2)')
-    expect(doneGoalsToggle(true, 2)).toBe('Ocultar concluídas (2)')
+    expect(doneGoalsToggle(false)).toBe('Mostrar concluídas')
+    expect(doneGoalsToggle(true)).toBe('Ocultar concluídas')
     expect(goalDoneDate('2026-10-30 12:00:00')).toBe('Concluída em 30/10/2026')
+    const late = new Date(2026, 9, 30, 23, 30)
+    const utc = late.toISOString().slice(0, 19).replace('T', ' ')
+    expect(goalDoneDate(utc)).toBe('Concluída em 30/10/2026')
     const linked = [
       { id: 1, status: 'active', goal_id: 1 },
       { id: 2, status: 'active', goal_id: 1 },

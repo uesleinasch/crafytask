@@ -95,12 +95,14 @@ export function emptyLevelText(label: string, filtered: boolean): string {
   return `Nada em ${label.toLowerCase()}${filtered ? ' nesta área.' : '.'}`
 }
 
-export function doneGoalsToggle(open: boolean, count: number): string {
-  return `${open ? 'Ocultar concluídas' : 'Mostrar concluídas'} (${count})`
+export function doneGoalsToggle(open: boolean): string {
+  return open ? 'Ocultar concluídas' : 'Mostrar concluídas'
 }
 
 export function goalDoneDate(doneAt: string): string {
-  return `Concluída em ${doneAt.slice(8, 10)}/${doneAt.slice(5, 7)}/${doneAt.slice(0, 4)}`
+  const date = new Date(`${doneAt.replace(' ', 'T')}Z`)
+  const pad = (n: number): string => String(n).padStart(2, '0')
+  return `Concluída em ${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}`
 }
 
 export function finishGoalWarning(goal: Goal, projects: Project[]): string | null {
