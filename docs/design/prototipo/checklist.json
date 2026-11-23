@@ -1230,6 +1230,16 @@
       }
     },
     {
+      "id": "F5.27",
+      "fase": "F5",
+      "titulo": "Horizontes: concluir e reabrir meta, seção Mostrar concluídas e seletores sem meta concluída",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/pages/HorizonsPage.tsx",
+        "padroes": ["Marcar como concluída", "Mostrar concluídas", "Reabrir"]
+      }
+    },
+    {
       "id": "F5.24",
       "fase": "F5",
       "titulo": "Metas com destino conferidas (Horizontes, lista e detalhe do projeto)",

@@ -2892,6 +2892,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
   const GOALS = [
     { id: 1, horizon: 3, name: 'Lançar o CrafyTask 4.0 com a nova interface', area: 'Produtos pessoais', description: 'Ant Design, tema escuro e app responsivo até março.' },
     { id: 2, horizon: 3, name: 'Correr 10 km abaixo de 55 min', area: 'Saúde', description: '' },
+    { id: 9, horizon: 3, name: 'Publicar o Day Zero Playbook em inglês', area: 'Carreira', description: 'Tradução revisada e site no ar.', doneAt: '2026-10-30' },
     { id: 3, horizon: 4, name: 'Ser referência em gestão de projetos open source', area: 'Carreira', description: 'Day Zero Playbook adotado por outros times.\nPalestrar duas vezes por ano.' },
     { id: 4, horizon: 5, name: 'Construir ferramentas que devolvem tempo às pessoas', area: null, description: 'Simplicidade antes de recurso.' }
   ];
@@ -2905,7 +2906,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
   ];
   const goalById = id => GOALS.find(g => g.id === id) || { name: '—', horizon: 3 };
   const goalSelectOptions = () => HZ.slice(3).map(lv => ({ label: 'H' + lv.h + ' · ' + lv.label, options: GOALS.filter(g => g.horizon === lv.h).map(g => ({ value: g.id, label: lv.emoji + ' ' + g.name })) })).filter(o => o.options.length);
-  const goalMenuGroups = (current, prefix) => HZ.slice(3).map(lv => ({ type: 'group', key: 'g' + lv.h, label: 'H' + lv.h + ' · ' + lv.label, children: GOALS.filter(g => g.horizon === lv.h).map(g => ({ key: prefix + g.id, label: (current === g.id ? '✓ ' : '') + g.name })) })).filter(o => o.children.length);
+  const goalMenuGroups = (current, prefix) => HZ.slice(3).map(lv => ({ type: 'group', key: 'g' + lv.h, label: 'H' + lv.h + ' · ' + lv.label, children: GOALS.filter(g => g.horizon === lv.h && (!g.doneAt || g.id === current)).map(g => ({ key: prefix + g.id, label: (current === g.id ? '✓ ' : '') + g.name + (g.doneAt ? ' (concluída)' : '') })) })).filter(o => o.children.length);
   const HZ_RAMP = {
     light: [['#F1EFFF', '#4B3BC9'], ['#E4E0FF', '#4433B8'], ['#D5CFFF', '#3B2BA6'], ['#C3BAFF', '#2E218C'], ['#AFA3FA', '#24196F'], ['#9D8FF5', '#170F4D']],
     dark: [['#1E1B33', '#B9B0FF'], ['#262143', '#C3BBFF'], ['#2F2854', '#CEC7FF'], ['#3A3168', '#D9D3FF'], ['#463B80', '#E6E2FF'], ['#5B4CA8', '#FFFFFF']]
@@ -2929,7 +2930,9 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const todayTasks = TASKS.filter(t => t.today && t.status !== 'finalizada' && inArea(t.project ? P[t.project].area : null));
     const projs = projectsActive.filter(p => inArea(p.area));
     const shownAreas = areas.filter(a => inArea(a.name));
-    const goalsOf = h => goals.filter(g => g.horizon === h && (!areaFilter || g.area === areaFilter || g.area === null));
+    const goalsOf = h => goals.filter(g => g.horizon === h && !g.doneAt && (!areaFilter || g.area === areaFilter || g.area === null));
+    const doneGoalsOf = h => goals.filter(g => g.horizon === h && g.doneAt && (!areaFilter || g.area === areaFilter || g.area === null));
+    const [showDone, setShowDone] = useState({});
     const areaDef = name => areas.find(a => a.name === name);
     const scrollTo = h => { try { document.getElementById('hz-' + h).scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {} };
 
@@ -2993,7 +2996,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         if (key === 'projects') go('projetos');
         if (key === 'edit') setAreaModal({ ...a, original: a.name });
         if (key === 'delete') {
-          const np = PROJECTS.filter(p => p.area === a.name).length, ng = goals.filter(g => g.area === a.name).length;
+          const np = PROJECTS.filter(p => p.area === a.name).length, ng = goals.filter(g => g.area === a.name && !g.doneAt).length;
           modal.confirm({ title: 'Excluir a área ' + a.name + '?', content: np || ng ? `${np} projeto(s) e ${ng} meta(s) ficam sem área. Nada mais é apagado.` : 'Nenhum projeto ou meta usa esta área.',
             okText: 'Excluir', okButtonProps: { danger: true }, cancelText: 'Cancelar', onOk: () => { setAreas(as => as.filter(x => x.name !== a.name)); if (areaFilter === a.name) setAreaFilter(null); message.success('Área excluída'); } });
         }
@@ -3001,7 +3004,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     });
     const h2 = levelCard(HZ[2], shownAreas.length, shownAreas.length
       ? html`<div className="ct-grid-auto" style=${{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 240px), 1fr))', padding: '4px 0' }}>${shownAreas.map(a => {
-          const np = projectsActive.filter(p => p.area === a.name).length, ng = goals.filter(g => g.area === a.name).length;
+          const np = projectsActive.filter(p => p.area === a.name).length, ng = goals.filter(g => g.area === a.name && !g.doneAt).length;
           return html`<${Dropdown} key=${a.name} menu=${areaMenu(a)} trigger=${['contextMenu']}><div className=${'ct-hzarea' + (areaFilter === a.name ? ' on' : '')} role="button" tabIndex=${0} onClick=${() => setAreaFilter(areaFilter === a.name ? null : a.name)}>
             <span className="ct-emoji-box">${a.emoji}</span>
             <div style=${{ minWidth: 0, flex: 1 }}>
@@ -3014,12 +3017,22 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       : empty('Nenhuma área de foco.', null), () => setAreaModal({ name: '', emoji: '🎯', description: '' }));
 
     const projectsOfGoal = g => PROJECTS.filter(p => p.goal === g.id && p.status !== 'archived');
+    const finishGoal = g => {
+      const act = PROJECTS.filter(p => p.goal === g.id && p.status === 'active').length;
+      const doIt = () => { setGoals(gs => gs.map(x => x.id === g.id ? { ...x, doneAt: TODAY } : x)); message.success('Meta concluída. Ela sai da lista e fica em "Concluídas".'); };
+      if (!act) { doIt(); return; }
+      modal.confirm({ title: 'Concluir "' + g.name + '"?', content: act + (act === 1 ? ' projeto ativo ainda serve' : ' projetos ativos ainda servem') + ' a esta meta. Eles continuam ligados a ela; reveja se ainda fazem sentido.', okText: 'Concluir', cancelText: 'Cancelar', onOk: doIt });
+    };
+    const reopenGoal = g => { setGoals(gs => gs.map(x => x.id === g.id ? { ...x, doneAt: null } : x)); message.success('Meta reaberta'); };
     const openGoalProjects = g => goWith(go, 'projetos', { goal: g.id });
     const goalMenu = g => ({
       items: [
         { key: 'projects', icon: createElement(I.FolderOutlined), label: 'Ver projetos da meta' },
         { key: 'edit', icon: createElement(I.EditOutlined), label: 'Editar' },
-        { key: 'move', icon: createElement(I.SwapOutlined), label: 'Mover para', children: HZ.slice(3).map(lv => ({ key: 'move:' + lv.h, label: (g.horizon === lv.h ? '✓ ' : '') + 'H' + lv.h + ' — ' + lv.label })) },
+        g.doneAt
+          ? { key: 'reopen', icon: createElement(I.UndoOutlined), label: 'Reabrir' }
+          : { key: 'done', icon: createElement(I.CheckCircleOutlined), label: 'Marcar como concluída' },
+        g.doneAt ? null : { key: 'move', icon: createElement(I.SwapOutlined), label: 'Mover para', children: HZ.slice(3).map(lv => ({ key: 'move:' + lv.h, label: (g.horizon === lv.h ? '✓ ' : '') + 'H' + lv.h + ' — ' + lv.label })) },
         { type: 'divider' },
         { key: 'delete', icon: createElement(I.DeleteOutlined), label: 'Excluir…', danger: true }
       ],
@@ -3028,21 +3041,32 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         const [k, v] = key.split(':');
         if (k === 'projects') openGoalProjects(g);
         if (k === 'edit') setGoalModal({ ...g });
+        if (k === 'done') finishGoal(g);
+        if (k === 'reopen') reopenGoal(g);
         if (k === 'move') { setGoals(gs => gs.map(x => x.id === g.id ? { ...x, horizon: Number(v) } : x)); message.success('Movida para H' + v); }
         if (k === 'delete') modal.confirm({ title: 'Excluir "' + g.name + '"?', content: projectsOfGoal(g).length ? projectsOfGoal(g).length + ' projeto(s) ficam sem meta. Nada mais é apagado.' : 'Nenhum projeto serve a esta meta.', okText: 'Excluir', okButtonProps: { danger: true }, cancelText: 'Cancelar', onOk: () => { setGoals(gs => gs.filter(x => x.id !== g.id)); message.success('Meta excluída'); } });
       }
     });
-    const goalLevel = lv => { const list = goalsOf(lv.h); return levelCard(lv, list.length, list.length
-      ? html`<${List} size="small" split=${false} dataSource=${list} renderItem=${g => { const np = projectsOfGoal(g).length; return html`<${Dropdown} menu=${goalMenu(g)} trigger=${['contextMenu']}><div className="ct-hzgoal" role="button" tabIndex=${0} aria-label=${'Ver projetos de ' + g.name} onClick=${() => openGoalProjects(g)} onKeyDown=${e => { if (e.key === 'Enter') openGoalProjects(g); }}>
-          <span style=${{ fontSize: 18 }}>${lv.emoji}</span>
+    const goalRow = (lv, g) => { const np = projectsOfGoal(g).length; const done = !!g.doneAt; return html`<${Dropdown} key=${g.id} menu=${goalMenu(g)} trigger=${['contextMenu']}><div className="ct-hzgoal" role="button" tabIndex=${0} aria-label=${'Ver projetos de ' + g.name} onClick=${() => openGoalProjects(g)} onKeyDown=${e => { if (e.key === 'Enter') openGoalProjects(g); }}>
+          <span style=${{ fontSize: 18, opacity: done ? 0.5 : 1 }}>${lv.emoji}</span>
           <div style=${{ flex: 1, minWidth: 0 }}>
-            <${Flex} align="center" gap=${8} wrap="wrap"><${Text} strong style=${{ fontWeight: 500 }}>${g.name}<//>${areaTag(g.area)}<//>
-            ${g.description ? html`<${Text} type="secondary" style=${{ whiteSpace: 'pre-wrap', fontSize: 13, display: 'block', marginTop: 2 }}>${g.description}<//>` : null}
+            <${Flex} align="center" gap=${8} wrap="wrap"><${Text} strong style=${{ fontWeight: 500, color: done ? 'var(--ct-text-3)' : undefined }}>${g.name}<//>${areaTag(g.area)}
+              ${done ? html`<${Chip} def=${{ ...STATUS.finalizada, label: 'Concluída em ' + fmtDate(g.doneAt) + '/' + g.doneAt.slice(0, 4) }} mode=${mode} />` : null}<//>
+            ${g.description && !done ? html`<${Text} type="secondary" style=${{ whiteSpace: 'pre-wrap', fontSize: 13, display: 'block', marginTop: 2 }}>${g.description}<//>` : null}
             <${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12, display: 'block', marginTop: 2 }}>${np ? np + ' projeto' + (np === 1 ? '' : 's') : 'Nenhum projeto'}<//>
           </div>
+          <${Tooltip} title=${done ? 'Reabrir' : 'Marcar como concluída'}><${Button} size="small" type="text" aria-label=${done ? 'Reabrir ' + g.name : 'Concluir ' + g.name} icon=${done ? html`<${I.UndoOutlined} />` : html`<${I.CheckOutlined} />`} onClick=${e => { e.stopPropagation(); done ? reopenGoal(g) : finishGoal(g); }} /><//>
           <${Dropdown} menu=${goalMenu(g)} trigger=${['click']}><${Button} size="small" type="text" aria-label="Mais ações" icon=${html`<${I.EllipsisOutlined} />`} onClick=${e => e.stopPropagation()} /><//>
-        </div><//>`; }} />`
-      : empty('Nada em ' + lv.label.toLowerCase() + (areaFilter ? ' nesta área.' : '.'), null), () => setGoalModal({ name: '', horizon: lv.h, area: areaFilter, description: '' })); };
+        </div><//>`; };
+    const goalLevel = lv => { const list = goalsOf(lv.h); const done = doneGoalsOf(lv.h); const open = !!showDone[lv.h];
+      const doneToggle = done.length ? html`<div style=${{ marginTop: list.length ? 4 : 0 }}>
+          <${Button} type="link" size="small" style=${{ paddingInline: 8 }} icon=${html`<${I.CheckCircleOutlined} />`} aria-expanded=${open} onClick=${() => setShowDone({ ...showDone, [lv.h]: !open })}>
+            ${open ? 'Ocultar concluídas' : 'Mostrar concluídas'} <span className="ct-mono">(${done.length})</span><//>
+          ${open ? html`<div>${done.map(g => goalRow(lv, g))}</div>` : null}
+        </div>` : null;
+      return levelCard(lv, list.length, html`${list.length
+        ? html`<div>${list.map(g => goalRow(lv, g))}</div>`
+        : empty('Nada em ' + lv.label.toLowerCase() + (areaFilter ? ' nesta área.' : '.'), null)}${doneToggle}`, () => setGoalModal({ name: '', horizon: lv.h, area: areaFilter, description: '' })); };
 
     const rail = html`<nav className="ct-hzrail" aria-label="Níveis">
       ${HZ.map(lv => html`<button key=${lv.h} type="button" onClick=${() => scrollTo(lv.h)}><${HzChip} h=${lv.h} mode=${mode} /><span>${lv.label}</span></button>`)}
