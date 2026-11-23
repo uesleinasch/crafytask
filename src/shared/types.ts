@@ -202,6 +202,7 @@ export interface Goal {
   area_id?: number
   area_name?: string
   project_count?: number
+  done_at?: string | null
   created_at: string
   updated_at: string
 }
@@ -218,6 +219,7 @@ export interface UpdateGoalInput {
   description?: string
   horizon?: GoalHorizon
   area_id?: number | null
+  done?: boolean
 }
 
 // ===================== RECURRENCE =====================

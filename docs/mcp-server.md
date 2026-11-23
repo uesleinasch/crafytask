@@ -70,7 +70,7 @@ Ao subir a ponte com `ELECTRON_RUN_AS_NODE=1`, essa variável é removida do amb
 | `delete_tasks` | Deleta tasks permanentemente, incluindo subtarefas em cascata; sempre exige `confirm_token`. |
 | `organize_overview` | Retrato GTD: inbox, sem projeto, atrasadas, bloqueadas, someday, métricas. Atrasada = prazo antes de `today`, ou em `today` com `due_time` já passado. |
 | `list_structure` | Projetos, contextos, tags (com uso), áreas e metas num só payload. |
-| `manage_structure` | Cria/atualiza/remove projeto, contexto, tag, área ou meta; projeto aceita `fields.goal_id` (id ou nome da meta; `null` remove); remover e mesclar tag exigem `confirm_token`. |
+| `manage_structure` | Cria/atualiza/remove projeto, contexto, tag, área ou meta; projeto aceita `fields.goal_id` (id ou nome da meta; `null` remove); remover e mesclar tag exigem `confirm_token`. Meta aceita `fields.done` no `update` (`true` conclui e grava `done_at`, `false` reabre); `list_structure` traz `done_at`. |
 | `project_milestones` | Marcos do projeto: `list` (em ordem: início, desenvolvimento por data, fim; com tasks feitas/total), `create` (`project`, `name`, `kind` `inicio`/`desenvolvimento`/`fim`, no máximo um início e um fim; `due_date`, `description`), `update`, `complete`/`reopen` (concluir é manual) e `delete` (exige `confirm_token`; as tasks ficam no projeto, sem marco). |
 | `task_dependencies` | `add` faz uma task depender de outra (fica bloqueada até a outra ser finalizada) e recusa ciclo; `remove` desfaz. |
 | `time_entries` | Corrige o tempo registrado: `update` muda início e fim de uma sessão encerrada, `delete` apaga uma sessão, `reset` zera o tempo da task. `delete` e `reset` exigem `confirm_token`. O worklog do Jira acompanha. |

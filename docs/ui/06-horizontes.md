@@ -47,6 +47,13 @@ Cada `Card` mostra o chip, o nome, o contador em mono e o subtítulo; H2 a H5 t�
   arquivados). Clicar na linha ou no nome (um botão, para o teclado) abre os projetos dela
   (`/projects?meta=<id>`). Menu: Ver projetos da meta · Editar · Mover para ▸ (H3/H4/H5, com ✓ no
   atual) · Excluir…, que diz quantos projetos (arquivados inclusive) ficam sem meta. **Adicionar** abre o diálogo já no nível da seção.
+- **Concluir meta:** botão `Check` na linha e "Marcar como concluída" no menu gravam
+  `goals.done_at` (`goal:update` com `done: true`). Com projeto ativo ligado, confirma antes
+  (`finishGoalWarning`); os projetos continuam ligados. A meta concluída sai da lista, do contador
+  do nível e do "M metas" da área (`filterByArea` separa `goals` e `doneGoals`) e aparece em
+  **Mostrar concluídas (N)** no fim do nível, apagada, sem descrição, com o chip "Concluída em
+  dd/mm/aaaa" no tom de Finalizada; ali o botão e o menu oferecem **Reabrir** (`done: false`) e o
+  menu perde o "Mover para". O estado aberto/fechado é local da tela.
 
 ## Diálogos
 
@@ -58,7 +65,7 @@ Erro ao salvar aparece numa mensagem e o diálogo continua aberto.
 
 ## Dados
 
-`area:list`, `goal:list` (com `project_count`), `project:list` (com a próxima ação e as contagens, ver
+`area:list`, `goal:list` (com `project_count` e `done_at`), `project:list` (com a próxima ação e as contagens, ver
 `05-projetos.md`) e `schedule:getForDate` de hoje, numa leitura só dentro do `RegionBoundary` da
 rota; relê em `tasks:refresh` e depois de cada gravação. O recorte por área é de `filterByArea`
 (`horizonLevels.ts`).

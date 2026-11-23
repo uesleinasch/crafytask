@@ -112,7 +112,7 @@ export function NewProjectModal({
             placeholder={NO_GOAL}
             value={draft.goal_id}
             onChange={(goal_id?: number) => set({ goal_id })}
-            options={goalSelectOptions(goals)}
+            options={goalSelectOptions(goals, initialGoal)}
           />
         </Form.Item>
         <Form.Item label="Cor" style={{ marginBottom: 0 }}>

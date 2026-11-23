@@ -247,7 +247,7 @@ só porque roda de CDN; os nomes lucide de cada lugar estão nas tabelas acima e
 | Passos da revisão     | `collect` `Download` · `inbox` `Inbox` · `mind` `Brain` · `next` `CircleArrowRight` · `past` `History` · `upcoming` `CalendarDays` · `waiting` `Hourglass` · `projects` `FolderKanban` · `someday` `Lightbulb` · `creative` `Rocket`           |
 | Menu da tarefa e ações em massa | Abrir `FileText` · timer `Play`/`Pause` · hoje `CalendarDays` · marcar como `CircleCheck` · categoria `Flag` · projeto `Folder` · marco `Milestone` (só na lista do projeto) · contextos `MapPin` · copiar `Copy` · Jira `Plug` · abrir no Jira `ExternalLink` · campos do Jira `SlidersHorizontal` · arquivar `Archive` · excluir `Trash2` |
 | Projetos              | abas pelo status (`LayoutGrid` em Todos, `FolderOpen` ativo, `Lightbulb` someday, `CircleCheck` concluído, `Archive` arquivado) · busca `Search` · Cards `LayoutGrid` · Tabela `Table2` · novo `Plus` · mais `Ellipsis` · resultado desejado `Target` · próxima ação `CircleArrowRight` · sem próxima ação `TriangleAlert` · área `TrendingUp` · meta `Trophy` · prazo `CalendarDays` · marcos `Milestone` (Início `Rocket`, Desenvolvimento `Milestone`, Fim `FlagTriangleRight`, concluir `Check`, concluído `CircleCheck`, reabrir `Undo2`) · abrir `FolderOpen` · marcar como `CircleCheck` · excluir `Trash2` · terminal `SquareTerminal` |
-| Horizontes            | chips `H0`…`H5` (texto, sem ícone) · Adicionar `Plus` · timer `Play`/`Pause` · mais `Ellipsis` · filtrar `Filter` · ver projetos `Folder` · editar `Pencil` · mover `ArrowLeftRight` · excluir `Trash2` · projetos da meta `Folder` |
+| Horizontes            | chips `H0`…`H5` (texto, sem ícone) · Adicionar `Plus` · timer `Play`/`Pause` · mais `Ellipsis` · filtrar `Filter` · ver projetos `Folder` · editar `Pencil` · mover `ArrowLeftRight` · concluir `Check`/`CircleCheck` · concluídas `CircleCheck` · reabrir `Undo2` · excluir `Trash2` · projetos da meta `Folder` |
 | Contextos e tags      | abas `MapPin`/`Tags` · busca `Search` · Cards `LayoutGrid` · Tabela `Table2` · novo `Plus` · mais `Ellipsis` · Ver tarefas `ListTodo` · editar `Pencil` · mesclar `Merge` · excluir `Trash2` |
 | Arquivo               | busca `Search` · abrir `FileText` · desarquivar `ArchiveRestore` · excluir de vez `Trash2` · limpar o arquivo `Eraser` · mais `Ellipsis` · grupo por mês `CalendarDays` · grupo sem projeto `Folder` |
 | Legenda do calendário | urgente `Flame` · prioridade `Flag` · time leak `Clock` · no Google `CalendarSync`                                                                                                                                                             |
@@ -565,6 +565,14 @@ nível para outro.
   Menu `⋯`/botão direito: área (filtrar, ver projetos, editar, excluir), meta (ver projetos da
   meta, editar, mover para outro nível, excluir). Excluir sempre confirma e diz o que acontece com
   projetos e metas (E6): ao excluir uma meta, os projetos dela ficam sem meta.
+- **Concluir meta** (H3–H5): botão `Check` na linha (tooltip "Marcar como concluída") e o mesmo item
+  no menu (`CircleCheck`). Com projetos ativos ligados, confirma ("N projetos ativos ainda servem a
+  esta meta…; reveja se ainda fazem sentido"): eles continuam ligados. A meta concluída sai da lista
+  e da contagem do nível e da área e vai para **Mostrar concluídas (N)** (`Button` link com
+  `CircleCheck`, contador em mono) no fim do nível; aberta, a linha fica apagada, sem descrição, com
+  o chip "Concluída em dd/mm/aaaa" no tom de Finalizada, e o botão vira **Reabrir** (`Undo2`, também
+  no menu, que perde o "Mover para"). Os seletores de meta (Novo projeto, pílula Meta, menu Meta ▸)
+  não oferecem meta concluída, salvo a que o projeto já tem, marcada "(concluída)".
 - Diálogo de meta com `Segmented` H3/H4/H5; de área com grade de emojis.
 
 ### Contextos e tags

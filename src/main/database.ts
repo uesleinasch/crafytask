@@ -396,6 +396,12 @@ export function initDatabase(): void {
   }
 
   try {
+    db.exec('ALTER TABLE goals ADD COLUMN done_at TEXT')
+  } catch {
+    /* já existe */
+  }
+
+  try {
     db.exec(
       'ALTER TABLE projects ADD COLUMN next_task_id INTEGER REFERENCES tasks(id) ON DELETE SET NULL'
     )
@@ -2491,6 +2497,13 @@ export function updateGoal(id: number, data: UpdateGoalInput): void {
   if (data.area_id !== undefined) {
     updates.push('area_id = ?')
     values.push(data.area_id)
+  }
+  if (data.done !== undefined) {
+    updates.push(
+      data.done
+        ? "done_at = COALESCE(done_at, strftime('%Y-%m-%d %H:%M:%S', 'now'))"
+        : 'done_at = NULL'
+    )
   }
 
   values.push(id)

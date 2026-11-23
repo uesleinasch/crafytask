@@ -19,6 +19,8 @@ import {
 } from 'antd'
 import {
   ArrowLeftRight,
+  Check,
+  CircleCheck,
   Ellipsis,
   Filter,
   Folder,
@@ -26,11 +28,14 @@ import {
   Pencil,
   Play,
   Plus,
-  Trash2
+  Trash2,
+  Undo2
 } from 'lucide-react'
 import type { Area, Goal, GoalHorizon } from '@shared/types'
 import { localDateString } from '@shared/dueState'
 import { LiveDot } from '@renderer/components/chips/LiveDot'
+import { chipStyle } from '@renderer/components/chips/chipStyle'
+import { STATUS_ICONS } from '@renderer/components/chips/statusMeta'
 import { AreaModal } from '@renderer/components/horizons/AreaModal'
 import { GoalModal } from '@renderer/components/horizons/GoalModal'
 import { HorizonChip } from '@renderer/components/horizons/HorizonChip'
@@ -46,8 +51,11 @@ import {
   areaCounts,
   areaSummary,
   deleteAreaWarning,
+  doneGoalsToggle,
   emptyLevelText,
   filterByArea,
+  finishGoalWarning,
+  goalDoneDate,
   horizonSectionId,
   type HorizonData,
   type HorizonDef
@@ -63,6 +71,8 @@ import { PageContainer } from '@renderer/components/shell/PageContainer'
 import { ProjectLabel } from '@renderer/components/tasks/ProjectLabel'
 import { dueTone, formatDueShort } from '@renderer/components/tasks/taskTableFormat'
 import { useTimerStore } from '@renderer/stores/timerStore'
+import { STATUS_COLORS } from '@renderer/theme/semantic'
+import { useThemeSettings } from '@renderer/theme/themeSettings'
 
 const ICON = { size: 14, strokeWidth: 1.75, 'aria-hidden': true } as const
 
@@ -71,7 +81,9 @@ export function HorizonsPage(): React.JSX.Element {
   const { showBoundary } = useErrorBoundary()
   const { message, modal } = App.useApp()
   const { token } = theme.useToken()
+  const { mode } = useThemeSettings()
   const screens = Grid.useBreakpoint()
+  const [showDone, setShowDone] = useState<Partial<Record<GoalHorizon, boolean>>>({})
   const timers = useTimerStore((s) => s.timers)
   const startTimer = useTimerStore((s) => s.startTimer)
   const stopTimer = useTimerStore((s) => s.stopTimer)
@@ -425,19 +437,53 @@ export function HorizonsPage(): React.JSX.Element {
     void navigate(goalProjectsPath(goal.id))
   }
 
+  const setGoalDone = (goal: Goal, done: boolean): void => {
+    window.api
+      .updateGoal(goal.id, { done })
+      .then(() => {
+        message.success(
+          done ? 'Meta concluída. Ela sai da lista e fica em "Concluídas".' : 'Meta reaberta'
+        )
+        load()
+      })
+      .catch((error) => message.error(errorMessage(error)))
+  }
+
+  const finishGoal = (goal: Goal): void => {
+    const warning = finishGoalWarning(goal, data.projects)
+    if (!warning) {
+      setGoalDone(goal, true)
+      return
+    }
+    modal.confirm({
+      title: `Concluir "${goal.name}"?`,
+      content: warning,
+      okText: 'Concluir',
+      cancelText: 'Cancelar',
+      onOk: () => setGoalDone(goal, true)
+    })
+  }
+
   const goalMenu = (goal: Goal): MenuProps => ({
     items: [
       { key: 'projects', icon: <Folder {...ICON} />, label: 'Ver projetos da meta' },
       { key: 'edit', icon: <Pencil {...ICON} />, label: 'Editar' },
-      {
-        key: 'move',
-        icon: <ArrowLeftRight {...ICON} />,
-        label: 'Mover para',
-        children: GOAL_HORIZONS.map((lv) => ({
-          key: `move:${lv.h}`,
-          label: `${goal.horizon === lv.h ? '✓ ' : ''}H${lv.h} — ${lv.label}`
-        }))
-      },
+      goal.done_at
+        ? { key: 'reopen', icon: <Undo2 {...ICON} />, label: 'Reabrir' }
+        : { key: 'done', icon: <CircleCheck {...ICON} />, label: 'Marcar como concluída' },
+      ...(goal.done_at
+        ? []
+        : [
+            {
+              key: 'move',
+              icon: <ArrowLeftRight {...ICON} />,
+              label: 'Mover para',
+              children: GOAL_HORIZONS.map((lv) => ({
+                key: `move:${lv.h}`,
+                label: `${goal.horizon === lv.h ? '✓ ' : ''}H${lv.h} — ${lv.label}`
+              }))
+            }
+          ]),
       { type: 'divider' },
       { key: 'delete', icon: <Trash2 {...ICON} />, label: 'Excluir…', danger: true }
     ],
@@ -446,6 +492,8 @@ export function HorizonsPage(): React.JSX.Element {
       const [kind, value] = key.split(':')
       if (kind === 'projects') openGoalProjects(goal)
       if (kind === 'edit') setGoalEdit(goalDraft(goal))
+      if (kind === 'done') finishGoal(goal)
+      if (kind === 'reopen') setGoalDone(goal, false)
       if (kind === 'move') {
         const horizon = Number(value) as GoalHorizon
         if (horizon === goal.horizon) return
@@ -477,76 +525,134 @@ export function HorizonsPage(): React.JSX.Element {
     }
   })
 
+  const doneColors = STATUS_COLORS.finalizada[mode]
+  const DoneIcon = STATUS_ICONS.finalizada
+
+  const goalRow = (lv: HorizonDef, goal: Goal): React.ReactNode => {
+    const done = !!goal.done_at
+    const toggleLabel = done ? 'Reabrir' : 'Marcar como concluída'
+    return (
+      <Dropdown key={goal.id} menu={goalMenu(goal)} trigger={['contextMenu']}>
+        <div className="ct-hzgoal" onClick={() => openGoalProjects(goal)}>
+          <span style={{ fontSize: 18, opacity: done ? 0.5 : 1 }} aria-hidden>
+            {lv.emoji}
+          </span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <Flex align="center" gap={8} wrap>
+              <button
+                type="button"
+                className="ct-linkbutton ct-hzgoal-name"
+                title="Ver projetos da meta"
+                style={done ? { color: token.colorTextTertiary } : undefined}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  openGoalProjects(goal)
+                }}
+              >
+                {goal.name}
+              </button>
+              {areaTag(goal.area_id)}
+              {goal.done_at && (
+                <span
+                  style={chipStyle(
+                    doneColors.fg,
+                    doneColors.bg,
+                    'transparent',
+                    token.borderRadiusSM
+                  )}
+                >
+                  <DoneIcon size={13} strokeWidth={2} aria-hidden />
+                  {goalDoneDate(goal.done_at)}
+                </span>
+              )}
+            </Flex>
+            {goal.description && !done && (
+              <Typography.Text
+                type="secondary"
+                style={{
+                  whiteSpace: 'pre-wrap',
+                  fontSize: 13,
+                  display: 'block',
+                  marginTop: 2
+                }}
+              >
+                {goal.description}
+              </Typography.Text>
+            )}
+            <Typography.Text
+              type="secondary"
+              style={{
+                fontSize: 12,
+                display: 'block',
+                marginTop: 2,
+                fontFamily: token.fontFamilyCode,
+                fontVariantNumeric: 'tabular-nums'
+              }}
+            >
+              {goalProjectsSummary(goal.project_count ?? 0)}
+            </Typography.Text>
+          </div>
+          <Tooltip title={toggleLabel}>
+            <Button
+              size="small"
+              type="text"
+              aria-label={`${done ? 'Reabrir' : 'Concluir'} ${goal.name}`}
+              icon={done ? <Undo2 {...ICON} /> : <Check {...ICON} />}
+              onClick={(e) => {
+                e.stopPropagation()
+                if (done) setGoalDone(goal, false)
+                else finishGoal(goal)
+              }}
+            />
+          </Tooltip>
+          <Dropdown menu={goalMenu(goal)} trigger={['click']} placement="bottomRight">
+            <Button
+              size="small"
+              type="text"
+              aria-label={`Mais ações de ${goal.name}`}
+              icon={<Ellipsis {...ICON} />}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </Dropdown>
+        </div>
+      </Dropdown>
+    )
+  }
+
   const goalLevel = (lv: HorizonDef & { h: GoalHorizon }): React.ReactNode => {
     const list = view.goals[lv.h]
+    const doneList = view.doneGoals[lv.h]
+    const open = !!showDone[lv.h]
     return level(
       lv,
       list.length,
-      list.length ? (
-        <div>
-          {list.map((goal) => (
-            <Dropdown key={goal.id} menu={goalMenu(goal)} trigger={['contextMenu']}>
-              <div className="ct-hzgoal" onClick={() => openGoalProjects(goal)}>
-                <span style={{ fontSize: 18 }} aria-hidden>
-                  {lv.emoji}
-                </span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <Flex align="center" gap={8} wrap>
-                    <button
-                      type="button"
-                      className="ct-linkbutton ct-hzgoal-name"
-                      title="Ver projetos da meta"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        openGoalProjects(goal)
-                      }}
-                    >
-                      {goal.name}
-                    </button>
-                    {areaTag(goal.area_id)}
-                  </Flex>
-                  {goal.description && (
-                    <Typography.Text
-                      type="secondary"
-                      style={{
-                        whiteSpace: 'pre-wrap',
-                        fontSize: 13,
-                        display: 'block',
-                        marginTop: 2
-                      }}
-                    >
-                      {goal.description}
-                    </Typography.Text>
-                  )}
-                  <Typography.Text
-                    type="secondary"
-                    style={{
-                      fontSize: 12,
-                      display: 'block',
-                      marginTop: 2,
-                      fontFamily: token.fontFamilyCode,
-                      fontVariantNumeric: 'tabular-nums'
-                    }}
-                  >
-                    {goalProjectsSummary(goal.project_count ?? 0)}
-                  </Typography.Text>
-                </div>
-                <Dropdown menu={goalMenu(goal)} trigger={['click']} placement="bottomRight">
-                  <Button
-                    size="small"
-                    type="text"
-                    aria-label={`Mais ações de ${goal.name}`}
-                    icon={<Ellipsis {...ICON} />}
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </Dropdown>
-              </div>
-            </Dropdown>
-          ))}
-        </div>
-      ) : (
-        empty(emptyLevelText(lv.label, filtered))
-      ),
+      <>
+        {list.length ? (
+          <div>{list.map((goal) => goalRow(lv, goal))}</div>
+        ) : (
+          empty(emptyLevelText(lv.label, filtered))
+        )}
+        {doneList.length > 0 && (
+          <div style={{ marginTop: list.length ? 4 : 0 }}>
+            <Button
+              type="link"
+              size="small"
+              style={{ paddingInline: 8 }}
+              icon={<CircleCheck {...ICON} />}
+              aria-expanded={open}
+              onClick={() => setShowDone({ ...showDone, [lv.h]: !open })}
+            >
+              {doneGoalsToggle(open)}{' '}
+              <span
+                style={{ fontFamily: token.fontFamilyCode, fontVariantNumeric: 'tabular-nums' }}
+              >
+                ({doneList.length})
+              </span>
+            </Button>
+            {open && <div>{doneList.map((goal) => goalRow(lv, goal))}</div>}
+          </div>
+        )}
+      </>,
       () => newGoal(lv.h)
     )
   }

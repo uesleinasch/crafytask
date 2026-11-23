@@ -4,8 +4,11 @@ import {
   areaCounts,
   areaSummary,
   deleteAreaWarning,
+  doneGoalsToggle,
   emptyLevelText,
   filterByArea,
+  finishGoalWarning,
+  goalDoneDate,
   type HorizonData
 } from './horizonLevels'
 
@@ -60,5 +63,43 @@ describe('horizontes', () => {
       'Nenhum projeto ou meta usa esta área.'
     )
     expect(emptyLevelText('Metas', true)).toBe('Nada em metas nesta área.')
+  })
+})
+
+describe('metas concluídas', () => {
+  const done = {
+    id: 4,
+    name: 'Certificação',
+    horizon: 3,
+    area_id: 1,
+    done_at: '2026-10-30 12:00:00'
+  } as Goal
+  const all: HorizonData = { ...data, goals: [...goals, done] }
+
+  it('saem da lista e da contagem da área e vão para as concluídas', () => {
+    const view = filterByArea(all, null)
+    expect(view.goals[3].map((g) => g.id)).toEqual([1, 2])
+    expect(view.doneGoals[3].map((g) => g.id)).toEqual([4])
+    expect(filterByArea(all, 2).doneGoals[3]).toEqual([])
+    expect(areaCounts(areas[0], projects, all.goals).goals).toBe(1)
+  })
+
+  it('textos do botão, da data e do aviso ao concluir', () => {
+    expect(doneGoalsToggle(false)).toBe('Mostrar concluídas')
+    expect(doneGoalsToggle(true)).toBe('Ocultar concluídas')
+    expect(goalDoneDate('2026-10-30 12:00:00')).toBe('Concluída em 30/10/2026')
+    const late = new Date(2026, 9, 30, 23, 30)
+    const utc = late.toISOString().slice(0, 19).replace('T', ' ')
+    expect(goalDoneDate(utc)).toBe('Concluída em 30/10/2026')
+    const linked = [
+      { id: 1, status: 'active', goal_id: 1 },
+      { id: 2, status: 'active', goal_id: 1 },
+      { id: 3, status: 'done', goal_id: 1 }
+    ] as Project[]
+    expect(finishGoalWarning(goals[0], linked)).toBe(
+      '2 projetos ativos ainda servem a esta meta. Eles continuam ligados a ela; reveja se ainda fazem sentido.'
+    )
+    expect(finishGoalWarning(goals[0], linked.slice(1))).toMatch(/^1 projeto ativo ainda serve/)
+    expect(finishGoalWarning(goals[1], linked)).toBeNull()
   })
 })
