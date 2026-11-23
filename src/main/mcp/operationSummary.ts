@@ -6,6 +6,7 @@ const FIELD_LABELS: Record<string, string> = {
   category: 'categoria',
   energy: 'energia',
   project: 'projeto',
+  milestone: 'marco',
   contexts: 'contextos',
   tags: 'tags',
   due_date: 'prazo',

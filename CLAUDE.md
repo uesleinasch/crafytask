@@ -129,7 +129,7 @@ header, and the extra height can be scrolled by a programmatic `scrollIntoView` 
 ## Database
 
 - File: `app.getPath('userData')/ticktask.db` (em dev, `ticktask-dev/` — ver **Commands**). Opened with `journal_mode = WAL` and `foreign_keys = ON`. `initDatabase()` runs at startup.
-- 19 tables: `tasks`, `time_entries`, `tags`, `task_tags`, `projects`, `contexts`, `task_contexts`, `weekly_reviews`, `task_dependencies`, `areas`, `goals`, `time_blocks`, `note_assets`, `notebooks`, `notebook_sections`, `notebook_pages`, `task_status_events`, `task_history`, `app_prefs`.
+- 20 tables: `tasks`, `time_entries`, `tags`, `task_tags`, `projects`, `contexts`, `task_contexts`, `weekly_reviews`, `task_dependencies`, `areas`, `goals`, `time_blocks`, `note_assets`, `notebooks`, `notebook_sections`, `notebook_pages`, `task_status_events`, `task_history`, `app_prefs`, `project_milestones`.
 - **Migrations are imperative, inline in `initDatabase()`** — `CREATE TABLE IF NOT EXISTS` plus guarded `ALTER TABLE`s. Changing a `CHECK` constraint requires the create-new-table-and-copy dance (see the `tasks_new` rebuild around `src/main/database.ts:375`, used to widen the task `status` CHECK). There is no migration framework — follow the existing pattern.
 - All queries use better-sqlite3 prepared statements; multi-step writes use `db.transaction(...)`.
 - `tasks.status_changed_at` (when the status last changed, used by the health indicators in
@@ -138,6 +138,13 @@ header, and the extra height can be scrolled by a programmatic `scrollIntoView` 
   `task_status_events` (`from_status`, `to_status`, `changed_at`), the history behind the weekly
   Inbox rate; it only starts when the triggers are installed. A `tasks` rebuild drops triggers:
   `ensureStatusChangedAt` runs at the end of `initDatabase()` and recreates all four.
+- Project milestones (`project_milestones`, `milestoneQueries.ts`, pure and tested): kind
+  `inicio`/`desenvolvimento`/`fim` (a partial unique index allows one início and one fim per
+  project), manual `done_at`. A task points to one through `tasks.milestone_id`; the trigger
+  `tasks_milestone_follows_project` clears it when the task changes project, so every writer is
+  covered. `ensureMilestoneSchema` runs last in `initDatabase()` and recreates it after a rebuild.
+  IPC `milestone:*`; the task side goes through `task:update` (`milestone_id`); MCP tool
+  `project_milestones` plus `milestone` on `create_task`/`update_task`.
 - `task_history` holds the written entries of a task's history (`checkpoint`, `operation`, `note`;
   origin `app` or `mcp`), with the task status at that moment. `listTaskHistory`
   (`taskHistoryQueries.ts`, pure, tested) merges them with `task_status_events`, so status moves are
