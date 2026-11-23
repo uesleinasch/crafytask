@@ -7,6 +7,7 @@ instaladores (`.deb` e AppImage) e a lista de commits da versão.
 
 | Versão | Data | Resumo |
 | --- | --- | --- |
+| [v3.20.1](v3.20.1.md) | 23/11/2026 | marcos: botão para editar e excluir, texto que vazava do card |
 | [v3.20.0](v3.20.0.md) | 23/11/2026 | marcos do projeto, concluir metas, Kanban com arrastar e rolagem, histórico em texto rico |
 | [v3.19.0](v3.19.0.md) | 21/11/2026 | conectar com Google num clique, permissões de agenda e Drive, projetos ligados a metas, timer para ao finalizar |
 | [v3.18.0](v3.18.0.md) | 20/11/2026 | servidor MCP: histórico da task, sessão de trabalho pela pasta, briefing, notas sem perda e por seção, busca geral, prompts, notificação; aba Histórico na task |
