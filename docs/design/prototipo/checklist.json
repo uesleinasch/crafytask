@@ -1611,7 +1611,7 @@
       "titulo": "Ditado (Handy): instalar e atualizar, ligar, atalho próprio e abrir o Handy",
       "check": {
         "tipo": "contem-todos",
-        "arquivos": "src/{renderer/src/components/settings/HandySection.tsx,main/handy.ts}",
+        "arquivos": "src/{renderer/src/components/settings/HandySection.tsx,renderer/src/components/settings/ShortcutRow.tsx,main/handy.ts,main/index.ts}",
         "padroes": [
           "Instalar",
           "Procurar atualização",

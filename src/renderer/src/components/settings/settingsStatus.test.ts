@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import type { McpStatus } from '@shared/types'
-import { errorMessage, gcalStatusInfo, mcpStatusInfo, notionStatus } from './settingsStatus'
+import type { HandyStatus, McpStatus } from '@shared/types'
+import {
+  errorMessage,
+  gcalStatusInfo,
+  handyStatusInfo,
+  mcpStatusInfo,
+  notionStatus
+} from './settingsStatus'
 
 const mcp = (overrides: Partial<McpStatus>): McpStatus =>
   ({ enabled: true, running: true, port: 7777, command: '', ...overrides }) as McpStatus
@@ -26,6 +32,15 @@ describe('estado das integrações', () => {
     expect(mcpStatusInfo(mcp({ enabled: false })).label).toBe('Desligado')
     expect(mcpStatusInfo(mcp({})).tone).toBe('on')
     expect(mcpStatusInfo(mcp({ running: false })).tone).toBe('error')
+  })
+
+  it('Ditado: ligado sem o Handy aberto é falha', () => {
+    const handy = (overrides: Partial<HandyStatus>): HandyStatus =>
+      ({ installed: true, enabled: true, running: true, ...overrides }) as HandyStatus
+    expect(handyStatusInfo(null).label).toBe('Não instalado')
+    expect(handyStatusInfo(handy({ enabled: false })).label).toBe('Desligado')
+    expect(handyStatusInfo(handy({})).tone).toBe('on')
+    expect(handyStatusInfo(handy({ running: false })).tone).toBe('error')
   })
 })
 

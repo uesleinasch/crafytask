@@ -18,6 +18,7 @@ import {
   Cloud,
   DatabaseBackup,
   Info,
+  Mic,
   Palette,
   Plug,
   Search,
@@ -26,7 +27,7 @@ import {
   Workflow,
   type LucideIcon
 } from 'lucide-react'
-import type { GcalStatus, JiraStatus, McpStatus } from '@shared/types'
+import type { GcalStatus, HandyStatus, JiraStatus, McpStatus } from '@shared/types'
 import { usePersistedState } from '@renderer/hooks/usePersistedState'
 import { PageContainer } from '@renderer/components/shell/PageContainer'
 import { RegionBoundary } from '@renderer/components/shell/RegionBoundary'
@@ -34,6 +35,7 @@ import { AboutSection } from '@renderer/components/settings/AboutSection'
 import { AppearanceSection } from '@renderer/components/settings/AppearanceSection'
 import { BackupSection } from '@renderer/components/settings/BackupSection'
 import { GeneralSection } from '@renderer/components/settings/GeneralSection'
+import { HandySection } from '@renderer/components/settings/HandySection'
 import { GoogleCalendarSection } from '@renderer/components/settings/GoogleCalendarSection'
 import { JiraSection } from '@renderer/components/settings/JiraSection'
 import { McpSection } from '@renderer/components/settings/McpSection'
@@ -43,6 +45,7 @@ import { WorkflowSection } from '@renderer/components/settings/WorkflowSection'
 import { SettingsHeader } from '@renderer/components/settings/SettingsLayout'
 import {
   gcalStatusInfo,
+  handyStatusInfo,
   jiraStatusInfo,
   mcpStatusInfo,
   notionStatus,
@@ -61,6 +64,7 @@ type SectionId =
   | 'google'
   | 'jira'
   | 'mcp'
+  | 'ditado'
   | 'sobre'
 
 interface NavItem {
@@ -84,6 +88,7 @@ export function SettingsPage(): React.JSX.Element {
   const [gcal, setGcal] = useState<GcalStatus | null>(null)
   const [jira, setJira] = useState<JiraStatus | null>(null)
   const [mcp, setMcp] = useState<McpStatus | null>(null)
+  const [handy, setHandy] = useState<HandyStatus | null>(null)
   const [autostart, setAutostart] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [failed, setFailed] = useState<SectionId[]>([])
@@ -96,8 +101,9 @@ export function SettingsPage(): React.JSX.Element {
       window.api.gcalGetStatus(),
       window.api.mcpGetStatus(),
       window.api.appGetAutostart(),
-      window.api.jiraGetStatus()
-    ]).then(([notionConfig, gcalStatus, mcpStatus, autostartEnabled, jiraStatus]) => {
+      window.api.jiraGetStatus(),
+      window.api.handyGetStatus()
+    ]).then(([notionConfig, gcalStatus, mcpStatus, autostartEnabled, jiraStatus, handyStatus]) => {
       const failures: SectionId[] = []
       if (notionConfig.status === 'fulfilled') setNotion(notionConfig.value)
       else failures.push('notion')
@@ -109,10 +115,14 @@ export function SettingsPage(): React.JSX.Element {
       else failures.push('geral')
       if (jiraStatus.status === 'fulfilled') setJira(jiraStatus.value)
       else failures.push('jira')
+      if (handyStatus.status === 'fulfilled') setHandy(handyStatus.value)
+      else failures.push('ditado')
       setFailed(failures)
       setIsLoading(false)
     })
   }, [])
+
+  useEffect(() => window.api.onHandyStatus(setHandy), [])
 
   const groups: { label: string; items: NavItem[] }[] = [
     {
@@ -191,6 +201,15 @@ export function SettingsPage(): React.JSX.Element {
           description:
             'Deixa assistentes como o Claude Code lerem e alterarem suas tarefas, só nesta máquina.',
           status: statusOf('mcp', mcpStatusInfo(mcp))
+        },
+        {
+          id: 'ditado',
+          label: 'Ditado (Handy)',
+          icon: Mic,
+          keywords: 'voz fala microfone transcrever handy whisper atalho',
+          description:
+            'Fale e o texto aparece no campo em que você está. A transcrição roda no próprio computador.',
+          status: statusOf('ditado', handyStatusInfo(handy))
         }
       ]
     },
@@ -291,6 +310,9 @@ export function SettingsPage(): React.JSX.Element {
       )}
       {current.id === 'jira' && jira && <JiraSection status={jira} onStatusChange={setJira} />}
       {current.id === 'mcp' && mcp && <McpSection status={mcp} onStatusChange={setMcp} />}
+      {current.id === 'ditado' && handy && (
+        <HandySection status={handy} onStatusChange={setHandy} />
+      )}
       {current.id === 'sobre' && <AboutSection />}
     </RegionBoundary>
   )

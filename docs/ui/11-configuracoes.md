@@ -49,6 +49,7 @@ item **Configurações** no rodapé da sidebar.
 | `SettingRow` | título e descrição à esquerda, controle à direita (`Switch`, `Input`, botão); quebra para baixo quando falta espaço; `vertical` põe o controle embaixo |
 | `SettingsHeader` | cabeçalho da seção, descrito acima |
 | `Kbd` / `KeyCombo` (`components/shell/Kbd.tsx`) | teclas em `<kbd>` mono com borda (guia §11) |
+| `ShortcutRow` | linha de atalho global: `KeyCombo`, `Tag` "Inativo" e o botão **Definir atalho** que grava a combinação; usada pela captura rápida e pelo ditado |
 | `SetupGuide`, `GuideLink`, `GuideField` (`SetupGuide.tsx`) | guia de configuração das integrações, descrito abaixo; link externo com ícone e rótulo de campo dentro do passo |
 | `settingsStatus.ts` | puro e testado: estado de cada integração, `STATUS_BADGE`, tipo `NotionConfig`, `errorMessage` (tira o prefixo `Error invoking remote method…`) |
 
