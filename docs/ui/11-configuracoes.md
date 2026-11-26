@@ -6,7 +6,7 @@ protótipo (rota `#ajustes`).
 
 ## Função
 
-Preferências do app e as integrações (Notion, Google, Jira, servidor MCP). Acessível pelo
+Preferências do app e as integrações (Notion, Google, Jira, servidor MCP, ditado com o Handy). Acessível pelo
 item **Configurações** no rodapé da sidebar.
 
 ## Estrutura
@@ -24,6 +24,7 @@ item **Configurações** no rodapé da sidebar.
 │ ☁ Google             ● │ └─────────────────────────────────────────┘    │
 │ 🔌 Jira              ● │                                    até 780px  │
 │ ⎓ Servidor MCP       ● │                                                │
+│ 🎙 Ditado (Handy)     ● │                                                │
 │ ⓘ Sobre                │                                                │
 └────────────────────────┴────────────────────────────────────────────────┘
 ```
@@ -37,7 +38,7 @@ item **Configurações** no rodapé da sidebar.
   ponto do `Badge` (integrações) e uma frase do que a seção faz.
 - **Conteúdo** com largura máxima de 780px, dentro do `PageContainer` e de um `RegionBoundary` por
   seção. Enquanto os estados carregam (`notionGetConfig`, `gcalGetStatus`, `jiraGetStatus`,
-  `mcpGetStatus`, `appGetAutostart` em paralelo), aparece um `Spin`; a navegação já está lá.
+  `mcpGetStatus`, `appGetAutostart`, `handyGetStatus` em paralelo), aparece um `Spin`; a navegação já está lá.
 - A página é dona dos estados e os repassa às seções com um callback de mudança. Por isso o ponto
   na navegação muda no mesmo instante em que a seção conecta ou desliga algo.
 

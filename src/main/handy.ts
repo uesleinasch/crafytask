@@ -251,13 +251,16 @@ function prepareDelivery(config: HandyConfig): unknown {
   return store
 }
 
-async function startHandy(): Promise<void> {
+async function startHandy(visible = false): Promise<void> {
   await stopAndWait()
   const config = readConfig()
   const store = prepareDelivery(config)
   startWatcher()
   lastError = null
-  const proc = spawn(appRunPath(), handyLaunchArgs(store), { detached: true, stdio: 'ignore' })
+  const proc = spawn(appRunPath(), visible ? [] : handyLaunchArgs(store), {
+    detached: true,
+    stdio: 'ignore'
+  })
   child = proc
   if (proc.pid) writeFileSync(pidPath(), String(proc.pid))
   proc.on('error', (error) => {
@@ -342,9 +345,12 @@ export async function setHandyShortcut(accelerator: unknown): Promise<HandyStatu
   return getHandyStatus()
 }
 
-export function openHandy(): void {
-  if (!child) throw new Error('Ligue o ditado para abrir o Handy.')
-  spawn(appRunPath(), [], { detached: true, stdio: 'ignore' }).unref()
+export async function openHandy(): Promise<HandyStatus> {
+  const config = readConfig()
+  if (!config.enabled || !isInstalled(config)) throw new Error('Ligue o ditado para abrir o Handy.')
+  if (child) spawn(appRunPath(), [], { detached: true, stdio: 'ignore' }).unref()
+  else await startHandy(true)
+  return getHandyStatus()
 }
 
 async function fetchRelease(): Promise<HandyRelease> {

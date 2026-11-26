@@ -393,7 +393,7 @@ interface API {
   handyInstall: () => Promise<HandyStatus>
   handySetEnabled: (enabled: boolean) => Promise<HandyStatus>
   handySetShortcut: (accelerator: string) => Promise<HandyStatus>
-  handyOpen: () => Promise<void>
+  handyOpen: () => Promise<HandyStatus>
   onHandyStatus: (callback: (status: HandyStatus) => void) => () => void
 
   // Terminal embutido

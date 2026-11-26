@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Alert, App, Button, Flex, Progress, Switch, Tooltip, theme } from 'antd'
 import { Download, ExternalLink, RefreshCw } from 'lucide-react'
 import type { HandyStatus, HandyUpdateInfo } from '@shared/types'
@@ -21,7 +21,21 @@ export function HandySection({
   const [checking, setChecking] = useState(false)
   const [switching, setSwitching] = useState(false)
   const mono = { fontFamily: token.fontFamilyCode, fontVariantNumeric: 'tabular-nums' as const }
-  const ready = status.enabled && status.installed && status.running
+  const ready = status.enabled && status.installed
+
+  useEffect(() => {
+    if (!status.installed) return
+    let current = true
+    window.api
+      .handyCheckUpdate()
+      .then((info) => {
+        if (current) setUpdate(info)
+      })
+      .catch(() => undefined)
+    return () => {
+      current = false
+    }
+  }, [status.installed, status.version])
 
   async function install(): Promise<void> {
     try {
@@ -61,7 +75,7 @@ export function HandySection({
 
   async function open(): Promise<void> {
     try {
-      await window.api.handyOpen()
+      onStatusChange(await window.api.handyOpen())
     } catch (error) {
       message.error(errorMessage(error))
     }
@@ -78,7 +92,9 @@ export function HandySection({
       title="Instalando o Handy"
       description={
         status.installing === 'download'
-          ? 'Baixando a versão mais recente.'
+          ? update?.available
+            ? `Baixando a versão ${update.latest}.`
+            : 'Baixando a versão mais recente.'
           : 'Conferida a assinatura. Preparando os arquivos.'
       }
     >
@@ -167,7 +183,7 @@ export function HandySection({
           successLabel="Atalho do ditado"
           shortcut={status.shortcut}
           inactive={status.enabled && status.installed && !status.shortcutActive}
-          disabled={!status.supported}
+          disabled={!ready}
           onSave={saveShortcut}
         />
       </SettingsCard>

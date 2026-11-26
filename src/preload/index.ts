@@ -617,7 +617,7 @@ const api = {
     ipcRenderer.invoke('handy:setEnabled', enabled),
   handySetShortcut: (accelerator: string): Promise<HandyStatus> =>
     ipcRenderer.invoke('handy:setShortcut', accelerator),
-  handyOpen: (): Promise<void> => ipcRenderer.invoke('handy:open'),
+  handyOpen: (): Promise<HandyStatus> => ipcRenderer.invoke('handy:open'),
   onHandyStatus: (callback: (status: HandyStatus) => void): (() => void) => {
     const handler = (_: Electron.IpcRendererEvent, status: HandyStatus): void => callback(status)
     ipcRenderer.on('handy:status', handler)

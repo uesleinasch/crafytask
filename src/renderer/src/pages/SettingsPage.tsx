@@ -122,7 +122,14 @@ export function SettingsPage(): React.JSX.Element {
     })
   }, [])
 
-  useEffect(() => window.api.onHandyStatus(setHandy), [])
+  useEffect(
+    () =>
+      window.api.onHandyStatus((status) => {
+        setHandy(status)
+        setFailed((ids) => ids.filter((id) => id !== 'ditado'))
+      }),
+    []
+  )
 
   const groups: { label: string; items: NavItem[] }[] = [
     {
