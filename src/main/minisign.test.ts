@@ -1,4 +1,4 @@
-import { generateKeyPairSync, sign, type KeyObject } from 'crypto'
+import { createHash, generateKeyPairSync, sign, type KeyObject } from 'crypto'
 import { describe, expect, it } from 'vitest'
 import { minisignPrehash, parseMinisignPublicKey, verifyMinisign } from './minisign'
 
@@ -25,6 +25,17 @@ function signFile(privateKey: KeyObject, data: Buffer, trusted: string, keyId = 
 }
 
 const prehash = (data: Buffer): Buffer => minisignPrehash().update(data).digest()
+
+describe('minisignPrehash', () => {
+  it('é BLAKE2b-512 em JS puro, igual ao do OpenSSL', () => {
+    const data = Buffer.alloc(300_000, 7)
+    const chunked = minisignPrehash()
+      .update(data.subarray(0, 1000))
+      .update(data.subarray(1000))
+      .digest()
+    expect(chunked).toEqual(createHash('blake2b512').update(data).digest())
+  })
+})
 
 describe('verifyMinisign', () => {
   const data = Buffer.from('conteúdo do AppImage')

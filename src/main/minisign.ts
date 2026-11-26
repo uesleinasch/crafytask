@@ -1,4 +1,5 @@
-import { createHash, createPublicKey, verify, type KeyObject } from 'crypto'
+import { blake2b } from '@noble/hashes/blake2b'
+import { createPublicKey, verify, type KeyObject } from 'crypto'
 
 const ED25519_SPKI_PREFIX = Buffer.from('302a300506032b6570032100', 'hex')
 const TRUSTED_PREFIX = 'trusted comment: '
@@ -31,8 +32,21 @@ export function parseMinisignPublicKey(value: string): MinisignPublicKey {
   return { keyId: raw.subarray(2, 10), key }
 }
 
-export function minisignPrehash(): ReturnType<typeof createHash> {
-  return createHash('blake2b512')
+export interface Prehash {
+  update: (chunk: Uint8Array) => Prehash
+  digest: () => Buffer
+}
+
+export function minisignPrehash(): Prehash {
+  const hash = blake2b.create({ dkLen: 64 })
+  const prehash: Prehash = {
+    update: (chunk) => {
+      hash.update(chunk)
+      return prehash
+    },
+    digest: () => Buffer.from(hash.digest())
+  }
+  return prehash
 }
 
 export function verifyMinisign(
