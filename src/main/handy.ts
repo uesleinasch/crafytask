@@ -200,22 +200,40 @@ function killGroup(pid: number): void {
   }
 }
 
-function killOrphan(): void {
+async function waitForExit(pid: number, timeoutMs = 3000): Promise<void> {
+  const deadline = Date.now() + timeoutMs
+  while (existsSync(`/proc/${pid}`) && Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 100))
+  }
+}
+
+function killOrphan(): number | null {
+  let killed: number | null = null
   try {
     const pid = Number(readFileSync(pidPath(), 'utf8'))
     const cmdline = readFileSync(`/proc/${pid}/cmdline`, 'utf8')
-    if (pid > 0 && cmdline.includes(appDir())) killGroup(pid)
+    if (pid > 0 && cmdline.includes(appDir())) {
+      killGroup(pid)
+      killed = pid
+    }
   } catch {
     // sem processo antigo
   }
   rmSync(pidPath(), { force: true })
+  return killed
 }
 
-function stopHandy(): void {
+function stopHandy(): number | null {
   const proc = child
   child = null
   if (proc?.pid) killGroup(proc.pid)
   rmSync(pidPath(), { force: true })
+  return proc?.pid ?? null
+}
+
+async function stopAndWait(): Promise<void> {
+  const pids = [killOrphan(), stopHandy()].filter((pid): pid is number => pid !== null)
+  await Promise.all(pids.map((pid) => waitForExit(pid)))
 }
 
 function prepareDelivery(config: HandyConfig): unknown {
@@ -233,9 +251,8 @@ function prepareDelivery(config: HandyConfig): unknown {
   return store
 }
 
-function startHandy(): void {
-  killOrphan()
-  stopHandy()
+async function startHandy(): Promise<void> {
+  await stopAndWait()
   const config = readConfig()
   const store = prepareDelivery(config)
   startWatcher()
@@ -281,12 +298,11 @@ export function initHandy(handyDeps: HandyDeps): void {
   deps = handyDeps
   const config = readConfig()
   if (!config.enabled || !isInstalled(config) || !isSupported()) return
-  try {
-    startHandy()
-  } catch (error) {
+  startHandy().catch((error) => {
     lastError = `Não foi possível abrir o Handy: ${errorText(error)}`
     console.error('[handy] falha ao iniciar:', error)
-  }
+    emit()
+  })
 }
 
 export function shutdownHandy(): void {
@@ -299,7 +315,7 @@ export async function setHandyEnabled(enabled: boolean): Promise<HandyStatus> {
   if (enabled && !isInstalled(current)) throw new Error('Instale o Handy primeiro.')
   const config = writeConfig({ enabled })
   if (enabled) {
-    startHandy()
+    await startHandy()
     await applyShortcut(config)
   } else {
     shutdownHandy()
@@ -321,7 +337,7 @@ export async function setHandyShortcut(accelerator: unknown): Promise<HandyStatu
   const config = writeConfig({ shortcut: accelerator })
   if (config.enabled && isInstalled(config)) {
     await applyShortcut(config)
-    if (!usesGnome()) startHandy()
+    if (!usesGnome()) await startHandy()
   }
   return getHandyStatus()
 }
@@ -419,11 +435,11 @@ export async function installHandy(): Promise<HandyStatus> {
     if (!existsSync(path.join(staging, 'squashfs-root', 'AppRun'))) {
       throw new Error('O pacote veio sem o AppRun.')
     }
-    stopHandy()
+    await stopAndWait()
     rmSync(appDir(), { recursive: true, force: true })
     renameSync(staging, appDir())
     const config = writeConfig({ version: release.version })
-    if (config.enabled) startHandy()
+    if (config.enabled) await startHandy()
   } catch (error) {
     lastError = `Falha ao instalar o Handy: ${errorText(error)}`
     throw new Error(lastError)
