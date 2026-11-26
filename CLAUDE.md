@@ -337,6 +337,8 @@ morto no `before-quit`); `handyPlan.ts` e `minisign.ts` são puros e testados.
 
 - O download só é extraído depois de `verifyMinisign` conferir a assinatura `.sig` da release com
   `HANDY_PUBLIC_KEY` (a chave do updater do Handy). Se o upstream trocar a chave, atualizar a constante.
+  O BLAKE2b vem de `@noble/hashes`: o BoringSSL do Electron não tem `blake2b512` (o vitest roda no
+  Node com OpenSSL e não pega isso).
 - O texto chega pelo método de colar `external_script` do Handy: `patchHandySettings` força isso
   (e `auto_submit`, `autostart_enabled`, `update_checks_enabled` desligados) antes de cada início;
   o script `entregar.sh` grava em `userData/handy/inbox/`, o main observa a pasta e
