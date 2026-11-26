@@ -15,6 +15,7 @@ import {
 } from 'antd'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { TaskTable } from '@renderer/components/tasks/TaskTable'
+import { Kbd } from '@renderer/components/shell/Kbd'
 import { STATUS_ICONS } from '@renderer/components/chips/statusMeta'
 import { errorMessage } from '@renderer/components/settings/settingsStatus'
 import { STATUS_COLORS } from '@renderer/theme/semantic'
@@ -68,7 +69,8 @@ import {
   type Tag,
   type Context,
   type Project,
-  type TaskListFilters
+  type TaskListFilters,
+  type ProjectMilestone
 } from '@shared/types'
 import { Copy, LayoutGrid, Plus, Search, Columns3, Table2 } from 'lucide-react'
 
@@ -86,12 +88,14 @@ function readStorage(key: string): string | null {
 const GROUP_BY_OPTIONS: { value: GroupBy; label: string }[] = [
   { value: 'project', label: 'Projeto' },
   { value: 'context', label: 'Contexto' },
+  { value: 'milestone', label: 'Marco' },
   { value: 'jira_space', label: 'Espaço Jira' },
   { value: 'jira_parent', label: 'Pai Jira' }
 ]
 
 interface TaskListViewProps {
   project?: { id: number; name: string }
+  milestones?: ProjectMilestone[]
   onChanged?: () => void
 }
 
@@ -109,7 +113,13 @@ function StatusColumnIcon({ status }: { status: TaskStatus }): React.JSX.Element
   return <Icon size={14} strokeWidth={1.75} aria-hidden color={STATUS_COLORS[status][mode].fg} />
 }
 
-export function TaskListView({ project, onChanged }: TaskListViewProps): React.JSX.Element {
+const NO_MILESTONES: ProjectMilestone[] = []
+
+export function TaskListView({
+  project,
+  milestones = NO_MILESTONES,
+  onChanged
+}: TaskListViewProps): React.JSX.Element {
   const navigate = useNavigate()
   const { message } = App.useApp()
   const inProject = !!project
@@ -264,9 +274,9 @@ export function TaskListView({ project, onChanged }: TaskListViewProps): React.J
       inProject && kanbanActive
         ? statusColumns(tasks)
         : showGroups
-          ? buildTaskGroups(tasks, activeGroupBy)
+          ? buildTaskGroups(tasks, activeGroupBy, milestones)
           : [],
-    [inProject, kanbanActive, showGroups, activeGroupBy, tasks]
+    [inProject, kanbanActive, showGroups, activeGroupBy, tasks, milestones]
   )
   const hasJiraTasks = useMemo(() => tasks.some((task) => task.jira_key), [tasks])
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
@@ -288,10 +298,11 @@ export function TaskListView({ project, onChanged }: TaskListViewProps): React.J
     () => ({
       projects: availableProjects,
       contexts: availableContexts,
+      milestones,
       selectedIds: selectedTaskIds,
       taskById
     }),
-    [availableProjects, availableContexts, selectedTaskIds, taskById]
+    [availableProjects, availableContexts, milestones, selectedTaskIds, taskById]
   )
   const filtering = searchQuery.trim() !== '' || activeFilterCount(filterValue) > 0
   const contextGroupingRepeats =
@@ -353,6 +364,22 @@ export function TaskListView({ project, onChanged }: TaskListViewProps): React.J
       }
     },
     [refreshTasks, tasks, message]
+  )
+
+  const handleMoveTask = useCallback(
+    async (taskId: number, status: string): Promise<void> => {
+      const next = status as TaskStatus
+      try {
+        await window.api.updateStatus(taskId, next)
+        message.success(`Movida para ${STATUS_LABELS[next]}`)
+      } catch (err) {
+        message.error(errorMessage(err))
+      } finally {
+        await refreshTasks()
+        onChanged?.()
+      }
+    },
+    [refreshTasks, message, onChanged]
   )
 
   const addToProject = async (): Promise<void> => {
@@ -506,6 +533,8 @@ export function TaskListView({ project, onChanged }: TaskListViewProps): React.J
               ...GROUP_BY_OPTIONS.filter(
                 (option) =>
                   !(inProject && option.value === 'project') &&
+                  (option.value !== 'milestone' ||
+                    (inProject && (milestones.length > 0 || activeGroupBy === 'milestone'))) &&
                   (!JIRA_GROUP_MODES.includes(option.value) ||
                     hasJiraTasks ||
                     activeGroupBy === option.value)
@@ -606,6 +635,15 @@ export function TaskListView({ project, onChanged }: TaskListViewProps): React.J
               </Empty>
             ) : kanbanActive ? (
               <RegionBoundary region="kanban de tarefas">
+                {inProject && (
+                  <Typography.Text
+                    type="secondary"
+                    style={{ display: 'block', fontSize: 12, marginBottom: 8 }}
+                  >
+                    Arraste um card para outra coluna para mudar o status. Para ver as outras
+                    colunas: <Kbd>Shift</Kbd> + rolagem ou arraste o fundo do quadro.
+                  </Typography.Text>
+                )}
                 <TaskKanban
                   columns={inProject ? defaultTaskGroups : taskGroups}
                   groupBy={inProject ? 'project' : activeGroupBy}
@@ -623,6 +661,9 @@ export function TaskListView({ project, onChanged }: TaskListViewProps): React.J
                   showStatus={statusFilter === 'all'}
                   contexts={availableContexts}
                   onReorderColumns={inProject ? undefined : handleReorderGroups}
+                  onMoveTask={
+                    inProject ? (id, status) => void handleMoveTask(id, status) : undefined
+                  }
                 />
               </RegionBoundary>
             ) : groupingEnabled && viewMode === 'cards' ? (

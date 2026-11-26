@@ -113,7 +113,7 @@ Próximas mais recente fora do arquivo) — no lugar das três consultas por pro
 
 `ProjectDetailPage.tsx` · `components/projects/ProjectHeader.tsx` e `ProjectSummary.tsx` · tarefas
 em `components/tasks/TaskListView.tsx`, o mesmo miolo da lista de tarefas. Dados: `project:get`,
-`area:list` e `task:list` do projeto (todas as abertas e fechadas, fora do arquivo); relê em
+`area:list`, `milestone:list` e `task:list` do projeto (todas as abertas e fechadas, fora do arquivo); relê em
 `tasks:refresh`. Projeto inexistente mostra um `Result` 404.
 
 ## Cabeçalho
@@ -132,7 +132,8 @@ em `components/tasks/TaskListView.tsx`, o mesmo miolo da lista de tarefas. Dados
 
 - **Área de foco** (`TrendingUp`): `Select` com as áreas e "Ver em Horizontes →".
 - **Meta** (`Trophy`): o mesmo `Select` agrupado do "Novo projeto" e "Ver em Horizontes →"; o nome
-  longo corta com reticências.
+  longo corta com reticências. Meta concluída não aparece nos seletores (`goalSelectOptions`,
+  `goalMenuGroups`), salvo a do próprio projeto, marcada "(concluída)".
 - **Prazo** (`CalendarDays`): `DatePicker` e "Remover prazo"; o texto diz "Prazo 12/12 · faltam
   8d" (ou "hoje", "venceu há 3d"), âmbar a 7 dias e vermelho vencido, só em projeto ativo.
 - **Cor:** as dez `USER_COLORS` como rádio. Uma cor antiga fora da paleta continua e aparece como
@@ -152,7 +153,14 @@ com `TriangleAlert`), quando o projeto está ativo, tem tarefa aberta e nenhuma 
 projeto), Tabela/Cards/Kanban, agrupar (sem "por projeto"), menu de contexto e ações em massa, só
 com as tarefas do projeto e sem a coluna/rótulo de projeto. No topo, o campo **"Adicionar tarefa a
 {projeto}…"** (Enter cria a tarefa já em Próximas). O **Kanban** aqui vale em qualquer aba e tem
-uma coluna por status, vazias inclusive ("Nada aqui"), sem reordenar colunas. Visão e agrupamento
+uma coluna por status, vazias inclusive ("Nada aqui"), sem reordenar colunas. O card **arrasta**
+para outra coluna (`@dnd-kit`, `DraggableBoard` em `TaskCardViews.tsx`; mouse a partir de 6px, para
+o clique continuar abrindo a tarefa, e teclado: espaço pega, setas pulam de coluna, espaço solta) e
+o status muda por `task:updateStatus`, com as regras de sempre (bloqueada não entra em Executando:
+o erro aparece e o card volta). A coluna sob o card ganha borda e fundo primários e, vazia, diz
+"Solte aqui". A dica acima do quadro cita o arrastar e os atalhos de rolagem. Com marcos, o
+agrupamento ganha **Agrupar por marco** (ordem dos marcos, "Sem marco" por último) e o menu de
+contexto, **Marco ▸**. Visão e agrupamento
 do projeto têm chaves próprias em `localStorage` (`ticktask:projectTaskView`,
 `ticktask:projectTaskGroup`).
 
@@ -163,6 +171,16 @@ do projeto têm chaves próprias em `localStorage` (`ticktask:projectTaskView`,
   tarefa como próxima…" com as tarefas abertas. A escolha grava `projects.next_task_id`; vale
   enquanto a tarefa está aberta, no projeto e fora do arquivo, senão volta a regra antiga (a tarefa
   em Próximas mais recente).
+- **Marcos** (`ProjectMilestones.tsx`, logo abaixo da Próxima ação; entre `md` e `lg`, numa linha
+  inteira abaixo dos três cards): `Timeline` dos marcos (`milestone:list`, ordem início →
+  desenvolvimento por data → fim) com nome (abre o `Modal`), `Tag` do tipo, data com "faltam Nd"
+  (tom de `milestoneView.ts` em `colorWarning`/`colorError`, como o prazo), "· próximo" no primeiro aberto, barra das
+  tarefas do marco, Concluir/Reabrir (`milestone:setDone`, manual) e o botão `⋯` (`Dropdown`) com
+  **Editar marco** (abre o `Modal`) e **Excluir marco** (`modal.confirm`). Com todas as tarefas feitas
+  aparece "Todas as tarefas feitas. Concluir marco". **Novo marco** abre o `Modal` (Nome, Tipo em
+  `Segmented` com Início/Fim tomados desabilitados, Data, "O que fica pronto"); editar mostra
+  **Excluir** com `Popconfirm` (as tarefas ficam sem marco). Dados em `project_milestones`
+  (`milestoneQueries.ts`, puro e testado); a tarefa guarda `tasks.milestone_id`.
 - **Resultado desejado:** `TextArea` sem borda, grava ao sair.
 - **Progresso:** "N de M tarefas" com a porcentagem e a barra; `Statistic` em mono 20: Abertas,
   Bloqueadas (no laranja de Prioridade quando há), Tempo total e Prazo ("12 dias", "venceu").

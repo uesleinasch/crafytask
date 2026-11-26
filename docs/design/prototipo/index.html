@@ -72,6 +72,16 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
 .ct-grid-auto { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 16px; }
 .ct-kanban { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(260px, 1fr); gap: 12px; overflow-x: auto; padding-bottom: 8px; }
 .ct-col { background: var(--ct-bg); border: 1px solid var(--ct-border); border-radius: 12px; padding: 10px; min-width: 0; }
+.ct-kanban-board { align-items: start; }
+.ct-kanban-board .ct-col { display: flex; flex-direction: column; min-height: 0; transition: border-color .12s, background-color .12s; }
+.ct-col-list { display: flex; flex-direction: column; gap: 8px; max-height: max(320px, calc(100vh - 320px)); overflow-y: auto; scrollbar-width: thin; margin-inline: -4px; padding-inline: 4px; }
+.ct-col.over { border-color: var(--ct-primary); background: var(--ct-primary-soft); }
+.ct-drag { cursor: grab; }
+.ct-kanban-board { cursor: grab; }
+.ct-kanban-board .ct-col-list > * { cursor: auto; }
+.ct-kanban-board .ct-col-list > .ct-drag { cursor: grab; }
+.ct-kanban-board.panning { cursor: grabbing; user-select: none; }
+.ct-drag.dragging { opacity: .4; }
 .ct-leak-1 { background: var(--ct-leak-1) !important; }
 .ct-leak-2 { background: var(--ct-leak-2) !important; }
 .ct-leak-3 { background: var(--ct-leak-3) !important; }
@@ -81,6 +91,25 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
 .ct-note { font-size: 15px; line-height: 1.65; max-width: 68ch; }
 .ct-note h3 { font-size: 17px; margin: 0 0 8px; }
 .ct-note code { font-family: var(--ct-mono); font-size: 13px; background: var(--ct-primary-soft); padding: 1px 5px; border-radius: 4px; }
+.ct-composer { border: 1px solid var(--ct-border); border-radius: 8px; background: var(--ct-surface); overflow: hidden; }
+.ct-composer:focus-within { border-color: var(--ct-primary); }
+.ct-composer-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; padding: 4px 6px; border-bottom: 1px solid var(--ct-border); background: var(--ct-bg); }
+.ct-composer-sep { width: 1px; height: 18px; margin: 0 4px; background: var(--ct-border); }
+.ct-composer-body { min-height: 96px; max-height: 320px; overflow: auto; padding: 10px 12px; outline: none; }
+.ct-composer-body:empty::before { content: attr(data-placeholder); color: var(--ct-text-3); pointer-events: none; }
+.ct-rich { font-size: 14px; line-height: 1.6; }
+.ct-rich > :first-child { margin-top: 0; }
+.ct-rich > :last-child { margin-bottom: 0; }
+.ct-rich p, .ct-rich ul, .ct-rich ol, .ct-rich blockquote, .ct-rich pre { margin: 0 0 6px; }
+.ct-rich h1, .ct-rich h2, .ct-rich h3 { margin: 4px 0 6px; font-size: 15px; font-weight: 600; }
+.ct-rich h1 { font-size: 17px; } .ct-rich h2 { font-size: 16px; }
+.ct-rich ul, .ct-rich ol { padding-inline-start: 22px; }
+.ct-rich blockquote { padding-inline-start: 10px; border-inline-start: 3px solid var(--ct-border); color: var(--ct-text-2); }
+.ct-rich code { font-family: var(--ct-mono); font-size: 12.5px; background: var(--ct-primary-soft); padding: 1px 5px; border-radius: 4px; }
+.ct-rich pre { font-family: var(--ct-mono); font-size: 12.5px; background: var(--ct-bg); border: 1px solid var(--ct-border); padding: 8px 10px; border-radius: 6px; white-space: pre-wrap; }
+.ct-rich a { color: var(--ct-primary); }
+.ct-rich img { display: block; max-width: 100%; max-height: 320px; border-radius: 6px; border: 1px solid var(--ct-border); }
+.ct-rich .ct-mention { color: var(--ct-primary); background: var(--ct-primary-soft); padding: 0 4px; border-radius: 4px; }
 .ct-bulkbar { position: sticky; bottom: 12px; z-index: 5; margin-top: 12px; }
 .ct-bulkbar-inner { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 12px; background: var(--ct-elevated); border: 1px solid var(--ct-border-strong); box-shadow: var(--ct-shadow-float); }
 :focus-visible { outline: 2px solid var(--ct-primary); outline-offset: 2px; }
@@ -350,6 +379,21 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     archived: { label: 'Arquivado', icon: 'ContainerOutlined', light: STATUS.inbox.light, dark: STATUS.inbox.dark }
   };
   const P = Object.fromEntries(PROJECTS.map(p => [p.id, p]));
+  const MILESTONE_KIND = {
+    inicio: { label: 'Início', icon: 'RocketOutlined', order: 0 },
+    desenvolvimento: { label: 'Desenvolvimento', icon: 'NodeIndexOutlined', order: 1 },
+    fim: { label: 'Fim', icon: 'FlagOutlined', order: 2 }
+  };
+  const MILESTONES = {
+    13: [
+      { id: 1, name: 'Kickoff da refatoração', kind: 'inicio', due: '2026-11-10', doneAt: '2026-11-10', description: 'Pesquisa e guia aprovados.' },
+      { id: 2, name: 'Lista e detalhe em Ant Design', kind: 'desenvolvimento', due: '2026-11-20', doneAt: null, description: '' },
+      { id: 3, name: 'Todas as telas migradas', kind: 'desenvolvimento', due: '2026-12-05', doneAt: null, description: '' },
+      { id: 4, name: 'Release v4 publicada', kind: 'fim', due: '2026-12-15', doneAt: null, description: 'Todos os entregáveis completos.' }
+    ]
+  };
+  const TASK_MILESTONE = { 711: 2, 731: 2, 698: 3, 707: 3, 699: 1 };
+  const sortMilestones = ms => ms.slice().sort((a, b) => MILESTONE_KIND[a.kind].order - MILESTONE_KIND[b.kind].order || String(a.due || '9999').localeCompare(String(b.due || '9999')));
   const CONTEXTS = [
     { name: '@dev', emoji: '💻' }, { name: '@reunião', emoji: '👥' }, { name: '@telefone', emoji: '📞' },
     { name: '@escrita', emoji: '✍️' }, { name: '@leitura', emoji: '📖' }, { name: '@github', emoji: '🔀' }
@@ -360,7 +404,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       id: 711, name: 'Criação de projeto para refatoração visual', description: 'Pesquisa, guia de design e protótipo da nova interface.',
       status: 'executando', category: 'normal', project: 13, contexts: ['@dev'], tags: ['refactor'], energy: 'alto', recurrence: 'none',
       scheduled: '2026-11-17', start: '09:00', end: '12:00', due: '2026-11-21', dueTime: null, url: '', gcal: true,
-      workingDir: '~/Code/pessoal/crafytask', dirInherited: true, startCommand: 'npm run dev', running: true, blocked: false, secs: 9130,
+      workingDir: '~/Code/pessoal/crafytask', dirInherited: true, startCommand: 'npm run dev', running: true, blocked: false, secs: 9130, milestone: 2,
       subtasks: [{ id: 801, name: 'Pesquisa de UI/UX', done: true }, { id: 802, name: 'Guia de design', done: true }, { id: 803, name: 'Protótipo navegável', done: false }],
       deps: [{ id: 699, name: 'Publicar release v3.16.0', done: true }],
       sessions: [
@@ -419,6 +463,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     { id: 709, name: 'Ler "Shape Up" de novo', status: 'someday', category: 'normal', project: null, contexts: ['@leitura'], due: null, secs: 0, energy: 'medio' },
     { id: 710, name: 'Marcar check-up anual', status: 'inbox', category: 'prioridade', project: 9, contexts: ['@telefone'], due: '2026-11-28', secs: 0, energy: 'baixo' },
     { id: 699, name: 'Publicar release v3.16.0', status: 'finalizada', category: 'normal', project: 13, contexts: ['@dev'], due: '2026-11-14', secs: 2700, energy: 'medio' },
+    ...['Tema escuro nos gráficos', 'Paleta de comandos', 'Barra de status', 'Captura rápida em antd', 'Timer flutuante', 'Tokens de densidade', 'Tabela de tarefas', 'Menu de contexto', 'Filtros salvos'].map((name, i) => ({ id: 680 + i, name, status: 'finalizada', category: 'normal', project: 13, contexts: ['@dev'], due: null, secs: 1800 + i * 300, energy: 'medio' })),
     { id: 712, name: 'Organizar 1:1 com o time de dados', status: 'aguardando', category: 'normal', project: 4, contexts: ['@reunião'], due: '2026-11-20', secs: 0, energy: 'medio', waiting: 'Agenda do gestor' },
     { id: 713, name: 'Treino de força — semana 46', status: 'proximas', category: 'normal', project: 9, contexts: ['@academia'], due: '2026-11-19', secs: 0, energy: 'alto', today: true },
     { id: 714, name: 'Rever limiar de time leak nas configurações', status: 'someday', category: 'normal', project: 13, contexts: ['@dev'], due: null, secs: 0, energy: 'baixo' }
@@ -790,6 +835,14 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           options=${PROJECTS.filter(p => p.status === 'active' || p.status === 'someday').map(p => ({ value: p.id, title: p.name, label: html`<${ProjectLabel} id=${p.id} />` }))} />`}>
         ${d.project ? html`<${ProjectLabel} id=${d.project} />` : html`<span><${I.FolderOutlined} /> Sem projeto</span>`}
       <//>
+      ${d.project && (MILESTONES[d.project] || []).length ? (() => {
+        const ms = sortMilestones(MILESTONES[d.project]);
+        const cur = ms.find(m => m.id === d.milestone);
+        return html`<${PropPill} label="Marco" icon="NodeIndexOutlined" muted=${!cur} content=${html`<${Select} allowClear placeholder="Sem marco" value=${cur ? cur.id : null} onChange=${v => set({ milestone: v || null })} style=${{ width: '100%' }}
+            options=${ms.map(m => ({ value: m.id, label: m.name + ' · ' + MILESTONE_KIND[m.kind].label + (m.due ? ' · ' + fmtDate(m.due) : '') }))} />`}>
+          ${cur ? cur.name : 'Marco'}
+        <//>`;
+      })() : null}
       <${PropPill} label="Contextos" icon=${d.ctxs.length ? null : 'EnvironmentOutlined'} muted=${!d.ctxs.length} content=${html`<${Flex} gap=${4} wrap="wrap">${CONTEXTS.map(c => html`<${Tag.CheckableTag} key=${c.name} checked=${d.ctxs.includes(c.name)} onChange=${on => set({ ctxs: on ? d.ctxs.concat(c.name) : d.ctxs.filter(x => x !== c.name) })}>${c.emoji} ${c.name}<//>`)}<//>`}>
         ${d.ctxs.length ? d.ctxs.slice(0, 2).map(n => { const c = CONTEXTS.find(x => x.name === n); return html`<span key=${n}>${c ? c.emoji + ' ' : ''}${n}</span>`; }) : 'Contexto'}${d.ctxs.length > 2 ? html`<span style=${{ color: 'var(--ct-text-3)' }}>+${d.ctxs.length - 2}</span>` : null}
       <//>
@@ -901,10 +954,32 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const [expanded, setExpanded] = useState([]);
     const [collapsed, setCollapsed] = useState(() => new Set());
     const [today, setToday] = useState(() => new Set(TASKS.filter(t => t.today).map(t => t.id)));
+    const [dragId, setDragId] = useState(null);
+    const boardRef = useCallback(el => {
+      if (!el || el.dataset.pan) return;
+      el.dataset.pan = '1';
+      el.addEventListener('wheel', ev => {
+        if (!ev.shiftKey || el.scrollWidth <= el.clientWidth) return;
+        ev.preventDefault();
+        el.scrollLeft += ev.deltaY || ev.deltaX;
+      }, { passive: false });
+      let start = null;
+      el.addEventListener('pointerdown', ev => {
+        if (ev.button !== 0 || ev.target.closest('.ct-col-list > *, button, a, input')) return;
+        start = { x: ev.clientX, left: el.scrollLeft };
+        el.setPointerCapture(ev.pointerId);
+        el.classList.add('panning');
+      });
+      el.addEventListener('pointermove', ev => { if (start) el.scrollLeft = start.left - (ev.clientX - start.x); });
+      const end = () => { start = null; el.classList.remove('panning'); };
+      el.addEventListener('pointerup', end);
+      el.addEventListener('pointercancel', end);
+    }, []);
+    const [dragOver, setDragOver] = useState(null);
     const counts = useMemo(() => { const c = { all: tasks.length }; tasks.forEach(t => { c[t.status] = (c[t.status] || 0) + 1; }); return c; }, [tasks]);
     const rows = tasks.filter(t => (status === 'all' || t.status === status) && t.name.toLowerCase().includes(q.toLowerCase()) && (!fOverdue || (t.due && t.due < TODAY && t.status !== 'finalizada')));
     const effectiveView = isMobile && view === 'tabela' ? 'cards' : view;
-    useEffect(() => { setSel([]); if (status !== 'executando' && view === 'kanban') setView('tabela'); }, [status]);
+    useEffect(() => { setSel([]); if (!projectId && status !== 'executando' && view === 'kanban') setView('tabela'); }, [status]);
     useEffect(() => { setSel([]); setCollapsed(new Set()); }, [groupBy]);
 
     const idOf = key => Number(String(key).split(':')[1].split('@')[0]);
@@ -1037,6 +1112,12 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         list.forEach(t => { const k = t.project || 0; if (!m.has(k)) m.set(k, []); m.get(k).push(t); });
         return [...m.entries()].map(([k, ts]) => ({ key: 'p' + k, name: k ? P[k].name : 'Sem projeto', color: k ? P[k].color : 'var(--ct-border-strong)', tasks: ts }));
       }
+      if (groupBy === 'milestone' && projectId) {
+        const ms = sortMilestones(MILESTONES[projectId] || []);
+        const groups = ms.map(m => ({ key: 'm' + m.id, name: m.name + ' · ' + MILESTONE_KIND[m.kind].label + (m.due ? ' · ' + fmtDate(m.due) : ''), tasks: list.filter(t => TASK_MILESTONE[t.id] === m.id) }));
+        groups.push({ key: 'm0', name: 'Sem marco', tasks: list.filter(t => !ms.some(m => m.id === TASK_MILESTONE[t.id])) });
+        return groups.filter(g => g.tasks.length);
+      }
       if (groupBy === 'context') {
         const m = new Map();
         list.forEach(t => (t.contexts.length ? t.contexts : ['—']).forEach(c => { if (!m.has(c)) m.set(c, []); m.get(c).push({ ...t, groupCtx: c }); }));
@@ -1119,13 +1200,22 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       ? html`<${Empty} image=${Empty.PRESENTED_IMAGE_SIMPLE} description=${status === 'inbox' ? 'Inbox zerado. Tudo processado.' : 'Nenhuma tarefa aqui.'} />`
       : effectiveView === 'kanban'
         ? projectId
-          ? html`<div className="ct-kanban">${Object.entries(STATUS).map(([k, v]) => { const items = rows.filter(t => t.status === k); return html`<div key=${k} className="ct-col">
-              <${Flex} align="center" gap=${8} style=${{ marginBottom: 8 }}>${createElement(I[v.icon], { style: { color: v[mode][0] } })}<${Text} strong>${v.label}<//><${Text} type="secondary" className="ct-mono">${items.length}<//><//>
-              <${Flex} vertical gap=${8}>${items.map(card)}${items.length ? null : html`<${Text} type="secondary" style=${{ fontSize: 12 }}>Nada aqui<//>`}<//>
+          ? html`<${Text} type="secondary" style=${{ display: 'block', fontSize: 12, marginBottom: 8 }}>Arraste um card para outra coluna para mudar o status. Para ver as outras colunas: <span className="ct-kbd">Shift</span> + rolagem ou arraste o fundo do quadro.<//>
+            <div ref=${boardRef} className="ct-kanban ct-kanban-board" tabIndex=${0} aria-label="Quadro Kanban">${Object.entries(STATUS).map(([k, v]) => { const items = rows.filter(t => t.status === k); return html`<div key=${k} className=${'ct-col' + (dragOver === k ? ' over' : '')}
+              onDragOver=${ev => { if (dragId === null) return; ev.preventDefault(); if (dragOver !== k) setDragOver(k); }}
+              onDragLeave=${ev => { if (!ev.currentTarget.contains(ev.relatedTarget)) setDragOver(null); }}
+              onDrop=${ev => { ev.preventDefault(); const t = findTask(dragId); setDragOver(null); setDragId(null);
+                if (!t || t.status === k) return;
+                if (k === 'executando' && t.blocked) { message.error('Tarefa bloqueada: conclua as dependências antes.'); return; }
+                updateTasks([t.id], { status: k }); message.success('Movida para ' + v.label); }}>
+              <${Flex} align="center" gap=${8} style=${{ marginBottom: 8, flex: 'none' }}>${createElement(I[v.icon], { style: { color: v[mode][0] } })}<${Text} strong>${v.label}<//><${Text} type="secondary" className="ct-mono">${items.length}<//><//>
+              <div className="ct-col-list">${items.map(t => html`<div key=${t.id} draggable="true" className=${'ct-drag' + (dragId === t.id ? ' dragging' : '')} aria-roledescription="card arrastável"
+                onDragStart=${ev => { ev.dataTransfer.effectAllowed = 'move'; setDragId(t.id); }} onDragEnd=${() => { setDragId(null); setDragOver(null); }}>${card(t)}</div>`)}
+                ${items.length ? null : html`<${Text} type="secondary" style=${{ fontSize: 12 }}>${dragId !== null ? 'Solte aqui' : 'Nada aqui'}<//>`}</div>
             </div>`; })}</div>`
-          : html`<div className="ct-kanban">${PROJECTS.filter(p => p.status === 'active').map(p => { const items = rows.filter(t => t.project === p.id); return html`<div key=${p.id} className="ct-col">
+          : html`<div ref=${boardRef} className="ct-kanban ct-kanban-board" tabIndex=${0} aria-label="Quadro Kanban">${PROJECTS.filter(p => p.status === 'active').map(p => { const items = rows.filter(t => t.project === p.id); return html`<div key=${p.id} className="ct-col">
             <${Flex} align="center" gap=${8} style=${{ marginBottom: 8 }}><span className="ct-dot" style=${{ background: p.color }}></span><${Text} strong>${p.name}<//><${Text} type="secondary" className="ct-mono">${items.length}<//><//>
-            <${Flex} vertical gap=${8}>${items.map(card)}${items.length ? null : html`<${Text} type="secondary" style=${{ fontSize: 12 }}>Nada executando<//>`}<//>
+            <div className="ct-col-list">${items.map(card)}${items.length ? null : html`<${Text} type="secondary" style=${{ fontSize: 12 }}>Nada executando<//>`}</div>
           </div>`; })}</div>`
         : effectiveView === 'cards'
           ? (groups
@@ -1162,7 +1252,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           { value: 'cards', icon: html`<${I.AppstoreOutlined} />`, label: screens.lg ? 'Cards' : null, title: 'Cards' },
           ...(status === 'executando' || projectId ? [{ value: 'kanban', icon: html`<${I.ProjectOutlined} />`, label: screens.lg ? 'Kanban' : null, title: 'Kanban' }] : [])
         ]} />
-        ${effectiveView !== 'kanban' ? html`<${Select} value=${groupBy} onChange=${setGroupBy} style=${{ width: 180 }} aria-label="Agrupar" options=${[{ value: 'none', label: 'Sem agrupamento' }].concat(projectId ? [] : [{ value: 'project', label: 'Agrupar por projeto' }], [{ value: 'context', label: 'Agrupar por contexto' }])} />` : null}
+        ${effectiveView !== 'kanban' ? html`<${Select} value=${groupBy} onChange=${setGroupBy} style=${{ width: 180 }} aria-label="Agrupar" options=${[{ value: 'none', label: 'Sem agrupamento' }].concat(projectId ? [{ value: 'milestone', label: 'Agrupar por marco' }] : [{ value: 'project', label: 'Agrupar por projeto' }], [{ value: 'context', label: 'Agrupar por contexto' }])} />` : null}
       <//>
       ${projectId ? html`<${Input} value=${newName} onChange=${e => setNewName(e.target.value)} onPressEnter=${addToProject} placeholder=${'Adicionar tarefa a ' + P[projectId].name + '…'} aria-label="Adicionar tarefa ao projeto" className="ct-project-add"
           prefix=${html`<${I.PlusOutlined} style=${{ color: 'var(--ct-text-3)' }} />`} suffix=${html`<${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12 }}>Enter<//>`} style=${{ marginBottom: 12 }} />` : null}
@@ -1222,7 +1312,9 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const [secs, setSecs] = useState(t.secs);
     const [category, setCategory] = useState(t.category);
     const [status, setStatus] = useState(t.status);
-    const [project, setProject] = useState(t.project);
+    const [project, setProjectRaw] = useState(t.project);
+    const [milestone, setMilestone] = useState(t.milestone || null);
+    const setProject = v => { setProjectRaw(v); if (v !== project) setMilestone(null); };
     const [ctxs, setCtxs] = useState(t.contexts);
     const [tags, setTags] = useState(t.tags);
     const [energy, setEnergy] = useState(t.energy);
@@ -1341,6 +1433,17 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         <//>`}>
         ${project ? html`<${ProjectLabel} id=${project} />` : html`<span><${I.FolderOutlined} /> Sem projeto</span>`}
       <//>
+      ${project && (MILESTONES[project] || []).length ? (() => {
+        const ms = sortMilestones(MILESTONES[project]);
+        const cur = ms.find(m => m.id === milestone);
+        return html`<${PropPill} label="Marco" icon="NodeIndexOutlined" muted=${!cur} content=${html`<${Flex} vertical gap=${8}>
+            <${Select} allowClear placeholder="Sem marco" value=${cur ? cur.id : null} onChange=${v => setMilestone(v || null)} style=${{ width: '100%' }}
+              options=${ms.map(m => ({ value: m.id, label: html`<${Space} size=${6}>${createElement(I[MILESTONE_KIND[m.kind].icon], { style: { color: 'var(--ct-text-3)' } })}${m.name}<${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12 }}>${m.due ? fmtDate(m.due) : ''}<//><//>` }))} />
+            <${Text} type="secondary" style=${{ fontSize: 12 }}>Os marcos são do projeto. Crie e conclua no detalhe do projeto.<//>
+          <//>`}>
+          ${cur ? html`<span>${cur.name}<span style=${{ color: 'var(--ct-text-3)' }}> · ${MILESTONE_KIND[cur.kind].label}</span></span>` : 'Marco'}
+        <//>`;
+      })() : null}
       <${PropPill} label="Contextos" icon=${ctxs.length ? null : 'EnvironmentOutlined'} muted=${!ctxs.length} content=${html`<${Flex} gap=${4} wrap="wrap">${CONTEXTS.map(c => html`<${Tag.CheckableTag} key=${c.name} checked=${ctxs.includes(c.name)} onChange=${on => setCtxs(on ? ctxs.concat(c.name) : ctxs.filter(x => x !== c.name))}>${c.emoji} ${c.name}<//>`)}<//>`}>
         ${ctxs.length ? ctxs.slice(0, 2).map(n => { const c = CONTEXTS.find(x => x.name === n); return html`<span key=${n}>${c ? c.emoji + ' ' : ''}${n}</span>`; }) : 'Contexto'}${ctxs.length > 2 ? html`<span style=${{ color: 'var(--ct-text-3)' }}>+${ctxs.length - 2}</span>` : null}
       <//>
@@ -1695,7 +1798,8 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       remaining: 'Aba Histórico no detalhe da task e o aviso ao encerrar a sessão.' },
     { id: 8, kind: 'operation', origin: 'mcp', at: 'hoje 18:40', status: 'executando', task: 'MCP-1: histórico da task', summary: 'PR #117 aprovado nos checks e levado para production.' },
     { id: 7, kind: 'status', at: 'hoje 18:40', from: 'executando', to: 'finalizada', task: 'MCP-1: histórico da task' },
-    { id: 6, kind: 'note', origin: 'app', at: 'hoje 18:20', status: 'executando', task: null, summary: 'Lembrar: a release só sai quando o épico inteiro fechar.' },
+    { id: 6, kind: 'note', origin: 'app', at: 'hoje 18:20', status: 'executando', task: null,
+      html: '<p>Lembrar: a release <b>só sai quando o épico inteiro fechar</b>.</p><ul><li>Conferir <code>docs/releases</code></li><li>Avisar no <span class="ct-mention">@Release v3.20</span></li></ul><blockquote>Combinado na revisão de sexta.</blockquote>' },
     { id: 5, kind: 'checkpoint', origin: 'mcp', at: 'hoje 18:12', status: 'executando', task: null,
       summary: 'Épico dividido em 8 subtarefas; começando pela memória da task.',
       done: 'Mapa do que o MCP cobre e do que falta.', remaining: 'Todas as subtarefas.' },
@@ -1704,12 +1808,77 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     { id: 2, kind: 'status', at: 'hoje 11:25', from: null, to: 'inbox', task: null }
   ];
 
+  const COMPOSER_BLOCKS = [
+    { value: 'p', label: 'Texto normal' },
+    { value: 'h1', label: 'Título 1' },
+    { value: 'h2', label: 'Título 2' },
+    { value: 'h3', label: 'Título 3' },
+    { value: 'blockquote', label: 'Citação' },
+    { value: 'pre', label: 'Bloco de código' }
+  ];
+
+  const COMPOSER_IMAGE = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+    "<svg xmlns='http://www.w3.org/2000/svg' width='240' height='120'><rect width='240' height='120' rx='8' fill='#D9D5F7'/>" +
+    "<text x='120' y='66' font-family='sans-serif' font-size='14' text-anchor='middle' fill='#4A3FB0'>imagem colada</text></svg>");
+
+  function HistoryComposer({ onCancel, onSave }) {
+    const ref = React.useRef(null);
+    const [block, setBlock] = useState('p');
+    const [empty, setEmpty] = useState(true);
+    useEffect(() => { ref.current && ref.current.focus(); }, []);
+    const run = (cmd, value) => { ref.current.focus(); document.execCommand(cmd, false, value); setEmpty(!ref.current.textContent.trim()); };
+    const keep = (ev) => ev.preventDefault();
+    const tool = (title, icon, onClick) => html`<${Tooltip} title=${title}>
+      <${Button} type="text" size="small" aria-label=${title} icon=${icon} onMouseDown=${keep} onClick=${onClick} />
+    <//>`;
+    const inlineCode = () => {
+      const sel = window.getSelection();
+      const text = sel && sel.toString();
+      run('insertHTML', '<code>' + (text || 'código') + '</code>&nbsp;');
+    };
+    const save = () => { if (!empty) onSave(ref.current.innerHTML); };
+    return html`<${Flex} vertical gap=${8}>
+      <div className="ct-composer">
+        <div className="ct-composer-bar" role="toolbar" aria-label="Formatação">
+          <${Select} size="small" variant="borderless" value=${block} style=${{ width: 136 }} options=${COMPOSER_BLOCKS}
+            onChange=${(v) => { setBlock(v); run('formatBlock', v); }} />
+          <span className="ct-composer-sep" />
+          ${tool('Negrito (Ctrl+B)', html`<${I.BoldOutlined} />`, () => run('bold'))}
+          ${tool('Itálico (Ctrl+I)', html`<${I.ItalicOutlined} />`, () => run('italic'))}
+          ${tool('Tachado', html`<${I.StrikethroughOutlined} />`, () => run('strikeThrough'))}
+          ${tool('Código', html`<${I.CodeOutlined} />`, inlineCode)}
+          <span className="ct-composer-sep" />
+          ${tool('Lista', html`<${I.UnorderedListOutlined} />`, () => run('insertUnorderedList'))}
+          ${tool('Lista numerada', html`<${I.OrderedListOutlined} />`, () => run('insertOrderedList'))}
+          ${tool('Lista de tarefas', html`<${I.CheckSquareOutlined} />`, () => run('insertHTML', '<ul><li>☐ </li></ul>'))}
+          <span className="ct-composer-sep" />
+          ${tool('Link', html`<${I.LinkOutlined} />`, () => run('createLink', 'https://exemplo.com'))}
+          ${tool('Imagem (ou cole/arraste no texto)', html`<${I.PictureOutlined} />`, () => run('insertHTML', '<p><img alt="Imagem colada" src="' + COMPOSER_IMAGE + '" /></p>'))}
+          ${tool('Mencionar tarefa ou página (@)', html`<span style=${{ fontWeight: 600 }}>@</span>`, () => run('insertHTML', '<span class="ct-mention">@Release v3.20</span>&nbsp;'))}
+        </div>
+        <div ref=${ref} className="ct-composer-body ct-rich" contentEditable suppressContentEditableWarning
+          aria-label="Anotação" aria-multiline="true" role="textbox"
+          data-placeholder="O que vale lembrar ao retomar esta tarefa?"
+          onInput=${() => setEmpty(!ref.current.textContent.trim())}
+          onKeyDown=${(ev) => {
+            if (ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)) { ev.preventDefault(); save(); }
+            if (ev.key === 'Escape') onCancel();
+          }} />
+      </div>
+      <${Flex} gap=${8} align="center" wrap>
+        <${Text} type="secondary" style=${{ fontSize: 12 }}><span className="ct-mono">Ctrl+Enter</span> grava · <span className="ct-mono">/</span> blocos · <span className="ct-mono">@</span> menciona · cole imagens<//>
+        <div style=${{ flex: 1 }}></div>
+        <${Button} size="small" onClick=${onCancel}>Cancelar<//>
+        <${Button} size="small" type="primary" disabled=${empty} onClick=${save}>Gravar<//>
+      <//>
+    <//>`;
+  }
+
   function TaskHistory({ mode, hasSubtasks }) {
     const { message } = AntApp.useApp();
     const [filter, setFilter] = useState('tudo');
     const [withSubs, setWithSubs] = useState(true);
     const [writing, setWriting] = useState(false);
-    const [draft, setDraft] = useState('');
     const [extra, setExtra] = useState([]);
     const all = [...extra, ...HISTORY_MOCK];
     const last = all.find(e => e.kind === 'checkpoint' && !e.task);
@@ -1746,17 +1915,16 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         dot: html`<${Icon} style=${{ color: 'var(--ct-text-2)', fontSize: 14 }} />`,
         children: html`<${Flex} vertical gap=${4}>
           <${Flex} gap=${6} align="center" wrap><${Text} strong>${kind.label}<//>${origin(e)}<//>
-          <${Text}>${e.summary}<//>
+          ${e.html ? html`<div className="ct-rich" dangerouslySetInnerHTML=${{ __html: e.html }} />` : html`<${Text}>${e.summary}<//>`}
           ${e.done ? html`<${Text} type="secondary"><b>Feito:</b> ${e.done}<//>` : null}
           ${e.remaining ? html`<${Text} type="secondary"><b>Falta:</b> ${e.remaining}<//>` : null}
           ${meta(e)}
         <//>`
       };
     };
-    const save = () => {
-      if (!draft.trim()) return;
-      setExtra([{ id: Date.now(), kind: 'note', origin: 'app', at: 'agora', status: 'executando', task: null, summary: draft.trim() }, ...extra]);
-      setDraft(''); setWriting(false); message.success('Anotação gravada no histórico');
+    const save = (noteHtml) => {
+      setExtra([{ id: Date.now(), kind: 'note', origin: 'app', at: 'agora', status: 'executando', task: null, html: noteHtml }, ...extra]);
+      setWriting(false); message.success('Anotação gravada no histórico');
     };
     return html`<${Flex} vertical gap=${16} style=${{ maxWidth: '76ch' }}>
       ${last ? html`<${Card} size="small" title=${html`<${Space} size=${6}><${I.FlagOutlined} />Onde parei<//>`} extra=${html`<${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12 }}>${last.at}<//>`}>
@@ -1772,10 +1940,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         <div style=${{ flex: 1 }}></div>
         <${Button} size="small" icon=${html`<${I.EditOutlined} />`} onClick=${() => setWriting(!writing)}>Anotar<//>
       <//>
-      ${writing ? html`<${Flex} vertical gap=${8}>
-        <${Input.TextArea} autoFocus autoSize=${{ minRows: 2, maxRows: 6 }} value=${draft} onChange=${ev => setDraft(ev.target.value)} placeholder="O que vale lembrar ao retomar esta tarefa?" />
-        <${Flex} gap=${8} justify="flex-end"><${Button} size="small" onClick=${() => { setWriting(false); setDraft(''); }}>Cancelar<//><${Button} size="small" type="primary" disabled=${!draft.trim()} onClick=${save}>Gravar<//><//>
-      <//>` : null}
+      ${writing ? html`<${HistoryComposer} onCancel=${() => setWriting(false)} onSave=${save} />` : null}
       ${shown.length === 0
         ? html`<${Empty} image=${Empty.PRESENTED_IMAGE_SIMPLE} description="Nada no histórico com este filtro" />`
         : html`<${Timeline} items=${shown.map(item)} />`}
@@ -1954,12 +2119,112 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           <${Form.Item} label="Resultado desejado" extra="Como fica o mundo quando o projeto estiver pronto?"><${Input.TextArea} autoSize=${{ minRows: 2, maxRows: 4 }} value=${draft.outcome} onChange=${e => setDraft({ ...draft, outcome: e.target.value })} /><//>
           <${Form.Item} label="Descrição"><${Input.TextArea} autoSize=${{ minRows: 2, maxRows: 4 }} value=${draft.description} onChange=${e => setDraft({ ...draft, description: e.target.value })} /><//>
           <${Form.Item} label="Área de foco"><${Select} allowClear placeholder="Sem área" value=${draft.area} onChange=${v => setDraft({ ...draft, area: v })} options=${AREAS.map(a => ({ value: a, label: a }))} /><//>
-          <${Form.Item} label="Meta" extra="A que meta, visão ou propósito este projeto serve?"><${Select} allowClear placeholder="Sem meta" value=${draft.goal} onChange=${v => setDraft({ ...draft, goal: v })} options=${goalSelectOptions()} /><//>
+          <${Form.Item} label="Meta" extra="A que meta, visão ou propósito este projeto serve?"><${Select} allowClear placeholder="Sem meta" value=${draft.goal} onChange=${v => setDraft({ ...draft, goal: v })} options=${goalSelectOptions(draft.goal)} /><//>
           <${Form.Item} label="Cor" style=${{ marginBottom: 0 }}><${Flex} gap=${8} wrap="wrap" role="radiogroup" aria-label="Cor">${['#E5484D', '#A84803', '#A15C00', '#0B7A50', '#0F6E7A', '#2A62D6', '#5B47EB', '#7647B0', '#B8327A', '#5D6B82'].map(c => html`<button key=${c} type="button" role="radio" aria-checked=${draft.color === c} aria-label=${'Cor ' + c} onClick=${() => setDraft({ ...draft, color: c })}
             style=${{ width: 26, height: 26, borderRadius: '50%', background: c, border: 'none', cursor: 'pointer', boxShadow: draft.color === c ? '0 0 0 2px var(--ct-surface), 0 0 0 4px var(--ct-text)' : 'none' }}></button>`)}<//><//>
         <//>` : null}
       <//>
     </div>`;
+  }
+
+  function MilestoneModal({ open, initial, taken, onCancel, onSave, onDelete }) {
+    const [form] = Form.useForm();
+    useEffect(() => {
+      if (open) form.setFieldsValue({ name: initial ? initial.name : '', kind: initial ? initial.kind : 'desenvolvimento', due: initial && initial.due ? dayjs(initial.due) : null, description: initial ? initial.description : '' });
+    }, [open, initial]);
+    const kindOption = k => ({
+      value: k,
+      disabled: taken.includes(k) && !(initial && initial.kind === k),
+      label: html`<${Tooltip} title=${taken.includes(k) && !(initial && initial.kind === k) ? 'O projeto já tem um marco de ' + MILESTONE_KIND[k].label.toLowerCase() : null}><${Space} size=${4}>${createElement(I[MILESTONE_KIND[k].icon])}${MILESTONE_KIND[k].label}<//><//>`
+    });
+    return html`<${Modal} open=${open} title=${initial ? 'Editar marco' : 'Novo marco'} onCancel=${onCancel} destroyOnClose
+      footer=${html`<${Flex} gap=${8} align="center">
+        ${initial ? html`<${Popconfirm} title="Excluir este marco?" description="As tarefas dele continuam no projeto, sem marco." okText="Excluir" okButtonProps=${{ danger: true }} cancelText="Cancelar" onConfirm=${() => onDelete(initial)}>
+          <${Button} danger type="text" icon=${html`<${I.DeleteOutlined} />`}>Excluir<//>
+        <//>` : null}
+        <div style=${{ flex: 1 }}></div>
+        <${Button} onClick=${onCancel}>Cancelar<//>
+        <${Button} type="primary" onClick=${() => form.validateFields().then(v => onSave({ ...initial, name: v.name.trim(), kind: v.kind, due: v.due ? v.due.format('YYYY-MM-DD') : null, description: v.description || '' }))}>${initial ? 'Salvar' : 'Criar marco'}<//>
+      <//>`}>
+      <${Form} form=${form} layout="vertical" requiredMark=${false} style=${{ marginTop: 12 }}>
+        <${Form.Item} name="name" label="Nome" rules=${[{ required: true, whitespace: true, message: 'Dê um nome ao marco' }]}>
+          <${Input} autoFocus placeholder="Ex.: Entregas do dia 10" maxLength=${120} />
+        <//>
+        <${Form.Item} name="kind" label="Tipo" extra="Início abre o projeto, Fim fecha: no máximo um de cada. Desenvolvimento marca as entregas do meio.">
+          <${Segmented} block options=${['inicio', 'desenvolvimento', 'fim'].map(kindOption)} />
+        <//>
+        <${Form.Item} name="due" label="Data">
+          <${DatePicker} format="DD/MM/YYYY" style=${{ width: '100%' }} placeholder="Sem data" />
+        <//>
+        <${Form.Item} name="description" label="O que fica pronto neste marco" style=${{ marginBottom: 0 }}>
+          <${Input.TextArea} autoSize=${{ minRows: 2, maxRows: 5 }} placeholder="Entregáveis, critério de pronto…" />
+        <//>
+      <//>
+    <//>`;
+  }
+
+  function MilestonesCard({ mode, projectId, tasks }) {
+    const { message } = AntApp.useApp();
+    const [list, setList] = useState(() => MILESTONES[projectId] || []);
+    const [editing, setEditing] = useState(null);
+    const ms = sortMilestones(list);
+    const taken = list.map(m => m.kind).filter(k => k !== 'desenvolvimento');
+    const c = PALETTE[mode];
+    const nextOpen = ms.find(m => !m.doneAt);
+    const save = m => {
+      if (m.id) setList(list.map(x => x.id === m.id ? m : x));
+      else setList(list.concat({ ...m, id: Date.now(), doneAt: null }));
+      setEditing(null);
+      message.success(m.id ? 'Marco salvo' : 'Marco criado');
+    };
+    const toggleDone = m => {
+      setList(list.map(x => x.id === m.id ? { ...x, doneAt: x.doneAt ? null : TODAY } : x));
+      message.success(m.doneAt ? 'Marco reaberto' : 'Marco concluído');
+    };
+    const row = m => {
+      const ts = tasks.filter(t => TASK_MILESTONE[t.id] === m.id);
+      const done = ts.filter(t => t.status === 'finalizada').length;
+      const left = m.due ? daysBetween(TODAY, m.due) : null;
+      const late = !m.doneAt && left !== null && left < 0;
+      const soon = !m.doneAt && left !== null && left >= 0 && left <= 7;
+      const kind = MILESTONE_KIND[m.kind];
+      const tone = m.doneAt ? STATUS.finalizada[mode][0] : late ? c.error : soon ? c.warning : c.text3;
+      const allDone = !m.doneAt && ts.length > 0 && done === ts.length;
+      return {
+        key: m.id,
+        dot: m.doneAt ? html`<${I.CheckCircleFilled} style=${{ color: tone, fontSize: 14 }} />` : createElement(I[kind.icon], { style: { color: m === nextOpen ? c.primary : tone, fontSize: 14 } }),
+        children: html`<${Flex} vertical gap=${4}>
+          <${Flex} gap=${6} align="center" wrap>
+            <button type="button" className="ct-aux-name" style=${{ flex: '1 1 auto', fontWeight: 500, textDecoration: m.doneAt ? 'line-through' : 'none', color: m.doneAt ? 'var(--ct-text-3)' : undefined }} onClick=${() => setEditing(m)}>${m.name}</button>
+            <${Tooltip} title=${m.doneAt ? 'Reabrir marco' : 'Concluir marco'}>
+              <${Button} type="text" size="small" aria-label=${m.doneAt ? 'Reabrir marco' : 'Concluir marco'} icon=${m.doneAt ? html`<${I.UndoOutlined} />` : html`<${I.CheckOutlined} />`} onClick=${() => toggleDone(m)} />
+            <//>
+          <//>
+          <${Flex} gap=${8} align="center" wrap>
+            <${Tag} bordered=${false} style=${{ margin: 0 }} icon=${createElement(I[kind.icon])}>${kind.label}<//>
+            ${m.due ? html`<${Text} className="ct-mono" style=${{ fontSize: 12, color: tone }}>${fmtDate(m.due)}${m.doneAt ? '' : left < 0 ? ' · venceu há ' + -left + 'd' : left === 0 ? ' · hoje' : ' · faltam ' + left + 'd'}<//>` : html`<${Text} type="secondary" style=${{ fontSize: 12 }}>Sem data<//>`}
+            ${m === nextOpen ? html`<${Text} type="secondary" style=${{ fontSize: 12 }}>· próximo<//>` : null}
+          <//>
+          ${ts.length ? html`<${Flex} gap=${8} align="center">
+            <${Progress} percent=${Math.round(done / ts.length * 100)} showInfo=${false} size="small" style=${{ flex: 1, margin: 0 }} strokeColor=${m.doneAt ? STATUS.finalizada[mode][0] : undefined} />
+            <${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12 }}>${done}/${ts.length}<//>
+          <//>` : html`<${Text} type="secondary" style=${{ fontSize: 12 }}>Nenhuma tarefa neste marco<//>`}
+          ${allDone ? html`<${Flex} gap=${6} align="center"><${Text} type="secondary" style=${{ fontSize: 12 }}>Todas as tarefas feitas.<//><${Button} size="small" type="link" style=${{ padding: 0 }} onClick=${() => toggleDone(m)}>Concluir marco<//><//>` : null}
+        <//>`
+      };
+    };
+    return html`<${Card} size="small" title=${html`<${Space} size=${6}><${I.NodeIndexOutlined} />Marcos<${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12 }}>${ms.filter(m => m.doneAt).length}/${ms.length}<//><//>`}
+      extra=${html`<${Button} type="text" size="small" icon=${html`<${I.PlusOutlined} />`} onClick=${() => setEditing('new')}>Novo marco<//>`}>
+      ${ms.length
+        ? html`<${Timeline} style=${{ marginTop: 8, marginBottom: -24 }} items=${ms.map(row)} />`
+        : html`<${Flex} vertical gap=${8} align="flex-start">
+            <${Text} type="secondary">Divida o projeto em entregas: um marco de início, os de desenvolvimento e o de fim.<//>
+            <${Button} size="small" icon=${html`<${I.PlusOutlined} />`} onClick=${() => setEditing('new')}>Novo marco<//>
+          <//>`}
+      <${MilestoneModal} open=${editing !== null} initial=${editing === 'new' ? null : editing} taken=${taken}
+        onCancel=${() => setEditing(null)} onSave=${save}
+        onDelete=${m => { setList(list.filter(x => x.id !== m.id)); setEditing(null); message.success('Marco excluído'); }} />
+    <//>`;
   }
 
   function ProjectDetailPage({ mode, go, isMobile, screens, projectId, openTerminal }) {
@@ -1996,7 +2261,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           <a onClick=${() => go('horizontes')}>Ver em Horizontes →</a>
         <//>`}>${p.area || 'Área de foco'}<//>
       <${PropPill} label="Meta" icon="TrophyOutlined" muted=${!p.goal} content=${html`<${Flex} vertical gap=${8}>
-          <${Select} allowClear placeholder="Sem meta" value=${p.goal || undefined} onChange=${v => set({ goal: v || null })} options=${goalSelectOptions()} />
+          <${Select} allowClear placeholder="Sem meta" value=${p.goal || undefined} onChange=${v => set({ goal: v || null })} options=${goalSelectOptions(p.goal)} />
           <${Text} type="secondary" style=${{ fontSize: 12 }}>A meta, visão ou propósito a que este projeto serve.<//>
           <a onClick=${() => go('horizontes')}>Ver em Horizontes →</a>
         <//>`}><span className="ct-ellipsis" style=${{ maxWidth: 220 }}>${p.goal ? goalById(p.goal).name : 'Meta'}</span><//>
@@ -2050,6 +2315,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         action=${html`<${Button} size="small" onClick=${() => { setNarrowTab('resumo'); try { document.querySelector('.ct-next-select input') && document.querySelector('.ct-next-select input').focus(); } catch (e) {} }}>Definir<//>`} />` : null}
     </div>`;
 
+    const milestonesCard = html`<${MilestonesCard} key=${'ms' + p.id} mode=${mode} projectId=${p.id} tasks=${st.tasks} />`;
     const outcomeCard = html`<${Card} size="small" title=${html`<${Space} size=${6}><${I.AimOutlined} />Resultado desejado<//>`}>
       <${Input.TextArea} variant="borderless" autoSize=${{ minRows: 2, maxRows: 8 }} defaultValue=${p.outcome} placeholder="Como vai ser quando este projeto estiver pronto?" aria-label="Resultado desejado" className="ct-inline-edit" style=${{ fontSize: 15 }} />
     <//>`;
@@ -2089,7 +2355,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     if (isMobile) return html`<div className="ct-page-narrow">${head}
       <${Tabs} activeKey=${narrowTab} onChange=${setNarrowTab} items=${[
         { key: 'tarefas', label: 'Tarefas ' + st.open, children: tasksArea },
-        { key: 'resumo', label: 'Resumo', children: html`<${Flex} vertical gap=${12}>${nextCard}${outcomeCard}${progressCard}<//>` }
+        { key: 'resumo', label: 'Resumo', children: html`<${Flex} vertical gap=${12}>${nextCard}${milestonesCard}${outcomeCard}${progressCard}<//>` }
       ]} />
     </div>`;
 
@@ -2097,10 +2363,11 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       ${screens.xl
         ? html`<${Row} gutter=${16} wrap=${false} style=${{ marginTop: 16 }}>
             <${Col} flex="1 1 0" style=${{ minWidth: 0 }}>${tasksArea}<//>
-            <${Col} flex=${screens.xxl ? '0 0 400px' : '0 0 340px'}><${Flex} vertical gap=${12}>${nextCard}${outcomeCard}${progressCard}<//><//>
+            <${Col} flex=${screens.xxl ? '0 0 400px' : '0 0 340px'}><${Flex} vertical gap=${12}>${nextCard}${milestonesCard}${outcomeCard}${progressCard}<//><//>
           <//>`
         : html`<${Row} gutter=${[12, 12]} style=${{ margin: '16px 0' }}>
               <${Col} xs=${24} md=${8}>${nextCard}<//><${Col} xs=${24} md=${8}>${outcomeCard}<//><${Col} xs=${24} md=${8}>${progressCard}<//>
+              <${Col} xs=${24}>${milestonesCard}<//>
             <//>
             ${tasksArea}`}
     </div>`;
@@ -2279,7 +2546,8 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       { key: 'notion', label: 'Notion', icon: 'BookOutlined', keywords: 'sincronizar banco api key', state: 'ok', stateText: 'Conectado' },
       { key: 'google', label: 'Google', icon: 'CloudOutlined', keywords: 'agenda calendar drive conta login entrar oauth client', state: 'off', stateText: 'Não conectado' },
       { key: 'jira', label: 'Jira', icon: 'ApiOutlined', keywords: 'boards worklog importar token', state: 'ok', stateText: 'Conectado' },
-      { key: 'mcp', label: 'Servidor MCP', icon: 'CloudSyncOutlined', keywords: 'token claude porta', state: 'ok', stateText: 'Rodando' }
+      { key: 'mcp', label: 'Servidor MCP', icon: 'CloudSyncOutlined', keywords: 'token claude porta', state: 'ok', stateText: 'Rodando' },
+      { key: 'ditado', label: 'Ditado (Handy)', icon: 'AudioOutlined', keywords: 'voz fala microfone transcrever handy whisper', state: 'ok', stateText: 'Ligado' }
     ] },
     { group: '', items: [{ key: 'sobre', label: 'Sobre', icon: 'InfoCircleOutlined', keywords: 'versão electron' }] }
   ];
@@ -2308,6 +2576,9 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const [worklog, setWorklog] = useState(true);
     const [jiraNotion, setJiraNotion] = useState(false);
     const [mcpOn, setMcpOn] = useState(true);
+    const [handySample, setHandySample] = useState('ok');
+    const [handyOn, setHandyOn] = useState(true);
+    const handyInstalled = handySample === 'ok' || handySample === 'nova';
     const [backupDir, setBackupDir] = useState('~/Backups/crafytask');
     const [shortcut, setShortcut] = useState(['Ctrl', 'Shift', 'Space']);
     const [recording, setRecording] = useState(false);
@@ -2358,6 +2629,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           google: 'Entre com sua conta Google para usar a agenda e o Drive no CrafyTask.',
           jira: 'Importa as issues atribuídas a você e devolve tempo, descrição e status.',
           mcp: 'Deixa assistentes como o Claude Code lerem e alterarem suas tarefas, só nesta máquina.',
+          ditado: 'Fale e o texto aparece no campo em que você está. A transcrição roda no próprio computador.',
           sobre: 'Versões e links do projeto.'
         }[current.key]}<//>
       </div>
@@ -2575,6 +2847,40 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         <//>
       <//>`,
 
+      ditado: html`<${Flex} vertical gap=${16}>
+        <${SettingsCard} title="Handy" extra=${html`<${Flex} align="center" gap=${6} wrap="wrap"><${Text} type="secondary" style=${{ fontSize: 12 }}>Exemplo:<//><${Segmented} size="small" value=${handySample} onChange=${setHandySample} options=${[{ value: 'nao', label: 'Não instalado' }, { value: 'baixando', label: 'Instalando' }, { value: 'ok', label: 'Instalado' }, { value: 'nova', label: 'Nova versão' }]} /><//>`}>
+          ${handySample === 'nao'
+            ? html`<${SettingRow} title="Handy não instalado" desc="Baixa a versão oficial do Handy, de código aberto, direto do GitHub.">
+                <${Button} type="primary" icon=${html`<${I.DownloadOutlined} />`} onClick=${() => setHandySample('baixando')}>Instalar<//>
+              <//>`
+            : handySample === 'baixando'
+              ? html`<${SettingRow} title="Instalando o Handy" desc="Baixando a versão 0.10.2.">
+                  <${Progress} percent=${42} size="small" style=${{ width: 200, margin: 0 }} />
+                <//>`
+              : html`<${SettingRow} title=${html`<span>Versão <span className="ct-mono">0.10.2</span></span>`} desc=${handySample === 'nova' ? html`<span>A versão <span className="ct-mono">0.10.3</span> está disponível.</span>` : 'É a versão mais recente.'}>
+                  ${handySample === 'nova'
+                    ? html`<${Button} type="primary" icon=${html`<${I.DownloadOutlined} />`} onClick=${() => { setHandySample('baixando'); }}>Atualizar<//>`
+                    : html`<${Button} icon=${html`<${I.SyncOutlined} />`} onClick=${() => message.info('Nenhuma versão nova')}>Procurar atualização<//>`}
+                <//>`}
+          <${SettingRow} title="Ditado por voz" desc="Liga o Handy junto com o CrafyTask.">
+            <${Tooltip} title=${handyInstalled ? undefined : 'Instale o Handy primeiro.'}><${Switch} checked=${handyOn && handyInstalled} disabled=${!handyInstalled} onChange=${v => { setHandyOn(v); message.success(v ? 'Ditado ligado' : 'Ditado desligado'); }} aria-label="Ditado por voz" /><//>
+          <//>
+        <//>
+        <${SettingsCard} title="Atalho">
+          <${SettingRow} title="Ditar" desc="Aperte para começar a falar e de novo para parar. O texto entra no campo com o cursor; com outro programa em foco, vai para a área de transferência.">
+            <${Flex} align="center" gap=${8} wrap="wrap">
+              <${Space} size=${4}>${['Ctrl', 'Alt', 'Space'].map(k => html`<kbd key=${k} className="ct-kbd">${k}</kbd>`)}<//>
+              <${Button} disabled=${!(handyOn && handyInstalled)} onClick=${() => message.info('Mesmo gravador de atalho da captura rápida')}>Definir atalho<//>
+            <//>
+          <//>
+        <//>
+        <${SettingsCard} title="Modelo, microfone e idioma">
+          <${SettingRow} title="Configurações do Handy" desc="Modelo de transcrição, microfone, idioma e sons ficam no próprio Handy.">
+            <${Tooltip} title=${handyOn && handyInstalled ? undefined : 'Ligue o ditado primeiro.'}><${Button} icon=${html`<${I.ExportOutlined} />`} disabled=${!(handyOn && handyInstalled)} onClick=${() => message.info('Abre a janela do Handy')}>Abrir o Handy<//><//>
+          <//>
+        <//>
+      <//>`,
+
       mcp: html`<${Flex} vertical gap=${16}>
         <${SettingsCard} title="Servidor">
           <${SettingRow} title="Servidor MCP" desc=${mcpOn ? html`<span>Rodando em <span className="ct-mono">127.0.0.1:7432</span></span>` : 'Desligado'}>
@@ -2625,6 +2931,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
   const GOALS = [
     { id: 1, horizon: 3, name: 'Lançar o CrafyTask 4.0 com a nova interface', area: 'Produtos pessoais', description: 'Ant Design, tema escuro e app responsivo até março.' },
     { id: 2, horizon: 3, name: 'Correr 10 km abaixo de 55 min', area: 'Saúde', description: '' },
+    { id: 9, horizon: 3, name: 'Publicar o Day Zero Playbook em inglês', area: 'Carreira', description: 'Tradução revisada e site no ar.', doneAt: '2026-10-30' },
     { id: 3, horizon: 4, name: 'Ser referência em gestão de projetos open source', area: 'Carreira', description: 'Day Zero Playbook adotado por outros times.\nPalestrar duas vezes por ano.' },
     { id: 4, horizon: 5, name: 'Construir ferramentas que devolvem tempo às pessoas', area: null, description: 'Simplicidade antes de recurso.' }
   ];
@@ -2637,8 +2944,8 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     { h: 5, label: 'Propósito', sub: 'Princípios e razão de ser', icon: 'StarOutlined', emoji: '✨' }
   ];
   const goalById = id => GOALS.find(g => g.id === id) || { name: '—', horizon: 3 };
-  const goalSelectOptions = () => HZ.slice(3).map(lv => ({ label: 'H' + lv.h + ' · ' + lv.label, options: GOALS.filter(g => g.horizon === lv.h).map(g => ({ value: g.id, label: lv.emoji + ' ' + g.name })) })).filter(o => o.options.length);
-  const goalMenuGroups = (current, prefix) => HZ.slice(3).map(lv => ({ type: 'group', key: 'g' + lv.h, label: 'H' + lv.h + ' · ' + lv.label, children: GOALS.filter(g => g.horizon === lv.h).map(g => ({ key: prefix + g.id, label: (current === g.id ? '✓ ' : '') + g.name })) })).filter(o => o.children.length);
+  const goalSelectOptions = current => HZ.slice(3).map(lv => ({ label: 'H' + lv.h + ' · ' + lv.label, options: GOALS.filter(g => g.horizon === lv.h && (!g.doneAt || g.id === current)).map(g => ({ value: g.id, label: lv.emoji + ' ' + g.name + (g.doneAt ? ' (concluída)' : '') })) })).filter(o => o.options.length);
+  const goalMenuGroups = (current, prefix) => HZ.slice(3).map(lv => ({ type: 'group', key: 'g' + lv.h, label: 'H' + lv.h + ' · ' + lv.label, children: GOALS.filter(g => g.horizon === lv.h && (!g.doneAt || g.id === current)).map(g => ({ key: prefix + g.id, label: (current === g.id ? '✓ ' : '') + g.name + (g.doneAt ? ' (concluída)' : '') })) })).filter(o => o.children.length);
   const HZ_RAMP = {
     light: [['#F1EFFF', '#4B3BC9'], ['#E4E0FF', '#4433B8'], ['#D5CFFF', '#3B2BA6'], ['#C3BAFF', '#2E218C'], ['#AFA3FA', '#24196F'], ['#9D8FF5', '#170F4D']],
     dark: [['#1E1B33', '#B9B0FF'], ['#262143', '#C3BBFF'], ['#2F2854', '#CEC7FF'], ['#3A3168', '#D9D3FF'], ['#463B80', '#E6E2FF'], ['#5B4CA8', '#FFFFFF']]
@@ -2662,7 +2969,9 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const todayTasks = TASKS.filter(t => t.today && t.status !== 'finalizada' && inArea(t.project ? P[t.project].area : null));
     const projs = projectsActive.filter(p => inArea(p.area));
     const shownAreas = areas.filter(a => inArea(a.name));
-    const goalsOf = h => goals.filter(g => g.horizon === h && (!areaFilter || g.area === areaFilter || g.area === null));
+    const goalsOf = h => goals.filter(g => g.horizon === h && !g.doneAt && (!areaFilter || g.area === areaFilter || g.area === null));
+    const doneGoalsOf = h => goals.filter(g => g.horizon === h && g.doneAt && (!areaFilter || g.area === areaFilter || g.area === null));
+    const [showDone, setShowDone] = useState({});
     const areaDef = name => areas.find(a => a.name === name);
     const scrollTo = h => { try { document.getElementById('hz-' + h).scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {} };
 
@@ -2726,7 +3035,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         if (key === 'projects') go('projetos');
         if (key === 'edit') setAreaModal({ ...a, original: a.name });
         if (key === 'delete') {
-          const np = PROJECTS.filter(p => p.area === a.name).length, ng = goals.filter(g => g.area === a.name).length;
+          const np = PROJECTS.filter(p => p.area === a.name).length, ng = goals.filter(g => g.area === a.name && !g.doneAt).length;
           modal.confirm({ title: 'Excluir a área ' + a.name + '?', content: np || ng ? `${np} projeto(s) e ${ng} meta(s) ficam sem área. Nada mais é apagado.` : 'Nenhum projeto ou meta usa esta área.',
             okText: 'Excluir', okButtonProps: { danger: true }, cancelText: 'Cancelar', onOk: () => { setAreas(as => as.filter(x => x.name !== a.name)); if (areaFilter === a.name) setAreaFilter(null); message.success('Área excluída'); } });
         }
@@ -2734,7 +3043,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     });
     const h2 = levelCard(HZ[2], shownAreas.length, shownAreas.length
       ? html`<div className="ct-grid-auto" style=${{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 240px), 1fr))', padding: '4px 0' }}>${shownAreas.map(a => {
-          const np = projectsActive.filter(p => p.area === a.name).length, ng = goals.filter(g => g.area === a.name).length;
+          const np = projectsActive.filter(p => p.area === a.name).length, ng = goals.filter(g => g.area === a.name && !g.doneAt).length;
           return html`<${Dropdown} key=${a.name} menu=${areaMenu(a)} trigger=${['contextMenu']}><div className=${'ct-hzarea' + (areaFilter === a.name ? ' on' : '')} role="button" tabIndex=${0} onClick=${() => setAreaFilter(areaFilter === a.name ? null : a.name)}>
             <span className="ct-emoji-box">${a.emoji}</span>
             <div style=${{ minWidth: 0, flex: 1 }}>
@@ -2747,12 +3056,22 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       : empty('Nenhuma área de foco.', null), () => setAreaModal({ name: '', emoji: '🎯', description: '' }));
 
     const projectsOfGoal = g => PROJECTS.filter(p => p.goal === g.id && p.status !== 'archived');
+    const finishGoal = g => {
+      const act = PROJECTS.filter(p => p.goal === g.id && p.status === 'active').length;
+      const doIt = () => { setGoals(gs => gs.map(x => x.id === g.id ? { ...x, doneAt: TODAY } : x)); message.success('Meta concluída. Ela sai da lista e fica em "Concluídas".'); };
+      if (!act) { doIt(); return; }
+      modal.confirm({ title: 'Concluir "' + g.name + '"?', content: act + (act === 1 ? ' projeto ativo ainda serve' : ' projetos ativos ainda servem') + ' a esta meta. Eles continuam ligados a ela; reveja se ainda fazem sentido.', okText: 'Concluir', cancelText: 'Cancelar', onOk: doIt });
+    };
+    const reopenGoal = g => { setGoals(gs => gs.map(x => x.id === g.id ? { ...x, doneAt: null } : x)); message.success('Meta reaberta'); };
     const openGoalProjects = g => goWith(go, 'projetos', { goal: g.id });
     const goalMenu = g => ({
       items: [
         { key: 'projects', icon: createElement(I.FolderOutlined), label: 'Ver projetos da meta' },
         { key: 'edit', icon: createElement(I.EditOutlined), label: 'Editar' },
-        { key: 'move', icon: createElement(I.SwapOutlined), label: 'Mover para', children: HZ.slice(3).map(lv => ({ key: 'move:' + lv.h, label: (g.horizon === lv.h ? '✓ ' : '') + 'H' + lv.h + ' — ' + lv.label })) },
+        g.doneAt
+          ? { key: 'reopen', icon: createElement(I.UndoOutlined), label: 'Reabrir' }
+          : { key: 'done', icon: createElement(I.CheckCircleOutlined), label: 'Marcar como concluída' },
+        g.doneAt ? null : { key: 'move', icon: createElement(I.SwapOutlined), label: 'Mover para', children: HZ.slice(3).map(lv => ({ key: 'move:' + lv.h, label: (g.horizon === lv.h ? '✓ ' : '') + 'H' + lv.h + ' — ' + lv.label })) },
         { type: 'divider' },
         { key: 'delete', icon: createElement(I.DeleteOutlined), label: 'Excluir…', danger: true }
       ],
@@ -2761,21 +3080,32 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         const [k, v] = key.split(':');
         if (k === 'projects') openGoalProjects(g);
         if (k === 'edit') setGoalModal({ ...g });
+        if (k === 'done') finishGoal(g);
+        if (k === 'reopen') reopenGoal(g);
         if (k === 'move') { setGoals(gs => gs.map(x => x.id === g.id ? { ...x, horizon: Number(v) } : x)); message.success('Movida para H' + v); }
         if (k === 'delete') modal.confirm({ title: 'Excluir "' + g.name + '"?', content: projectsOfGoal(g).length ? projectsOfGoal(g).length + ' projeto(s) ficam sem meta. Nada mais é apagado.' : 'Nenhum projeto serve a esta meta.', okText: 'Excluir', okButtonProps: { danger: true }, cancelText: 'Cancelar', onOk: () => { setGoals(gs => gs.filter(x => x.id !== g.id)); message.success('Meta excluída'); } });
       }
     });
-    const goalLevel = lv => { const list = goalsOf(lv.h); return levelCard(lv, list.length, list.length
-      ? html`<${List} size="small" split=${false} dataSource=${list} renderItem=${g => { const np = projectsOfGoal(g).length; return html`<${Dropdown} menu=${goalMenu(g)} trigger=${['contextMenu']}><div className="ct-hzgoal" role="button" tabIndex=${0} aria-label=${'Ver projetos de ' + g.name} onClick=${() => openGoalProjects(g)} onKeyDown=${e => { if (e.key === 'Enter') openGoalProjects(g); }}>
-          <span style=${{ fontSize: 18 }}>${lv.emoji}</span>
+    const goalRow = (lv, g) => { const np = projectsOfGoal(g).length; const done = !!g.doneAt; return html`<${Dropdown} key=${g.id} menu=${goalMenu(g)} trigger=${['contextMenu']}><div className="ct-hzgoal" role="button" tabIndex=${0} aria-label=${'Ver projetos de ' + g.name} onClick=${() => openGoalProjects(g)} onKeyDown=${e => { if (e.key === 'Enter') openGoalProjects(g); }}>
+          <span style=${{ fontSize: 18, opacity: done ? 0.5 : 1 }}>${lv.emoji}</span>
           <div style=${{ flex: 1, minWidth: 0 }}>
-            <${Flex} align="center" gap=${8} wrap="wrap"><${Text} strong style=${{ fontWeight: 500 }}>${g.name}<//>${areaTag(g.area)}<//>
-            ${g.description ? html`<${Text} type="secondary" style=${{ whiteSpace: 'pre-wrap', fontSize: 13, display: 'block', marginTop: 2 }}>${g.description}<//>` : null}
+            <${Flex} align="center" gap=${8} wrap="wrap"><${Text} strong style=${{ fontWeight: 500, color: done ? 'var(--ct-text-3)' : undefined }}>${g.name}<//>${areaTag(g.area)}
+              ${done ? html`<${Chip} def=${{ ...STATUS.finalizada, label: 'Concluída em ' + fmtDate(g.doneAt) + '/' + g.doneAt.slice(0, 4) }} mode=${mode} />` : null}<//>
+            ${g.description && !done ? html`<${Text} type="secondary" style=${{ whiteSpace: 'pre-wrap', fontSize: 13, display: 'block', marginTop: 2 }}>${g.description}<//>` : null}
             <${Text} type="secondary" className="ct-mono" style=${{ fontSize: 12, display: 'block', marginTop: 2 }}>${np ? np + ' projeto' + (np === 1 ? '' : 's') : 'Nenhum projeto'}<//>
           </div>
+          <${Tooltip} title=${done ? 'Reabrir' : 'Marcar como concluída'}><${Button} size="small" type="text" aria-label=${done ? 'Reabrir ' + g.name : 'Concluir ' + g.name} icon=${done ? html`<${I.UndoOutlined} />` : html`<${I.CheckOutlined} />`} onClick=${e => { e.stopPropagation(); done ? reopenGoal(g) : finishGoal(g); }} /><//>
           <${Dropdown} menu=${goalMenu(g)} trigger=${['click']}><${Button} size="small" type="text" aria-label="Mais ações" icon=${html`<${I.EllipsisOutlined} />`} onClick=${e => e.stopPropagation()} /><//>
-        </div><//>`; }} />`
-      : empty('Nada em ' + lv.label.toLowerCase() + (areaFilter ? ' nesta área.' : '.'), null), () => setGoalModal({ name: '', horizon: lv.h, area: areaFilter, description: '' })); };
+        </div><//>`; };
+    const goalLevel = lv => { const list = goalsOf(lv.h); const done = doneGoalsOf(lv.h); const open = !!showDone[lv.h];
+      const doneToggle = done.length ? html`<div style=${{ marginTop: list.length ? 4 : 0 }}>
+          <${Button} type="link" size="small" style=${{ paddingInline: 8 }} icon=${html`<${I.CheckCircleOutlined} />`} aria-expanded=${open} onClick=${() => setShowDone({ ...showDone, [lv.h]: !open })}>
+            ${open ? 'Ocultar concluídas' : 'Mostrar concluídas'} <span className="ct-mono">(${done.length})</span><//>
+          ${open ? html`<div>${done.map(g => goalRow(lv, g))}</div>` : null}
+        </div>` : null;
+      return levelCard(lv, list.length, html`${list.length
+        ? html`<div>${list.map(g => goalRow(lv, g))}</div>`
+        : empty('Nada em ' + lv.label.toLowerCase() + (areaFilter ? ' nesta área.' : '.'), null)}${doneToggle}`, () => setGoalModal({ name: '', horizon: lv.h, area: areaFilter, description: '' })); };
 
     const rail = html`<nav className="ct-hzrail" aria-label="Níveis">
       ${HZ.map(lv => html`<button key=${lv.h} type="button" onClick=${() => scrollTo(lv.h)}><${HzChip} h=${lv.h} mode=${mode} /><span>${lv.label}</span></button>`)}

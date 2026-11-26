@@ -3,6 +3,7 @@ import {
   app,
   shell,
   BrowserWindow,
+  clipboard,
   ipcMain,
   Notification,
   screen,
@@ -26,6 +27,17 @@ import {
   type GsettingsRun
 } from './gnomeKeybinding'
 import { createTray, destroyTray } from './tray'
+import {
+  checkHandyUpdate,
+  getHandyStatus,
+  handyShortcut,
+  initHandy,
+  installHandy,
+  openHandy,
+  setHandyEnabled,
+  setHandyShortcut,
+  shutdownHandy
+} from './handy'
 import { isAutostartEnabled, setAutostartEnabled } from './autostart'
 import { isSafeHttpUrl } from '@shared/externalUrl'
 import { isThemePreference } from '@shared/themePreference'
@@ -150,7 +162,12 @@ import {
   getWorkflowPrefs,
   setWorkflowPrefs,
   getAppPrefs,
-  setAppPrefs
+  setAppPrefs,
+  listProjectMilestones,
+  createProjectMilestone,
+  updateProjectMilestone,
+  setProjectMilestoneDone,
+  deleteProjectMilestone
 } from './database'
 import { mergeTimeBlock, timeBlockError } from './calendarQueries'
 import {
@@ -244,7 +261,8 @@ import { generateToken } from './mcp/config'
 import { registerWriteEffects } from './mcp/effects'
 import { createDrawingRenderBridge } from './drawingRenderBridge'
 import { TASK_HISTORY_MAX_LIMIT } from './taskHistoryQueries'
-import type { TaskHistoryView } from '@shared/types'
+import { historyNoteFromDoc } from './historyNote'
+import type { HandyStatus, TaskHistoryView } from '@shared/types'
 import type { DrawingRenderResult } from '@shared/drawingRender'
 import {
   applyStatusChange as applyTaskStatusChange,
@@ -265,6 +283,8 @@ import type {
   TaskListFilters,
   UpdateTagInput,
   CreateProjectInput,
+  CreateMilestoneInput,
+  UpdateMilestoneInput,
   UpdateProjectInput,
   ProjectStatus,
   McpStatus,
@@ -692,6 +712,7 @@ async function changeCaptureShortcut(accelerator: unknown): Promise<AppPrefsStat
   if (!isValidAccelerator(accelerator)) {
     throw new Error(`Atalho inválido. ${ACCELERATOR_RULE}`)
   }
+  if (accelerator === handyShortcut()) throw new Error('Esse atalho já liga o ditado.')
   if (usesGnomeKeybinding()) {
     try {
       await writeGnomeKeybinding(runGsettings, accelerator, quickCaptureCommand())
@@ -736,6 +757,26 @@ function navigateMainWindow(route: string): void {
   }
   revealMainWindow()
   mainWindow.webContents.send('app:navigate', route)
+}
+
+function deliverDictation(text: string): void {
+  const target = BrowserWindow.getFocusedWindow()
+  if (target && !target.isDestroyed() && target !== floatWindow) {
+    target.webContents.insertText(text)
+    return
+  }
+  clipboard.writeText(text)
+  try {
+    showNotification('Ditado copiado', 'Cole com Ctrl+V onde quiser.')
+  } catch (error) {
+    console.error('[handy] aviso do ditado:', error)
+  }
+}
+
+function sendHandyStatus(status: HandyStatus): void {
+  for (const window of BrowserWindow.getAllWindows()) {
+    if (!window.isDestroyed()) window.webContents.send('handy:status', status)
+  }
 }
 
 // O Electron não segura a Notification: sem esta referência ela pode ser coletada antes do clique.
@@ -1139,12 +1180,20 @@ function setupIpcHandlers(): void {
   ipcMain.handle(
     'task:history',
     (_, taskId: number, includeSubtasks: boolean): TaskHistoryView => ({
-      entries: getTaskHistory({ taskId, includeSubtasks, limit: TASK_HISTORY_MAX_LIMIT }),
+      entries: getTaskHistory({
+        taskId,
+        includeSubtasks,
+        limit: TASK_HISTORY_MAX_LIMIT,
+        withBody: true
+      }),
       lastCheckpoint: getTaskLastCheckpoint(taskId)
     })
   )
-  ipcMain.handle('task:addHistory', (_, taskId: number, summary: string) =>
-    addTaskHistory({ task_id: taskId, kind: 'note', summary: String(summary ?? '') }, 'app')
+  ipcMain.handle('task:addHistory', (_, taskId: number, doc: string) =>
+    addTaskHistory(
+      { task_id: taskId, kind: 'note', ...historyNoteFromDoc(String(doc ?? '')) },
+      'app'
+    )
   )
   ipcMain.handle('timeEntry:update', (_, id: number, startIso: string, endIso: string) => {
     editTimeEntry(id, startIso, endIso)
@@ -1259,6 +1308,24 @@ function setupIpcHandlers(): void {
     disposeTerminalsForProjects([id])
   })
   ipcMain.handle('project:getTasks', (_, projectId: number) => getProjectTasks(projectId))
+
+  const afterMilestoneChange = <T>(result: T): T => {
+    mainWindow?.webContents.send('tasks:refresh')
+    return result
+  }
+  ipcMain.handle('milestone:list', (_, projectId: number) => listProjectMilestones(projectId))
+  ipcMain.handle('milestone:create', (_, input: CreateMilestoneInput) =>
+    afterMilestoneChange(createProjectMilestone(input))
+  )
+  ipcMain.handle('milestone:update', (_, id: number, patch: UpdateMilestoneInput) =>
+    afterMilestoneChange(updateProjectMilestone(id, patch))
+  )
+  ipcMain.handle('milestone:setDone', (_, id: number, done: boolean) =>
+    afterMilestoneChange(setProjectMilestoneDone(id, done))
+  )
+  ipcMain.handle('milestone:delete', (_, id: number) => {
+    afterMilestoneChange(deleteProjectMilestone(id))
+  })
 
   // ===================== CONTEXTS =====================
   ipcMain.handle('context:create', (_, name: string, icon?: string, color?: string) =>
@@ -1587,6 +1654,14 @@ function setupIpcHandlers(): void {
     }
     return buildMcpStatus()
   })
+
+  // ===================== HANDY (DITADO) =====================
+  ipcMain.handle('handy:getStatus', () => getHandyStatus())
+  ipcMain.handle('handy:checkUpdate', () => checkHandyUpdate())
+  ipcMain.handle('handy:install', () => installHandy())
+  ipcMain.handle('handy:setEnabled', (_, enabled: boolean) => setHandyEnabled(enabled === true))
+  ipcMain.handle('handy:setShortcut', (_, accelerator: unknown) => setHandyShortcut(accelerator))
+  ipcMain.handle('handy:open', () => openHandy())
 }
 
 // ===================== APP LIFECYCLE =====================
@@ -1724,6 +1799,14 @@ app.whenReady().then(() => {
   // Registrar atalho global para captura rápida
   registerGlobalShortcut()
 
+  initHandy({
+    usesGnomeKeybinding,
+    runGsettings,
+    deliver: deliverDictation,
+    onStatus: sendHandyStatus,
+    reservedShortcuts: () => [captureShortcut]
+  })
+
   if (wantsQuickCapture(process.argv)) createQuickCaptureWindow()
 
   app.on('second-instance', (_, argv) => {
@@ -1748,6 +1831,7 @@ app.on('before-quit', () => {
   isQuitting = true
   destroyTray()
   killAllTerminals()
+  shutdownHandy()
   if (notificationInterval) clearInterval(notificationInterval)
   stopAutoBackupScheduler()
   void stopMcpServer()

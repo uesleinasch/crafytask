@@ -77,6 +77,7 @@ nav:
       - Google Calendar: integracoes/google-calendar.md
       - Jira: integracoes/jira.md
       - MCP (Claude Code e outros): integracoes/mcp.md
+      - Ditado (Handy): integracoes/handy.md
   - Comandos:
       - comandos/index.md
       - Scripts npm: comandos/scripts-npm.md
@@ -90,6 +91,9 @@ nav:
       - Fluxo git: desenvolvimento/fluxo-git.md
   - Releases:
       - releases/index.md
+      - v3.21.0: releases/v3.21.0.md
+      - v3.20.1: releases/v3.20.1.md
+      - v3.20.0: releases/v3.20.0.md
       - v3.19.0: releases/v3.19.0.md
       - v3.18.0: releases/v3.18.0.md
       - v3.17.0: releases/v3.17.0.md

@@ -5,7 +5,6 @@ import {
   Card,
   Empty,
   Flex,
-  Input,
   Segmented,
   Space,
   Spin,
@@ -28,7 +27,10 @@ import {
 import type { TaskHistoryEntryKind, TaskHistoryItem } from '@shared/types'
 import { StatusChip } from '@renderer/components/chips/StatusChip'
 import { STATUS_ICONS } from '@renderer/components/chips/statusMeta'
+import { RegionBoundary } from '@renderer/components/shell/RegionBoundary'
 import { useTaskHistory } from '@renderer/hooks/useTaskHistory'
+import { HistoryComposer } from './HistoryComposer'
+import { HistoryNoteView } from './HistoryNoteView'
 import {
   filterHistory,
   formatHistoryTime,
@@ -88,7 +90,6 @@ export function TaskHistoryPanel({
   const [filter, setFilter] = useState<HistoryFilter>('all')
   const [withSubtasks, setWithSubtasks] = useState(true)
   const [writing, setWriting] = useState(false)
-  const [draft, setDraft] = useState('')
   const [saving, setSaving] = useState(false)
   const { entries, lastCheckpoint, loading, addNote } = useTaskHistory(
     taskId,
@@ -102,18 +103,11 @@ export function TaskHistoryPanel({
     fontSize: 12
   }
 
-  const closeDraft = (): void => {
-    setWriting(false)
-    setDraft('')
-  }
-
-  const save = async (): Promise<void> => {
-    const summary = draft.trim()
-    if (!summary) return
+  const save = async (doc: string): Promise<void> => {
     setSaving(true)
     try {
-      await addNote(summary)
-      closeDraft()
+      await addNote(doc)
+      setWriting(false)
       message.success('Anotação gravada no histórico')
     } catch {
       message.error('Não foi possível gravar a anotação')
@@ -183,7 +177,13 @@ export function TaskHistoryPanel({
               </span>
             </Tag>
           </Flex>
-          <Text style={{ whiteSpace: 'pre-wrap' }}>{item.summary}</Text>
+          {item.body ? (
+            <RegionBoundary region="anotação do histórico" resetKeys={[item.id]}>
+              <HistoryNoteView body={item.body} fallback={item.summary} />
+            </RegionBoundary>
+          ) : (
+            <Text style={{ whiteSpace: 'pre-wrap' }}>{item.summary}</Text>
+          )}
           <DoneAndRemaining item={item} />
           {meta(item)}
         </Flex>
@@ -239,30 +239,14 @@ export function TaskHistoryPanel({
       </Flex>
 
       {writing && (
-        <Flex vertical gap={8}>
-          <Input.TextArea
-            autoFocus
-            autoSize={{ minRows: 2, maxRows: 6 }}
-            maxLength={4000}
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            placeholder="O que vale lembrar ao retomar esta tarefa?"
+        <RegionBoundary region="editor da anotação" resetKeys={[taskId]}>
+          <HistoryComposer
+            taskId={taskId}
+            saving={saving}
+            onCancel={() => setWriting(false)}
+            onSave={(doc) => void save(doc)}
           />
-          <Flex gap={8} justify="flex-end">
-            <Button size="small" onClick={closeDraft}>
-              Cancelar
-            </Button>
-            <Button
-              size="small"
-              type="primary"
-              loading={saving}
-              disabled={!draft.trim()}
-              onClick={() => void save()}
-            >
-              Gravar
-            </Button>
-          </Flex>
-        </Flex>
+        </RegionBoundary>
       )}
 
       {loading ? (

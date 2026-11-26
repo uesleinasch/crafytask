@@ -9,6 +9,7 @@ export interface CompactTask {
   category?: TaskCategory
   energy?: EnergyLevel
   project?: string
+  milestone?: string
   due_date?: string
   due_time?: string
   scheduled_date?: string
@@ -42,6 +43,7 @@ export function compactTask(task: Task): CompactTask {
     category: task.category === 'normal' ? undefined : task.category,
     energy: task.energy_level ?? undefined,
     project: filled(task.project_name),
+    milestone: filled(task.milestone_name),
     due_date: filled(task.due_date),
     due_time: filled(task.due_time),
     scheduled_date: filled(task.scheduled_date),

@@ -56,6 +56,8 @@ import type {
   ContextWithUsage,
   UpdateTagInput,
   McpStatus,
+  HandyStatus,
+  HandyUpdateInfo,
   BackupSnapshot,
   BackupStatus,
   NotesOwner,
@@ -72,7 +74,10 @@ import type {
   PageLocation,
   PageSearchResult,
   FloatTimerData,
-  TaskHistoryView
+  TaskHistoryView,
+  ProjectMilestone,
+  CreateMilestoneInput,
+  UpdateMilestoneInput
 } from '../shared/types'
 import type { ThemePreference } from '../shared/themePreference'
 import type { WorkflowPrefs, WorkflowPrefsPatch } from '../shared/workflowPrefs'
@@ -164,7 +169,7 @@ interface API {
   updateStatus: (id: number, status: TaskStatus) => Promise<void>
   getTimeEntries: (taskId: number) => Promise<TimeEntry[]>
   getTaskHistory: (taskId: number, includeSubtasks: boolean) => Promise<TaskHistoryView>
-  addTaskHistory: (taskId: number, summary: string) => Promise<number>
+  addTaskHistory: (taskId: number, doc: string) => Promise<number>
   updateTimeEntry: (id: number, startIso: string, endIso: string) => Promise<void>
   deleteTimeEntry: (id: number) => Promise<void>
   listTimeEntriesRange: (fromIso: string, toIso: string) => Promise<TimeEntrySpan[]>
@@ -207,6 +212,11 @@ interface API {
   listProjects: (status?: ProjectStatus) => Promise<Project[]>
   updateProject: (id: number, data: UpdateProjectInput) => Promise<void>
   deleteProject: (id: number) => Promise<void>
+  listMilestones: (projectId: number) => Promise<ProjectMilestone[]>
+  createMilestone: (input: CreateMilestoneInput) => Promise<ProjectMilestone>
+  updateMilestone: (id: number, patch: UpdateMilestoneInput) => Promise<ProjectMilestone>
+  setMilestoneDone: (id: number, done: boolean) => Promise<ProjectMilestone>
+  deleteMilestone: (id: number) => Promise<void>
   getProjectTasks: (projectId: number) => Promise<Task[]>
 
   // Contexts
@@ -378,6 +388,13 @@ interface API {
   mcpGetStatus: () => Promise<McpStatus>
   mcpSetEnabled: (enabled: boolean) => Promise<McpStatus>
   mcpRegenerateToken: () => Promise<McpStatus>
+  handyGetStatus: () => Promise<HandyStatus>
+  handyCheckUpdate: () => Promise<HandyUpdateInfo>
+  handyInstall: () => Promise<HandyStatus>
+  handySetEnabled: (enabled: boolean) => Promise<HandyStatus>
+  handySetShortcut: (accelerator: string) => Promise<HandyStatus>
+  handyOpen: () => Promise<HandyStatus>
+  onHandyStatus: (callback: (status: HandyStatus) => void) => () => void
 
   // Terminal embutido
   terminalCreate: (

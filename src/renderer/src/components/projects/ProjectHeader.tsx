@@ -258,7 +258,7 @@ export function ProjectHeader({
                 placeholder={NO_GOAL}
                 value={project.goal_id ?? undefined}
                 onChange={(goalId?: number) => void onSave({ goal_id: goalId ?? null })}
-                options={goalSelectOptions(goals)}
+                options={goalSelectOptions(goals, project.goal_id)}
                 aria-label="Meta"
               />
               <Typography.Text type="secondary" style={{ fontSize: 12 }}>

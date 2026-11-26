@@ -57,6 +57,8 @@ import type {
   ContextWithUsage,
   UpdateTagInput,
   McpStatus,
+  HandyStatus,
+  HandyUpdateInfo,
   BackupSnapshot,
   BackupStatus,
   NotesOwner,
@@ -73,7 +75,10 @@ import type {
   PageLocation,
   PageSearchResult,
   FloatTimerData,
-  TaskHistoryView
+  TaskHistoryView,
+  ProjectMilestone,
+  CreateMilestoneInput,
+  UpdateMilestoneInput
 } from '../shared/types'
 import type { ThemePreference } from '../shared/themePreference'
 import type { WorkflowPrefs, WorkflowPrefsPatch } from '../shared/workflowPrefs'
@@ -213,8 +218,8 @@ const api = {
     ipcRenderer.invoke('task:getTimeEntries', taskId),
   getTaskHistory: (taskId: number, includeSubtasks: boolean): Promise<TaskHistoryView> =>
     ipcRenderer.invoke('task:history', taskId, includeSubtasks),
-  addTaskHistory: (taskId: number, summary: string): Promise<number> =>
-    ipcRenderer.invoke('task:addHistory', taskId, summary),
+  addTaskHistory: (taskId: number, doc: string): Promise<number> =>
+    ipcRenderer.invoke('task:addHistory', taskId, doc),
   updateTimeEntry: (id: number, startIso: string, endIso: string): Promise<void> =>
     ipcRenderer.invoke('timeEntry:update', id, startIso, endIso),
   deleteTimeEntry: (id: number): Promise<void> => ipcRenderer.invoke('timeEntry:delete', id),
@@ -303,6 +308,15 @@ const api = {
   updateProject: (id: number, data: UpdateProjectInput): Promise<void> =>
     ipcRenderer.invoke('project:update', id, data),
   deleteProject: (id: number): Promise<void> => ipcRenderer.invoke('project:delete', id),
+  listMilestones: (projectId: number): Promise<ProjectMilestone[]> =>
+    ipcRenderer.invoke('milestone:list', projectId),
+  createMilestone: (input: CreateMilestoneInput): Promise<ProjectMilestone> =>
+    ipcRenderer.invoke('milestone:create', input),
+  updateMilestone: (id: number, patch: UpdateMilestoneInput): Promise<ProjectMilestone> =>
+    ipcRenderer.invoke('milestone:update', id, patch),
+  setMilestoneDone: (id: number, done: boolean): Promise<ProjectMilestone> =>
+    ipcRenderer.invoke('milestone:setDone', id, done),
+  deleteMilestone: (id: number): Promise<void> => ipcRenderer.invoke('milestone:delete', id),
   getProjectTasks: (projectId: number): Promise<Task[]> =>
     ipcRenderer.invoke('project:getTasks', projectId),
 
@@ -596,6 +610,19 @@ const api = {
   mcpSetEnabled: (enabled: boolean): Promise<McpStatus> =>
     ipcRenderer.invoke('mcp:setEnabled', enabled),
   mcpRegenerateToken: (): Promise<McpStatus> => ipcRenderer.invoke('mcp:regenerateToken'),
+  handyGetStatus: (): Promise<HandyStatus> => ipcRenderer.invoke('handy:getStatus'),
+  handyCheckUpdate: (): Promise<HandyUpdateInfo> => ipcRenderer.invoke('handy:checkUpdate'),
+  handyInstall: (): Promise<HandyStatus> => ipcRenderer.invoke('handy:install'),
+  handySetEnabled: (enabled: boolean): Promise<HandyStatus> =>
+    ipcRenderer.invoke('handy:setEnabled', enabled),
+  handySetShortcut: (accelerator: string): Promise<HandyStatus> =>
+    ipcRenderer.invoke('handy:setShortcut', accelerator),
+  handyOpen: (): Promise<HandyStatus> => ipcRenderer.invoke('handy:open'),
+  onHandyStatus: (callback: (status: HandyStatus) => void): (() => void) => {
+    const handler = (_: Electron.IpcRendererEvent, status: HandyStatus): void => callback(status)
+    ipcRenderer.on('handy:status', handler)
+    return () => ipcRenderer.removeListener('handy:status', handler)
+  },
 
   terminalCreate: (
     owner: TerminalOwner,

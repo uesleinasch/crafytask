@@ -783,6 +783,16 @@
       }
     },
     {
+      "id": "F3.19",
+      "fase": "F3",
+      "titulo": "Anotar do Histórico com editor rico: barra de formatação no topo e entrada formatada na linha do tempo",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/components/tasks/HistoryComposer.tsx",
+        "padroes": ["role=\"toolbar\"", "Texto normal", "Lista numerada", "Ctrl\\+Enter"]
+      }
+    },
+    {
       "id": "F3.15",
       "fase": "F3",
       "titulo": "Campos do Jira num Drawer do antd",
@@ -1196,6 +1206,43 @@
       }
     },
     {
+      "id": "F5.25",
+      "fase": "F5",
+      "titulo": "Marcos do projeto: card no detalhe, modal com tipo início/desenvolvimento/fim, pílula Marco e agrupar por marco",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/renderer/src/components/projects/ProjectMilestones.tsx",
+        "padroes": ["<Timeline", "Novo marco", "Concluir marco", "<Segmented"]
+      }
+    },
+    {
+      "id": "F5.26",
+      "fase": "F5",
+      "titulo": "Kanban: coluna com rolagem própria e, no projeto, card arrastável entre colunas muda o status",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": [
+          "src/renderer/src/components/tasks/TaskCardViews.tsx",
+          "src/renderer/src/hooks/useBoardPan.ts",
+          "src/renderer/src/lib/boardPan.ts"
+        ],
+        "padroes": ["useDroppable", "useDraggable", "Solte aqui", "overflowY: 'auto'", "shiftKey", "setPointerCapture"]
+      }
+    },
+    {
+      "id": "F5.27",
+      "fase": "F5",
+      "titulo": "Horizontes: concluir e reabrir meta, seção Mostrar concluídas e seletores sem meta concluída",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": [
+          "src/renderer/src/pages/HorizonsPage.tsx",
+          "src/renderer/src/components/horizons/horizonLevels.ts"
+        ],
+        "padroes": ["Marcar como concluída", "Mostrar concluídas", "Reabrir", "goalDoneDate"]
+      }
+    },
+    {
       "id": "F5.24",
       "fase": "F5",
       "titulo": "Metas com destino conferidas (Horizontes, lista e detalhe do projeto)",
@@ -1557,6 +1604,33 @@
         "tipo": "manual"
       },
       "validado": "2026-11-21"
+    },
+    {
+      "id": "F7.24",
+      "fase": "F7",
+      "titulo": "Ditado (Handy): instalar e atualizar, ligar, atalho próprio e abrir o Handy",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/{renderer/src/components/settings/HandySection.tsx,renderer/src/components/settings/ShortcutRow.tsx,main/handy.ts,main/index.ts}",
+        "padroes": [
+          "Instalar",
+          "Procurar atualização",
+          "Ditado por voz",
+          "Definir atalho",
+          "Abrir o Handy",
+          "verifyMinisign",
+          "insertText"
+        ]
+      }
+    },
+    {
+      "id": "F7.25",
+      "fase": "F7",
+      "titulo": "Ditado conferido (instalar, ligar, ditar num campo, trocar o atalho, atualizar)",
+      "check": {
+        "tipo": "manual"
+      },
+      "validado": "2026-11-26"
     },
     {
       "id": "F7.3",

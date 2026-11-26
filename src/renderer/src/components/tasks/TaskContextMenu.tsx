@@ -10,6 +10,7 @@ import {
   Flag,
   Folder,
   MapPin,
+  Milestone,
   Pause,
   Plug,
   Play,
@@ -56,7 +57,7 @@ export function TaskContextMenu({
 }: TaskContextMenuProps): React.JSX.Element {
   const { message } = App.useApp()
   const onChanged = useContext(TaskMenuChangedContext)
-  const { projects, contexts, selectedIds, taskById } = useContext(TaskMenuDataContext)
+  const { projects, contexts, milestones, selectedIds, taskById } = useContext(TaskMenuDataContext)
   const { mode } = useThemeSettings()
   const startTimer = useTimerStore((s) => s.startTimer)
   const stopTimer = useTimerStore((s) => s.stopTimer)
@@ -77,6 +78,10 @@ export function TaskContextMenu({
   }))
   const removesFromToday = todayToggle(todayItems, localDateString(new Date())).date === null
   const taskContextIds = (task.contexts ?? []).map((c) => c.id)
+  const projectMilestones = milestones.filter(
+    (milestone) => milestone.project_id === task.project_id
+  )
+  const sameProject = targets.every((t) => t?.project_id === task.project_id)
   const tag = (label: string): string => (many ? `${label} (${ids.length})` : label)
   const check = (on: boolean): string => (!many && on ? '✓ ' : '')
 
@@ -203,6 +208,22 @@ export function TaskContextMenu({
           }))
       ]
     },
+    ...(projectMilestones.length > 0 && sameProject
+      ? [
+          {
+            key: 'milestone',
+            icon: <Milestone {...ICON} />,
+            label: tag('Marco'),
+            children: [
+              { key: 'milestone:none', label: `${check(!task.milestone_id)}Sem marco` },
+              ...projectMilestones.map((milestone) => ({
+                key: `milestone:${milestone.id}`,
+                label: `${check(task.milestone_id === milestone.id)}${milestone.name}`
+              }))
+            ]
+          }
+        ]
+      : []),
     ...(many || !task.jira_key
       ? []
       : [
@@ -262,6 +283,13 @@ export function TaskContextMenu({
       const projectId = value === 'none' ? null : Number(value)
       const name = projects.find((p) => p.id === projectId)?.name
       void bulk.moveToProject(ids, projectId, name)
+    }
+    if (kind === 'milestone') {
+      const milestone_id = value === 'none' ? null : Number(value)
+      void run(
+        () => Promise.all(ids.map((id) => window.api.updateTask(id, { milestone_id }))),
+        milestone_id ? 'Marco definido' : 'Tarefa tirada do marco'
+      )
     }
     if (kind === 'context') {
       const contextId = Number(value)

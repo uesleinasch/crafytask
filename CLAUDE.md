@@ -129,7 +129,7 @@ header, and the extra height can be scrolled by a programmatic `scrollIntoView` 
 ## Database
 
 - File: `app.getPath('userData')/ticktask.db` (em dev, `ticktask-dev/` — ver **Commands**). Opened with `journal_mode = WAL` and `foreign_keys = ON`. `initDatabase()` runs at startup.
-- 19 tables: `tasks`, `time_entries`, `tags`, `task_tags`, `projects`, `contexts`, `task_contexts`, `weekly_reviews`, `task_dependencies`, `areas`, `goals`, `time_blocks`, `note_assets`, `notebooks`, `notebook_sections`, `notebook_pages`, `task_status_events`, `task_history`, `app_prefs`.
+- 20 tables: `tasks`, `time_entries`, `tags`, `task_tags`, `projects`, `contexts`, `task_contexts`, `weekly_reviews`, `task_dependencies`, `areas`, `goals`, `time_blocks`, `note_assets`, `notebooks`, `notebook_sections`, `notebook_pages`, `task_status_events`, `task_history`, `app_prefs`, `project_milestones`.
 - **Migrations are imperative, inline in `initDatabase()`** — `CREATE TABLE IF NOT EXISTS` plus guarded `ALTER TABLE`s. Changing a `CHECK` constraint requires the create-new-table-and-copy dance (see the `tasks_new` rebuild around `src/main/database.ts:375`, used to widen the task `status` CHECK). There is no migration framework — follow the existing pattern.
 - All queries use better-sqlite3 prepared statements; multi-step writes use `db.transaction(...)`.
 - `tasks.status_changed_at` (when the status last changed, used by the health indicators in
@@ -138,6 +138,13 @@ header, and the extra height can be scrolled by a programmatic `scrollIntoView` 
   `task_status_events` (`from_status`, `to_status`, `changed_at`), the history behind the weekly
   Inbox rate; it only starts when the triggers are installed. A `tasks` rebuild drops triggers:
   `ensureStatusChangedAt` runs at the end of `initDatabase()` and recreates all four.
+- Project milestones (`project_milestones`, `milestoneQueries.ts`, pure and tested): kind
+  `inicio`/`desenvolvimento`/`fim` (a partial unique index allows one início and one fim per
+  project), manual `done_at`. A task points to one through `tasks.milestone_id`; the trigger
+  `tasks_milestone_follows_project` clears it when the task changes project, so every writer is
+  covered. `ensureMilestoneSchema` runs last in `initDatabase()` and recreates it after a rebuild.
+  IPC `milestone:*`; the task side goes through `task:update` (`milestone_id`); MCP tool
+  `project_milestones` plus `milestone` on `create_task`/`update_task`.
 - `task_history` holds the written entries of a task's history (`checkpoint`, `operation`, `note`;
   origin `app` or `mcp`), with the task status at that moment. `listTaskHistory`
   (`taskHistoryQueries.ts`, pure, tested) merges them with `task_status_events`, so status moves are
@@ -319,6 +326,27 @@ todos puros e testados — e `jira.ts` (lado Electron: `userData/jira-config.jso
 
 `tasks.external_url` é o link externo genérico da task (as importadas recebem o da issue). Abrir no
 navegador passa por `app:openExternal`, que só aceita `http(s)` (`shared/externalUrl.ts`).
+
+## Ditado (Handy)
+
+O CrafyTask embrulha o [Handy](https://github.com/cjpais/Handy) sem fork: usa o AppImage oficial da
+última release e só as interfaces públicas dele (CLI `--start-hidden`/`--toggle-transcription`,
+instância única, `settings_store.json`). `handy.ts` é o lado Electron (`userData/handy-config.json`,
+download, extração com `--appimage-extract` em `userData/handy/app`, processo filho em grupo próprio,
+morto no `before-quit`); `handyPlan.ts` e `minisign.ts` são puros e testados.
+
+- O download só é extraído depois de `verifyMinisign` conferir a assinatura `.sig` da release com
+  `HANDY_PUBLIC_KEY` (a chave do updater do Handy). Se o upstream trocar a chave, atualizar a constante.
+  O BLAKE2b vem de `@noble/hashes`: o BoringSSL do Electron não tem `blake2b512` (o vitest roda no
+  Node com OpenSSL e não pega isso).
+- O texto chega pelo método de colar `external_script` do Handy: `patchHandySettings` força isso
+  (e `auto_submit`, `autostart_enabled`, `update_checks_enabled` desligados) antes de cada início;
+  o script `entregar.sh` grava em `userData/handy/inbox/`, o main observa a pasta e
+  `deliverDictation` (em `index.ts`) faz `webContents.insertText` na janela focada, ou clipboard +
+  aviso. Não dependemos de `wtype`/`ydotool`, que o GNOME Wayland não tem.
+- Atalho: no GNOME Wayland, atalho do sistema no slot `DICTATION_SLOT` de `gnomeKeybinding.ts`
+  rodando `AppRun --toggle-transcription`; fora dele, vai para o binding `transcribe` do Handy. O
+  atalho da captura e o do ditado se recusam mutuamente. IPC `handy:*`, evento `handy:status`.
 
 ## Backup e restauração
 

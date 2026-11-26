@@ -73,6 +73,7 @@ na pílula). Cada mudança grava na hora; campos de texto gravam ao sair ou com 
 | Aguardando (`Hourglass`) | primeira, com status Aguardando ou texto salvo | campo de até 120 caracteres; grava `waiting_for` ao sair ou com Enter (vazio limpa). Com texto: "Aguardando: Revisor externo" na cor de Aguardando; vazia: "Aguardando quem?" |
 | Categoria | sempre | os quatro `CategoryChip` (Urgente, Prioridade, Normal, Time leak); Normal aparece como texto |
 | Projeto | sempre | `Select` com busca (ativos, someday e o atual, mesmo concluído ou arquivado, para não perder o vínculo) + "Abrir projeto →" |
+| Marco | tarefa de projeto com marcos | `Select` com os marcos do projeto (ícone do tipo e data) e a dica "Os marcos são do projeto…"; grava `milestone_id` por `task:update` (`updateTask` valida que o marco é do projeto). Trocar de projeto tira do marco (trigger `tasks_milestone_follows_project`). |
 | Contextos (`MapPin` quando vazia) | sempre | `CheckableTag` por contexto; a pílula mostra dois e "+N"; sem contextos, `Empty` com o link "Criar em Contextos e tags" |
 | Prazo (`Flag`) | sempre | data + hora (`DatePicker`/`TimePicker`), "Remover prazo"; vermelha se vencido, âmbar se hoje |
 | Energia | sempre | três botões com `EnergyMeter`; clicar no ativo limpa |
@@ -110,8 +111,16 @@ montados por baixo (`display: none`) para não perder edição em curso.
 - **Onde parei** (`Flag`): o último checkpoint da própria task, com resumo, Feito e Falta.
 - **Filtros:** `Segmented` Tudo · Checkpoints · Movimentações; `Switch` Subtarefas (só em task com
   subtarefa, ligado por padrão) junta o histórico das filhas, com o nome da subtarefa em cada item.
-- **Anotar** (`Pencil`; some em task arquivada): `Input.TextArea` com Cancelar e Gravar; grava uma
-  entrada `note` de origem `app` (`task:addHistory`).
+- **Anotar** (`Pencil`; some em task arquivada): abre `HistoryComposer`, um Tiptap com as extensões
+  das notas (`buildExtensions` com a task como dono, então `/`, `@` e imagem colada ou arrastada
+  funcionam igual) e uma barra fixa no topo: estilo do bloco (`Select`), negrito, itálico, tachado,
+  código, listas, lista de tarefas, link (`Popover` com o endereço), imagem e menção. Os ícones e a ordem seguem o protótipo. `Ctrl+Enter`
+  grava e `Esc` cancela (atalhos com prioridade baixa, para o `Esc` do menu `@`/`/` fechar o menu
+  primeiro). Grava uma entrada `note` de origem `app` (`task:addHistory`, que recebe o JSON do
+  documento): o main guarda o JSON em `task_history.body` e o Markdown dele em `summary`
+  (`historyNote.ts`), que é o que o MCP e a busca leem.
+- **Anotação formatada:** entrada com `body` aparece num Tiptap só leitura (`HistoryNoteView`, menção
+  clicável); as demais (MCP, anotações antigas) seguem como texto simples.
 - **Linha do tempo** (`Timeline`), da mais nova para a mais antiga: movimentação de status (chips de
   origem e destino, ou "Criada em"), checkpoint, operação e anotação, com a origem (`Bot` Claude,
   `User` Você). Vem de `task:history` (`listTaskHistory`, até 200 itens) e recarrega no

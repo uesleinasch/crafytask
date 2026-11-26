@@ -243,11 +243,11 @@ só porque roda de CDN; os nomes lucide de cada lugar estão nas tabelas acima e
 | Abas do inspetor      | Tempo `Timer` · Detalhes `FileText` · Relações `Network`                                                                                                                                                                                       |
 | `HealthCard`          | em dia `CircleCheck` · Inbox `Inbox` · sem próxima ação `CircleArrowRight` · projetos parados `CirclePause` · aguardando `Hourglass` · próximas paradas `Clock` · prazos vencidos `CalendarX` · revisão `ClipboardCheck` · someday `Lightbulb` |
 | Janelas auxiliares    | Captura `Inbox` · Fechar `X` · Capturado `CircleCheck` · Pausar `Pause` · Abrir CrafyTask `Maximize2` |
-| Configurações         | Geral `Settings` · Aparência `Palette` · Fluxo de trabalho `Workflow` · Terminal `SquareTerminal` · Backup `DatabaseBackup` · Notion `BookOpen` · Google `Cloud` (conectar `LogIn`, permitida `Check`, desconectar `LogOut`, ressincronizar `RefreshCw`, salvar credenciais `Save`) · Jira `Plug` · Servidor MCP `Cable` · Sobre `Info`               |
+| Configurações         | Geral `Settings` · Aparência `Palette` · Fluxo de trabalho `Workflow` · Terminal `SquareTerminal` · Backup `DatabaseBackup` · Notion `BookOpen` · Google `Cloud` (conectar `LogIn`, permitida `Check`, desconectar `LogOut`, ressincronizar `RefreshCw`, salvar credenciais `Save`) · Jira `Plug` · Servidor MCP `Cable` · Ditado (Handy) `Mic` (instalar e atualizar `Download`, procurar atualização `RefreshCw`, abrir o Handy `ExternalLink`) · Sobre `Info` |
 | Passos da revisão     | `collect` `Download` · `inbox` `Inbox` · `mind` `Brain` · `next` `CircleArrowRight` · `past` `History` · `upcoming` `CalendarDays` · `waiting` `Hourglass` · `projects` `FolderKanban` · `someday` `Lightbulb` · `creative` `Rocket`           |
-| Menu da tarefa e ações em massa | Abrir `FileText` · timer `Play`/`Pause` · hoje `CalendarDays` · marcar como `CircleCheck` · categoria `Flag` · projeto `Folder` · contextos `MapPin` · copiar `Copy` · Jira `Plug` · abrir no Jira `ExternalLink` · campos do Jira `SlidersHorizontal` · arquivar `Archive` · excluir `Trash2` |
-| Projetos              | abas pelo status (`LayoutGrid` em Todos, `FolderOpen` ativo, `Lightbulb` someday, `CircleCheck` concluído, `Archive` arquivado) · busca `Search` · Cards `LayoutGrid` · Tabela `Table2` · novo `Plus` · mais `Ellipsis` · resultado desejado `Target` · próxima ação `CircleArrowRight` · sem próxima ação `TriangleAlert` · área `TrendingUp` · meta `Trophy` · prazo `CalendarDays` · abrir `FolderOpen` · marcar como `CircleCheck` · excluir `Trash2` · terminal `SquareTerminal` |
-| Horizontes            | chips `H0`…`H5` (texto, sem ícone) · Adicionar `Plus` · timer `Play`/`Pause` · mais `Ellipsis` · filtrar `Filter` · ver projetos `Folder` · editar `Pencil` · mover `ArrowLeftRight` · excluir `Trash2` · projetos da meta `Folder` |
+| Menu da tarefa e ações em massa | Abrir `FileText` · timer `Play`/`Pause` · hoje `CalendarDays` · marcar como `CircleCheck` · categoria `Flag` · projeto `Folder` · marco `Milestone` (só na lista do projeto) · contextos `MapPin` · copiar `Copy` · Jira `Plug` · abrir no Jira `ExternalLink` · campos do Jira `SlidersHorizontal` · arquivar `Archive` · excluir `Trash2` |
+| Projetos              | abas pelo status (`LayoutGrid` em Todos, `FolderOpen` ativo, `Lightbulb` someday, `CircleCheck` concluído, `Archive` arquivado) · busca `Search` · Cards `LayoutGrid` · Tabela `Table2` · novo `Plus` · mais `Ellipsis` · resultado desejado `Target` · próxima ação `CircleArrowRight` · sem próxima ação `TriangleAlert` · área `TrendingUp` · meta `Trophy` · prazo `CalendarDays` · marcos `Milestone` (Início `Rocket`, Desenvolvimento `Milestone`, Fim `FlagTriangleRight`, concluir `Check`, concluído `CircleCheck`, reabrir `Undo2`) · abrir `FolderOpen` · marcar como `CircleCheck` · excluir `Trash2` · terminal `SquareTerminal` |
+| Horizontes            | chips `H0`…`H5` (texto, sem ícone) · Adicionar `Plus` · timer `Play`/`Pause` · mais `Ellipsis` · filtrar `Filter` · ver projetos `Folder` · editar `Pencil` · mover `ArrowLeftRight` · concluir `Check`/`CircleCheck` · concluídas `CircleCheck` · reabrir `Undo2` · excluir `Trash2` · projetos da meta `Folder` |
 | Contextos e tags      | abas `MapPin`/`Tags` · busca `Search` · Cards `LayoutGrid` · Tabela `Table2` · novo `Plus` · mais `Ellipsis` · Ver tarefas `ListTodo` · editar `Pencil` · mesclar `Merge` · excluir `Trash2` |
 | Arquivo               | busca `Search` · abrir `FileText` · desarquivar `ArchiveRestore` · excluir de vez `Trash2` · limpar o arquivo `Eraser` · mais `Ellipsis` · grupo por mês `CalendarDays` · grupo sem projeto `Folder` |
 | Legenda do calendário | urgente `Flame` · prioridade `Flag` · time leak `Clock` · no Google `CalendarSync`                                                                                                                                                             |
@@ -381,7 +381,7 @@ ConfigProvider (tema, cssVar) → App (message, modal, notification) → RegionB
   | Barra de propriedades | Pílulas que abrem um `Popover` de edição: Aguardando (primeira, só com status Aguardando ou com texto salvo: "Aguardando: Revisor externo" na cor de Aguardando, vazia "Aguardando quem?"), Categoria, Projeto (+ "Abrir projeto →"), Contextos, Prazo (data + hora, cor de vencido/hoje), Energia (clicar no ativo limpa). Programado (data + início/fim), Recorrência, Tags e Link externo aparecem quando têm valor; vazias, entram por "+ Propriedade"                                                             |
   | Aviso                 | `Alert` de bloqueio com "Ver dependências", que abre o inspetor em Relações                                                                                                                                                                                                                                                                                          |
   | Área de trabalho      | Abas Notas e Desenho, botão de modo foco e, só na aba Notas, as ações da nota: Salvar em arquivo local (`Save`; depois da primeira exportação o nome do arquivo aparece em mono a partir de `lg` e o tooltip diz que ele é reexportado a cada salvamento) e Salvar e sincronizar com o Notion (`RefreshCw`, gira enquanto sincroniza) |
-  | Histórico (só task)   | Terceira aba da área de trabalho (`History`), sem ações de nota e sem modo foco. No topo, o cartão **Onde parei** (`Flag`): o último checkpoint da task, com resumo, Feito e Falta. Depois os filtros (`Segmented` Tudo · Checkpoints · Movimentações), o `Switch` Subtarefas (só em task com subtarefa) e o botão **Anotar** (`Pencil`), que abre um `Input.TextArea` com Cancelar e Gravar. A lista é um `Timeline` do antd, do mais novo para o mais antigo: movimentação mostra os chips de status de origem e destino com `ArrowRight` (ou "Criada em"), no ponto o ícone do status de destino; checkpoint (`Flag`), operação (`Zap`) e anotação (`MessageSquare`) mostram rótulo, origem (`Bot` Claude ou `User` Você), texto e, no checkpoint, Feito e Falta. Hora e nome da subtarefa em `colorTextSecondary`, hora em Geist Mono. Largura de leitura de 76ch. Em task arquivada o botão Anotar some. Sem nenhuma entrada, `Empty` simples com "Ainda não há histórico"; com filtro sem resultado, "Nada no histórico com este filtro". Página de caderno não tem esta aba. |
+  | Histórico (só task)   | Terceira aba da área de trabalho (`History`), sem ações de nota e sem modo foco. No topo, o cartão **Onde parei** (`Flag`): o último checkpoint da task, com resumo, Feito e Falta. Depois os filtros (`Segmented` Tudo · Checkpoints · Movimentações), o `Switch` Subtarefas (só em task com subtarefa) e o botão **Anotar** (`Pencil`), que abre o editor da anotação no molde do comentário do Jira: caixa com borda e, no topo, uma barra fixa (`role="toolbar"`, fundo `colorBgLayout`) com o estilo do bloco num `Select` sem borda (Texto normal, Título 1–3, Citação, Bloco de código), negrito `Bold`, itálico `Italic`, tachado `Strikethrough`, código `Code`, lista `List`, lista numerada `ListOrdered`, lista de tarefas `ListChecks`, link `Link`, imagem `Image` e menção `AtSign`, separados em grupos; abaixo, o texto (Tiptap, mesmo `/` e `@` das notas, 96–320px com rolagem; imagem também entra colando ou arrastando, guardada como as imagens das notas da task). Embaixo, a dica "Ctrl+Enter grava · / blocos · @ menciona · cole imagens" e Cancelar e Gravar; `Esc` cancela. A lista é um `Timeline` do antd, do mais novo para o mais antigo: movimentação mostra os chips de status de origem e destino com `ArrowRight` (ou "Criada em"), no ponto o ícone do status de destino; checkpoint (`Flag`), operação (`Zap`) e anotação (`MessageSquare`) mostram rótulo, origem (`Bot` Claude ou `User` Você), texto (a anotação escrita no app aparece formatada, em 14px; o texto gravado pelo MCP segue simples) e, no checkpoint, Feito e Falta. Hora e nome da subtarefa em `colorTextSecondary`, hora em Geist Mono. Largura de leitura de 76ch. Em task arquivada o botão Anotar some. Sem nenhuma entrada, `Empty` simples com "Ainda não há histórico"; com filtro sem resultado, "Nada no histórico com este filtro". Página de caderno não tem esta aba. |
   | Inspetor · Tempo      | Barra do limite (`success` → `warning` 80% → `error` 100%), Total e Sessões, lista de sessões (em andamento no topo; encerradas com editar início/fim e excluir), Ajustes de tempo (adicionar, ajustar total, limite, remover limite)                                                                                                                                |
   | Inspetor · Detalhes   | Jira (issue, status com transição, pai, Campos do Jira) · Google Calendar (switch, ressincronizar) · Ambiente (diretório herdado/alterar/voltar a herdar, comando, abrir terminal)                                                                                                                                                                                   |
   | Inspetor · Relações   | Subtarefas (aviso de pai bloqueado, progresso, checkbox + nome que navega, nova inline) · Depende de (verde/laranja, remover, adicionar com busca) · Issues filhas no Jira. A aba mostra cadeado se bloqueada e `feitas/total`                                                                                                                                       |
@@ -510,11 +510,37 @@ notas:
   próxima.
 - **Área principal:** a mesma tabela de tarefas (abas de status, busca, filtros, agrupamento, menu
   de contexto, ações em massa), filtrada pelo projeto, sem a coluna Projeto, com um campo
-  "Adicionar tarefa a {projeto}…" no topo (cria em Próximas; resolve E1) e Kanban por status.
+  "Adicionar tarefa a {projeto}…" no topo (cria em Próximas; resolve E1) e Kanban por status. No
+  Kanban do projeto o card **arrasta** para outra coluna e muda o status (as regras de sempre:
+  tarefa bloqueada não vai para Executando, finalizar fecha o timer), com a dica "Arraste um card
+  para outra coluna para mudar o status." acima; a coluna sob o card ganha borda e fundo primários
+  e, vazia, diz "Solte aqui". Teclado: espaço pega o card, setas trocam de coluna, espaço solta.
+- **Coluna do Kanban** (todo Kanban): a lista de cards rola dentro da coluna, com altura máxima de
+  `max(320px, 100vh − 320px)`, e o cabeçalho fica fixo; assim a barra de rolagem horizontal fica à
+  vista sem rolar a página até o fim. O quadro também anda para o lado com `Shift` + rolagem e
+  arrastando o fundo (fora dos cards; cursor de mão), e com as setas quando está em foco — em
+  tela pequena ninguém depende da barra lá embaixo. A dica do projeto cita os dois atalhos.
 - **Coluna lateral (`xl+`):** Próxima ação (nome, status, contextos, Iniciar, trocar por outra
   tarefa), Resultado desejado (editável) e Progresso (barra, abertas, bloqueadas, tempo total,
-  prazo). Entre `md` e `lg` os três cards ficam em linha acima das tarefas; abaixo de `md`, abas
-  Tarefas e Resumo.
+  prazo). Entre `md` e `lg` os três cards ficam em linha acima das tarefas, e Marcos numa linha
+  inteira abaixo deles; abaixo de `md`, abas Tarefas e Resumo.
+- **Marcos** (`Milestone`; card logo abaixo da Próxima ação, com "feitos/total" em mono no título e
+  **Novo marco** `Plus`): dão início, meio e fim ao projeto. Cada marco tem nome, tipo (Início
+  `Rocket`, Desenvolvimento `Milestone`, Fim `FlagTriangleRight`; no máximo um Início e um Fim por
+  projeto), data opcional e "o que fica pronto". A lista é um `Timeline` ordenado por tipo e data:
+  nome (abre o `Modal` de edição), `Tag` do tipo com ícone, data em mono com "faltam Nd" (âmbar a 7
+  dias, vermelho vencido, como o prazo), "· próximo" no primeiro marco aberto (ponto na cor
+  primária), barra "feitas/total" das tarefas do marco e o botão **Concluir marco** (`Check`;
+  concluído vira `CircleCheck` no tom de Finalizada, nome riscado e **Reabrir** `Undo2`), seguido do
+  botão `⋯` (`Ellipsis`) com **Editar marco** (`Pencil`) e **Excluir marco** (`Trash2`,
+  `modal.confirm` com quantas tarefas ficam no projeto, sem marco). Concluir é
+  manual; com todas as tarefas feitas aparece "Todas as tarefas feitas. Concluir marco". Sem marco:
+  texto "Divida o projeto em entregas…" e **Novo marco**. O `Modal` tem Nome, Tipo (`Segmented`;
+  Início/Fim tomados ficam desabilitados com tooltip), Data e "O que fica pronto neste marco";
+  editar mostra **Excluir** (`Popconfirm`: as tarefas ficam no projeto, sem marco).
+- A tarefa entra num marco pela pílula **Marco** (`Milestone`, só em tarefa de projeto com marcos) e,
+  na lista do projeto, pelo menu de contexto (Marco ▸). A tabela do projeto ganha **Agrupar por
+  marco** (ordem dos marcos, rótulo "nome · Tipo · dd/mm", "Sem marco" por último). Tirar a tarefa do projeto tira do marco.
 - Próxima ação passa a ser **escolhida** (hoje é derivada da tarefa `proximas` mais recente). Isso
   pede uma coluna `projects.next_task_id`, com a regra atual como padrão quando estiver vazia.
 
@@ -541,6 +567,14 @@ nível para outro.
   Menu `⋯`/botão direito: área (filtrar, ver projetos, editar, excluir), meta (ver projetos da
   meta, editar, mover para outro nível, excluir). Excluir sempre confirma e diz o que acontece com
   projetos e metas (E6): ao excluir uma meta, os projetos dela ficam sem meta.
+- **Concluir meta** (H3–H5): botão `Check` na linha (tooltip "Marcar como concluída") e o mesmo item
+  no menu (`CircleCheck`). Com projetos ativos ligados, confirma ("N projetos ativos ainda servem a
+  esta meta…; reveja se ainda fazem sentido"): eles continuam ligados. A meta concluída sai da lista
+  e da contagem do nível e da área e vai para **Mostrar concluídas (N)** (`Button` link com
+  `CircleCheck`, contador em mono) no fim do nível; aberta, a linha fica apagada, sem descrição, com
+  o chip "Concluída em dd/mm/aaaa" no tom de Finalizada, e o botão vira **Reabrir** (`Undo2`, também
+  no menu, que perde o "Mover para"). Os seletores de meta (Novo projeto, pílula Meta, menu Meta ▸)
+  não oferecem meta concluída, salvo a que o projeto já tem, marcada "(concluída)".
 - Diálogo de meta com `Segmented` H3/H4/H5; de área com grade de emojis.
 
 ### Contextos e tags
@@ -567,8 +601,8 @@ Mesmo esqueleto das outras telas, com navegação própria porque são muitas se
 
 - **Navegação interna** (232px, fixa ao rolar): busca de configuração no topo (filtra por nome e
   palavras-chave, como "tema", "worklog", "porta"); grupos **Aplicativo** (Geral, Aparência, Fluxo de
-  trabalho, Terminal, Backup) e **Integrações** (Notion, Google, Jira, Servidor MCP), e
-  Sobre no fim. Integração mostra um `Badge` de estado (conectado, desligado, erro) com o texto no
+  trabalho, Terminal, Backup) e **Integrações** (Notion, Google, Jira, Servidor MCP, Ditado (Handy)),
+  e Sobre no fim. Integração mostra um `Badge` de estado (conectado, desligado, erro) com o texto no
   tooltip. A seção aberta fica salva. Abaixo de `md` a navegação vira um `Select` agrupado. O
   conteúdo da seção tem largura máxima de 780px.
 - **Cabeçalho da seção:** ícone em quadrado `primarySoft`, título, `Tag` neutra de estado com o
@@ -603,6 +637,12 @@ Mesmo esqueleto das outras telas, com navegação própria porque são muitas se
   recusados, e a descrição fica `error` com a regra). `Esc`, `Tab` ou tirar o foco cancela. Definir
   já deixa o atalho valendo, seja qual for o sistema; a tela não explica o mecanismo. Se o atalho
   salvo não está valendo, uma `Tag` `warning` "Inativo" fica ao lado das teclas.
+- **Ditado (Handy)** também é uma ação por vez: card **Handy** com "Instalar" (primário) sem
+  instalação, o `Progress` do download ao instalar, a versão em mono e "Procurar atualização" (vira
+  "Atualizar", primário, com versão nova) depois, e o `Switch` "Ditado por voz"; card **Atalho** com
+  a linha "Ditar" no mesmo gravador de atalho (o da captura e o do ditado se recusam); card
+  **Modelo, microfone e idioma** com "Abrir o Handy". O que depende de instalar ou ligar fica
+  desabilitado com tooltip dizendo o que falta. A tela não explica como o texto chega ao campo.
 
 ### Cadernos
 

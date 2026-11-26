@@ -32,6 +32,7 @@ export interface TaskHistoryItem {
   to_status: TaskStatus | null
   created_at: string
   session_id?: string | null
+  body?: string | null
 }
 
 export interface TaskHistoryView {
@@ -46,6 +47,7 @@ export interface AddTaskHistoryInput {
   done?: string | null
   remaining?: string | null
   session_id?: string | null
+  body?: string | null
 }
 
 // ===================== TAG =====================
@@ -109,6 +111,37 @@ export interface Project {
   working_dir?: string | null
 }
 
+export type MilestoneKind = 'inicio' | 'desenvolvimento' | 'fim'
+
+export interface ProjectMilestone {
+  id: number
+  project_id: number
+  name: string
+  kind: MilestoneKind
+  due_date: string | null
+  description: string | null
+  done_at: string | null
+  created_at: string
+  updated_at: string
+  task_count: number
+  done_task_count: number
+}
+
+export interface CreateMilestoneInput {
+  project_id: number
+  name: string
+  kind: MilestoneKind
+  due_date?: string | null
+  description?: string | null
+}
+
+export interface UpdateMilestoneInput {
+  name?: string
+  kind?: MilestoneKind
+  due_date?: string | null
+  description?: string | null
+}
+
 export interface CreateProjectInput {
   name: string
   description?: string
@@ -169,6 +202,7 @@ export interface Goal {
   area_id?: number
   area_name?: string
   project_count?: number
+  done_at?: string | null
   created_at: string
   updated_at: string
 }
@@ -185,6 +219,7 @@ export interface UpdateGoalInput {
   description?: string
   horizon?: GoalHorizon
   area_id?: number | null
+  done?: boolean
 }
 
 // ===================== RECURRENCE =====================
@@ -225,6 +260,8 @@ export interface Task {
   archived_at?: string | null
   status_changed_at?: string | null
   project_id?: number
+  milestone_id?: number | null
+  milestone_name?: string | null
   project_name?: string
   project_color?: string
   created_at: string
@@ -335,6 +372,7 @@ export interface UpdateTaskInput {
   due_time?: string | null
   external_url?: string | null
   waiting_for?: string | null
+  milestone_id?: number | null
 }
 
 export type GoogleClientMode = 'builtin' | 'custom'
@@ -748,6 +786,25 @@ export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
 }
 
 // ===================== MCP SERVER =====================
+
+export interface HandyStatus {
+  supported: boolean
+  installed: boolean
+  version: string | null
+  enabled: boolean
+  running: boolean
+  shortcut: string
+  shortcutActive: boolean
+  installing: 'download' | 'extract' | null
+  progress: number | null
+  error: string | null
+}
+
+export interface HandyUpdateInfo {
+  latest: string
+  current: string | null
+  available: boolean
+}
 
 export interface McpStatus {
   enabled: boolean
