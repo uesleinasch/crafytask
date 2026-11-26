@@ -4,6 +4,17 @@ export const CRAFYTASK_PATH =
   '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/crafytask-capture/'
 export const KEYBINDING_NAME = 'CrafyTask: captura rápida'
 
+export interface GnomeKeybindingSlot {
+  path: string
+  name: string
+}
+
+export const CAPTURE_SLOT: GnomeKeybindingSlot = { path: CRAFYTASK_PATH, name: KEYBINDING_NAME }
+export const DICTATION_SLOT: GnomeKeybindingSlot = {
+  path: '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/crafytask-dictation/',
+  name: 'CrafyTask: ditado'
+}
+
 export type GsettingsRun = (args: string[]) => Promise<string>
 
 const MODIFIER_TO_GNOME: Record<string, string> = {
@@ -52,10 +63,13 @@ export interface GnomeKeybinding {
   command: string
 }
 
-export async function readGnomeKeybinding(run: GsettingsRun): Promise<GnomeKeybinding | null> {
+export async function readGnomeKeybinding(
+  run: GsettingsRun,
+  slot: GnomeKeybindingSlot = CAPTURE_SLOT
+): Promise<GnomeKeybinding | null> {
   const paths = parseStrv(await run(['get', MEDIA_KEYS_SCHEMA, 'custom-keybindings']))
-  if (!paths.includes(CRAFYTASK_PATH)) return null
-  const key = `${CUSTOM_SCHEMA}:${CRAFYTASK_PATH}`
+  if (!paths.includes(slot.path)) return null
+  const key = `${CUSTOM_SCHEMA}:${slot.path}`
   const [binding] = parseStrv(await run(['get', key, 'binding']))
   const [command] = parseStrv(await run(['get', key, 'command']))
   return { binding: binding ?? '', command: command ?? '' }
@@ -64,21 +78,29 @@ export async function readGnomeKeybinding(run: GsettingsRun): Promise<GnomeKeybi
 export async function writeGnomeKeybinding(
   run: GsettingsRun,
   accelerator: string,
-  command: string
+  command: string,
+  slot: GnomeKeybindingSlot = CAPTURE_SLOT
 ): Promise<void> {
-  const key = `${CUSTOM_SCHEMA}:${CRAFYTASK_PATH}`
-  await run(['set', key, 'name', gvariantString(KEYBINDING_NAME)])
+  const key = `${CUSTOM_SCHEMA}:${slot.path}`
+  await run(['set', key, 'name', gvariantString(slot.name)])
   await run(['set', key, 'command', gvariantString(command)])
   await run(['set', key, 'binding', gvariantString(gnomeBinding(accelerator))])
   const paths = parseStrv(await run(['get', MEDIA_KEYS_SCHEMA, 'custom-keybindings']))
-  if (!paths.includes(CRAFYTASK_PATH)) {
-    await run([
-      'set',
-      MEDIA_KEYS_SCHEMA,
-      'custom-keybindings',
-      formatStrv([...paths, CRAFYTASK_PATH])
-    ])
+  if (!paths.includes(slot.path)) {
+    await run(['set', MEDIA_KEYS_SCHEMA, 'custom-keybindings', formatStrv([...paths, slot.path])])
   }
+}
+
+export async function removeGnomeKeybinding(
+  run: GsettingsRun,
+  slot: GnomeKeybindingSlot
+): Promise<void> {
+  const paths = parseStrv(await run(['get', MEDIA_KEYS_SCHEMA, 'custom-keybindings']))
+  if (paths.includes(slot.path)) {
+    const rest = paths.filter((path) => path !== slot.path)
+    await run(['set', MEDIA_KEYS_SCHEMA, 'custom-keybindings', formatStrv(rest)])
+  }
+  await run(['reset-recursively', `${CUSTOM_SCHEMA}:${slot.path}`])
 }
 
 export function isGnomeKeybindingCurrent(
