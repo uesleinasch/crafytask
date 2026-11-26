@@ -327,6 +327,27 @@ todos puros e testados — e `jira.ts` (lado Electron: `userData/jira-config.jso
 `tasks.external_url` é o link externo genérico da task (as importadas recebem o da issue). Abrir no
 navegador passa por `app:openExternal`, que só aceita `http(s)` (`shared/externalUrl.ts`).
 
+## Ditado (Handy)
+
+O CrafyTask embrulha o [Handy](https://github.com/cjpais/Handy) sem fork: usa o AppImage oficial da
+última release e só as interfaces públicas dele (CLI `--start-hidden`/`--toggle-transcription`,
+instância única, `settings_store.json`). `handy.ts` é o lado Electron (`userData/handy-config.json`,
+download, extração com `--appimage-extract` em `userData/handy/app`, processo filho em grupo próprio,
+morto no `before-quit`); `handyPlan.ts` e `minisign.ts` são puros e testados.
+
+- O download só é extraído depois de `verifyMinisign` conferir a assinatura `.sig` da release com
+  `HANDY_PUBLIC_KEY` (a chave do updater do Handy). Se o upstream trocar a chave, atualizar a constante.
+  O BLAKE2b vem de `@noble/hashes`: o BoringSSL do Electron não tem `blake2b512` (o vitest roda no
+  Node com OpenSSL e não pega isso).
+- O texto chega pelo método de colar `external_script` do Handy: `patchHandySettings` força isso
+  (e `auto_submit`, `autostart_enabled`, `update_checks_enabled` desligados) antes de cada início;
+  o script `entregar.sh` grava em `userData/handy/inbox/`, o main observa a pasta e
+  `deliverDictation` (em `index.ts`) faz `webContents.insertText` na janela focada, ou clipboard +
+  aviso. Não dependemos de `wtype`/`ydotool`, que o GNOME Wayland não tem.
+- Atalho: no GNOME Wayland, atalho do sistema no slot `DICTATION_SLOT` de `gnomeKeybinding.ts`
+  rodando `AppRun --toggle-transcription`; fora dele, vai para o binding `transcribe` do Handy. O
+  atalho da captura e o do ditado se recusam mutuamente. IPC `handy:*`, evento `handy:status`.
+
 ## Backup e restauração
 
 `src/main/backup.ts` (lado Electron) + `backupPlan.ts` (puro, testado), expostos em Configurações →

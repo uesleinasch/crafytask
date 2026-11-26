@@ -243,7 +243,7 @@ só porque roda de CDN; os nomes lucide de cada lugar estão nas tabelas acima e
 | Abas do inspetor      | Tempo `Timer` · Detalhes `FileText` · Relações `Network`                                                                                                                                                                                       |
 | `HealthCard`          | em dia `CircleCheck` · Inbox `Inbox` · sem próxima ação `CircleArrowRight` · projetos parados `CirclePause` · aguardando `Hourglass` · próximas paradas `Clock` · prazos vencidos `CalendarX` · revisão `ClipboardCheck` · someday `Lightbulb` |
 | Janelas auxiliares    | Captura `Inbox` · Fechar `X` · Capturado `CircleCheck` · Pausar `Pause` · Abrir CrafyTask `Maximize2` |
-| Configurações         | Geral `Settings` · Aparência `Palette` · Fluxo de trabalho `Workflow` · Terminal `SquareTerminal` · Backup `DatabaseBackup` · Notion `BookOpen` · Google `Cloud` (conectar `LogIn`, permitida `Check`, desconectar `LogOut`, ressincronizar `RefreshCw`, salvar credenciais `Save`) · Jira `Plug` · Servidor MCP `Cable` · Sobre `Info`               |
+| Configurações         | Geral `Settings` · Aparência `Palette` · Fluxo de trabalho `Workflow` · Terminal `SquareTerminal` · Backup `DatabaseBackup` · Notion `BookOpen` · Google `Cloud` (conectar `LogIn`, permitida `Check`, desconectar `LogOut`, ressincronizar `RefreshCw`, salvar credenciais `Save`) · Jira `Plug` · Servidor MCP `Cable` · Ditado (Handy) `Mic` (instalar e atualizar `Download`, procurar atualização `RefreshCw`, abrir o Handy `ExternalLink`) · Sobre `Info` |
 | Passos da revisão     | `collect` `Download` · `inbox` `Inbox` · `mind` `Brain` · `next` `CircleArrowRight` · `past` `History` · `upcoming` `CalendarDays` · `waiting` `Hourglass` · `projects` `FolderKanban` · `someday` `Lightbulb` · `creative` `Rocket`           |
 | Menu da tarefa e ações em massa | Abrir `FileText` · timer `Play`/`Pause` · hoje `CalendarDays` · marcar como `CircleCheck` · categoria `Flag` · projeto `Folder` · marco `Milestone` (só na lista do projeto) · contextos `MapPin` · copiar `Copy` · Jira `Plug` · abrir no Jira `ExternalLink` · campos do Jira `SlidersHorizontal` · arquivar `Archive` · excluir `Trash2` |
 | Projetos              | abas pelo status (`LayoutGrid` em Todos, `FolderOpen` ativo, `Lightbulb` someday, `CircleCheck` concluído, `Archive` arquivado) · busca `Search` · Cards `LayoutGrid` · Tabela `Table2` · novo `Plus` · mais `Ellipsis` · resultado desejado `Target` · próxima ação `CircleArrowRight` · sem próxima ação `TriangleAlert` · área `TrendingUp` · meta `Trophy` · prazo `CalendarDays` · marcos `Milestone` (Início `Rocket`, Desenvolvimento `Milestone`, Fim `FlagTriangleRight`, concluir `Check`, concluído `CircleCheck`, reabrir `Undo2`) · abrir `FolderOpen` · marcar como `CircleCheck` · excluir `Trash2` · terminal `SquareTerminal` |
@@ -601,8 +601,8 @@ Mesmo esqueleto das outras telas, com navegação própria porque são muitas se
 
 - **Navegação interna** (232px, fixa ao rolar): busca de configuração no topo (filtra por nome e
   palavras-chave, como "tema", "worklog", "porta"); grupos **Aplicativo** (Geral, Aparência, Fluxo de
-  trabalho, Terminal, Backup) e **Integrações** (Notion, Google, Jira, Servidor MCP), e
-  Sobre no fim. Integração mostra um `Badge` de estado (conectado, desligado, erro) com o texto no
+  trabalho, Terminal, Backup) e **Integrações** (Notion, Google, Jira, Servidor MCP, Ditado (Handy)),
+  e Sobre no fim. Integração mostra um `Badge` de estado (conectado, desligado, erro) com o texto no
   tooltip. A seção aberta fica salva. Abaixo de `md` a navegação vira um `Select` agrupado. O
   conteúdo da seção tem largura máxima de 780px.
 - **Cabeçalho da seção:** ícone em quadrado `primarySoft`, título, `Tag` neutra de estado com o
@@ -637,6 +637,12 @@ Mesmo esqueleto das outras telas, com navegação própria porque são muitas se
   recusados, e a descrição fica `error` com a regra). `Esc`, `Tab` ou tirar o foco cancela. Definir
   já deixa o atalho valendo, seja qual for o sistema; a tela não explica o mecanismo. Se o atalho
   salvo não está valendo, uma `Tag` `warning` "Inativo" fica ao lado das teclas.
+- **Ditado (Handy)** também é uma ação por vez: card **Handy** com "Instalar" (primário) sem
+  instalação, o `Progress` do download ao instalar, a versão em mono e "Procurar atualização" (vira
+  "Atualizar", primário, com versão nova) depois, e o `Switch` "Ditado por voz"; card **Atalho** com
+  a linha "Ditar" no mesmo gravador de atalho (o da captura e o do ditado se recusam); card
+  **Modelo, microfone e idioma** com "Abrir o Handy". O que depende de instalar ou ligar fica
+  desabilitado com tooltip dizendo o que falta. A tela não explica como o texto chega ao campo.
 
 ### Cadernos
 

@@ -2546,7 +2546,8 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
       { key: 'notion', label: 'Notion', icon: 'BookOutlined', keywords: 'sincronizar banco api key', state: 'ok', stateText: 'Conectado' },
       { key: 'google', label: 'Google', icon: 'CloudOutlined', keywords: 'agenda calendar drive conta login entrar oauth client', state: 'off', stateText: 'Não conectado' },
       { key: 'jira', label: 'Jira', icon: 'ApiOutlined', keywords: 'boards worklog importar token', state: 'ok', stateText: 'Conectado' },
-      { key: 'mcp', label: 'Servidor MCP', icon: 'CloudSyncOutlined', keywords: 'token claude porta', state: 'ok', stateText: 'Rodando' }
+      { key: 'mcp', label: 'Servidor MCP', icon: 'CloudSyncOutlined', keywords: 'token claude porta', state: 'ok', stateText: 'Rodando' },
+      { key: 'ditado', label: 'Ditado (Handy)', icon: 'AudioOutlined', keywords: 'voz fala microfone transcrever handy whisper', state: 'ok', stateText: 'Ligado' }
     ] },
     { group: '', items: [{ key: 'sobre', label: 'Sobre', icon: 'InfoCircleOutlined', keywords: 'versão electron' }] }
   ];
@@ -2575,6 +2576,9 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
     const [worklog, setWorklog] = useState(true);
     const [jiraNotion, setJiraNotion] = useState(false);
     const [mcpOn, setMcpOn] = useState(true);
+    const [handySample, setHandySample] = useState('ok');
+    const [handyOn, setHandyOn] = useState(true);
+    const handyInstalled = handySample === 'ok' || handySample === 'nova';
     const [backupDir, setBackupDir] = useState('~/Backups/crafytask');
     const [shortcut, setShortcut] = useState(['Ctrl', 'Shift', 'Space']);
     const [recording, setRecording] = useState(false);
@@ -2625,6 +2629,7 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
           google: 'Entre com sua conta Google para usar a agenda e o Drive no CrafyTask.',
           jira: 'Importa as issues atribuídas a você e devolve tempo, descrição e status.',
           mcp: 'Deixa assistentes como o Claude Code lerem e alterarem suas tarefas, só nesta máquina.',
+          ditado: 'Fale e o texto aparece no campo em que você está. A transcrição roda no próprio computador.',
           sobre: 'Versões e links do projeto.'
         }[current.key]}<//>
       </div>
@@ -2839,6 +2844,40 @@ body { background: var(--ct-bg); color: var(--ct-text); font-family: var(--ct-fo
         <${SettingsCard} title="Opções">
           <${SettingRow} title="Registrar o tempo no Jira (worklog)" desc="Cada sessão de 1 min ou mais vira um worklog na issue. Tempo anterior a ligar não é enviado."><${Switch} checked=${worklog} onChange=${setWorklog} /><//>
           <${SettingRow} title="Sincronizar tasks do Jira com o Notion"><${Switch} checked=${jiraNotion} onChange=${setJiraNotion} /><//>
+        <//>
+      <//>`,
+
+      ditado: html`<${Flex} vertical gap=${16}>
+        <${SettingsCard} title="Handy" extra=${html`<${Flex} align="center" gap=${6} wrap="wrap"><${Text} type="secondary" style=${{ fontSize: 12 }}>Exemplo:<//><${Segmented} size="small" value=${handySample} onChange=${setHandySample} options=${[{ value: 'nao', label: 'Não instalado' }, { value: 'baixando', label: 'Instalando' }, { value: 'ok', label: 'Instalado' }, { value: 'nova', label: 'Nova versão' }]} /><//>`}>
+          ${handySample === 'nao'
+            ? html`<${SettingRow} title="Handy não instalado" desc="Baixa a versão oficial do Handy, de código aberto, direto do GitHub.">
+                <${Button} type="primary" icon=${html`<${I.DownloadOutlined} />`} onClick=${() => setHandySample('baixando')}>Instalar<//>
+              <//>`
+            : handySample === 'baixando'
+              ? html`<${SettingRow} title="Instalando o Handy" desc="Baixando a versão 0.10.2.">
+                  <${Progress} percent=${42} size="small" style=${{ width: 200, margin: 0 }} />
+                <//>`
+              : html`<${SettingRow} title=${html`<span>Versão <span className="ct-mono">0.10.2</span></span>`} desc=${handySample === 'nova' ? html`<span>A versão <span className="ct-mono">0.10.3</span> está disponível.</span>` : 'É a versão mais recente.'}>
+                  ${handySample === 'nova'
+                    ? html`<${Button} type="primary" icon=${html`<${I.DownloadOutlined} />`} onClick=${() => { setHandySample('baixando'); }}>Atualizar<//>`
+                    : html`<${Button} icon=${html`<${I.SyncOutlined} />`} onClick=${() => message.info('Nenhuma versão nova')}>Procurar atualização<//>`}
+                <//>`}
+          <${SettingRow} title="Ditado por voz" desc="Liga o Handy junto com o CrafyTask.">
+            <${Tooltip} title=${handyInstalled ? undefined : 'Instale o Handy primeiro.'}><${Switch} checked=${handyOn && handyInstalled} disabled=${!handyInstalled} onChange=${v => { setHandyOn(v); message.success(v ? 'Ditado ligado' : 'Ditado desligado'); }} aria-label="Ditado por voz" /><//>
+          <//>
+        <//>
+        <${SettingsCard} title="Atalho">
+          <${SettingRow} title="Ditar" desc="Aperte para começar a falar e de novo para parar. O texto entra no campo com o cursor; com outro programa em foco, vai para a área de transferência.">
+            <${Flex} align="center" gap=${8} wrap="wrap">
+              <${Space} size=${4}>${['Ctrl', 'Alt', 'Space'].map(k => html`<kbd key=${k} className="ct-kbd">${k}</kbd>`)}<//>
+              <${Button} disabled=${!(handyOn && handyInstalled)} onClick=${() => message.info('Mesmo gravador de atalho da captura rápida')}>Definir atalho<//>
+            <//>
+          <//>
+        <//>
+        <${SettingsCard} title="Modelo, microfone e idioma">
+          <${SettingRow} title="Configurações do Handy" desc="Modelo de transcrição, microfone, idioma e sons ficam no próprio Handy.">
+            <${Tooltip} title=${handyOn && handyInstalled ? undefined : 'Ligue o ditado primeiro.'}><${Button} icon=${html`<${I.ExportOutlined} />`} disabled=${!(handyOn && handyInstalled)} onClick=${() => message.info('Abre a janela do Handy')}>Abrir o Handy<//><//>
+          <//>
         <//>
       <//>`,
 

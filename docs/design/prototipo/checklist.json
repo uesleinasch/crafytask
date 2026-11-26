@@ -1606,6 +1606,33 @@
       "validado": "2026-11-21"
     },
     {
+      "id": "F7.24",
+      "fase": "F7",
+      "titulo": "Ditado (Handy): instalar e atualizar, ligar, atalho próprio e abrir o Handy",
+      "check": {
+        "tipo": "contem-todos",
+        "arquivos": "src/{renderer/src/components/settings/HandySection.tsx,renderer/src/components/settings/ShortcutRow.tsx,main/handy.ts,main/index.ts}",
+        "padroes": [
+          "Instalar",
+          "Procurar atualização",
+          "Ditado por voz",
+          "Definir atalho",
+          "Abrir o Handy",
+          "verifyMinisign",
+          "insertText"
+        ]
+      }
+    },
+    {
+      "id": "F7.25",
+      "fase": "F7",
+      "titulo": "Ditado conferido (instalar, ligar, ditar num campo, trocar o atalho, atualizar)",
+      "check": {
+        "tipo": "manual"
+      },
+      "validado": "2026-11-26"
+    },
+    {
       "id": "F7.3",
       "fase": "F7",
       "titulo": "Cadernos, dashboard, terminal e configurações conferidos",

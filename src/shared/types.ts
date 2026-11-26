@@ -787,6 +787,25 @@ export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
 
 // ===================== MCP SERVER =====================
 
+export interface HandyStatus {
+  supported: boolean
+  installed: boolean
+  version: string | null
+  enabled: boolean
+  running: boolean
+  shortcut: string
+  shortcutActive: boolean
+  installing: 'download' | 'extract' | null
+  progress: number | null
+  error: string | null
+}
+
+export interface HandyUpdateInfo {
+  latest: string
+  current: string | null
+  available: boolean
+}
+
 export interface McpStatus {
   enabled: boolean
   running: boolean

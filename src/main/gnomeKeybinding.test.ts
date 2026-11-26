@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   CRAFYTASK_PATH,
   CUSTOM_SCHEMA,
+  DICTATION_SLOT,
   MEDIA_KEYS_SCHEMA,
   formatStrv,
   gnomeBinding,
@@ -9,6 +10,7 @@ import {
   isGnomeKeybindingCurrent,
   parseStrv,
   readGnomeKeybinding,
+  removeGnomeKeybinding,
   shellQuote,
   writeGnomeKeybinding,
   type GsettingsRun
@@ -83,5 +85,21 @@ describe('atalho personalizado do GNOME', () => {
     await writeGnomeKeybinding(run, 'Super+F9', command)
     expect(parseStrv(store[`${MEDIA_KEYS_SCHEMA} custom-keybindings`])).toHaveLength(2)
     expect(store[`${CUSTOM_SCHEMA}:${CRAFYTASK_PATH} binding`]).toBe("'<Super>F9'")
+  })
+
+  it('o atalho do ditado vive num caminho próprio e sai sem levar o da captura', async () => {
+    const { run, store } = fakeGsettings()
+    await writeGnomeKeybinding(run, 'CommandOrControl+Shift+Space', command)
+    await writeGnomeKeybinding(run, 'CommandOrControl+Alt+Space', 'ditar', DICTATION_SLOT)
+    expect(await readGnomeKeybinding(run, DICTATION_SLOT)).toEqual({
+      binding: '<Control><Alt>space',
+      command: 'ditar'
+    })
+    expect(store[`${CUSTOM_SCHEMA}:${DICTATION_SLOT.path} name`]).toBe("'CrafyTask: ditado'")
+
+    await removeGnomeKeybinding(run, DICTATION_SLOT)
+    expect(parseStrv(store[`${MEDIA_KEYS_SCHEMA} custom-keybindings`])).toEqual([CRAFYTASK_PATH])
+    expect(await readGnomeKeybinding(run, DICTATION_SLOT)).toBeNull()
+    expect((await readGnomeKeybinding(run))?.command).toBe(command)
   })
 })

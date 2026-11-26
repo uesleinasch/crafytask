@@ -57,6 +57,8 @@ import type {
   ContextWithUsage,
   UpdateTagInput,
   McpStatus,
+  HandyStatus,
+  HandyUpdateInfo,
   BackupSnapshot,
   BackupStatus,
   NotesOwner,
@@ -608,6 +610,19 @@ const api = {
   mcpSetEnabled: (enabled: boolean): Promise<McpStatus> =>
     ipcRenderer.invoke('mcp:setEnabled', enabled),
   mcpRegenerateToken: (): Promise<McpStatus> => ipcRenderer.invoke('mcp:regenerateToken'),
+  handyGetStatus: (): Promise<HandyStatus> => ipcRenderer.invoke('handy:getStatus'),
+  handyCheckUpdate: (): Promise<HandyUpdateInfo> => ipcRenderer.invoke('handy:checkUpdate'),
+  handyInstall: (): Promise<HandyStatus> => ipcRenderer.invoke('handy:install'),
+  handySetEnabled: (enabled: boolean): Promise<HandyStatus> =>
+    ipcRenderer.invoke('handy:setEnabled', enabled),
+  handySetShortcut: (accelerator: string): Promise<HandyStatus> =>
+    ipcRenderer.invoke('handy:setShortcut', accelerator),
+  handyOpen: (): Promise<HandyStatus> => ipcRenderer.invoke('handy:open'),
+  onHandyStatus: (callback: (status: HandyStatus) => void): (() => void) => {
+    const handler = (_: Electron.IpcRendererEvent, status: HandyStatus): void => callback(status)
+    ipcRenderer.on('handy:status', handler)
+    return () => ipcRenderer.removeListener('handy:status', handler)
+  },
 
   terminalCreate: (
     owner: TerminalOwner,

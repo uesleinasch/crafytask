@@ -1,4 +1,4 @@
-import type { GcalStatus, JiraStatus, McpStatus } from '@shared/types'
+import type { GcalStatus, HandyStatus, JiraStatus, McpStatus } from '@shared/types'
 
 export type StatusTone = 'on' | 'off' | 'error'
 
@@ -42,6 +42,12 @@ export function jiraStatusInfo(status: JiraStatus | null): StatusInfo {
 export function mcpStatusInfo(status: McpStatus | null): StatusInfo {
   if (!status?.enabled) return { tone: 'off', label: 'Desligado' }
   return status.running ? { tone: 'on', label: 'Rodando' } : { tone: 'error', label: 'Falha' }
+}
+
+export function handyStatusInfo(status: HandyStatus | null): StatusInfo {
+  if (!status?.installed) return { tone: 'off', label: 'Não instalado' }
+  if (!status.enabled) return { tone: 'off', label: 'Desligado' }
+  return status.running ? { tone: 'on', label: 'Ligado' } : { tone: 'error', label: 'Parado' }
 }
 
 export function errorMessage(error: unknown): string {

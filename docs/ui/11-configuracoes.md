@@ -6,7 +6,7 @@ protótipo (rota `#ajustes`).
 
 ## Função
 
-Preferências do app e as integrações (Notion, Google, Jira, servidor MCP). Acessível pelo
+Preferências do app e as integrações (Notion, Google, Jira, servidor MCP, ditado com o Handy). Acessível pelo
 item **Configurações** no rodapé da sidebar.
 
 ## Estrutura
@@ -24,6 +24,7 @@ item **Configurações** no rodapé da sidebar.
 │ ☁ Google             ● │ └─────────────────────────────────────────┘    │
 │ 🔌 Jira              ● │                                    até 780px  │
 │ ⎓ Servidor MCP       ● │                                                │
+│ 🎙 Ditado (Handy)     ● │                                                │
 │ ⓘ Sobre                │                                                │
 └────────────────────────┴────────────────────────────────────────────────┘
 ```
@@ -37,7 +38,7 @@ item **Configurações** no rodapé da sidebar.
   ponto do `Badge` (integrações) e uma frase do que a seção faz.
 - **Conteúdo** com largura máxima de 780px, dentro do `PageContainer` e de um `RegionBoundary` por
   seção. Enquanto os estados carregam (`notionGetConfig`, `gcalGetStatus`, `jiraGetStatus`,
-  `mcpGetStatus`, `appGetAutostart` em paralelo), aparece um `Spin`; a navegação já está lá.
+  `mcpGetStatus`, `appGetAutostart`, `handyGetStatus` em paralelo), aparece um `Spin`; a navegação já está lá.
 - A página é dona dos estados e os repassa às seções com um callback de mudança. Por isso o ponto
   na navegação muda no mesmo instante em que a seção conecta ou desliga algo.
 
@@ -49,6 +50,7 @@ item **Configurações** no rodapé da sidebar.
 | `SettingRow` | título e descrição à esquerda, controle à direita (`Switch`, `Input`, botão); quebra para baixo quando falta espaço; `vertical` põe o controle embaixo |
 | `SettingsHeader` | cabeçalho da seção, descrito acima |
 | `Kbd` / `KeyCombo` (`components/shell/Kbd.tsx`) | teclas em `<kbd>` mono com borda (guia §11) |
+| `ShortcutRow` | linha de atalho global: `KeyCombo`, `Tag` "Inativo" e o botão **Definir atalho** que grava a combinação; usada pela captura rápida e pelo ditado |
 | `SetupGuide`, `GuideLink`, `GuideField` (`SetupGuide.tsx`) | guia de configuração das integrações, descrito abaixo; link externo com ícone e rótulo de campo dentro do passo |
 | `settingsStatus.ts` | puro e testado: estado de cada integração, `STATUS_BADGE`, tipo `NotionConfig`, `errorMessage` (tira o prefixo `Error invoking remote method…`) |
 
@@ -256,6 +258,32 @@ O app traz o próprio cliente OAuth, embutido no build da release a partir dos s
   continua, as tarefas não mudam).
 - Falhas ao ler o estado de uma integração não derrubam a página: a seção mostra um `Alert` de erro e
   a navegação, o ponto vermelho "Erro ao ler". Enquanto carrega, nenhum ponto aparece.
+
+### Ditado (Handy)
+
+`HandySection.tsx`; o estado vem de `handy:getStatus` e do evento `handy:status` (progresso da
+instalação, Handy fechado). Guia de uso em `docs/integracoes/handy.md`.
+
+- Card **Handy**: sem instalação, "Handy não instalado" e **Instalar** (primário); instalando, o
+  `Progress` do download e depois "Preparando…"; instalado, a versão em mono e **Procurar
+  atualização**, que vira **Atualizar** (primário) quando há versão nova. Abaixo, o `Switch`
+  **Ditado por voz**, desabilitado até instalar. Erros (download, assinatura, Handy fechado) num
+  `Alert` no topo da seção.
+- Card **Atalho**: linha **Ditar** com o mesmo gravador da captura rápida (`KeyCombo`, "Definir
+  atalho", `Tag` "Inativo"). Recusa o atalho da captura, e a captura recusa o do ditado.
+- Card **Modelo, microfone e idioma**: **Abrir o Handy**, só com o ditado ligado.
+- O main (`handy.ts`; regras puras em `handyPlan.ts` e `minisign.ts`, testadas) baixa o AppImage
+  oficial da última release, confere a assinatura minisign com a chave do updater do Handy, extrai
+  com `--appimage-extract` em `userData/handy/app` (não precisa de FUSE) e roda o `AppRun` com
+  `--start-hidden` (sem ele na primeira vez, para o onboarding do Handy). Antes de iniciar, grava no
+  `settings_store.json` do Handy o método de colar `external_script`, apontando para
+  `userData/handy/entregar.sh`: o script grava o texto em `userData/handy/inbox/`, que o main
+  observa e entrega com `webContents.insertText` à janela em foco (o timer flutuante não conta);
+  sem janela do CrafyTask em foco, vai para a área de transferência com um aviso.
+- Atalho: no GNOME com Wayland vira atalho personalizado do sistema (caminho próprio
+  `crafytask-dictation`) que roda `AppRun --toggle-transcription` (o Handy aberto recebe pela
+  instância única); nos outros ambientes, o atalho vai para o binding do próprio Handy, que é
+  reiniciado para valer.
 
 ### Sobre
 
