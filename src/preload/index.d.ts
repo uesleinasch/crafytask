@@ -56,6 +56,8 @@ import type {
   ContextWithUsage,
   UpdateTagInput,
   McpStatus,
+  HandyStatus,
+  HandyUpdateInfo,
   BackupSnapshot,
   BackupStatus,
   NotesOwner,
@@ -386,6 +388,13 @@ interface API {
   mcpGetStatus: () => Promise<McpStatus>
   mcpSetEnabled: (enabled: boolean) => Promise<McpStatus>
   mcpRegenerateToken: () => Promise<McpStatus>
+  handyGetStatus: () => Promise<HandyStatus>
+  handyCheckUpdate: () => Promise<HandyUpdateInfo>
+  handyInstall: () => Promise<HandyStatus>
+  handySetEnabled: (enabled: boolean) => Promise<HandyStatus>
+  handySetShortcut: (accelerator: string) => Promise<HandyStatus>
+  handyOpen: () => Promise<void>
+  onHandyStatus: (callback: (status: HandyStatus) => void) => () => void
 
   // Terminal embutido
   terminalCreate: (
