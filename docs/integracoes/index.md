@@ -13,6 +13,7 @@ explicam o que cada integração faz e não faz.
 | [Google Calendar](google-calendar.md) | CrafyTask → Google | ver blocos de tempo, agendamentos e prazos na sua agenda |
 | [Jira](jira.md) | Jira ↔ CrafyTask | importar issues atribuídas a você, transicionar status, editar campos, enviar worklog |
 | [MCP](mcp.md) | assistente ↔ CrafyTask | deixar o Claude Code (ou outro cliente MCP) ler e organizar suas tarefas |
+| [Ditado (Handy)](handy.md) | Handy → CrafyTask | falar e ver o texto no campo em que o cursor está |
 
 !!! info "Nomes antigos preservados"
     Alguns nomes criados pelas integrações continuam com "TickTask" para não duplicar dados de

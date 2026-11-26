@@ -77,6 +77,7 @@ nav:
       - Google Calendar: integracoes/google-calendar.md
       - Jira: integracoes/jira.md
       - MCP (Claude Code e outros): integracoes/mcp.md
+      - Ditado (Handy): integracoes/handy.md
   - Comandos:
       - comandos/index.md
       - Scripts npm: comandos/scripts-npm.md

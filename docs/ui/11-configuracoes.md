@@ -257,6 +257,32 @@ O app traz o próprio cliente OAuth, embutido no build da release a partir dos s
 - Falhas ao ler o estado de uma integração não derrubam a página: a seção mostra um `Alert` de erro e
   a navegação, o ponto vermelho "Erro ao ler". Enquanto carrega, nenhum ponto aparece.
 
+### Ditado (Handy)
+
+`HandySection.tsx`; o estado vem de `handy:getStatus` e do evento `handy:status` (progresso da
+instalação, Handy fechado). Guia de uso em `docs/integracoes/handy.md`.
+
+- Card **Handy**: sem instalação, "Handy não instalado" e **Instalar** (primário); instalando, o
+  `Progress` do download e depois "Preparando…"; instalado, a versão em mono e **Procurar
+  atualização**, que vira **Atualizar** (primário) quando há versão nova. Abaixo, o `Switch`
+  **Ditado por voz**, desabilitado até instalar. Erros (download, assinatura, Handy fechado) num
+  `Alert` no topo da seção.
+- Card **Atalho**: linha **Ditar** com o mesmo gravador da captura rápida (`KeyCombo`, "Definir
+  atalho", `Tag` "Inativo"). Recusa o atalho da captura, e a captura recusa o do ditado.
+- Card **Modelo, microfone e idioma**: **Abrir o Handy**, só com o ditado ligado.
+- O main (`handy.ts`; regras puras em `handyPlan.ts` e `minisign.ts`, testadas) baixa o AppImage
+  oficial da última release, confere a assinatura minisign com a chave do updater do Handy, extrai
+  com `--appimage-extract` em `userData/handy/app` (não precisa de FUSE) e roda o `AppRun` com
+  `--start-hidden` (sem ele na primeira vez, para o onboarding do Handy). Antes de iniciar, grava no
+  `settings_store.json` do Handy o método de colar `external_script`, apontando para
+  `userData/handy/entregar.sh`: o script grava o texto em `userData/handy/inbox/`, que o main
+  observa e entrega com `webContents.insertText` à janela em foco (o timer flutuante não conta);
+  sem janela do CrafyTask em foco, vai para a área de transferência com um aviso.
+- Atalho: no GNOME com Wayland vira atalho personalizado do sistema (caminho próprio
+  `crafytask-dictation`) que roda `AppRun --toggle-transcription` (o Handy aberto recebe pela
+  instância única); nos outros ambientes, o atalho vai para o binding do próprio Handy, que é
+  reiniciado para valer.
+
 ### Sobre
 
 Card **Versões** (`Descriptions`): CrafyTask (`app:getVersion`), Electron, Chromium e Node
